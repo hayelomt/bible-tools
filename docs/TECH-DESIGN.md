@@ -294,7 +294,7 @@ The queue is a local query: open questions, takeaways from the last `reviewWindo
 | E2E | Playwright | Built web + built API on **local Postgres `lamp_e2e`** | Sign up → verify (link from `tmp/emails`) → capture a lesson **offline** (`context.setOffline`) → reconnect → a second browser context (second device) sees it; conflict flow; theme switch; export |
 
 ### 10.1 Vitest setup for NestJS
-NestJS dependency injection reads `design:paramtypes` metadata, which Vitest's default transformer doesn't emit. The API's `vitest.config.ts` therefore uses `unplugin-swc` (with `@swc/core`) and turns off Vite's own TypeScript transform (`oxc: false` on Vite 8). When scaffolding (`nest new`, ESM option), check whether the generated Vitest config already does this, and add it if not. Add `vite-tsconfig-paths` if path aliases are used.
+NestJS dependency injection reads `design:paramtypes` metadata. The API's `vitest.config.ts` compiles tests with `unplugin-swc` (with `@swc/core`) and turns off Vite's own transform (`oxc: false`), so tests use the same compiler as `nest build` (SWC builder). *Checked at scaffold (M1-02): the NestJS 12 template doesn't add this, and Vite 8's Oxc transform does emit the metadata too, so SWC is for parity rather than strictly required.* The repo stays on **TypeScript 6** until 7.1: TypeScript 7.0 has no programmatic compiler API, which the Nest CLI needs. Add `vite-tsconfig-paths` if path aliases are used.
 
 ### 10.2 Test databases (no Docker)
 - `scripts/dev-db.sh` (idempotent) uses the local Postgres (Postgres.app 18 on macOS, the distro package on Linux) to create the role `lamp` and the databases `lamp_dev`, `lamp_test` and `lamp_e2e`, and writes the connection strings to `apps/api/.env.local` and `.env.test`.
