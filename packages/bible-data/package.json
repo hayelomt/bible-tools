@@ -1,0 +1,22 @@
+{
+  "name": "@lamp/bible-data",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Bible source texts and the build script for per-book JSON",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@lamp/config": "workspace:*",
+    "oxlint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

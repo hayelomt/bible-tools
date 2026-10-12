@@ -45,7 +45,7 @@ M1 ──▶ M2 (A) ──▶ M3 (B) ──▶ M4 (C) ──▶ M5 (D) ──▶
 
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
-| ☐ | M1-01 | Monorepo scaffold: Turborepo + pnpm workspaces, Node 24 (`.nvmrc`, `engines`, `scripts/check-node.sh`), ESM everywhere, `packages/config` (tsconfig, oxlint, Prettier, Vitest preset), empty `packages/domain`, `ui` and `bible-data` consumed as TS source | M | §3 | `pnpm lint`, `pnpm typecheck` and `pnpm test` run across the workspace; the wrong Node version fails with a clear message |
+| ☑ | M1-01 | Monorepo scaffold: Turborepo + pnpm workspaces, Node 24 (`.nvmrc`, `engines`, `scripts/check-node.sh`), ESM everywhere, `packages/config` (tsconfig, oxlint, Prettier, Vitest preset), empty `packages/domain`, `ui` and `bible-data` consumed as TS source | M | §3 | `pnpm lint`, `pnpm typecheck` and `pnpm test` run across the workspace; the wrong Node version fails with a clear message |
 | ☐ | M1-02 | API scaffold: `nest new` (NestJS 12, **ESM** option) in `apps/api`; check that Vitest uses `unplugin-swc` so dependency injection works, and add it if not; `@nestjs/config` with Zod env validation; `GET /api/health`; one error shape with `errorCode`; structured JSON logging | M | §7.1, §10.1 | A unit test injecting a service passes; `/api/health` returns the version; a bad `.env` stops startup with a clear error |
 | ☐ | M1-03 | Local database, **no Docker**: `scripts/dev-db.sh` (idempotent) creates the role `lamp` and the databases `lamp_dev`, `lamp_test` and `lamp_e2e` on the local Postgres (Postgres.app 18 on macOS), and writes `.env.local` and `.env.test` | S | §10.2, §13 | A fresh clone plus the script gives three working databases, with no containers running |
 | ☐ | M1-04 | Prisma 7 schema for every §5.2 table: `prisma-client` generator, `@prisma/adapter-pg`, snake_case mapping, client-generated UUIDv7 ids, `rev`, `deletedAt`, `User.syncRev`; raw SQL in migrations for `citext`, partial unique indexes and check constraints; `PrismaService`; a demo seed (`pnpm db:seed`) | L | §5 | Migrations apply cleanly to an empty database; integration tests cover the unique rules (tag names per user, case-insensitive email) and cascading deletes |
@@ -161,7 +161,7 @@ M1 ──▶ M2 (A) ──▶ M3 (B) ──▶ M4 (C) ──▶ M5 (D) ──▶
 
 | Needed for | Item | Owner | Status |
 |---|---|---|---|
-| M1-01 | Node 24 LTS on the dev machine (it has 22.22.2; the NestJS 12 CLI needs 22.22.3+ or 24.15+) | You | ☐ |
+| M1-01 | Node 24 LTS on the dev machine (it has 22.22.2; the NestJS 12 CLI needs 22.22.3+ or 24.15+) | You | ☑ |
 | M1-07, M7-02 | GitHub repository (private until v1.0, then public) | You | ☐ |
 | M1-12 | WEB USFM from eBible.org (public domain, free download) | You | ☐ |
 | M2-13, M7-07, M7-08 | Test devices: an Android phone and an iPhone, ideally one low-end | You | ☐ |

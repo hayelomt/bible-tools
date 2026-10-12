@@ -1,0 +1,26 @@
+{
+  "name": "@lamp/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared tsconfig, oxlint, Prettier and Vitest presets",
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./oxlint.json": "./oxlint.json",
+    "./prettier": {
+      "types": "./prettier.d.ts",
+      "default": "./prettier.js"
+    },
+    "./vitest": {
+      "types": "./vitest.d.ts",
+      "default": "./vitest.js"
+    }
+  },
+  "scripts": {
+    "lint": "oxlint -c oxlint.json --deny-warnings ."
+  },
+  "dependencies": {
+    "oxlint": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@lamp/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure TS domain core: books, VerseRef, parser, doc model, SM-2, sync types, Zod schemas",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@lamp/config": "workspace:*",
+    "oxlint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
