@@ -28,3 +28,23 @@ Checks the update prompt (TECH-DESIGN §8.6). Use a production build, so the ser
 
 Also try it on a phone with the installed app: the same steps, with the update triggered by
 closing and reopening the app after step 3.
+
+## Losing the connection mid-edit loses nothing (M3-09)
+
+Checks the sync engine (TECH-DESIGN §6.3) against a real API. Last run 2026-10-13 in the desktop
+app's browser, with the API stopped and started for the connection (the Vite proxy then answers
+502, which the app takes as offline); results as below.
+
+1. `pnpm dev` with `lamp_dev` migrated. In a fresh browser profile, sign up, open the link from
+   `apps/api/tmp/emails/` and verify. The seeded tags are pushed at once (DevTools → Application →
+   IndexedDB → `lamp` → `syncState`: `cursor` 24, `ownerUserId` set; `outbox` empty).
+2. Start a lesson, give it a title, and type a sentence in the first note. About 2 s after typing
+   stops, the outbox is empty again.
+3. Keep the cursor in the note and cut the connection: stop the API (or DevTools → Network →
+   Offline). Type another sentence, wait a few seconds, then type a third.
+   - The note keeps everything typed. The outbox holds one sent change (the sentences typed before
+     the failed push, merged) and the changes typed since, not merged with it.
+4. Bring the connection back: start the API (a retry comes within the backoff, at most 5 min), or
+   go back online in DevTools (at once).
+   - The outbox empties, and the server has the note with every sentence, as one section and no
+     conflicted copy (`select body from section …` on `lamp_dev`).

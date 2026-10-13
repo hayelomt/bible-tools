@@ -6,7 +6,7 @@ import {
   newId,
   type UserSettings,
 } from '@lamp/domain';
-import { emitRowsChanged, type RowRef } from './changes.ts';
+import { emitLocalWrite, emitRowsChanged, type RowRef } from './changes.ts';
 import { type LampDb, type RowEntity, SETTINGS_KEY, SYNC_STATE_KEY } from './db.ts';
 
 /** The fields every synced row carries, which the writer fills in. */
@@ -57,6 +57,7 @@ export function action<T>(db: LampDb, run: (writer: Writer) => Promise<T>): Prom
     })
     .then((result) => {
       emitRowsChanged(changed);
+      emitLocalWrite();
       return result;
     });
   inFlight.add(write);
@@ -187,12 +188,21 @@ class TransactionWriter implements Writer {
     return row;
   }
 
-  private async reindex(entity: RowEntity, row: EntityRow<RowEntity>): Promise<void> {
-    if (!isCitingEntity(entity)) return;
-    await this.db.citation.where('sourceId').equals(row.id).delete();
-    const entries = citationsFor(entity, row as EntityRow<typeof entity>);
-    await this.db.citation.bulkAdd(entries.map((entry) => ({ id: newId(), ...entry })));
+  private reindex(entity: RowEntity, row: EntityRow<RowEntity>): Promise<void> {
+    return reindex(this.db, entity, row);
   }
+}
+
+/** Rebuilds a row's citations (§8.4), inside the caller's transaction; a tombstone has none. */
+export async function reindex(
+  db: LampDb,
+  entity: RowEntity,
+  row: EntityRow<RowEntity>,
+): Promise<void> {
+  if (!isCitingEntity(entity)) return;
+  await db.citation.where('sourceId').equals(row.id).delete();
+  const entries = citationsFor(entity, row as EntityRow<typeof entity>);
+  await db.citation.bulkAdd(entries.map((entry) => ({ id: newId(), ...entry })));
 }
 
 /** The outbox's change union can't be narrowed from a generic entity, so writes assert it. */

@@ -10,6 +10,7 @@ import { ShellSlots, useSlotRef } from './slots.tsx';
 import { UpdatePrompt } from './update-prompt.tsx';
 import { isTyping } from '@/lib/is-typing.ts';
 import { newLessonTarget } from '@/lib/new-lesson.ts';
+import { useSyncAccount } from '@/sync/sync.ts';
 
 /**
  * The frame around every screen (wireframes/shell.md): a top bar and a bottom bar under 1024 px,
@@ -19,6 +20,7 @@ import { newLessonTarget } from '@/lib/new-lesson.ts';
 export function AppShell() {
   useShortcuts();
   useThemeSync();
+  useSyncAccount();
   return (
     <ShellSlots>
       <div className="min-h-svh lg:flex">

@@ -51,8 +51,11 @@ export class PullService {
   async pull(user: User, { cursor, limit }: PullQuery): Promise<PullResponse> {
     assertVerified(user);
     const serverTime = new Date().toISOString();
-    const { rows, hasMore } = await this.prisma.$transaction(
-      (tx) => this.page(tx, user.id, BigInt(cursor), limit),
+    const { rows, hasMore, remaining } = await this.prisma.$transaction(
+      async (tx) => ({
+        ...(await this.page(tx, user.id, BigInt(cursor), limit)),
+        remaining: await this.count(tx, user.id, BigInt(cursor)),
+      }),
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
     const last = rows.at(-1);
@@ -60,6 +63,7 @@ export class PullService {
       rows: rows.map(pulled),
       nextCursor: last ? Number(last.rev) : cursor,
       hasMore,
+      remaining,
       serverTime,
       minClientVersion: MIN_CLIENT_VERSION,
     };
@@ -101,6 +105,22 @@ export class PullService {
       }
     }
     return found;
+  }
+
+  /**
+   * How many rows are after `cursor`, this page's included, from the same snapshot: the total a
+   * device's first-sync progress counts towards (§6.3).
+   */
+  private async count(tx: Tx, userId: string, cursor: bigint): Promise<number> {
+    const where = { userId, rev: { gt: cursor } };
+    let total = 0;
+    for (const entity of ENTITY_NAMES) {
+      total +=
+        entity === 'userSettings'
+          ? await tx.userSettings.count({ where })
+          : await ENTITY_TABLES[entity].model(tx).count({ where });
+    }
+    return total;
   }
 
   /** One table's rows. */

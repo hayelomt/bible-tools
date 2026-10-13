@@ -187,6 +187,11 @@ export const pullResponseSchema = z.strictObject({
   rows: z.array(pulledRowSchema),
   nextCursor: revSchema,
   hasMore: z.boolean(),
+  /**
+   * Rows after the request's cursor, this page's included, counted in the same snapshot: the
+   * total for first-sync progress ("1,240 of 3,000").
+   */
+  remaining: z.int().min(0),
   /** For the device's clock offset (§6.5). */
   serverTime: timestampSchema,
   /** Older clients get 426 and "Update required" (§6.6). */

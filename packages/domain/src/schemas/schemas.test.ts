@@ -302,6 +302,7 @@ describe('sync schemas', () => {
       rows: ENTITY_NAMES.map((entity) => ({ entity, row: ROWS[entity] })),
       nextCursor: 3,
       hasMore: false,
+      remaining: 11,
       serverTime: NOW,
       minClientVersion: '0.1.0',
     };

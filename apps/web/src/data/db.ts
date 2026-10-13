@@ -20,8 +20,19 @@ import { Dexie, type DexieOptions, type Table } from 'dexie';
 /** The entities stored one row per id; settings are one row per device. */
 export type RowEntity = Exclude<EntityName, 'userSettings'>;
 
-/** A queued change (§6.1), in the order it was made. `seq` is assigned by IndexedDB. */
-export type OutboxEntry = Change & { seq?: number };
+/**
+ * A queued change (§6.1), in the order it was made. `seq` is assigned by IndexedDB. `sent` marks a
+ * change that has gone out in a push, so it's never merged with a later one (the server may have
+ * applied it); `rejected` is the server's reason for refusing it, which holds back later changes
+ * to the same row (§6.2).
+ */
+export type OutboxEntry = Change & { seq?: number; sent?: boolean; rejected?: Rejection };
+
+/** Why the server refused a change: its error code and message. */
+export interface Rejection {
+  errorCode: string;
+  message: string;
+}
 
 /** What the device knows about its sync (§6.1, §6.6). One row, under `SYNC_STATE_KEY`. */
 export interface SyncState {

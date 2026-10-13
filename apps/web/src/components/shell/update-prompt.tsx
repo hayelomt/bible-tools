@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { writesSettled } from '@/data/action.ts';
 import { isTyping } from '@/lib/is-typing.ts';
+import { syncEngine } from '@/sync/sync.ts';
 
 /** How often an open app looks for a new version. */
 const CHECK_MS = 60 * 60 * 1000;
@@ -11,8 +12,9 @@ const CHECK_MS = 60 * 60 * 1000;
  * Registers the service worker, and offers a new version once it's ready (wireframes/shell.md
  * "Update prompt"): a toast that stays until it's used. The app never reloads by itself, and the
  * toast is put away while something is being typed, so a reload never lands mid-edit; Reload
- * waits for the last writes first. Later leaves the update for the next start. (M3-09 also holds
- * it back while the outbox is mid-push.)
+ * waits for the last writes and a sync in flight first (a push cut off is safe, as a change is
+ * sent again with its id, but its answer would wait for the next start). Later leaves the update
+ * for the next start.
  */
 export function UpdatePrompt() {
   const {
@@ -35,12 +37,14 @@ export function UpdatePrompt() {
       action: {
         label: 'Reload',
         onClick: () => {
-          void writesSettled().then(() => {
-            // The plugin reloads only for an update found just after the page loaded; one found
-            // later (the hourly check, another tab) is reloaded for here.
-            navigator.serviceWorker?.addEventListener('controllerchange', reload, { once: true });
-            return updateServiceWorker(true);
-          });
+          void writesSettled()
+            .then(() => syncEngine.settled())
+            .then(() => {
+              // The plugin reloads only for an update found just after the page loaded; one found
+              // later (the hourly check, another tab) is reloaded for here.
+              navigator.serviceWorker?.addEventListener('controllerchange', reload, { once: true });
+              return updateServiceWorker(true);
+            });
         },
       },
     });

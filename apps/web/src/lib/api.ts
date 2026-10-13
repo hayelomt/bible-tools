@@ -4,13 +4,22 @@ import {
   type HealthResponse,
   type LoginRequest,
   type MeResponse,
+  type PullResponse,
+  type PushRequest,
+  type PushResponse,
   type ResetPasswordRequest,
   type SignupRequest,
   type VerifyEmailRequest,
   apiErrorSchema,
   healthResponseSchema,
   meResponseSchema,
+  pullResponseSchema,
+  pushResponseSchema,
 } from '@lamp/domain';
+import { version } from '../../package.json';
+
+/** This app's version, sent with every push and pull (§6.6). */
+export const CLIENT_VERSION = version;
 
 /** An answer from the API with its error body (§7.1); `errorCode` is what screens switch on. */
 export class ApiRequestError extends Error {
@@ -111,4 +120,17 @@ export async function resetPassword(body: ResetPasswordRequest): Promise<void> {
 
 export async function changePassword(body: ChangePasswordRequest): Promise<void> {
   await request('POST', '/api/auth/change-password', body);
+}
+
+/** `POST /api/sync/push` (§6.2). */
+export async function pushChanges(body: PushRequest): Promise<PushResponse> {
+  const res = await request('POST', '/api/sync/push', body);
+  return pushResponseSchema.parse(await res.json());
+}
+
+/** `GET /api/sync/pull` (§6.3): one page after `cursor`. */
+export async function pullChanges(cursor: number): Promise<PullResponse> {
+  const query = new URLSearchParams({ cursor: String(cursor), clientVersion: CLIENT_VERSION });
+  const res = await request('GET', `/api/sync/pull?${query}`);
+  return pullResponseSchema.parse(await res.json());
 }

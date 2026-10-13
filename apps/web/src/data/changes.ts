@@ -22,3 +22,18 @@ export function emitRowsChanged(refs: readonly RowRef[]): void {
   if (refs.length === 0) return;
   for (const listener of listeners) listener(refs);
 }
+
+const writeListeners = new Set<() => void>();
+
+/**
+ * Called after each action commits, settings included: a change was queued, so sync runs soon
+ * (§6.3). A pull's rows don't count.
+ */
+export function onLocalWrite(listener: () => void): () => void {
+  writeListeners.add(listener);
+  return () => writeListeners.delete(listener);
+}
+
+export function emitLocalWrite(): void {
+  for (const listener of writeListeners) listener();
+}

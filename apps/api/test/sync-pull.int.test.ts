@@ -124,7 +124,12 @@ describe('a first pull from 0', () => {
     ]);
 
     const page = await pull(0);
-    expect(page).toMatchObject({ nextCursor: 7, hasMore: false, minClientVersion: '0.0.0' });
+    expect(page).toMatchObject({
+      nextCursor: 7,
+      hasMore: false,
+      remaining: 6,
+      minClientVersion: '0.0.0',
+    });
     expect(Math.abs(Date.parse(page.serverTime) - Date.now())).toBeLessThan(60_000);
     expect(page.rows).toEqual([
       { entity: 'lesson', row: { ...lesson, rev: 1 } },
@@ -137,9 +142,10 @@ describe('a first pull from 0', () => {
   });
 
   it('is empty for a new account, and so is a pull from the latest cursor', async () => {
-    expect(await pull(0)).toMatchObject({ rows: [], nextCursor: 0, hasMore: false });
+    const empty = { rows: [], hasMore: false, remaining: 0 };
+    expect(await pull(0)).toMatchObject({ ...empty, nextCursor: 0 });
     await sync.pushOk(client, account, [upsert('lesson', lessonRow())]);
-    expect(await pull(1)).toMatchObject({ rows: [], nextCursor: 1, hasMore: false });
+    expect(await pull(1)).toMatchObject({ ...empty, nextCursor: 1 });
   });
 
   it("never returns another account's rows", async () => {
@@ -164,10 +170,11 @@ describe('paging', () => {
     ]);
 
     const { pages, rows, cursor } = await pullAll(0, 3);
-    expect(pages.map((p) => [p.rows.length, p.nextCursor, p.hasMore])).toEqual([
-      [3, 3, true],
-      [3, 6, true],
-      [1, 7, false],
+    // `remaining` counts this page and the rest, the total a first sync's progress shows.
+    expect(pages.map((p) => [p.rows.length, p.nextCursor, p.hasMore, p.remaining])).toEqual([
+      [3, 3, true, 7],
+      [3, 6, true, 4],
+      [1, 7, false, 1],
     ]);
     expect(ids(rows)).toEqual(ids((await pull(0)).rows));
     expect(rows).toHaveLength(7);
@@ -188,7 +195,7 @@ describe('paging', () => {
       );
     }
     const first = await pull(0);
-    expect(first).toMatchObject({ nextCursor: 500, hasMore: true });
+    expect(first).toMatchObject({ nextCursor: 500, hasMore: true, remaining: 502 });
     expect(first.rows).toHaveLength(500);
     expect((await pull(500)).rows).toHaveLength(2);
   });

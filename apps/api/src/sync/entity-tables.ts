@@ -23,6 +23,7 @@ export interface RowModel {
     orderBy?: { rev: 'asc' };
     take?: number;
   }): Promise<StoredRow[]>;
+  count(args: { where: { userId: string; rev: { gt: bigint } } }): Promise<number>;
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
   update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<unknown>;
 }
