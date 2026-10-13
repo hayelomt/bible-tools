@@ -57,7 +57,9 @@ lamp_psql() {
 }
 
 echo "Role $role"
-admin_psql <<SQL
+# Passed with -c, not on stdin: sudo with use_pty (the Ubuntu 24.04 default) can drop piped
+# input when there's no terminal, and psql then exits 0 having run nothing.
+admin_psql -c "
 DO \$\$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$role') THEN
@@ -65,8 +67,7 @@ BEGIN
   END IF;
 END
 \$\$;
-ALTER ROLE $role WITH LOGIN CREATEDB NOSUPERUSER PASSWORD '$password';
-SQL
+ALTER ROLE $role WITH LOGIN CREATEDB NOSUPERUSER PASSWORD '$password';"
 
 server=$(lamp_psql -At -d postgres -c 'show server_version_num')
 if [ "$server" -lt 180000 ]; then
