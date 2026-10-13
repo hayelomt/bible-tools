@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": ["./node_modules/@lamp/config/oxlint.json"],
+  "plugins": ["typescript", "unicorn", "oxc", "import", "vitest", "react", "jsx-a11y"],
+  "env": {
+    "browser": true
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off"
+  }
+}

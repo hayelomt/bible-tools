@@ -3,18 +3,38 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "shadcn/ui components, theme presets and tokens",
+  "description": "shadcn/ui components (Base UI), theme presets and tokens",
   "exports": {
-    ".": "./src/index.ts"
+    "./globals.css": "./src/styles/globals.css",
+    "./lib/*": "./src/lib/*.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts"
   },
   "scripts": {
-    "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings src",
+    "lint": "oxlint -c .oxlintrc.json --deny-warnings src",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "class-variance-authority": "catalog:",
+    "cn": "catalog:",
+    "lucide-react": "catalog:",
+    "tw-animate-css": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
   "devDependencies": {
     "@lamp/config": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "oxlint": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "shadcn": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

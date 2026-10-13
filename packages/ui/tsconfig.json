@@ -2,7 +2,10 @@
   "extends": "@lamp/config/tsconfig.base.json",
   "compilerOptions": {
     "lib": ["es2024", "dom", "dom.iterable"],
-    "types": []
+    "jsx": "react-jsx",
+    "types": [],
+    // shadcn components import each other through the package name (components.json aliases).
+    "paths": { "@lamp/ui/*": ["./src/*"] }
   },
   "include": ["src", "*.config.ts"]
 }
