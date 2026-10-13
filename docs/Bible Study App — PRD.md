@@ -1,6 +1,6 @@
 # Lamp — Bible Study App PRD
 
-Oct 13, 2026 · @Frost Biter · v1.3 (see [Change log](#change-log))
+Oct 13, 2026 · @Frost Biter · v1.4 (see [Change log](#change-log))
 
 ## Overview
 
@@ -196,7 +196,7 @@ Phase 1 is sequenced into five milestones so the app is always usable; no dates,
 
 &#91;embedded content: phase 1 roadmap · 4 milestones, each with a gate\] *(predates v1.1; the table below is current)*
 
-Milestone A must land before anything else because every later feature reads the verse references and section tree it defines. B comes next so the data model is proven against sync before more entities are built on it. C and D could be reordered; E depends on C (the review queue reads questions and takeaways) and D (memory verses come from the reader).
+Milestone A must land before anything else because every later feature reads the verse references and section tree it defines. C comes next, then B: finding past notes matters more than sync while the app is used on one device, and every write already queues for sync, so B adds sync to C's entities without rework. D could come before B or C; E depends on C (the review queue reads questions and takeaways) and D (memory verses come from the reader).
 
 | Milestone | Features | Gate |
 | --- | --- | --- |
@@ -239,3 +239,4 @@ Phase 2 builds on the accounts and sync from phase 1 to add sharing, community a
 | 1.1 | 2026-10-12 | Technical design decisions: phase 1 gains a NestJS + PostgreSQL server, optional accounts (F14) and cross-device sync (F15), moved from phase 2. ESV (F13) moves to phase 2; phase 1 ships WEB only. Theme presets added (F16). Product decisions: guest use without an account, sign-out keeps notes on the device, chips show their snapshot, 24 seeded tags on sections and lessons, a 14-day review window, PDF through the print view, MIT licence, no admin UI. Verse references may cross chapters. Milestones become A–E, with accounts and sync as B. |
 | 1.2 | 2026-10-12 | Named the app **Lamp**. Theme presets settled (F16). Hosting on the existing VPS provider, email through Resend, errors to Sentry, backups by provider snapshots; see TECH-DESIGN §15. |
 | 1.3 | 2026-10-13 | Verse entry (F3) accepts KJV verse numbers that WEB places elsewhere and moves them onto WEB's; parser rules for ambiguous input settled (TECH-DESIGN §4.1, §15). |
+| 1.4 | 2026-10-13 | Build order: milestone C (structure) before B (accounts and sync). Letters and features unchanged. |

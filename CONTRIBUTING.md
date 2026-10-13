@@ -22,7 +22,7 @@ pnpm lint && pnpm typecheck && pnpm test
 All planned work is in [docs/BACKLOG.md](docs/BACKLOG.md), in milestones that are built in order.
 
 1. **Take the first ☐ task in the current milestone** whose dependencies are done. Earlier
-   milestones come first: M2 builds on M1, M3 on M2, and so on. A task's _Refs_ column points to
+   milestones come first, in the order the backlog's _Order_ section gives (M4 is built before M3). A task's _Refs_ column points to
    the PRD feature (F1–F16) and the TECH-DESIGN section (§) it implements; read those first.
 2. **Say you're taking it.** Open an issue titled with the task ID ("M2-04: Lesson create and
    edit"), or comment on the existing one, so two people don't build the same thing.

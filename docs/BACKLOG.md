@@ -20,8 +20,8 @@
 |---|---|---|---|---|---|---|
 | [M1](#m1--foundations) | — | Monorepo, API and web scaffolds, database, CI, domain core, WEB data, UX pass | 2 | 11 | 2 | 9 – 17 |
 | [M2](#m2--spine) | A | Capture a sermon offline as a guest and reopen it | 3 | 6 | 4 | 9.75 – 17.5 |
-| [M3](#m3--accounts-and-sync) | B | Accounts, and notes syncing between devices without loss | 4 | 7 | 4 | 10.5 – 19 |
 | [M4](#m4--structure) | C | Find any past note by tag, text or verse | 2 | 5 | 1 | 4.5 – 8.5 |
+| [M3](#m3--accounts-and-sync) | B | Accounts, and notes syncing between devices without loss | 4 | 7 | 4 | 10.5 – 19 |
 | [M5](#m5--reader) | D | Read, highlight and promote scripture | 2 | 3 | 0 | 2 – 4 |
 | [M6](#m6--loops-and-output) | E | Review queue, scripture memory, export | 3 | 4 | 0 | 2.75 – 5.5 |
 | [M7](#m7--release) | — | VPS deploy, hardening, a month of real use, public v1.0 | 6 | 4 | 0 | 3.5 – 7 |
@@ -31,11 +31,11 @@ The effort range runs from optimistic (S ¼ d, M ½ d, L 1½ d, assuming Claude 
 
 ### Order
 ```
-M1 ──▶ M2 (A) ──▶ M3 (B) ──▶ M4 (C) ──▶ M5 (D) ──▶ M6 (E) ──▶ M7 (v1.0)
+M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶ M6 (E) ──▶ M7 (v1.0)
 ```
 - **M2 builds the app as a guest-only, offline app**, but every write already goes through the outbox (M2-01). M3 then only has to drain that outbox, with no rework of the screens.
-- **Sync (M3) comes before the remaining features** so the data model is proven against two devices and conflicts while it has few entities. Every entity added later gets sync for free.
-- M4 and M5 can swap. M6 needs both: the review queue reads questions and takeaways (M4), and memory verses come from the reader (M5).
+- **Structure (M4) comes before sync (M3)** (decided 2026-10-13): finding past notes is worth more than sync while the app is used on one device. M4 needs nothing from M3: it's local, its writes queue in the outbox like every other, and its entities are already in the shared schemas, the Prisma model and the sync entity list. The cost: sync is proven against more entities, so M3 also covers tags, takeaways and questions (two devices creating the same tag, a promoted question edited on both sides, guest tags and questions joining an account). The IDs keep their numbers.
+- M5 can come before M3 too, or swap with M4. M6 needs both: the review queue reads questions and takeaways (M4), and memory verses come from the reader (M5).
 - Each milestone ends with a **gate test** that checks the PRD gate for that milestone. You can study with the app from the end of M2, and across devices from the end of M3.
 
 ---
@@ -78,10 +78,24 @@ M1 ──▶ M2 (A) ──▶ M3 (B) ──▶ M4 (C) ──▶ M5 (D) ──▶
 | ☑ | M2-10 | F3 Verse chip: display reference and translation label, tap to expand the snapshot; keyboard and screen-reader accessible; deleted as one unit | M | §9, F3 | The chip text never changes after capture, shown by a test |
 | ☑ | M2-11 | F12 **PWA**: `vite-plugin-pwa` (injectManifest) precaching the app shell, installable manifest, WEB downloaded in the background with progress in settings (and chips inserted before their book arrived get their snapshot then), `storage.persist()`; safe update ("New version — Reload", never while editing) | L | §8.6, F12 | In airplane mode after the first load, every screen works and any book opens; manual script: an update mid-edit loses nothing |
 | ☐ | M2-12 | Gate test (Playwright, offline): create a lesson, add three sections with a reply and two verse chips, reload, reopen; the outbox holds every change | M | PRD *Milestones* A | Passes in CI; the capture takes under two minutes when done by hand |
-| ☐ | M2-13 | Real-use check: take notes during an actual sermon on a phone with the installed app; log where typing or verse entry is slow | S | PRD *Goals* | Findings are fixed or logged as tasks before M3 starts |
+| ☐ | M2-13 | Real-use check: take notes during an actual sermon on a phone with the installed app; log where typing or verse entry is slow | S | PRD *Goals* | Findings are fixed or logged as tasks before M4 starts |
+
+## M4 — Structure
+*PRD milestone C (F4, F5, F6, F7). **Gate:** any past note can be found by tag, text or verse. Built before M3 (see Order): where a task's Done when says something syncs, that part is checked in M3 (M3-14).*
+
+| Status | ID | Task | Size | Refs | Done when |
+|---|---|---|---|---|---|
+| ☐ | M4-01 | F4 Tag input with autocomplete on sections and lessons: seeded and custom tags, a new tag on Enter | M | F4 | Custom tags show in autocomplete (and sync, checked in M3); the same name can't be created twice with different case |
+| ☐ | M4-02 | F4 Tag page: every section and lesson with the tag, grouped by lesson, newest first | S | F4 | A section shows up immediately after tagging |
+| ☐ | M4-03 | F5 Takeaways on a lesson: add, edit, delete | S | F5 | Takeaways carry `createdAt` for the review queue (and sync, checked in M3) |
+| ☐ | M4-04 | F5 Open questions: add, set status (open / answered / parked), promote to a child section titled with the question; answered once that section has a body | M | F5 | Tests: promotion links `answerSectionId`; an empty answer section leaves the question open |
+| ☐ | M4-05 | F6 Search index: MiniSearch in a Web Worker over sections, takeaways and questions, built at startup and updated after each action (and each pull, once M3 adds it) | M | §8.4, F6 | 5,000 seeded sections index in under 1 s on a mid-range phone (recorded) |
+| ☐ | M4-06 | F6 **Search UI**: one box for free text, `#tags` and verse queries (detected by the parser); results grouped by lesson; a result opens the lesson at the matching section | L | §8.4, F6 | Each query type returns the right sections in a fixture test; works offline |
+| ☐ | M4-07 | F7 **Verse index** page: every section, highlight and memory item citing a passage, newest first, with lesson, date and surrounding text; reachable from a chip and from search | M | §4.1, F7 | Opening `Rom 8` lists every citation that overlaps the chapter, including cross-chapter ranges |
+| ☐ | M4-08 | Gate test: seed a month of lessons, then find a note by tag, by free text and by verse | M | PRD *Milestones* C | Passes in CI |
 
 ## M3 — Accounts and sync
-*PRD milestone B (F14, F15). **Gate:** notes captured offline on a phone appear on a laptop, and a two-device edit loses nothing.*
+*PRD milestone B (F14, F15). **Gate:** notes captured offline on a phone appear on a laptop, and a two-device edit loses nothing. Built after M4 (see Order), so it syncs tags, takeaways and questions too, and adds the pull to M4-05's index updates.*
 
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
@@ -93,27 +107,13 @@ M1 ──▶ M2 (A) ──▶ M3 (B) ──▶ M4 (C) ──▶ M5 (D) ──▶
 | ☐ | M3-06 | **Push endpoint**: one transaction per change; idempotent by change id (`SyncChange`); Zod and ownership checks on the row and everything it references; `User.syncRev` incremented as the per-user lock; citations recomputed; a result per change; verified email required | L | §6.2, §6.3 | Tests: a replayed batch changes nothing; a change to another user's row is rejected; one bad change doesn't block the rest |
 | ☐ | M3-07 | **Conflict rules** as pure functions in `domain/sync.ts`, applied by the push endpoint: last write wins by adjusted `updatedAt`; a section body changed on both sides keeps the older body as a "conflicted copy" sibling; edit beats delete; a deleted parent is restored | L | §6.4, F15 | Unit tests for every row of the §6.4 table, and integration tests for the same cases through the endpoint |
 | ☐ | M3-08 | **Pull endpoint**: rows with `rev > cursor` including tombstones, paged at 500, with `nextCursor`, `hasMore`, `serverTime` and `minClientVersion`; `426` for clients that are too old | M | §6.3 | Tests: the cursor never skips a row under concurrent pushes; a first pull from 0 returns everything |
-| ☐ | M3-09 | **Client sync engine**: triggers (start, online, 2 s after a write, every 60 s, "Sync now"), backoff from 5 s to 5 min, push in batches of up to 100, pulled rows skipped while the outbox has a change for that entity, later changes held after a rejection, clock offset, first-sync progress | L | §6.1–6.5 | Unit tests plus a manual test that toggles the network in the middle of editing |
+| ☐ | M3-09 | **Client sync engine**: triggers (start, online, 2 s after a write, every 60 s, "Sync now"), backoff from 5 s to 5 min, push in batches of up to 100, pulled rows skipped while the outbox has a change for that entity, later changes held after a rejection, clock offset, first-sync progress | L | §6.1–6.5 | Unit tests, including the search index (M4-05) updating after a pull, plus a manual test that toggles the network in the middle of editing |
 | ☐ | M3-10 | Guest and device rules: guest notes join the account at sign-up; `ownerUserId`; sign-out keeps the notes; the "notes from another account" dialog (remove by default, or add with new ids and remapped references); "Remove notes from this device" in settings | M | §6.6, F14 | Tests for each path, including adopting another account's notes with unsynced changes |
 | ☐ | M3-11 | Sync status UI: synced, syncing, offline with N waiting, "verify your email", "update required", clock warning, rejected changes with details; "Sync now"; the conflicted-copy label in the editor | M | §6, F15 | Every state can be shown with a mocked API |
 | ☐ | M3-12 | Devices: created on first sync; the list in account settings with last sync and version; sign a device out | S | §7.1, F14 | A signed-out device gets `401` and keeps its notes |
 | ☐ | M3-13 | Isolation tests: one user can never read, overwrite, reference or delete another user's rows through any endpoint | S | §12 | The suite covers every model |
 | ☐ | M3-14 | **Sync contract test**: the web sync engine running in Node on two fake-indexeddb devices against a real API on `lamp_test`; both edit offline, sync, and end up identical with the expected conflicted copies | M | §10 | Passes in CI, including a randomised run of 200 operations |
 | ☐ | M3-15 | Gate test (Playwright): a guest captures a lesson offline, signs up and verifies, a second browser context signs in and sees it; both edit the same section offline, reconnect, and the conflicted copy appears | M | PRD *Milestones* B | Passes in CI |
-
-## M4 — Structure
-*PRD milestone C (F4, F5, F6, F7). **Gate:** any past note can be found by tag, text or verse.*
-
-| Status | ID | Task | Size | Refs | Done when |
-|---|---|---|---|---|---|
-| ☐ | M4-01 | F4 Tag input with autocomplete on sections and lessons: seeded and custom tags, a new tag on Enter | M | F4 | Custom tags sync and show in autocomplete; the same name can't be created twice with different case |
-| ☐ | M4-02 | F4 Tag page: every section and lesson with the tag, grouped by lesson, newest first | S | F4 | A section shows up immediately after tagging |
-| ☐ | M4-03 | F5 Takeaways on a lesson: add, edit, delete | S | F5 | Takeaways sync and carry `createdAt` for the review queue |
-| ☐ | M4-04 | F5 Open questions: add, set status (open / answered / parked), promote to a child section titled with the question; answered once that section has a body | M | F5 | Tests: promotion links `answerSectionId`; an empty answer section leaves the question open |
-| ☐ | M4-05 | F6 Search index: MiniSearch in a Web Worker over sections, takeaways and questions, built at startup and updated after each action and pull | M | §8.4, F6 | 5,000 seeded sections index in under 1 s on a mid-range phone (recorded) |
-| ☐ | M4-06 | F6 **Search UI**: one box for free text, `#tags` and verse queries (detected by the parser); results grouped by lesson; a result opens the lesson at the matching section | L | §8.4, F6 | Each query type returns the right sections in a fixture test; works offline |
-| ☐ | M4-07 | F7 **Verse index** page: every section, highlight and memory item citing a passage, newest first, with lesson, date and surrounding text; reachable from a chip and from search | M | §4.1, F7 | Opening `Rom 8` lists every citation that overlaps the chapter, including cross-chapter ranges |
-| ☐ | M4-08 | Gate test: seed a month of lessons, then find a note by tag, by free text and by verse | M | PRD *Milestones* C | Passes in CI |
 
 ## M5 — Reader
 *PRD milestone D (F8). **Gate:** scripture is read, highlighted and promoted inside the app.*
