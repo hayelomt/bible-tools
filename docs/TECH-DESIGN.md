@@ -226,7 +226,7 @@ The device applies a pulled row **only if the outbox has nothing pending for tha
 - **Rejections** stay in the outbox with the server's code and message (`rejected`), and hold back later changes to that row; other rows go on. `discardRejected` drops one with the changes behind it: a row the server never had is removed, and for any other the cursor moves back before the row's rev so the next pull restores the server's copy. The sync panel's Discard (M3-11) calls it.
 - **Pull** (`pull.ts`): each page is stored in one transaction, skipping rows the outbox has a change for, with citations rebuilt, then the cursor, `lastPullAt` and the clock offset (`serverTime` minus the request's midpoint). The rows go to `onRowsChanged`, so the search index updates as for an action.
 - **Status** (`useSyncStatus`): `guest`, `synced`, `syncing`, `offline` (no answer), `failing` (an error answer; `failingSince` for the panel's 10 minutes), `unverified`, `signed-out` (401, or no session on a device that has synced), `update-required` (426; nothing more until a reload) and `other-account`; plus `progress` (`{ done, total, firstSync }`) while a pull runs. The status line and panel are M3-11.
-- **Owner** (§6.6, decided 2026-10-13): the engine only syncs when `syncState.ownerUserId` is empty or the signed-in account; an empty one is claimed on the first sync, so a guest's notes join the account. Another account's notes wait (`other-account`) for M3-10's dialog. Seeded tags matched by name also come with M3-10; until then a guest's seeded tags are rejected as duplicates on an account that already has them.
+- **Owner** (§6.6, decided 2026-10-13): the engine only syncs when `syncState.ownerUserId` is empty or the signed-in account; an empty one is claimed on the first sync, so a guest's notes join the account. Another account's notes wait (`other-account`) for the dialog M3-10 added (§6.6).
 
 ### 6.4 Conflicts
 A conflict is a change whose `baseRev` is older than the server row's `rev`, meaning another device changed the row since this one last saw it.
@@ -266,6 +266,13 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 - **Expired session while offline:** local work continues. The outbox waits until the user signs in again.
 - **Client too old:** the server answers `426` to a push or pull when `clientVersion < minClientVersion`, and the app shows "Update required" (§8.6).
 
+*Built in M3-10 (`apps/web/src/sync`; decided 2026-10-13):*
+- **Owner:** the first sync with an account claims a device whose `ownerUserId` is empty, and records `ownerEmail` too, so the dialog can name the other account (masked: "a•••@example.com").
+- **Tags by name** (`tags.ts`, decided 2026-10-13: all tags, not only seeded ones): before each push, every live tag the server never took (rev 0, with no change sent and unanswered) whose name matches a synced tag in any case is merged into it. The local tag and its changes go; its links move to the synced tag as new changes (new `changeId`s, as the server answers a changeId it has seen with the stored result), and a link the synced tag already has on the same section or lesson is dropped. A device that has never pulled (cursor 0) pulls before it pushes, so a guest's 24 seeded tags meet the account's. The same step repairs a tag two devices made offline: the second is refused as `DUPLICATE`, the pull brings the first, and the next run merges them.
+- **Notes from another account** (`OtherAccountDialog` in the shell, shown in phase `other-account`): *Remove* (`removeNotes`) clears every row, the citations and the outbox, seeds the 24 tags again and keeps the device id. *Add* (`copyNotes`) gives each live row a new id with its references remapped (the columns the server checks, §6.2), drops a row whose required parent wasn't copied, clears an optional reference that wasn't, and makes the outbox the copies' creates, so unsynced changes go only to the new account. Either way the settings stay at rev 0, unqueued, so the account's settings win; the owner changes and the cursor goes back to 0. *Cancel* signs out. The dialog can't be dismissed otherwise.
+- **Sign-out** asks first, saying how many rows have unsynced changes (seeded tags never count); signed out, Settings says the changes sync at the next sign-in as that account.
+- **Remove notes from this device** (Settings → Storage, signed out only; decided 2026-10-13): `removeNotes` without an owner, plus a new device id and the recent searches cleared. The look, mode and preset stay, and so does the Bible download.
+
 ## 7. API (`apps/api`)
 
 ### 7.1 Modules
@@ -304,7 +311,7 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 - **Passwords:** argon2id at 19 MiB, 2 passes, 1 lane. The common-password list is `@zxcvbn-ts/language-common` (`400 PASSWORD_TOO_COMMON`). A login for an unknown email still verifies against a dummy hash, and answers exactly like a wrong password (`401 INVALID_CREDENTIALS`).
 - **Lockout and rate limits:** five failed logins for one email within 15 minutes lock that email for 15 minutes (`429 ACCOUNT_LOCKED` with `retryAfterSeconds`), whether or not an account has it. `@nestjs/throttler` allows 30 requests per IP and 10 per email in 15 minutes to sign-up, login and the email endpoints (§7.3) (`429 TOO_MANY_REQUESTS`). Both are in memory: the API is one process, and a restart only forgets the counts. `trust proxy` is `loopback`, so `req.ip` is the client behind Caddy.
 - **Validation:** a global `StandardSchemaValidationPipe` answers `400 VALIDATION_FAILED` with `details.issues` (path and message, never the value sent).
-- **Sign-up** creates only the user and its session, and sends the verification email (§7.3). The default settings and seeded tags for the account come with the guest data in M3-10, so a guest's own settings and tags aren't overwritten by server defaults.
+- **Sign-up** creates only the user and its session, and sends the verification email (§7.3). The default settings and seeded tags for the account come with the guest data (§6.6), so a guest's own settings and tags aren't overwritten by server defaults.
 
 *Built in M3-03 (`apps/api/src/auth`, `src/account`):*
 - **Asking for the password again** (`AuthService.confirmPassword`): a wrong answer is `403 WRONG_PASSWORD`, not `401`, so the app doesn't take it for a lost session. Wrong answers count towards the login lockout of the account's email (`429 ACCOUNT_LOCKED`), so a stolen session can't be used to guess the password. Both endpoints use the auth throttles.
@@ -348,7 +355,7 @@ React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui (in `packages/ui`), **Tan
 - **Resend:** "Send it again" waits 60 s after sign-up or a resend, or the `retryAfterSeconds` the server answers; a new link from an expired one needs the session, so a signed-out device is sent to sign in.
 - **Reset** ends every session, this device's too (§7.3), so its last step says every device was signed out and Continue opens sign-in, instead of the wireframe's "Your other devices are signed out". A used reset link is only known when it's submitted (there is no check endpoint).
 - **Sign-up off:** the screen learns it from the `SIGNUP_DISABLED` answer, then shows "This Lamp server doesn't take new accounts." with a link to sign in.
-- Sign-out has no dialog yet; the "changes waiting" dialog (wireframes/account.md) comes with the outbox's meaning in M3-09 and M3-10.
+- Sign-out asks first, with the "changes waiting" line from wireframes/account.md (M3-10).
 
 *Lessons and series, built in M2-04 to M2-06:*
 - A screen whose title comes from data (a lesson, a series) fills the shell's `h1` through `ScreenTitle`, and can add header controls (`ScreenActions`: a tick once the lesson is saved, `⋯`) and a side panel (`SidePanel`). These are portals into slots of the shell (`components/shell/slots.tsx`), so their content keeps the screen's state.

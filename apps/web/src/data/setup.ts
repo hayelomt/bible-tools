@@ -25,6 +25,7 @@ export function ensureDevice(db: LampDb, initial: InitialSettings): Promise<void
         lastPullAt: null,
         clockOffsetMs: 0,
         ownerUserId: null,
+        ownerEmail: null,
       },
       SYNC_STATE_KEY,
     );

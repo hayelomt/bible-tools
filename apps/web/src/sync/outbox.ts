@@ -132,7 +132,7 @@ interface RowAddress {
 }
 
 /** The changes still queued for a row. */
-function queuedFor(db: LampDb, { entity, entityId }: RowAddress) {
+export function queuedFor(db: LampDb, { entity, entityId }: RowAddress) {
   return entity === 'userSettings'
     ? db.outbox.filter((entry) => entry.entity === 'userSettings')
     : db.outbox.where('[entity+entityId]').equals([entity, entityId!]);

@@ -40,7 +40,13 @@ async function signIn(page: Page, email: string, password: string) {
 async function signOut(page: Page) {
   await page.goto('/settings');
   await page.getByRole('button', { name: 'Sign out' }).click();
-  await expect(page.getByText('Signed out. Your notes stay on this device.')).toBeVisible();
+  // The dialog says the notes stay (§6.6).
+  const dialog = page.getByRole('dialog', { name: 'Sign out?' });
+  await expect(dialog.getByText('Your notes stay on this device.')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Sign out' }).click();
+  await expect(
+    page.getByText('Signed out. Your notes stay on this device.', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Sign up' })).toBeVisible();
 }
 

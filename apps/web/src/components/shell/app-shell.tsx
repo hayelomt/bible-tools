@@ -1,6 +1,7 @@
 import { Toaster } from '@lamp/ui/components/sonner';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { OtherAccountDialog } from '@/components/account/other-account-dialog.tsx';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { useThemeSync } from '@/lib/theme.ts';
 import { BottomNav } from './bottom-nav.tsx';
@@ -38,6 +39,7 @@ export function AppShell() {
       </div>
       <AppToaster />
       <UpdatePrompt />
+      <OtherAccountDialog />
     </ShellSlots>
   );
 }

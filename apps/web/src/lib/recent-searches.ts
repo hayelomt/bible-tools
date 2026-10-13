@@ -24,3 +24,12 @@ export function rememberSearch(query: string): void {
     // Not remembered; search works the same.
   }
 }
+
+/** Clears the list, when the notes leave the device. */
+export function forgetSearches(): void {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // Nothing stored.
+  }
+}

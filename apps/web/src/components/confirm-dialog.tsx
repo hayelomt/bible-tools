@@ -17,18 +17,27 @@ interface ConfirmDialogProps {
   title: string;
   /** What happens to anything attached. */
   description: string;
+  /** What would be lost, in the destructive colour: "3 changes never synced". */
+  warning?: string | null;
   /** The verb again, with a count when there is one: "Delete all 3". */
   confirmLabel: string;
+  /** `default` for an action that loses nothing, like signing out. */
+  variant?: 'destructive' | 'default';
   onConfirm: () => void | Promise<void>;
 }
 
-/** A confirmation for a removal that can't be undone (UX-PATTERNS "Confirmations"). */
+/**
+ * A confirmation for a removal that can't be undone, or for an action people worry about, like
+ * signing out (UX-PATTERNS "Confirmations").
+ */
 export function ConfirmDialog({
   open,
   onOpenChange,
   title,
   description,
+  warning,
   confirmLabel,
+  variant = 'destructive',
   onConfirm,
 }: ConfirmDialogProps) {
   const cancel = useRef<HTMLButtonElement>(null);
@@ -39,12 +48,17 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {warning && (
+          <p role="alert" className="text-sm text-destructive">
+            {warning}
+          </p>
+        )}
         <DialogFooter>
           <DialogClose ref={cancel} render={<Button variant="outline" />}>
             Cancel
           </DialogClose>
           <Button
-            variant="destructive"
+            variant={variant}
             onClick={async () => {
               await onConfirm();
               onOpenChange(false);

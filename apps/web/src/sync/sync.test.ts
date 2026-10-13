@@ -1,5 +1,6 @@
 import {
   type Change,
+  ENTITY_NAMES,
   type EntityName,
   keysBetween,
   type MeResponse,
@@ -10,18 +11,33 @@ import {
   type PushResponse,
   type PushResult,
   type SectionBody,
+  SEED_TAGS,
 } from '@lamp/domain';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createLesson, type LessonFields, updateLesson } from '@/data/actions/lessons.ts';
+import {
+  createLesson,
+  deleteLesson,
+  type LessonFields,
+  updateLesson,
+} from '@/data/actions/lessons.ts';
+import { addQuestion, promoteQuestion } from '@/data/actions/questions.ts';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { updateSettings } from '@/data/actions/settings.ts';
+import { addTag } from '@/data/actions/tags.ts';
 import { onRowsChanged, type RowRef } from '@/data/changes.ts';
-import { LampDb, type OutboxEntry, SETTINGS_KEY, SYNC_STATE_KEY } from '@/data/db.ts';
+import {
+  LampDb,
+  type OutboxEntry,
+  type RowEntity,
+  SETTINGS_KEY,
+  SYNC_STATE_KEY,
+} from '@/data/db.ts';
 import { ensureDevice } from '@/data/setup.ts';
 import { ApiRequestError, NetworkError } from '@/lib/api.ts';
 import { allDocs, changedDocs } from '@/search/read-docs.ts';
 import { TextIndex } from '@/search/text-index.ts';
+import { noteCounts, removeNotes, unsyncedCount } from './device-data.ts';
 import { deviceName } from './device-name.ts';
 import { BACKOFF_MS, type SyncApi, SyncEngine, WRITE_DEBOUNCE_MS } from './engine.ts';
 import { discardRejected, settleBatch, takeBatch } from './outbox.ts';
@@ -100,10 +116,31 @@ class FakeServer implements SyncApi {
     return this.rows.get(key(entity, id))?.row as Record<string, unknown> | undefined;
   }
 
+  /** The live rows of one entity. */
+  all(entity: EntityName) {
+    return [...this.rows.values()]
+      .filter(
+        (pulled) =>
+          pulled.entity === entity && (pulled.row as { deletedAt?: unknown }).deletedAt == null,
+      )
+      .map(({ row }) => row as Record<string, unknown>);
+  }
+
   private apply(change: Change): PushResult {
     const id = change.entity === 'userSettings' ? undefined : change.entityId;
-    if (this.refuse.has(key(change.entity, id))) {
-      return { changeId: change.changeId, status: 'rejected', errorCode: 'INVALID', message: 'No' };
+    const refuse = (errorCode: string) =>
+      ({ changeId: change.changeId, status: 'rejected', errorCode, message: 'No' }) as const;
+    if (this.refuse.has(key(change.entity, id))) return refuse('INVALID');
+    // The two checks the server makes that matching tags by name is about.
+    if (change.op === 'upsert' && change.entity === 'tag') {
+      const name = change.row.name.toLowerCase();
+      const taken = this.all('tag').some(
+        (tag) => tag.id !== change.entityId && (tag.name as string).toLowerCase() === name,
+      );
+      if (taken) return refuse('DUPLICATE');
+    }
+    if (change.op === 'upsert' && 'tagId' in change.row && !this.get('tag', change.row.tagId)) {
+      return refuse('REFERENCE_NOT_FOUND');
     }
     const stored = this.get(change.entity, id);
     const row =
@@ -128,6 +165,8 @@ const key = (entity: EntityName, id?: string) => (id ? `${entity}:${id}` : entit
 let db: LampDb;
 let dbCount = 0;
 const engines: SyncEngine[] = [];
+const listening: Array<() => void> = [];
+const ROW_ENTITIES = ENTITY_NAMES.filter((name): name is RowEntity => name !== 'userSettings');
 
 async function device(): Promise<LampDb> {
   const made = new LampDb(`sync-${++dbCount}`, { indexedDB, IDBKeyRange });
@@ -153,6 +192,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   for (const engine of engines.splice(0)) engine.stop();
+  for (const stop of listening.splice(0)) stop();
   vi.useRealTimers();
   await db.delete();
 });
@@ -675,9 +715,241 @@ describe('the engine', () => {
     };
     const engine = engineFor(db, api);
     await Promise.all([engine.syncNow(), engine.syncNow(), engine.syncNow()]);
-    expect(pulls).toBe(2);
+    // The first run pulls before it pushes too, as the device has never pulled.
+    expect(pulls).toBe(3);
   });
 });
+
+describe('guests and devices (§6.6)', () => {
+  const OTHER: MeResponse = { ...ACCOUNT, id: newId(), email: 'second@example.com' };
+
+  it("joins a guest's notes to the account, matching its tags by name", async () => {
+    const server = new FakeServer();
+    seedAccount(server, ['patience']);
+    const lesson = await createLesson(LESSON, db);
+    await addTag({ kind: 'lesson', id: lesson.id }, SEED_TAGS[0]!, db);
+    await addTag({ kind: 'lesson', id: lesson.id }, 'Patience', db);
+    await addTag({ kind: 'lesson', id: lesson.id }, 'Mercy', db);
+
+    await engineFor(db, server).syncNow();
+
+    expect(await db.outbox.count()).toBe(0);
+    const serverTags = server.all('tag');
+    expect(serverTags).toHaveLength(SEEDED_TAGS + 2);
+    expect(new Set(serverTags.map((tag) => tag.id))).toEqual(new Set(await ids(db, 'tag')));
+    const names = new Map(serverTags.map((tag) => [tag.id, tag.name]));
+    const linked = server.all('lessonTag').map((link) => names.get(link.tagId as string));
+    expect(linked.toSorted()).toEqual([SEED_TAGS[0], 'Mercy', 'patience'].toSorted());
+    expect((await db.lessonTag.toArray()).map((link) => link.tagId).toSorted()).toEqual(
+      server
+        .all('lessonTag')
+        .map((link) => link.tagId)
+        .toSorted(),
+    );
+    expect(await state()).toMatchObject({ ownerUserId: ACCOUNT.id, ownerEmail: ACCOUNT.email });
+  });
+
+  it('repairs a tag refused because another device made the same one offline', async () => {
+    const server = new FakeServer();
+    const other = await device();
+    const lesson = await createLesson(LESSON, db);
+    await engineFor(db, server).syncNow();
+    await engineFor(other, server).syncNow();
+    await addTag({ kind: 'lesson', id: lesson.id }, 'Patience', db);
+    await addTag({ kind: 'lesson', id: lesson.id }, 'patience', other);
+
+    await engines[0]!.syncNow();
+    await engines[1]!.syncNow();
+    expect((await other.outbox.toArray()).map((entry) => entry.rejected?.errorCode)).toEqual([
+      'DUPLICATE',
+      'REFERENCE_NOT_FOUND',
+    ]);
+
+    await engines[1]!.syncNow();
+    expect(await other.outbox.count()).toBe(0);
+    expect(server.all('tag').filter((tag) => tag.name === 'Patience')).toHaveLength(1);
+    // Both devices put the tag on the lesson; the second link was dropped as the same one.
+    expect(server.all('lessonTag')).toHaveLength(1);
+    await engines[0]!.syncNow();
+    expect(await db.lessonTag.toArray()).toEqual(await other.lessonTag.toArray());
+    await other.delete();
+  });
+
+  it("removes another account's notes, unsynced changes too, then pulls this account", async () => {
+    const first = new FakeServer();
+    const kept = await createLesson({ ...LESSON, title: 'Synced' }, db);
+    await engineFor(db, first).syncNow();
+    await createLesson({ ...LESSON, title: 'Never synced' }, db);
+    const { deviceId } = await state();
+
+    const second = new FakeServer();
+    seedAccount(second);
+    const theirs = { ...LESSON, id: newId(), title: 'Theirs', createdAt: NOW, updatedAt: NOW };
+    second.put('lesson', { ...theirs, deletedAt: null });
+    const engine = engineFor(db, second, OTHER);
+    await engine.syncNow();
+    expect(engine.getStatus().phase).toBe('other-account');
+    expect(await state()).toMatchObject({ ownerUserId: ACCOUNT.id, ownerEmail: ACCOUNT.email });
+    expect(await unsyncedCount(db)).toBe(1);
+    const indexed = rowsChanged();
+
+    await engine.resolveOtherAccount('remove');
+
+    expect(engine.getStatus().phase).toBe('synced');
+    expect((await db.lesson.toArray()).map((l) => l.title)).toEqual(['Theirs']);
+    expect(indexed).toContainEqual({ entity: 'lesson', id: kept.id });
+    expect(second.pushes.flatMap((push) => push.changes)).toEqual([]);
+    expect(await db.tag.count()).toBe(SEEDED_TAGS);
+    expect(await state()).toMatchObject({
+      deviceId,
+      ownerUserId: OTHER.id,
+      ownerEmail: OTHER.email,
+      cursor: second.rev,
+    });
+  });
+
+  it("adds another account's notes as copies with new ids, unsynced changes included", async () => {
+    const first = new FakeServer();
+    const lesson = await createLesson(LESSON, db);
+    const keys = keysBetween(null, null, 2);
+    const parent = await createSection(
+      {
+        lessonId: lesson.id,
+        parentId: null,
+        orderKey: keys[0]!,
+        body: body('P'),
+        conflictOf: null,
+      },
+      db,
+    );
+    const child = await createSection(
+      {
+        lessonId: lesson.id,
+        parentId: parent.id,
+        orderKey: keys[0]!,
+        body: body('C'),
+        conflictOf: null,
+      },
+      db,
+    );
+    const question = await addQuestion(lesson.id, 'Who is the door?', db);
+    const answer = await promoteQuestion(question.id, undefined, db);
+    await addTag({ kind: 'section', id: child.id }, 'Kindness', db);
+    const gone = await createLesson({ ...LESSON, title: 'Deleted' }, db);
+    await deleteLesson(gone.id, db);
+    await engineFor(db, first).syncNow();
+    await rename(lesson.id, 'Renamed offline');
+    const oldIds = new Set(
+      (await Promise.all(ROW_ENTITIES.map((entity) => ids(db, entity)))).flat(),
+    );
+    const firstPushes = first.pushes.length;
+
+    const second = new FakeServer();
+    seedAccount(second, ['KINDNESS']);
+    const engine = engineFor(db, second, OTHER);
+    await engine.syncNow();
+    await engine.resolveOtherAccount('add');
+
+    expect(engine.getStatus().phase).toBe('synced');
+    expect(first.pushes).toHaveLength(firstPushes);
+    expect(await db.outbox.count()).toBe(0);
+    const mentioned = JSON.stringify(second.pushes).match(/[0-9a-f]{8}-[0-9a-f-]{27}/g) ?? [];
+    expect(mentioned.filter((id) => oldIds.has(id))).toEqual([]);
+    const lessons = second.all('lesson');
+    expect(lessons.map((l) => l.title)).toEqual(['Renamed offline']);
+    const newLesson = lessons[0]!.id as string;
+    const sections = second.all('section');
+    expect(sections).toHaveLength(3);
+    expect(sections.every((s) => s.lessonId === newLesson)).toBe(true);
+    const copiedChild = sections.find((s) => s.parentId !== null)!;
+    expect(sections.find((s) => s.id === copiedChild.parentId)!.body).toEqual(body('P'));
+    const [copiedQuestion] = second.all('question');
+    expect(copiedQuestion).toMatchObject({ lessonId: newLesson });
+    expect(sections.find((s) => s.id === copiedQuestion!.answerSectionId)!.body).toEqual(
+      answer.body,
+    );
+    const kindness = second.all('tag').find((tag) => tag.name === 'KINDNESS')!;
+    expect(second.all('sectionTag')).toEqual([
+      expect.objectContaining({ tagId: kindness.id, sectionId: copiedChild.id }),
+    ]);
+    expect(second.all('tag')).toHaveLength(SEEDED_TAGS + 1);
+    // The device holds exactly the account's rows.
+    for (const entity of ROW_ENTITIES) {
+      expect((await ids(db, entity)).toSorted()).toEqual(
+        second
+          .all(entity)
+          .map((row) => row.id)
+          .toSorted(),
+      );
+    }
+  });
+
+  it('keeps the notes on sign-out; their changes sync when the account signs in again', async () => {
+    const server = new FakeServer();
+    const lesson = await createLesson(LESSON, db);
+    const engine = engineFor(db, server);
+    await engine.syncNow();
+    engine.setAccount(null);
+    await engine.syncNow();
+    expect(engine.getStatus().phase).toBe('signed-out');
+
+    await rename(lesson.id, 'Edited');
+    await rename(lesson.id, 'Edited while signed out');
+    expect(await unsyncedCount(db)).toBe(1);
+    await engine.syncNow();
+    expect(server.get('lesson', lesson.id)).toMatchObject({ title: 'The Good Shepherd' });
+
+    engine.setAccount(ACCOUNT);
+    await engine.syncNow();
+    expect(server.get('lesson', lesson.id)).toMatchObject({ title: 'Edited while signed out' });
+  });
+
+  it('removes the notes from a signed-out device, which starts again as a new guest', async () => {
+    const server = new FakeServer();
+    const lesson = await createLesson(LESSON, db);
+    await updateSettings({ look: 'folio' }, db);
+    await engineFor(db, server).syncNow();
+    await rename(lesson.id, 'Unsynced');
+    const { deviceId } = await state();
+    const indexed = rowsChanged();
+
+    await removeNotes(db, null);
+
+    expect(await db.lesson.count()).toBe(0);
+    expect(indexed).toContainEqual({ entity: 'lesson', id: lesson.id });
+    expect(await db.tag.filter((tag) => tag.rev === 0).count()).toBe(SEEDED_TAGS);
+    expect(await db.outbox.count()).toBe(SEEDED_TAGS);
+    expect(await db.userSettings.get(SETTINGS_KEY)).toMatchObject({ look: 'folio', rev: 0 });
+    const after = await state();
+    expect(after).toMatchObject({ ownerUserId: null, ownerEmail: null, cursor: 0 });
+    expect(after.deviceId).not.toBe(deviceId);
+    expect(await noteCounts(db)).toEqual({ lessons: 0, highlights: 0, memoryItems: 0 });
+  });
+});
+
+/** The tags an account already has on the server, as its first device left them. */
+function seedAccount(server: FakeServer, extra: string[] = []) {
+  for (const name of [...SEED_TAGS, ...extra]) {
+    server.put('tag', {
+      id: newId(),
+      name,
+      isSeeded: (SEED_TAGS as readonly string[]).includes(name),
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+    });
+  }
+}
+
+const ids = async (on: LampDb, entity: RowEntity) =>
+  (await on.rows(entity).toArray()).map((row) => row.id);
+
+/** The rows reported to the search index from now on, until the test ends. */
+function rowsChanged(): RowRef[] {
+  const seen: RowRef[] = [];
+  listening.push(onRowsChanged((refs) => seen.push(...refs)));
+  return seen;
+}
 
 describe('the device name', () => {
   it('names the browser and the system', () => {

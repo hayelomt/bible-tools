@@ -2,8 +2,10 @@ import type { MeResponse, PullResponse, PushRequest, PushResponse } from '@lamp/
 import { onLocalWrite } from '@/data/changes.ts';
 import { type LampDb, SYNC_STATE_KEY } from '@/data/db.ts';
 import { ApiRequestError, NetworkError } from '@/lib/api.ts';
+import { copyNotes, removeNotes } from './device-data.ts';
 import { settleBatch, takeBatch, toChange } from './outbox.ts';
 import { applyPage, clockOffset } from './pull.ts';
+import { matchTagsByName } from './tags.ts';
 
 /**
  * Where sync stands (wireframes/sync.md). The status line and panel (M3-11) show it.
@@ -14,7 +16,8 @@ import { applyPage, clockOffset } from './pull.ts';
  * - `unverified`: signed up, email not verified yet; nothing syncs.
  * - `signed-out`: the session ended; changes wait until this account signs in again.
  * - `update-required`: the server needs a newer app (`426`); nothing syncs until reload.
- * - `other-account`: the device's notes belong to another account (M3-10 asks what to do).
+ * - `other-account`: the device's notes belong to another account; the user chooses what happens to
+ *   them (`resolveOtherAccount`) before anything syncs.
  * - `failing`: the server answered with an error; retrying.
  */
 export type SyncPhase =
@@ -60,9 +63,13 @@ export const INTERVAL_MS = 60_000;
 /** One sync at a time across tabs: they share the database, so a second run finds little to do. */
 const LOCK_NAME = 'lamp-sync';
 
+/** What happens to another account's notes on this device (§6.6). */
+export type OtherAccountChoice = 'remove' | 'add';
+
 /**
- * The client sync engine (TECH-DESIGN §6.1–6.5). Each run pushes the outbox in batches, then
- * pulls pages until the server has nothing newer. It runs on start, when the device comes online,
+ * The client sync engine (TECH-DESIGN §6.1–6.6). Each run pushes the outbox in batches, then
+ * pulls pages until the server has nothing newer. A device that has never pulled pulls first, so
+ * its tags can be matched to the account's by name before they're pushed. It runs on start, when the device comes online,
  * 2 s after the last local write, every 60 s while visible, on "Sync now" and when the account
  * changes. Failures retry with backoff; while one waits, only coming online and "Sync now" run
  * early. Runs never overlap: a trigger during a run asks for one more run after it.
@@ -130,6 +137,24 @@ export class SyncEngine {
     return this.run();
   }
 
+  /**
+   * The answer to "This device has notes from another account": remove them, or copy them into
+   * the signed-in account. Then syncs.
+   */
+  async resolveOtherAccount(choice: OtherAccountChoice): Promise<void> {
+    const { db } = this.deps;
+    const account = this.account;
+    if (!account) return;
+    await this.settled();
+    await withLock(async () => {
+      const state = await db.syncState.get(SYNC_STATE_KEY);
+      if (!state?.ownerUserId || state.ownerUserId === account.id) return;
+      const owner = { id: account.id, email: account.email };
+      await (choice === 'add' ? copyNotes(db, owner) : removeNotes(db, owner));
+    });
+    await this.syncNow();
+  }
+
   /** Resolves once no sync is running, e.g. before the page reloads for an update. */
   settled(): Promise<void> {
     return this.running ?? Promise.resolve();
@@ -172,11 +197,13 @@ export class SyncEngine {
       return this.set({ phase: state?.ownerUserId ? 'signed-out' : 'guest', progress: null });
     }
     if (!account.emailVerifiedAt) return this.set({ phase: 'unverified', progress: null });
-    if (!(await claimDevice(db, account.id))) {
+    if (!(await claimDevice(db, account))) {
       return this.set({ phase: 'other-account', progress: null });
     }
     this.set({ phase: 'syncing' });
     try {
+      if ((await db.syncState.get(SYNC_STATE_KEY))?.cursor === 0) await this.pullAll();
+      await matchTagsByName(db);
       await this.pushAll();
       await this.pullAll();
       this.failures = 0;
@@ -271,16 +298,20 @@ export class SyncEngine {
 }
 
 /**
- * Whether this device's notes may sync with `userId`: they're a guest's (and join the account
- * now), or they last synced with it. Notes of another account wait for M3-10's question.
+ * Whether this device's notes may sync with `account`: they're a guest's (and join the account
+ * now, §6.6), or they last synced with it. Notes of another account wait for the user's choice.
  */
-async function claimDevice(db: LampDb, userId: string): Promise<boolean> {
+async function claimDevice(db: LampDb, account: MeResponse): Promise<boolean> {
   return db.transaction('rw', db.syncState, async () => {
     const state = await db.syncState.get(SYNC_STATE_KEY);
     if (!state) return false;
-    if (state.ownerUserId === userId) return true;
-    if (state.ownerUserId !== null) return false;
-    await db.syncState.update(SYNC_STATE_KEY, { ownerUserId: userId });
+    if (state.ownerUserId !== null && state.ownerUserId !== account.id) return false;
+    if (state.ownerUserId === null || state.ownerEmail !== account.email) {
+      await db.syncState.update(SYNC_STATE_KEY, {
+        ownerUserId: account.id,
+        ownerEmail: account.email,
+      });
+    }
     return true;
   });
 }

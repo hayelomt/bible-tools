@@ -2,11 +2,17 @@ import { Button, buttonVariants } from '@lamp/ui/components/button';
 import { toast } from '@lamp/ui/components/sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { PageSection } from '@/components/page-section.tsx';
+import { db, SYNC_STATE_KEY } from '@/data/db.ts';
 import { setAccount, useAccount } from '@/lib/account.ts';
 import { logout } from '@/lib/api.ts';
 import { authErrorMessage } from '@/lib/auth-messages.ts';
+import { count, maskEmail } from '@/lib/labels.ts';
 import { useOnline } from '@/lib/use-online.ts';
+import { unsyncedCount } from '@/sync/device-data.ts';
 import { FormError, linkClass, OfflineNote } from './fields.tsx';
 
 /**
@@ -27,12 +33,21 @@ export function AccountSection() {
 }
 
 function Guest() {
+  // Signed out: the notes are still this account's, and sync when it signs in again (§6.6).
+  const owner = useLiveQuery(async () => (await db.syncState.get(SYNC_STATE_KEY))?.ownerEmail, []);
   return (
     <>
-      <p>
-        Your notes are only on this device. Sign up to back them up and sync them to your other
-        devices.
-      </p>
+      {owner ? (
+        <p>
+          Signed out. Your notes stay on this device, and changes sync the next time you sign in as{' '}
+          {maskEmail(owner)}.
+        </p>
+      ) : (
+        <p>
+          Your notes are only on this device. Sign up to back them up and sync them to your other
+          devices.
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
         <Link to="/signup" className={buttonVariants()}>
           Sign up
@@ -48,7 +63,9 @@ function Guest() {
 function SignedIn({ email, verified }: { email: string; verified: boolean }) {
   const queryClient = useQueryClient();
   const online = useOnline();
-  // Sign-out keeps the notes on the device (§6.6). M3-10 adds the dialog for unsynced changes.
+  const [asking, setAsking] = useState(false);
+  const unsynced = useLiveQuery(() => unsyncedCount(db), []) ?? 0;
+  // Sign-out keeps the notes on the device (§6.6); the dialog says so, and what's waiting.
   const signOut = useMutation({
     mutationFn: logout,
     onSuccess: () => {
@@ -74,11 +91,24 @@ function SignedIn({ email, verified }: { email: string; verified: boolean }) {
         variant="outline"
         className="self-start"
         disabled={!online || signOut.isPending}
-        onClick={() => signOut.mutate()}
+        onClick={() => setAsking(true)}
       >
         Sign out
       </Button>
       <FormError>{signOut.error && authErrorMessage(signOut.error)}</FormError>
+      <ConfirmDialog
+        open={asking}
+        onOpenChange={setAsking}
+        title="Sign out?"
+        description={
+          unsynced > 0
+            ? `Your notes stay on this device. ${count(unsynced, 'change')} ${unsynced === 1 ? "hasn't" : "haven't"} synced yet; they sync the next time you sign in here.`
+            : 'Your notes stay on this device.'
+        }
+        confirmLabel="Sign out"
+        variant="default"
+        onConfirm={() => signOut.mutateAsync().catch(() => {})}
+      />
     </>
   );
 }

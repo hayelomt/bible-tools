@@ -46,6 +46,11 @@ export interface SyncState {
   clockOffsetMs: number;
   /** The account the local data last synced with; null for a guest who never signed in. */
   ownerUserId: string | null;
+  /**
+   * That account's email, for the "notes from another account" dialog (§6.6). Missing on devices
+   * that first synced before M3-10.
+   */
+  ownerEmail?: string | null;
 }
 
 export const SYNC_STATE_KEY = 'device';
