@@ -3,12 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Bible source texts and the build script for per-book JSON",
+  "description": "WEB text pipeline: downloads the USFM, builds per-book JSON and a manifest; passage lookup",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings src",
+    "build": "node scripts/build.ts",
+    "download": "node scripts/download.ts",
+    "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings src scripts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
