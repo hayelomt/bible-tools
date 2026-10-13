@@ -6,6 +6,13 @@ const SCREENS = [
   ['/search', 'Search'],
   ['/review', 'Review'],
   ['/settings', 'Settings'],
+  ['/signup', 'Create an account'],
+  ['/signin', 'Sign in'],
+  ['/forgot-password', 'Reset your password'],
+  ['/check-email', 'Check your email'],
+  ['/verify-email', 'Verify your email'],
+  ['/reset-password', 'Choose a new password'],
+  ['/settings/password', 'Change password'],
 ] as const;
 
 const sidewaysScroll = (page: Page) =>

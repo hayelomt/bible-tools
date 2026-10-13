@@ -32,6 +32,10 @@ export async function allLessons(db: LampDb = appDb): Promise<Lesson[]> {
   return lessons.toSorted(byDate).toReversed();
 }
 
+export function lessonCount(db: LampDb = appDb): Promise<number> {
+  return db.lesson.filter(notDeleted).count();
+}
+
 /** A series' lessons in date order, oldest first (wireframes/lessons.md "Series"). */
 export async function seriesLessons(seriesId: string, db: LampDb = appDb): Promise<Lesson[]> {
   const lessons = await db.lesson.where('seriesId').equals(seriesId).filter(notDeleted).toArray();

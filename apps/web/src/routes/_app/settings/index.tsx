@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { AccountSection } from '@/components/account/account-section.tsx';
 import { ApiStatus } from '@/components/api-status.tsx';
 import { BibleStatus } from '@/components/bible-status.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
@@ -21,10 +22,7 @@ function Settings() {
   const settings = useSettings();
   return (
     <div className="flex flex-col gap-8">
-      <PageSection title="Account">
-        {/* M3-05 adds sign-up and sign-in here; a guest is never asked before then. */}
-        <p>Your notes are only on this device.</p>
-      </PageSection>
+      <AccountSection />
       {settings && (
         <PageSection title="Appearance">
           <ThemeSheet />
