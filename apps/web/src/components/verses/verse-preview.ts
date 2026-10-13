@@ -98,18 +98,21 @@ function previewDom(refs: VerseRef[]): HTMLElement {
   const dom = document.createElement('div');
   dom.contentEditable = 'false';
   dom.dataset.versePreview = '';
-  dom.className = 'my-1 flex flex-col gap-2 border-l-2 border-primary/40 pl-3 text-[0.95em]';
+  // Set apart from the note: a tinted card, smaller italic text, so it never reads as typed.
+  dom.className =
+    'my-2 flex flex-col gap-3 rounded-r-lg border-l-[3px] border-primary/60 bg-muted/70 px-3 py-2.5 text-[0.9em] leading-relaxed select-none';
   for (const ref of refs) {
     const item = document.createElement('div');
     const label = document.createElement('div');
-    label.className = 'font-sans text-xs text-muted-foreground';
+    label.className =
+      'mb-0.5 font-sans text-[0.7rem] font-medium tracking-wide text-primary uppercase';
     label.textContent = `${ref.display} · ${ref.translation}`;
     const text = document.createElement('div');
     if (ref.snapshotText) {
-      text.className = 'font-serif';
+      text.className = 'font-serif text-foreground/80 italic';
       text.append(...verseTextNodes(bookState(ref.book), ref, ref.snapshotText));
     } else {
-      text.className = 'text-muted-foreground';
+      text.className = 'font-sans text-sm text-muted-foreground';
       text.textContent = 'Text not downloaded yet.';
     }
     item.append(label, text);

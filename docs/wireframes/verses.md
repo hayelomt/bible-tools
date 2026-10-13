@@ -46,15 +46,16 @@ downloaded yet. It's added when the Bible is downloaded."
 
 With Settings → Bible → "Show verse text in notes" on (off by default, synced), each paragraph's
 chips show their text under it, numbered, as a quote that isn't part of the note: it can't be
-edited, and isn't saved, copied or exported with it.
+edited, and isn't saved, copied or exported with it. It's set apart from what was typed: a tinted
+card with an accent edge, the reference in small capitals, the text smaller and in italics.
 
 ```text
 │ ┃ Paul says in ⟦Romans 8:38–39 · WEB⟧│
 │ ┃ and ⟦Psalm 23:1 · WEB⟧.            │
-│ ┃ ▏Romans 8:38–39 · WEB              │  ← text-xs, muted
-│ ┃ ▏³⁸ For I am persuaded that neither│  ← font-serif
+│ ┃ ▏ROMANS 8:38–39 · WEB              │  ← small caps, accent colour
+│ ┃ ▏³⁸ For I am persuaded that neither│  ← font-serif italic, on bg-muted
 │ ┃ ▏death… ³⁹ nor height, nor depth…  │
-│ ┃ ▏Psalm 23:1 · WEB                  │
+│ ┃ ▏PSALM 23:1 · WEB                  │
 │ ┃ ▏¹ Yahweh is my shepherd…          │
 ```
 
