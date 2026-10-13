@@ -4,7 +4,8 @@ import type { SectionBody } from '@lamp/domain';
 import { resolveFocusPosition } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { cn } from 'cn';
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { SectionTags } from '@/components/tags/section-tags.tsx';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { forgetUnsaved, keepUnsaved } from '@/data/unsaved.ts';
 import { SAVE_DELAY_MS } from '@/components/lesson/use-lesson-saver.ts';
@@ -52,6 +53,7 @@ export function SectionEditor({ row, api, focus, sortable, drag }: SectionEditor
     disabled: !sortable,
   });
   const handle = useRef<HTMLButtonElement>(null);
+  const [editingTags, setEditingTags] = useState(false);
   const stored = useRef(item.stored);
   const pending = useRef<SectionBody | undefined>(undefined);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -233,6 +235,16 @@ export function SectionEditor({ row, api, focus, sortable, drag }: SectionEditor
         )}
       >
         <EditorContent editor={editor} />
+        {item.stored && (
+          <SectionTags
+            sectionId={id}
+            editing={editingTags}
+            onDone={(toHandle) => {
+              setEditingTags(false);
+              if (toHandle) handle.current?.focus();
+            }}
+          />
+        )}
       </div>
       {item.stored ? (
         <SectionHandle
@@ -241,6 +253,7 @@ export function SectionEditor({ row, api, focus, sortable, drag }: SectionEditor
           ref={handle}
           drag={{ ref: setActivatorNodeRef, listeners }}
           hidden={slot !== undefined}
+          onEditTags={() => setEditingTags(true)}
         />
       ) : (
         // A draft has nothing to move or delete yet; the space keeps the text from shifting.

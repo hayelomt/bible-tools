@@ -1,4 +1,5 @@
-import type { Lesson, Section, Series } from '@lamp/domain';
+import type { Lesson, Section, Series, Tag } from '@lamp/domain';
+import type { TagLink, TagTarget } from './actions/tags.ts';
 import { db as appDb, type LampDb } from './db.ts';
 
 /**
@@ -70,4 +71,34 @@ export function lessonSections(lessonId: string, db: LampDb = appDb): Promise<Se
 /** How many sections a lesson has, for the delete confirmation. */
 export function sectionCount(lessonId: string, db: LampDb = appDb): Promise<number> {
   return db.section.where('lessonId').equals(lessonId).filter(notDeleted).count();
+}
+
+/** Every tag, seeded and custom, by name ignoring case. */
+export async function allTags(db: LampDb = appDb): Promise<Tag[]> {
+  const tags = await db.tag.filter(notDeleted).toArray();
+  return tags.toSorted((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+}
+
+/** A tag on a section or lesson, with the link that puts it there. */
+export interface AppliedTag {
+  tag: Tag;
+  link: TagLink;
+}
+
+/** The tags on a section or lesson, in the order they were added. */
+export async function tagsOf(target: TagTarget, db: LampDb = appDb): Promise<AppliedTag[]> {
+  const links =
+    target.kind === 'section'
+      ? await db.sectionTag.where('sectionId').equals(target.id).filter(notDeleted).toArray()
+      : await db.lessonTag.where('lessonId').equals(target.id).filter(notDeleted).toArray();
+  const entity = target.kind === 'section' ? 'sectionTag' : 'lessonTag';
+  const tags = await db.tag.bulkGet(links.map((l) => l.tagId));
+  return links
+    .map((link, i) => ({ link, tag: tags[i] }))
+    .filter((t): t is { link: (typeof links)[number]; tag: Tag } => !!t.tag && notDeleted(t.tag))
+    .toSorted(
+      (a, b) =>
+        a.link.createdAt.localeCompare(b.link.createdAt) || a.link.id.localeCompare(b.link.id),
+    )
+    .map(({ link, tag }) => ({ tag, link: { entity, id: link.id } }));
 }

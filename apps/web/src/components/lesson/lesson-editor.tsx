@@ -142,13 +142,13 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
             >
               Details
             </h2>
-            <LessonDetails saver={saver} />
+            <LessonDetails saver={saver} lessonId={lesson ? id : null} />
           </section>
         </SidePanel>
       ) : (
         detailsOpen && (
           <div id={detailsId} className="mt-2 rounded-xl border p-4">
-            <LessonDetails saver={saver} />
+            <LessonDetails saver={saver} lessonId={lesson ? id : null} />
           </div>
         )
       )}

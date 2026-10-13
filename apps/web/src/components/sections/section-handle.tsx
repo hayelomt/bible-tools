@@ -19,6 +19,8 @@ interface SectionHandleProps {
   drag: { ref: (element: HTMLElement | null) => void; listeners: DraggableSyntheticListeners };
   /** Its section is the slot of a drag in progress. */
   hidden: boolean;
+  /** Tags: opens the tag input under the section. */
+  onEditTags: () => void;
 }
 
 /**
@@ -26,7 +28,7 @@ interface SectionHandleProps {
  * gives up a single 44 px gutter. A tap, a click or Enter opens the section menu; pressing and
  * dragging moves the section (`useSectionDrag`). The menu is the keyboard's way to reorder.
  */
-export function SectionHandle({ row, api, ref, drag, hidden }: SectionHandleProps) {
+export function SectionHandle({ row, api, ref, drag, hidden, onEditTags }: SectionHandleProps) {
   const [open, setOpen] = useState(false);
   const id = row.item.id;
   const can = open ? api.can(id) : undefined;
@@ -68,6 +70,7 @@ export function SectionHandle({ row, api, ref, drag, hidden }: SectionHandleProp
           {can && (
             <>
               <DropdownMenuItem onClick={() => api.reply(id)}>Reply</DropdownMenuItem>
+              <DropdownMenuItem onClick={onEditTags}>Tags</DropdownMenuItem>
               <DropdownMenuItem disabled={!can.moveUp} onClick={() => api.moveUp(id, 'handle')}>
                 Move up
               </DropdownMenuItem>

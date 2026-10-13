@@ -77,7 +77,7 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 | ☑ | M2-09 | F3 **Verse autocomplete**: a TipTap suggestion plugin that opens when the text before the cursor parses as a reference, shows `suggest()` results with a WEB preview, and inserts a `verse` node with the snapshot | L | §8.3, F3 | `Rom 8:28-30`, `1 Jn 3`, `romns 8` and `Rom 8:38–9:5` complete correctly offline; Escape keeps the typed text |
 | ☑ | M2-10 | F3 Verse chip: display reference and translation label, tap to expand the snapshot; keyboard and screen-reader accessible; deleted as one unit | M | §9, F3 | The chip text never changes after capture, shown by a test |
 | ☑ | M2-11 | F12 **PWA**: `vite-plugin-pwa` (injectManifest) precaching the app shell, installable manifest, WEB downloaded in the background with progress in settings (and chips inserted before their book arrived get their snapshot then), `storage.persist()`; safe update ("New version — Reload", never while editing) | L | §8.6, F12 | In airplane mode after the first load, every screen works and any book opens; manual script: an update mid-edit loses nothing |
-| ☐ | M2-12 | Gate test (Playwright, offline): create a lesson, add three sections with a reply and two verse chips, reload, reopen; the outbox holds every change | M | PRD *Milestones* A | Passes in CI; the capture takes under two minutes when done by hand |
+| ☑ | M2-12 | Gate test (Playwright, offline): create a lesson, add three sections with a reply and two verse chips, reload, reopen; the outbox holds every change | M | PRD *Milestones* A | Passes in CI; the capture takes under two minutes when done by hand |
 | ☐ | M2-13 | Real-use check: take notes during an actual sermon on a phone with the installed app; log where typing or verse entry is slow | S | PRD *Goals* | Findings are fixed or logged as tasks before M4 starts |
 
 ## M4 — Structure
@@ -85,7 +85,7 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
-| ☐ | M4-01 | F4 Tag input with autocomplete on sections and lessons: seeded and custom tags, a new tag on Enter | M | F4 | Custom tags show in autocomplete (and sync, checked in M3); the same name can't be created twice with different case |
+| ☑ | M4-01 | F4 Tag input with autocomplete on sections and lessons: seeded and custom tags, a new tag on Enter | M | F4 | Custom tags show in autocomplete (and sync, checked in M3); the same name can't be created twice with different case |
 | ☐ | M4-02 | F4 Tag page: every section and lesson with the tag, grouped by lesson, newest first | S | F4 | A section shows up immediately after tagging |
 | ☐ | M4-03 | F5 Takeaways on a lesson: add, edit, delete | S | F5 | Takeaways carry `createdAt` for the review queue (and sync, checked in M3) |
 | ☐ | M4-04 | F5 Open questions: add, set status (open / answered / parked), promote to a child section titled with the question; answered once that section has a body | M | F5 | Tests: promotion links `answerSectionId`; an empty answer section leaves the question open |

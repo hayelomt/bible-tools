@@ -31,6 +31,7 @@ export {
 } from './citations.ts';
 export { newId } from './ids.ts';
 export { SEED_TAGS } from './seed-tags.ts';
+export { MAX_TAG_NAME_LENGTH, normaliseTagName, tagKey } from './tag-names.ts';
 export {
   DEFAULT_TRANSLATION,
   checkPassage,

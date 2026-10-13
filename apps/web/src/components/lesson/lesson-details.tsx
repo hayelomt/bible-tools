@@ -5,6 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useId, useState } from 'react';
 import { PassageInput } from '@/components/passage-input.tsx';
 import { Segmented } from '@/components/segmented.tsx';
+import { TagInput } from '@/components/tags/tag-input.tsx';
 import { allSeries } from '@/data/queries.ts';
 import { SOURCE_LABELS } from '@/lib/labels.ts';
 import type { LessonSaver } from './use-lesson-saver.ts';
@@ -15,11 +16,17 @@ const labelClass = 'text-sm text-muted-foreground not-first:mt-2 @sm:not-first:m
 /** An empty optional line is stored as null; the schema trims the rest. */
 const optional = (text: string) => (text.trim() ? text : null);
 
+interface LessonDetailsProps {
+  saver: LessonSaver;
+  /** The stored lesson's id; null for a new lesson, which can't be tagged until it has a title. */
+  lessonId: string | null;
+}
+
 /**
  * A lesson's details (wireframes/lessons.md "Details"): date, source, speaker, church, main
- * passages and series. Each saves as it changes; typed fields once typing settles.
+ * passages, series and tags. Each saves as it changes; typed fields once typing settles.
  */
-export function LessonDetails({ saver }: { saver: LessonSaver }) {
+export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
   const { values, save, flush } = saver;
   const series = useLiveQuery(() => allSeries(), []);
   const [speaker, setSpeaker] = useState(values.speaker ?? '');
@@ -30,6 +37,7 @@ export function LessonDetails({ saver }: { saver: LessonSaver }) {
     church: useId(),
     passages: useId(),
     series: useId(),
+    tags: useId(),
   };
   const sourceName = useId();
 
@@ -113,6 +121,15 @@ export function LessonDetails({ saver }: { saver: LessonSaver }) {
             </option>
           ))}
         </NativeSelect>
+
+        {lessonId && (
+          <>
+            <label htmlFor={ids.tags} className={`${labelClass} @sm:self-start @sm:pt-1.5`}>
+              Tags
+            </label>
+            <TagInput id={ids.tags} target={{ kind: 'lesson', id: lessonId }} />
+          </>
+        )}
       </div>
     </div>
   );
