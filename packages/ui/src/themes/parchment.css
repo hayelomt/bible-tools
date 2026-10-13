@@ -1,0 +1,36 @@
+/* Parchment: cream paper, ink brown, burgundy accent. The default preset. */
+[data-theme='parchment'] {
+  --background: oklch(0.962 0.022 85);
+  --foreground: oklch(0.27 0.035 50);
+  --card: oklch(0.982 0.014 85);
+  --card-foreground: oklch(0.27 0.035 50);
+  --primary: oklch(0.43 0.13 18);
+  --primary-foreground: oklch(0.975 0.015 85);
+  --secondary: oklch(0.915 0.03 80);
+  --secondary-foreground: oklch(0.3 0.04 50);
+  --muted: oklch(0.93 0.025 82);
+  --muted-foreground: oklch(0.48 0.045 60);
+  --accent: oklch(0.915 0.035 25);
+  --accent-foreground: oklch(0.32 0.08 20);
+  --border: oklch(0.875 0.03 78);
+  --input: oklch(0.6 0.045 65);
+  --ring: oklch(0.5 0.13 18);
+}
+
+[data-theme='parchment'].dark {
+  --background: oklch(0.2 0.018 55);
+  --foreground: oklch(0.92 0.025 85);
+  --card: oklch(0.24 0.02 55);
+  --card-foreground: oklch(0.92 0.025 85);
+  --primary: oklch(0.74 0.11 18);
+  --primary-foreground: oklch(0.2 0.03 18);
+  --secondary: oklch(0.3 0.022 55);
+  --secondary-foreground: oklch(0.92 0.025 85);
+  --muted: oklch(0.28 0.02 55);
+  --muted-foreground: oklch(0.74 0.035 75);
+  --accent: oklch(0.33 0.045 20);
+  --accent-foreground: oklch(0.93 0.02 85);
+  --border: oklch(0.34 0.02 55);
+  --input: oklch(0.58 0.03 60);
+  --ring: oklch(0.68 0.1 18);
+}

@@ -11,3 +11,4 @@ test-results/
 playwright-report/
 blob-report/
 packages/bible-data/source/
+.claude/launch.json

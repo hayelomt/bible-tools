@@ -1,0 +1,36 @@
+/* Olive: soft sage, deep olive. */
+[data-theme='olive'] {
+  --background: oklch(0.955 0.018 130);
+  --foreground: oklch(0.27 0.03 125);
+  --card: oklch(0.98 0.01 130);
+  --card-foreground: oklch(0.27 0.03 125);
+  --primary: oklch(0.43 0.08 122);
+  --primary-foreground: oklch(0.975 0.01 120);
+  --secondary: oklch(0.91 0.03 128);
+  --secondary-foreground: oklch(0.3 0.04 125);
+  --muted: oklch(0.925 0.025 130);
+  --muted-foreground: oklch(0.48 0.04 125);
+  --accent: oklch(0.9 0.045 125);
+  --accent-foreground: oklch(0.3 0.06 122);
+  --border: oklch(0.87 0.03 128);
+  --input: oklch(0.6 0.04 125);
+  --ring: oklch(0.5 0.08 122);
+}
+
+[data-theme='olive'].dark {
+  --background: oklch(0.21 0.02 130);
+  --foreground: oklch(0.92 0.02 120);
+  --card: oklch(0.25 0.022 130);
+  --card-foreground: oklch(0.92 0.02 120);
+  --primary: oklch(0.76 0.1 122);
+  --primary-foreground: oklch(0.21 0.03 125);
+  --secondary: oklch(0.31 0.025 130);
+  --secondary-foreground: oklch(0.92 0.02 120);
+  --muted: oklch(0.29 0.022 130);
+  --muted-foreground: oklch(0.74 0.03 125);
+  --accent: oklch(0.34 0.045 125);
+  --accent-foreground: oklch(0.93 0.02 120);
+  --border: oklch(0.35 0.025 130);
+  --input: oklch(0.58 0.035 125);
+  --ring: oklch(0.7 0.09 122);
+}

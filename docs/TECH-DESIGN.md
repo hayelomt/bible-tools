@@ -282,9 +282,17 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 ### 8.5 Theme
 - Presets live in `packages/ui/src/themes/*.css` as CSS variable sets for the shadcn tokens (`--background`, `--foreground`, `--primary`, `--muted`, `--accent`, `--ring`, `--radius`, …), each with light and dark values. They're selected with `<html data-theme="parchment" class="dark">`.
 - Tailwind v4 maps the tokens with `@theme inline`, so components use only semantic classes (`bg-background`, `text-primary`) and never raw colours.
-- Presets (the "reading-room" set): *Parchment* (default: cream paper, ink brown, burgundy accent), *Vellum* (off-white, charcoal, gold), *Olive* (soft sage, deep olive), *Slate* (cool grey, blue-slate), *Cedar* (warm wood tones, amber), *Midnight* (deep navy, soft gold; dark first). Exact colours are tuned in the UX pass and must pass the contrast test.
+- Presets (the "reading-room" set): *Parchment* (default: cream paper, ink brown, burgundy accent), *Vellum* (off-white, charcoal, gold), *Olive* (soft sage, deep olive), *Slate* (cool grey, blue-slate), *Cedar* (warm wood tones, amber), *Midnight* (deep navy, soft gold; dark first). Colours were tuned in M1-13 and M1-14, and every change must pass the contrast test.
 - The choice is stored in `UserSettings` (synced) and mirrored to `localStorage`. A small inline script in `index.html` applies it before the first paint, so there's no flash of the wrong theme.
 - A CI test checks WCAG AA contrast for every preset in both modes.
+
+*Built in M1-13:*
+- Each preset file sets 15 tokens (background, foreground, card, primary, secondary, muted, accent with their foregrounds, border, input, ring) under `[data-theme='<id>']` and `[data-theme='<id>'].dark`. `globals.css` holds what the presets share, declared on every `[data-theme]` element: `--radius`, the destructive colour, the four reader highlights (`bg-highlight-yellow` …), and aliases (`--popover` and the sidebar tokens point at card, primary, accent). The shadcn chart tokens are dropped, since the app has no charts. `index.html` ships `data-theme="parchment"`.
+- The `dark` variant is `&:where(.dark, .dark *):not(:where(.light, .light *))`, so a `.light` element inside a dark page switches back. The demo uses it to show both modes side by side.
+- `@lamp/ui/themes/presets` has the preset list (checked against `THEME_PRESETS` in `domain`), `resolveMode`, `applyTheme`, and `readTheme`/`saveTheme` for the `localStorage` key `lamp.theme`. The inline script in `index.html` repeats that logic, since it has to run before any module loads; an E2E test checks it with the app's scripts blocked.
+- **The contrast test** (`themes.test.ts`) converts each token from OKLCH to sRGB, composites translucent colours the way the browser does, and checks 29 (light) or 31 (dark) pairs per preset, taken from how the components combine them: text on its background at 4.5:1, including hover and tinted states (`bg-primary/80`, `bg-destructive/10` and `/20`, `dark:bg-input/30`); field borders, switch tracks, checked controls and the focus ring at 3:1 (WCAG 1.4.11). `--border` is decorative (dividers, card edges) and is not checked. Every colour must be inside sRGB.
+- **Demo page:** `/dev/themes` in the web app shows the 15 components (button, badge, card, alert, input, textarea, label, checkbox, switch, tabs, separator, select, dropdown menu, tooltip, dialog) and reading text in all 12 preset and mode panels, with buttons that switch the page itself. Popups render in a portal, so they take the page's preset.
+- **Fonts:** the interface uses the system font. Scripture and notes use Literata (`font-serif`), self-hosted from `@fontsource-variable/literata` with the weight axis, upright and italic. The browser downloads only the subsets a page needs (Latin is 52 KB per style).
 
 ### 8.6 PWA
 - `vite-plugin-pwa` (Workbox) in `injectManifest` mode: precaches the app shell; installable manifest; `navigator.storage.persist()` requested after sign-in or the first lesson.
@@ -400,8 +408,10 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 20 | `rev` on the wire (2026-10-13) | A plain number; the API converts Postgres bigint at the edge | §4.3 |
 | 21 | Psalm titles (2026-10-13) | Kept in the book files' `d` field, outside the verse text | §9 |
 | 22 | Empty WEB verses (2026-10-13) | `""` in the text, with the footnote kept in the `n` field | §9 |
+| 23 | Components in M1-13 (2026-10-13) | The core shadcn set is added now, so the presets are tuned against what M2 uses | §8.5 |
+| 24 | Reading font (2026-10-13) | Literata, self-hosted, for scripture and notes; the system font for the interface | §8.5 |
 
-**Still open:** nothing blocks phase 1. Exact preset colours are tuned in the UX pass; mapping between other translations' numbering waits for a second translation in phase 2.
+**Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
 
 ## 16. PRD changes this design implies (applied in PRD v1.1)
 - **Architecture:** phase 1 now has a server (NestJS + Postgres) and accounts, with guest use still allowed. The "no backend" wording and the *Architecture* table need rewriting.

@@ -1,9 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="parchment">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lamp</title>
+    <script>
+      // Applies the saved theme before the first paint (TECH-DESIGN §8.5). Mirrors readTheme,
+      // resolveMode and applyTheme in @lamp/ui/themes/presets; keep them in step.
+      (function () {
+        var presets = ['parchment', 'vellum', 'olive', 'slate', 'cedar', 'midnight'];
+        var root = document.documentElement;
+        var choice = {};
+        try {
+          choice = JSON.parse(localStorage.getItem('lamp.theme') || '{}') || {};
+        } catch (e) {}
+        if (presets.indexOf(choice.preset) >= 0) root.dataset.theme = choice.preset;
+        var dark =
+          choice.mode === 'dark' ||
+          (choice.mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        root.classList.toggle('dark', dark);
+        root.style.colorScheme = dark ? 'dark' : 'light';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

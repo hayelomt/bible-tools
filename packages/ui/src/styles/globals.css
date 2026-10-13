@@ -1,9 +1,26 @@
-/* shadcn base-nova tokens (neutral). The reading-room presets replace these in M1-13 (§8.5). */
+/*
+ * Tailwind, the shadcn tokens and the reading-room presets (TECH-DESIGN §8.5). `<html>` always
+ * carries a preset, `data-theme="parchment"`, and the class `dark` in dark mode; the presets in
+ * ../themes set the colour tokens for both. Components use only the semantic classes
+ * (`bg-background`, `text-primary`), never raw colours.
+ */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import '@fontsource-variable/literata/wght.css';
+@import '@fontsource-variable/literata/wght-italic.css';
+@import '../themes/parchment.css';
+@import '../themes/vellum.css';
+@import '../themes/olive.css';
+@import '../themes/slate.css';
+@import '../themes/cedar.css';
+@import '../themes/midnight.css';
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * Dark styles apply inside `.dark`. A `.light` element inside it switches back, so the theme demo
+ * can show both modes on one page.
+ */
+@custom-variant dark (&:where(.dark, .dark *):not(:where(.light, .light *)));
 /* The app using this file is scanned automatically (its Vite root); add this package's components. */
 @source "../**/*.{ts,tsx}";
 
@@ -17,11 +34,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -47,77 +59,47 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  /* System fonts until the UX pass (M1-14) picks reading fonts. */
+  --color-highlight-yellow: var(--highlight-yellow);
+  --color-highlight-green: var(--highlight-green);
+  --color-highlight-blue: var(--highlight-blue);
+  --color-highlight-pink: var(--highlight-pink);
+  /* The interface uses the system font; scripture and notes are set in Literata (font-serif). */
   --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Literata Variable', ui-serif, Georgia, serif;
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+/*
+ * Tokens every preset shares. They're declared on each `[data-theme]` element, not only on
+ * `<html>`, so that aliases like `var(--card)` resolve against that element's preset.
+ */
+[data-theme] {
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover: var(--card);
+  --popover-foreground: var(--card-foreground);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--card-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --destructive: oklch(0.46 0.18 28);
+  /* Reader highlights (F6): pale enough for body text on top. */
+  --highlight-yellow: oklch(0.92 0.1 95);
+  --highlight-green: oklch(0.91 0.07 140);
+  --highlight-blue: oklch(0.9 0.05 235);
+  --highlight-pink: oklch(0.89 0.055 355);
+  color-scheme: light;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+[data-theme].dark {
+  --destructive: oklch(0.8 0.11 22);
+  --highlight-yellow: oklch(0.42 0.08 90);
+  --highlight-green: oklch(0.4 0.06 145);
+  --highlight-blue: oklch(0.4 0.06 240);
+  --highlight-pink: oklch(0.4 0.07 355);
+  color-scheme: dark;
 }
 
 @layer base {
