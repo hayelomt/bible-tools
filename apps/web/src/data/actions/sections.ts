@@ -1,5 +1,5 @@
-import type { Section } from '@lamp/domain';
-import { action, type NewRow, type RowPatch } from '../action.ts';
+import { compareOrder, keyBetween, type Section } from '@lamp/domain';
+import { action, type NewRow, RowNotFoundError, type RowPatch } from '../action.ts';
 import { db as appDb, type LampDb } from '../db.ts';
 import { syncAnswers } from './questions.ts';
 
@@ -75,5 +75,49 @@ export function restoreSections(removed: RemovedSections, db: LampDb = appDb): P
     await syncAnswers(w, await w.db.section.bulkGet(removed.sections).then(present));
   });
 }
+
+/**
+ * "Keep this instead" on a conflicted copy (§6.4, decision 32): the section it was made from takes
+ * the copy's text, and the copy goes, in one action. Replies under the copy move to the section,
+ * after its own; so do its tags. A copy whose section was deleted becomes an ordinary section.
+ */
+export function keepConflictedCopy(copyId: string, db: LampDb = appDb): Promise<Section> {
+  return action(db, async (w) => {
+    const copy = await w.db.section.get(copyId);
+    if (!copy || copy.deletedAt !== null) throw new RowNotFoundError('section', copyId);
+    const original = copy.conflictOf ? await w.db.section.get(copy.conflictOf) : undefined;
+    if (!original || original.deletedAt !== null) {
+      return w.update('section', copyId, { conflictOf: null, conflictDevice: null });
+    }
+
+    const section = await w.update('section', original.id, { body: copy.body });
+    const replies = await w.db.section.where('parentId').equals(original.id).filter(live).toArray();
+    let last = replies.toSorted(compareOrder).at(-1)?.orderKey ?? null;
+    const moving = await w.db.section.where('parentId').equals(copyId).filter(live).toArray();
+    for (const reply of moving.toSorted(compareOrder)) {
+      last = keyBetween(last, null);
+      await w.update('section', reply.id, { parentId: original.id, orderKey: last });
+    }
+    const have = new Set(
+      (await w.db.sectionTag.where('sectionId').equals(original.id).filter(live).toArray()).map(
+        (t) => t.tagId,
+      ),
+    );
+    for (const link of await w.db.sectionTag
+      .where('sectionId')
+      .equals(copyId)
+      .filter(live)
+      .toArray()) {
+      if (!have.has(link.tagId))
+        await w.create('sectionTag', { tagId: link.tagId, sectionId: original.id });
+      await w.remove('sectionTag', link.id);
+    }
+    await w.remove('section', copyId);
+    await syncAnswers(w, [section, (await w.db.section.get(copyId))!]);
+    return section;
+  });
+}
+
+const live = (row: { deletedAt: string | null }) => row.deletedAt === null;
 
 const present = <T>(rows: (T | undefined)[]) => rows.filter((r): r is T => r !== undefined);

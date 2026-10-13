@@ -302,6 +302,7 @@ describe('deletes', () => {
     });
     await expect(prisma.section.findUnique({ where: { id: copy.id } })).resolves.toMatchObject({
       conflictOf: null,
+      conflictDevice: null,
     });
   });
 });

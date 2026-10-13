@@ -1,4 +1,5 @@
 import { useSortable } from '@dnd-kit/sortable';
+import { Button } from '@lamp/ui/components/button';
 import { CSS } from '@dnd-kit/utilities';
 import type { SectionBody } from '@lamp/domain';
 import { resolveFocusPosition } from '@tiptap/core';
@@ -8,6 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { SectionTags } from '@/components/tags/section-tags.tsx';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { forgetUnsaved, keepUnsaved } from '@/data/unsaved.ts';
+import { momentLabel } from '@/lib/dates.ts';
 import { SAVE_DELAY_MS } from '@/components/lesson/use-lesson-saver.ts';
 import { hasText, toBody } from './body.ts';
 import { sectionExtensions } from './extensions.ts';
@@ -105,6 +107,7 @@ export function SectionEditor({
             ...list.placementOf(id),
             body,
             conflictOf: null,
+            conflictDevice: null,
           });
           stored.current = true;
           list.markStored(id);
@@ -213,6 +216,8 @@ export function SectionEditor({
   }, [flush]);
 
   const slot = typeof drag === 'object' ? drag.slot : undefined;
+  const conflict = item.stored ? item.conflict : null;
+  const labelId = `conflict-${id}`;
   return (
     <div
       ref={setNodeRef}
@@ -240,11 +245,18 @@ export function SectionEditor({
       <div
         className={cn(
           'min-w-0 flex-1 rounded-r-md border-l-2 pl-3 transition-colors duration-700 focus-within:border-primary',
+          conflict && 'rounded-lg border bg-muted/40 p-3',
           flash && 'border-primary bg-primary/10',
           slot !== undefined && 'invisible',
         )}
         data-flash={flash || undefined}
+        {...(conflict && { role: 'group', 'aria-labelledby': labelId })}
       >
+        {conflict && (
+          <p id={labelId} className="mb-1 text-sm text-muted-foreground">
+            Conflicted copy · {conflict.device ?? 'another device'} · {momentLabel(conflict.time)}
+          </p>
+        )}
         <EditorContent editor={editor} />
         {item.stored && (
           <SectionTags
@@ -255,6 +267,23 @@ export function SectionEditor({
               if (toHandle) handle.current?.focus();
             }}
           />
+        )}
+        {conflict && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                flush();
+                api.keepCopy(id);
+              }}
+            >
+              Keep this instead
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => api.remove(id)}>
+              Delete
+            </Button>
+          </div>
         )}
       </div>
       {item.stored ? (

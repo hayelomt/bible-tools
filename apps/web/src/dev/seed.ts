@@ -363,7 +363,14 @@ async function writeNotes(
   const keys = keysBetween(null, null, notes.length);
   for (const [i, note] of notes.entries()) {
     const section = await createSection(
-      { lessonId, parentId, orderKey: keys[i]!, body: noteBody(note.text), conflictOf: null },
+      {
+        lessonId,
+        parentId,
+        orderKey: keys[i]!,
+        body: noteBody(note.text),
+        conflictOf: null,
+        conflictDevice: null,
+      },
       db,
     );
     for (const tag of note.tags ?? []) await addTag({ kind: 'section', id: section.id }, tag, db);
@@ -451,6 +458,7 @@ export async function seedBulk(db: LampDb, lessons = 50, sections = 100): Promis
             `${words(20 + (s % 7), l * sections + s)}${chip}\n${words(20, s)} note ${l + 1}-${s + 1}`,
           ),
           conflictOf: null,
+          conflictDevice: null,
         });
       }
     });

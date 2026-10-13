@@ -33,7 +33,7 @@ async function signIn(page: Page, email: string, password: string) {
   await page.goto('/signin');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
 }
 
@@ -100,7 +100,7 @@ test('sign up, verify, change and reset the password, with links from tmp/emails
   await page.goto('/signin');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('The email or password is wrong.');
   await signIn(page, email, NEW_PASSWORD);
   await signOut(page);
@@ -150,7 +150,7 @@ test('offline, the forms keep what was typed and the notes keep working', async 
   await expect(
     page.getByText('Needs a connection. Your notes keep working offline.'),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Sign in' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeDisabled();
   await expect(page.getByLabel('Email')).toHaveValue('offline@example.com');
 
   await page.getByRole('link', { name: 'Create one' }).click();

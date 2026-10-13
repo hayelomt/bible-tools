@@ -81,6 +81,18 @@ export function lessonSections(lessonId: string, db: LampDb = appDb): Promise<Se
 }
 
 /** How many sections a lesson has, for the delete confirmation. */
+/** How many conflicted copies (§6.4) each lesson has, for its row in a list. */
+export async function conflictCounts(db: LampDb = appDb): Promise<Map<string, number>> {
+  // IndexedDB doesn't index null, so only the copies are in the `conflictOf` index.
+  const copies = await db.section
+    .orderBy('conflictOf')
+    .filter((s) => s.deletedAt === null)
+    .toArray();
+  const counts = new Map<string, number>();
+  for (const copy of copies) counts.set(copy.lessonId, (counts.get(copy.lessonId) ?? 0) + 1);
+  return counts;
+}
+
 export function sectionCount(lessonId: string, db: LampDb = appDb): Promise<number> {
   return db.section.where('lessonId').equals(lessonId).filter(notDeleted).count();
 }

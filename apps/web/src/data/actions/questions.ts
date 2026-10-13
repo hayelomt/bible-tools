@@ -132,6 +132,7 @@ export function promoteQuestion(
       orderKey,
       body: answerBody(question.text),
       conflictOf: null,
+      conflictDevice: null,
     });
     // A parked question being answered is open again until the answer is written.
     await w.update('question', id, { answerSectionId: section.id, status: 'open' });

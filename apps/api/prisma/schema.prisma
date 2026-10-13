@@ -154,20 +154,24 @@ model Lesson {
 // body: restricted ProseMirror JSON (domain bodySchema)
 // orderKey: fractional index key among siblings; column collation is "C" (byte order)
 model Section {
-  id         String    @id @default(uuid(7)) @db.Uuid
-  userId     String    @map("user_id") @db.Uuid
-  lessonId   String    @map("lesson_id") @db.Uuid
-  parentId   String?   @map("parent_id") @db.Uuid
-  orderKey   String    @map("order_key")
-  body       Json
-  conflictOf String?   @map("conflict_of") @db.Uuid
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
-  rev        BigInt    @default(0)
+  id             String    @id @default(uuid(7)) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  lessonId       String    @map("lesson_id") @db.Uuid
+  parentId       String?   @map("parent_id") @db.Uuid
+  orderKey       String    @map("order_key")
+  body           Json
+  conflictOf     String?   @map("conflict_of") @db.Uuid
+  // The device that wrote a conflicted copy's body, for its label (§6.4).
+  conflictDevice String?   @map("conflict_device")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev            BigInt    @default(0)
   // Server only: the rev that last changed body, so a push can tell whether the body changed
   // after its baseRev (§6.4).
-  bodyRev    BigInt    @default(0) @map("body_rev")
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
+  bodyRev        BigInt    @default(0) @map("body_rev")
+  // Server only: the device that last changed body, which names a conflicted copy made from it.
+  bodyDevice     String?   @map("body_device")
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson             Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)

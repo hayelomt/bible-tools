@@ -60,7 +60,10 @@ describe('unsaved section text', () => {
 
   it('applies kept text only to the row it was typed on', async () => {
     const { base: _, ...fields } = draft();
-    const row = await createSection({ ...fields, body: emptyBody(), conflictOf: null }, db);
+    const row = await createSection(
+      { ...fields, body: emptyBody(), conflictOf: null, conflictDevice: null },
+      db,
+    );
     keepUnsaved(draft({ base: row.updatedAt, body: text('Lost write') }), storage);
     await restoreUnsaved(db, storage);
     expect((await db.section.get(row.id))?.body).toEqual(text('Lost write'));

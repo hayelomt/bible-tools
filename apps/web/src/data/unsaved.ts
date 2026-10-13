@@ -72,7 +72,7 @@ export async function restoreUnsaved(db: LampDb, storage: Storage = localStorage
         const lesson = await db.lesson.get(entry.lessonId);
         if (lesson && lesson.deletedAt === null) {
           const { base: _, ...fields } = entry;
-          await createSection({ ...fields, conflictOf: null }, db);
+          await createSection({ ...fields, conflictOf: null, conflictDevice: null }, db);
         }
       }
     } catch (error) {

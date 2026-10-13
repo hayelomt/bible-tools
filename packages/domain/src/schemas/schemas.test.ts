@@ -77,6 +77,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     orderKey: keyBetween(),
     body: emptyBody(),
     conflictOf: null,
+    conflictDevice: null,
   },
   tag: { ...meta(4), name: 'grace', isSeeded: true },
   sectionTag: { ...meta(5), tagId: id(4), sectionId: id(3) },

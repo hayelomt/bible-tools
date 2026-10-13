@@ -48,6 +48,7 @@ const section: Section = {
   orderKey: keyBetween(),
   body: chipBody(JHN_3, ROM_8_28, JHN_3),
   conflictOf: null,
+  conflictDevice: null,
 };
 
 describe('newId', () => {

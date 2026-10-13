@@ -73,6 +73,7 @@ async function section(name: string, lessonId: string, content: SectionBody, par
       orderKey: keyBetween(null, null),
       body: content,
       conflictOf: null,
+      conflictDevice: null,
     },
     db,
   );

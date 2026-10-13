@@ -21,8 +21,11 @@ export interface Outcome<R> {
   row: R;
   /** Null when `baseRev` was current, so there was no conflict. */
   resolution: ConflictResolution | null;
-  /** A section body that lost to a newer one, saved as a conflicted copy. */
-  copy?: { body: SectionBody; time: string };
+  /**
+   * A section body that lost to a newer one, saved as a conflicted copy, and whether it was the
+   * stored body or the one this device sent.
+   */
+  copy?: { body: SectionBody; time: string; from: 'server' | 'device' };
   /** Whether anything this device sent was kept, so the rows it sits under must be live. */
   keepsClientEdit: boolean;
 }
@@ -66,7 +69,11 @@ export function resolveUpsert<R extends Row>(input: UpsertInput<R>): Outcome<R> 
     return {
       row,
       resolution: 'conflicted-copy',
-      copy: { body: loser.body as SectionBody, time: loser.updatedAt },
+      copy: {
+        body: loser.body as SectionBody,
+        time: loser.updatedAt,
+        from: clientWins ? 'server' : 'device',
+      },
       keepsClientEdit: true,
     };
   }
@@ -124,11 +131,12 @@ export const PARENT_COLUMNS: Readonly<Record<EntityName, readonly string[]>> = {
 
 /**
  * The conflicted copy of `section`: a new sibling right after it (`orderKey` between it and the
- * next sibling) holding the losing body, dated when that body was written.
+ * next sibling) holding the losing body, dated when that body was written and labelled with the
+ * device that wrote it.
  */
 export function conflictedCopy(
   section: SyncRow<'section'>,
-  copy: { body: SectionBody; time: string },
+  copy: { body: SectionBody; time: string; device: string | null },
   id: string,
   orderKey: string,
 ): SyncRow<'section'> {
@@ -139,6 +147,7 @@ export function conflictedCopy(
     orderKey,
     body: copy.body,
     conflictOf: section.id,
+    conflictDevice: copy.device,
     createdAt: copy.time,
     updatedAt: copy.time,
     deletedAt: null,

@@ -89,6 +89,8 @@ export const sectionSchema = z.strictObject({
   body: bodySchema,
   /** The section a conflicted copy was made from (§6.4). */
   conflictOf: idSchema.nullable(),
+  /** The device that wrote a conflicted copy's body, for its label (§6.4); null when unknown. */
+  conflictDevice: lineSchema(100).nullable(),
 });
 
 export const tagSchema = z.strictObject({

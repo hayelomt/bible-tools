@@ -14,9 +14,9 @@ export const SERIES_KIND_LABELS: Record<Series['kind'], string> = {
   custom: 'Other',
 };
 
-/** "1 lesson", "3 lessons". */
-export function count(n: number, noun: string): string {
-  return `${n} ${noun}${n === 1 ? '' : 's'}`;
+/** "1 lesson", "3 lessons"; `plural` for a noun that doesn't just add an s. */
+export function count(n: number, noun: string, plural = `${noun}s`): string {
+  return `${n} ${n === 1 ? noun : plural}`;
 }
 
 /** "a•••@example.com": names an account on a shared screen without showing the whole address. */

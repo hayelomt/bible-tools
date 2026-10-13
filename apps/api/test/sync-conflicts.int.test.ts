@@ -56,8 +56,8 @@ beforeEach(async () => {
   account = await sync.signUp(t, client);
 });
 
-async function pushOne(change: object): Promise<PushResult> {
-  const [result] = await sync.pushOk(client, account, [change]);
+async function pushOne(change: object, deviceName?: string): Promise<PushResult> {
+  const [result] = await sync.pushOk(client, account, [change], deviceName);
   return result!;
 }
 
@@ -132,7 +132,7 @@ async function bothTyped(phoneTime: string) {
   const next = sectionRow(lesson.id, { orderKey: 'a1', body: bodyOf('next') });
   await pushOne(upsert('section', next)); // rev 3
   const laptop = { ...section, body: bodyOf('typed on the laptop'), updatedAt: LATER };
-  await pushOne(upsert('section', laptop, 2, ['body', 'updatedAt'])); // rev 4
+  await pushOne(upsert('section', laptop, 2, ['body', 'updatedAt']), 'Firefox on macOS'); // rev 4
   const phone = { ...section, body: PHONE_BODY, updatedAt: phoneTime };
   const result = await pushOne(upsert('section', phone, 2, ['body', 'updatedAt']));
   return { lesson, section, next, result };
@@ -147,10 +147,17 @@ describe('a section body changed on both sides', () => {
 
     const rows = await sectionsOf(lesson.id);
     expect(rows.map((r) => r.id)).toEqual([section.id, copyId, next.id]);
-    expect(rows[0]).toMatchObject({ body: PHONE_BODY, rev: 5n, conflictOf: null });
+    expect(rows[0]).toMatchObject({
+      body: PHONE_BODY,
+      rev: 5n,
+      conflictOf: null,
+      conflictDevice: null,
+    });
     expect(rows[1]).toMatchObject({
       body: bodyOf('typed on the laptop'),
       conflictOf: section.id,
+      // The stored body's device, from when the laptop pushed it.
+      conflictDevice: 'Firefox on macOS',
       parentId: null,
       createdAt: new Date(LATER),
       rev: 5n,
@@ -169,7 +176,11 @@ describe('a section body changed on both sides', () => {
       body: bodyOf('typed on the laptop'),
     });
     const copy = await storedSection(copyId);
-    expect(copy).toMatchObject({ body: PHONE_BODY, conflictOf: section.id });
+    expect(copy).toMatchObject({
+      body: PHONE_BODY,
+      conflictOf: section.id,
+      conflictDevice: 'Chrome on Android',
+    });
     // The copy is in the verse index like any section.
     const cited = await t.prisma.citation.findMany({ where: { sourceId: copyId } });
     expect(cited).toEqual([expect.objectContaining({ book: 'JHN', lessonId: lesson.id })]);

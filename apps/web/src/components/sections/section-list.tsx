@@ -13,6 +13,7 @@ import { useAutoPreview } from '@/components/verses/verse-preview.ts';
 import { VerseViewer } from '@/components/verses/verse-viewer.tsx';
 import {
   type RemovedSections,
+  keepConflictedCopy,
   removeSection,
   restoreSections,
   updateSection,
@@ -47,6 +48,8 @@ export interface SectionItem extends OutlineItem {
   stored: boolean;
   /** The stored row's; null for a draft. */
   updatedAt: string | null;
+  /** A conflicted copy's label (§6.4): the device that wrote it and when; null for any other. */
+  conflict: { of: string; device: string | null; time: string } | null;
 }
 export type SectionRow = OutlineRow<SectionItem>;
 
@@ -94,6 +97,8 @@ export interface SectionListApi {
   reply: (id: string) => void;
   /** Deletes at once with an Undo toast, or asks first when the section has replies. */
   remove: (id: string) => void;
+  /** "Keep this instead" on a conflicted copy: its text replaces its section's, and it goes. */
+  keepCopy: (id: string) => void;
   /** Whether the press that just ended was a drag, not a click. */
   wasDragged: () => boolean;
   backspaceEmpty: (id: string) => boolean;
@@ -169,10 +174,17 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
     const items: SectionItem[] = [
       ...stored
         .filter((s) => !removed.has(s.id))
-        .map((s) => ({ ...s, ...moves.get(s.id)?.placement, stored: true })),
+        .map((s) => ({
+          ...s,
+          ...moves.get(s.id)?.placement,
+          stored: true,
+          conflict: s.conflictOf
+            ? { of: s.conflictOf, device: s.conflictDevice, time: s.createdAt }
+            : null,
+        })),
       ...drafts
         .filter((d) => !storedById.has(d.id))
-        .map((d) => ({ ...d, body: emptyBody(), stored: false, updatedAt: null })),
+        .map((d) => ({ ...d, body: emptyBody(), stored: false, updatedAt: null, conflict: null })),
     ];
     return outline(items);
   }, [stored, storedById, drafts, moves, removed]);
@@ -405,6 +417,18 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
           created.current.add(section.id);
           focusAt(section.id, 'end');
         });
+      },
+      keepCopy: (id) => {
+        const of = rowOf(id)?.item.conflict?.of;
+        // Without its section, the copy stays as an ordinary section.
+        if (of && rowOf(of)) {
+          // The handle, not the text: an editor with focus doesn't take a stored change.
+          focusAt(of, 'handle');
+          setRemoved((r) => new Set(r).add(id));
+        } else {
+          focusAt(id, 'handle');
+        }
+        enqueue(() => keepConflictedCopy(id));
       },
       wasDragged,
       drop: (id, drop) => moveToTarget(id, drop, 'handle'),

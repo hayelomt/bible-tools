@@ -129,6 +129,7 @@ describe('action', () => {
         orderKey: keyBetween(),
         body: withChip(ROM_8_28),
         conflictOf: null,
+        conflictDevice: null,
       });
     });
     await action(db, (w) => w.update('section', section.id, { body: withChip(JHN_10_9) }));
@@ -214,6 +215,7 @@ describe('action', () => {
           orderKey: keyBetween(),
           body: withChip(JHN_10_9),
           conflictOf: null,
+          conflictDevice: null,
         });
         await w.updateSettings({ themePreset: 'olive' });
         throw new Error('the tab died');

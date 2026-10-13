@@ -43,6 +43,7 @@ beforeEach(async () => {
       orderKey: keyBetween(null, null),
       body: emptyBody(),
       conflictOf: null,
+      conflictDevice: null,
     },
     db,
   );
@@ -186,7 +187,10 @@ const newLesson = (title: string, date: string) =>
     db,
   );
 const newSection = (lessonId: string, orderKey: string, parentId: string | null = null) =>
-  createSection({ lessonId, parentId, orderKey, body: emptyBody(), conflictOf: null }, db);
+  createSection(
+    { lessonId, parentId, orderKey, body: emptyBody(), conflictOf: null, conflictDevice: null },
+    db,
+  );
 
 describe('tag page', () => {
   it('groups tagged sections and lessons by lesson, newest lesson first, sections in reading order', async () => {

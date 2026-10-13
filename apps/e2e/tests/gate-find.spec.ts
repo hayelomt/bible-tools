@@ -192,6 +192,7 @@ function seedMonth(tagIds: Map<string, string>): Seed {
         orderKey: keys[i],
         body,
         conflictOf: null,
+        conflictDevice: null,
       });
       seed.section.push(section);
       if (tag) {

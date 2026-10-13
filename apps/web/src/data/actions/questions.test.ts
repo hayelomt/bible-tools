@@ -111,6 +111,7 @@ describe('questions', () => {
         orderKey: keyBetween(null, null),
         body: emptyBody(),
         conflictOf: null,
+        conflictDevice: null,
       },
       db,
     );

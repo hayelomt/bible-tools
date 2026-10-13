@@ -83,6 +83,7 @@ describe('lessons', () => {
         orderKey: keyBetween(null, null),
         body: emptyBody(),
         conflictOf: null,
+        conflictDevice: null,
       });
       await w.create('sectionTag', { tagId: tag.id, sectionId: section.id });
       await w.create('lessonTag', { tagId: tag.id, lessonId: id });

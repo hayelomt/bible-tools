@@ -61,6 +61,7 @@ export const sectionRow = (lessonId: string, fields: object = {}): Row => ({
   orderKey: 'a0',
   body: bodyCiting(ROMANS_8_28),
   conflictOf: null,
+  conflictDevice: null,
   ...fields,
 });
 
@@ -107,10 +108,15 @@ export async function signUp(
   return { id, token: sessionCookie(res)?.token ?? '' };
 }
 
-export const push = (client: Client, account: Account | undefined, changes: object[]) =>
+export const push = (
+  client: Client,
+  account: Account | undefined,
+  changes: object[],
+  deviceName = 'Chrome on Android',
+) =>
   client.post(
     '/api/sync/push',
-    { deviceId: DEVICE_ID, deviceName: 'Chrome on Android', clientVersion: '0.0.0', changes },
+    { deviceId: DEVICE_ID, deviceName, clientVersion: '0.0.0', changes },
     account?.token,
   );
 
@@ -118,7 +124,8 @@ export async function pushOk(
   client: Client,
   account: Account,
   changes: object[],
+  deviceName?: string,
 ): Promise<PushResult[]> {
-  const res = await push(client, account, changes).expect(200);
+  const res = await push(client, account, changes, deviceName).expect(200);
   return pushResponseSchema.parse(res.body).results;
 }

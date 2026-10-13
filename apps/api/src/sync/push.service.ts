@@ -10,6 +10,7 @@ import {
   keyBetween,
   newId,
   type Outcome,
+  type SectionBody,
   PARENT_COLUMNS,
   type PushEnvelope,
   type PushResponse,
@@ -39,6 +40,12 @@ type RowChange = Exclude<Change, { entity: 'userSettings' }>;
 type SettingsChange = Extract<Change, { entity: 'userSettings' }>;
 type Rejected = Extract<PushResult, { status: 'rejected' }>;
 
+/** The pushing device: its id is recorded with each change, its name with each body it writes. */
+interface Device {
+  id: string;
+  name: string;
+}
+
 /** Prisma's codes for a unique, foreign key, check or not-null violation. */
 const CONSTRAINT_ERRORS = new Set(['P2002', 'P2003', 'P2004', 'P2011']);
 
@@ -60,10 +67,11 @@ export class PushService {
     assertSupportedClient(request.clientVersion);
     assertVerified(user);
     const chains = new Map<string, Chain>();
+    const device = { id: request.deviceId, name: request.deviceName };
     const results: PushResult[] = [];
     for (const change of request.changes) {
       const key = `${String(change.entity)}:${String(change.entityId ?? '')}`;
-      const result = await this.pushOne(user.id, request.deviceId, change, chains.get(key));
+      const result = await this.pushOne(user.id, device, change, chains.get(key));
       if (result.status === 'applied' && typeof change.baseRev === 'number') {
         chains.set(key, { baseRev: change.baseRev, rev: result.rev });
       } else {
@@ -76,12 +84,12 @@ export class PushService {
 
   private async pushOne(
     userId: string,
-    deviceId: string,
+    device: Device,
     raw: { changeId: string },
     chain: Chain | undefined,
   ): Promise<PushResult> {
     try {
-      return await this.prisma.$transaction((tx) => this.apply(tx, userId, deviceId, raw, chain));
+      return await this.prisma.$transaction((tx) => this.apply(tx, userId, device, raw, chain));
     } catch (error) {
       if (!(error instanceof Prisma.PrismaClientKnownRequestError)) throw error;
       if (!CONSTRAINT_ERRORS.has(error.code)) throw error;
@@ -94,7 +102,7 @@ export class PushService {
       return this.prisma.$transaction(
         async (tx) =>
           (await this.stored(tx, userId, raw.changeId)) ??
-          this.record(tx, userId, deviceId, rejection),
+          this.record(tx, userId, device.id, rejection),
       );
     }
   }
@@ -102,7 +110,7 @@ export class PushService {
   private async apply(
     tx: Tx,
     userId: string,
-    deviceId: string,
+    device: Device,
     raw: { changeId: string },
     chain: Chain | undefined,
   ): Promise<PushResult> {
@@ -118,7 +126,7 @@ export class PushService {
       return this.record(
         tx,
         userId,
-        deviceId,
+        device.id,
         reject(raw.changeId, SyncErrorCode.INVALID_CHANGE, describeIssues(parsed.error)),
       );
     }
@@ -127,13 +135,14 @@ export class PushService {
     const result =
       change.entity === 'userSettings'
         ? await this.applySettings(tx, userId, change, baseRev)
-        : await this.applyRow(tx, userId, change, baseRev);
-    return this.record(tx, userId, deviceId, result);
+        : await this.applyRow(tx, userId, device.name, change, baseRev);
+    return this.record(tx, userId, device.id, result);
   }
 
   private async applyRow(
     tx: Tx,
     userId: string,
+    deviceName: string,
     change: RowChange,
     baseRev: number,
   ): Promise<PushResult> {
@@ -167,9 +176,16 @@ export class PushService {
     }
 
     const rev = await this.nextRev(tx, userId);
-    await this.writeRow(tx, userId, entity, current, outcome.row, rev);
+    await this.writeRow(tx, userId, entity, current, outcome.row, rev, deviceName);
     const copyId = outcome.copy
-      ? await this.writeCopy(tx, userId, outcome.row as SyncRow<'section'>, outcome.copy, rev)
+      ? await this.writeCopy(tx, userId, outcome.row as SyncRow<'section'>, rev, {
+          ...outcome.copy,
+          // The stored body was written by the device that last changed it.
+          device:
+            outcome.copy.from === 'device'
+              ? deviceName
+              : ((current?.bodyDevice as string | null | undefined) ?? null),
+        })
       : undefined;
     const restored =
       outcome.keepsClientEdit && outcome.row.deletedAt === null
@@ -203,7 +219,7 @@ export class PushService {
     return resultOf(change.changeId, rev, outcome.resolution);
   }
 
-  /** Stores a row at `rev` and rebuilds its citations. */
+  /** Stores a row at `rev`, written by `device`, and rebuilds its citations. */
   private async writeRow(
     tx: Tx,
     userId: string,
@@ -211,6 +227,7 @@ export class PushService {
     current: StoredRow | null,
     row: SyncRow<RowEntity>,
     rev: bigint,
+    device: string | null,
   ): Promise<void> {
     const model = ENTITY_TABLES[entity].model(tx);
     const { id, ...columns } = toColumns(entity, row);
@@ -218,6 +235,7 @@ export class PushService {
     if (entity === 'section') {
       const sameBody = current !== null && sameJson(current.body, (row as SyncRow<'section'>).body);
       data.bodyRev = sameBody ? current.bodyRev : rev;
+      data.bodyDevice = sameBody ? current.bodyDevice : device;
     }
     if (current) await model.update({ where: { id: row.id }, data });
     else await model.create({ data: { ...data, id, userId } });
@@ -229,8 +247,8 @@ export class PushService {
     tx: Tx,
     userId: string,
     section: SyncRow<'section'>,
-    copy: NonNullable<Outcome<unknown>['copy']>,
     rev: bigint,
+    copy: { body: SectionBody; time: string; device: string | null },
   ): Promise<string> {
     const next = await tx.section.findFirst({
       where: {
@@ -245,7 +263,7 @@ export class PushService {
     });
     const orderKey = keyBetween(section.orderKey, next?.orderKey ?? null);
     const row = conflictedCopy(section, copy, newId(), orderKey);
-    await this.writeRow(tx, userId, 'section', null, row, rev);
+    await this.writeRow(tx, userId, 'section', null, row, rev, copy.device);
     return row.id;
   }
 

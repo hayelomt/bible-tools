@@ -91,6 +91,7 @@ describe('fillStoredSnapshots', () => {
         orderKey: keyBetween(null, null),
         body: body(jude2, john),
         conflictOf: null,
+        conflictDevice: null,
       },
       db,
     );

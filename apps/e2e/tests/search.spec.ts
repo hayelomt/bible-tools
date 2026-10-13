@@ -167,6 +167,7 @@ test('5,000 sections are indexed in under 1 s at a mid-range phone’s speed', a
             ],
           },
           conflictOf: null,
+          conflictDevice: null,
           ...meta,
         });
       }

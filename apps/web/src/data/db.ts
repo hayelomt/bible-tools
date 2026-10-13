@@ -118,6 +118,24 @@ export class LampDb extends Dexie {
           settings.look ??= 'classic';
         }),
     );
+    // `conflictDevice` added (§6.4), for queued section changes too: the server's schema needs it.
+    // Conflicted copies are indexed, so a lesson can count its own.
+    this.version(4)
+      .stores({ section: 'id, lessonId, parentId, conflictOf' })
+      .upgrade(async (tx) => {
+        await tx
+          .table('section')
+          .toCollection()
+          .modify((section: Partial<Section>) => {
+            section.conflictDevice ??= null;
+          });
+        await tx
+          .table('outbox')
+          .filter((entry: OutboxEntry) => entry.entity === 'section' && entry.op === 'upsert')
+          .modify((entry: OutboxEntry) => {
+            (entry as { row: Partial<Section> }).row.conflictDevice ??= null;
+          });
+      });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {

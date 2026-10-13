@@ -83,7 +83,7 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
 };
 
 /** Columns that never leave the server; `rev` travels beside the row. */
-const SERVER_COLUMNS = new Set(['userId', 'rev', 'bodyRev']);
+const SERVER_COLUMNS = new Set(['userId', 'rev', 'bodyRev', 'bodyDevice']);
 
 /** A stored row as the device has it, without `rev`: times become ISO strings, a date `YYYY-MM-DD`. */
 export function toRow<E extends EntityName>(stored: object): SyncRow<E> {

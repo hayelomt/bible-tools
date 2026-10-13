@@ -27,6 +27,7 @@ const section = (fields: Partial<SyncRow<'section'>> = {}): SyncRow<'section'> =
   orderKey: 'a0',
   body: text('base'),
   conflictOf: null,
+  conflictDevice: null,
   createdAt: EARLY,
   updatedAt: BASE,
   deletedAt: null,
@@ -139,7 +140,7 @@ describe('resolveUpsert', () => {
       expect(resolveUpsert({ ...both, server, incoming })).toEqual({
         row: { ...server, body: text('typed on the phone'), updatedAt: LATE },
         resolution: 'conflicted-copy',
-        copy: { body: text('typed on the laptop'), time: BASE },
+        copy: { body: text('typed on the laptop'), time: BASE, from: 'server' },
         keepsClientEdit: true,
       });
     });
@@ -149,7 +150,7 @@ describe('resolveUpsert', () => {
       expect(resolveUpsert({ ...both, server, incoming })).toEqual({
         row: server,
         resolution: 'conflicted-copy',
-        copy: { body: text('typed on the phone'), time: EARLY },
+        copy: { body: text('typed on the phone'), time: EARLY, from: 'device' },
         keepsClientEdit: true,
       });
     });
@@ -276,7 +277,7 @@ describe('conflictedCopy', () => {
     const orderKey = keyBetween('a0', 'a1');
     const copy = conflictedCopy(
       original,
-      { body: text('older'), time: EARLY },
+      { body: text('older'), time: EARLY, device: 'Firefox on macOS' },
       '0199e0a0-0000-7000-8000-00000000000e',
       orderKey,
     );
@@ -287,6 +288,7 @@ describe('conflictedCopy', () => {
       orderKey,
       body: text('older'),
       conflictOf: original.id,
+      conflictDevice: 'Firefox on macOS',
       createdAt: EARLY,
       updatedAt: EARLY,
       deletedAt: null,

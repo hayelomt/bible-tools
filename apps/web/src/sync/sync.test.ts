@@ -203,7 +203,14 @@ describe('the outbox', () => {
   it('merges edits queued one after another for one row, but not across another row', async () => {
     const lesson = await createLesson(LESSON, db);
     const section = await createSection(
-      { lessonId: lesson.id, parentId: null, orderKey: 'a0', body: body('I'), conflictOf: null },
+      {
+        lessonId: lesson.id,
+        parentId: null,
+        orderKey: 'a0',
+        body: body('I'),
+        conflictOf: null,
+        conflictDevice: null,
+      },
       db,
     );
     await db.outbox.clear();
@@ -213,7 +220,14 @@ describe('the outbox', () => {
     await updateSection(section.id, { orderKey: 'a1' }, db);
     await updateSection(section.id, { body: body('I am the door') }, db);
     await createSection(
-      { lessonId: lesson.id, parentId: null, orderKey: 'a2', body: body('2'), conflictOf: null },
+      {
+        lessonId: lesson.id,
+        parentId: null,
+        orderKey: 'a2',
+        body: body('2'),
+        conflictOf: null,
+        conflictDevice: null,
+      },
       db,
     );
     await updateSection(section.id, { body: body('I am the door.') }, db);
@@ -449,6 +463,7 @@ describe('a pulled page', () => {
       orderKey: 'a0',
       body: body('Forgiveness keeps no ledger'),
       conflictOf: null,
+      conflictDevice: null,
       createdAt: NOW,
       updatedAt: NOW,
       deletedAt: null,
@@ -537,6 +552,7 @@ describe('the engine', () => {
         orderKey: keys[0]!,
         body: body('A'),
         conflictOf: null,
+        conflictDevice: null,
       },
       other,
     );
@@ -819,6 +835,7 @@ describe('guests and devices (§6.6)', () => {
         orderKey: keys[0]!,
         body: body('P'),
         conflictOf: null,
+        conflictDevice: null,
       },
       db,
     );
@@ -829,6 +846,7 @@ describe('guests and devices (§6.6)', () => {
         orderKey: keys[0]!,
         body: body('C'),
         conflictOf: null,
+        conflictDevice: null,
       },
       db,
     );

@@ -3,10 +3,16 @@ import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { action } from '../action.ts';
 import { LampDb } from '../db.ts';
-import { lessonSections } from '../queries.ts';
+import { conflictCounts, lessonSections } from '../queries.ts';
 import { ensureDevice } from '../setup.ts';
 import { createLesson } from './lessons.ts';
-import { createSection, removeSection, restoreSections, updateSection } from './sections.ts';
+import {
+  createSection,
+  keepConflictedCopy,
+  removeSection,
+  restoreSections,
+  updateSection,
+} from './sections.ts';
 
 const text = (t: string): SectionBody => ({
   type: 'doc',
@@ -39,7 +45,16 @@ afterEach(async () => {
   await db.delete();
 });
 
-const section = (fields: { id?: string; parentId?: string | null; body?: SectionBody } = {}) =>
+const section = (
+  fields: {
+    id?: string;
+    parentId?: string | null;
+    orderKey?: string;
+    body?: SectionBody;
+    conflictOf?: string | null;
+    conflictDevice?: string | null;
+  } = {},
+) =>
   createSection(
     {
       lessonId,
@@ -47,6 +62,7 @@ const section = (fields: { id?: string; parentId?: string | null; body?: Section
       orderKey: keyBetween(null, null),
       body: emptyBody(),
       conflictOf: null,
+      conflictDevice: null,
       ...fields,
     },
     db,
@@ -117,5 +133,66 @@ describe('sections', () => {
     });
     expect((await db.sectionTag.toArray()).every((t) => t.deletedAt === null)).toBe(true);
     expect((await db.section.get(old.id))?.deletedAt).not.toBeNull();
+  });
+});
+
+const tagIds = async (sectionId: string) =>
+  (await db.sectionTag.where('sectionId').equals(sectionId).toArray())
+    .filter((t) => t.deletedAt === null)
+    .map((t) => t.tagId);
+
+describe('conflicted copies (§6.4)', () => {
+  it('"Keep this instead" moves the copy\'s text, replies and tags to its section', async () => {
+    const original = await section({ orderKey: 'a0', body: text('Jesus is the door') });
+    const copy = await section({
+      orderKey: 'a1',
+      body: text('Jesus is the gate'),
+      conflictOf: original.id,
+      conflictDevice: 'Firefox on macOS',
+    });
+    const [grace, hope] = await db.tag.limit(2).toArray();
+    await action(db, async (w) => {
+      await w.create('sectionTag', { tagId: grace!.id, sectionId: original.id });
+      await w.create('sectionTag', { tagId: grace!.id, sectionId: copy.id });
+      await w.create('sectionTag', { tagId: hope!.id, sectionId: copy.id });
+    });
+    const own = await section({ parentId: original.id, orderKey: 'a0', body: text('mine') });
+    const moved = await section({ parentId: copy.id, orderKey: 'a0', body: text('reply') });
+    expect((await conflictCounts(db)).get(lessonId)).toBe(1);
+    await db.outbox.clear();
+
+    await keepConflictedCopy(copy.id, db);
+
+    expect(await db.section.get(original.id)).toMatchObject({ body: text('Jesus is the gate') });
+    expect(await db.section.get(copy.id)).toMatchObject({ deletedAt: expect.any(String) });
+    const reply = await db.section.get(moved.id);
+    expect(reply).toMatchObject({ parentId: original.id });
+    expect(reply!.orderKey > own.orderKey).toBe(true);
+    expect((await tagIds(original.id)).toSorted()).toEqual([grace!.id, hope!.id].toSorted());
+    expect(await tagIds(copy.id)).toEqual([]);
+    expect((await conflictCounts(db)).get(lessonId)).toBeUndefined();
+    // One action: every write is queued to sync.
+    const queued = await db.outbox.toArray();
+    expect(queued.map((e) => `${e.entity}:${e.op}`)).toEqual(
+      expect.arrayContaining(['section:upsert', 'sectionTag:upsert', 'section:delete']),
+    );
+  });
+
+  it('a copy whose section was deleted becomes an ordinary section', async () => {
+    const original = await section({ orderKey: 'a0', body: text('door') });
+    const copy = await section({
+      orderKey: 'a1',
+      body: text('gate'),
+      conflictOf: original.id,
+      conflictDevice: null,
+    });
+    await removeSection(original.id, {}, db);
+    await keepConflictedCopy(copy.id, db);
+    expect(await db.section.get(copy.id)).toMatchObject({
+      body: text('gate'),
+      conflictOf: null,
+      conflictDevice: null,
+      deletedAt: null,
+    });
   });
 });

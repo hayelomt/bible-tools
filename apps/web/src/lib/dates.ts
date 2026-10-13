@@ -44,3 +44,28 @@ export function shortDate(date: string, now = new Date()): string {
 export function longDate(date: string): string {
   return withoutCommas(LONG.format(asUtc(date)));
 }
+
+const TIME = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+/**
+ * A moment in this device's time zone: "today 09:41", "yesterday 09:41" or "Sun 12 Oct 09:41".
+ * `joiner` goes between the day and the time ("today at 09:41").
+ */
+export function momentLabel(iso: string, now = new Date(), joiner = ' '): string {
+  const at = new Date(iso);
+  const day = today(at);
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const dayLabel =
+    day === today(now) ? 'today' : day === today(yesterday) ? 'yesterday' : shortDate(day, now);
+  return `${dayLabel}${joiner}${TIME.format(at)}`;
+}
+
+/** How long ago: "just now", "2 min ago", "3 h ago", then the moment ("yesterday 09:41"). */
+export function agoLabel(iso: string, now = new Date()): string {
+  const minutes = Math.floor((now.getTime() - Date.parse(iso)) / 60_000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 12 * 60) return `${Math.floor(minutes / 60)} h ago`;
+  return momentLabel(iso, now);
+}
