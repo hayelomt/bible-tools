@@ -24,6 +24,16 @@ const note = (page: Page) => page.getByRole('textbox', { name: 'Note', exact: tr
 const list = (page: Page) => page.getByRole('listbox', { name: 'Verse suggestions' });
 const option = (page: Page, name: string | RegExp) => list(page).getByRole('option', { name });
 
+/**
+ * Keeps a book from being fetched or downloaded, as if the connection went before it arrived.
+ * Returns what lets it through again.
+ */
+async function withoutBook(page: Page, code: string): Promise<() => Promise<void>> {
+  const url = `**/bible/WEB/${code}.*.json`;
+  await page.route(url, (route) => route.abort('internetdisconnected'));
+  return () => page.unroute(url);
+}
+
 async function startLesson(page: Page) {
   await page.goto('/');
   await newLesson(page, 'Romans 8');
@@ -35,6 +45,7 @@ test('references complete into chips with their WEB text, offline too', async ({
   page,
   context,
 }) => {
+  await withoutBook(page, '1JN');
   await startLesson(page);
   await page.keyboard.type('Paul says in Rom 8:28-30');
   await expect(option(page, /^Romans 8:28–30/)).toHaveAttribute('aria-selected', 'true');
@@ -174,11 +185,23 @@ test('a chip opens the text it captured, which never changes', async ({ page }) 
   await expect(note(page)).toHaveText('Romans 8:28 · WEB and more');
   await expect.poll(() => chips(page)).toHaveLength(1);
 
-  // The WEB text changes (a corrected edition, say): the chip keeps what it captured.
-  await page.route('**/bible/WEB/ROM.*.json', async (route) => {
-    const book = (await (await route.fetch()).json()) as { c: string[][] };
-    book.c[7]![27] = 'A corrected verse.';
-    await route.fulfill({ json: book });
+  // The WEB text changes (a corrected edition, say: a new file for the book in the manifest): the
+  // chip keeps what it captured.
+  await page.route('**/bible/manifest.json', async (route) => {
+    const manifest = (await (await route.fetch()).json()) as {
+      translations: { WEB: { books: { ROM: { file: string } } } };
+    };
+    const rom = manifest.translations.WEB.books.ROM;
+    const original = `/bible/${rom.file}`;
+    await page.route('**/bible/WEB/ROM.corrected.json', async (book) => {
+      const text = (await (await page.request.get(original)).json()) as {
+        c: string[][];
+      };
+      text.c[7]![27] = 'A corrected verse.';
+      await book.fulfill({ json: text });
+    });
+    rom.file = 'WEB/ROM.corrected.json';
+    await route.fulfill({ json: manifest });
   });
   await page.reload();
   await chip(page, 'Romans 8:28').click();
@@ -228,10 +251,11 @@ test('from the keyboard: arrow onto a chip, Enter opens it, Backspace deletes it
   await expect.poll(() => chips(page)).toEqual([]);
 });
 
-test('a chip inserted before its book was downloaded says its text is coming', async ({
+test('a chip inserted before its book was downloaded gets its text when it arrives', async ({
   page,
   context,
 }) => {
+  const letThrough = await withoutBook(page, '1JN');
   await startLesson(page);
   await context.setOffline(true);
   await page.keyboard.type('1 Jn 3');
@@ -240,6 +264,24 @@ test('a chip inserted before its book was downloaded says its text is coming', a
   await expect(viewer(page)).toContainText(
     'Text not downloaded yet. It’s added when the Bible is downloaded.',
   );
+  await page.keyboard.press('Escape');
+  await expect
+    .poll(() => chips(page))
+    .toEqual([expect.not.objectContaining({ snapshotText: expect.anything() })]);
+
+  // Back online, the download goes on; the chip gets its text, in the note and as stored.
+  await letThrough();
+  await context.setOffline(false);
+  await expect
+    .poll(() => chips(page), { timeout: 15_000 })
+    .toEqual([
+      expect.objectContaining({
+        display: '1 John 3',
+        snapshotText: expect.stringMatching(/^See how great a love the Father has given to us/),
+      }),
+    ]);
+  await chip(page, '1 John 3').click();
+  await expect(viewer(page)).toContainText('See how great a love the Father');
 });
 
 test.describe('on a phone', () => {

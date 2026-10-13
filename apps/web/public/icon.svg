@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Lamp's icon: a clay oil lamp, in Parchment's colours (Psalm 119:105). The glyph stays inside
+       the maskable safe zone, a circle of 40% radius. -->
+  <rect width="512" height="512" fill="#f9f2e2"/>
+  <g transform="translate(256 256) scale(1.15) translate(-251 -290)">
+    <path d="M370 196c26 40 32 72 0 94c-32-22-26-54 0-94z" fill="#f4a437"/>
+    <path d="M370 242c11 18 13 32 0 41c-13-9-11-23 0-41z" fill="#fbd98a"/>
+    <path d="M160 312c-46-12-50 50 2 38" fill="none" stroke="#892934" stroke-width="18" stroke-linecap="round"/>
+    <path d="M150 315c0-46 52-56 104-44l110 24c28 6 30 30 4 36l-114 30c-56 14-104 0-104-46z" fill="#892934"/>
+    <ellipse cx="236" cy="290" rx="30" ry="9" fill="#5c1a22"/>
+    <path d="M200 356h76l-8 26h-60z" fill="#892934"/>
+  </g>
+</svg>

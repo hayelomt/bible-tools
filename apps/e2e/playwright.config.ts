@@ -19,6 +19,9 @@ export default defineConfig({
     // `vite preview` serves the built web app and proxies /api to the API below.
     baseURL: WEB_URL,
     trace: 'retain-on-failure',
+    // Requests go straight to the network, where `page.route` sees them; offline.spec.ts turns
+    // the service worker on.
+    serviceWorkers: 'block',
   },
   // Chromium only; Safari/iPhone is checked by hand on a real device.
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

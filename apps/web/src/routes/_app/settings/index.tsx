@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { ApiStatus } from '@/components/api-status.tsx';
+import { BibleStatus } from '@/components/bible-status.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
+import { StorageStatus } from '@/components/storage-status.tsx';
 import { ThemeSheet } from '@/components/theme-sheet.tsx';
 import { useSettings } from '@/data/use-settings.ts';
 import packageJson from '../../../../package.json' with { type: 'json' };
@@ -28,6 +30,12 @@ function Settings() {
           <ModeControl value={settings.colorMode} />
         </PageSection>
       )}
+      <PageSection title="Bible">
+        <BibleStatus />
+      </PageSection>
+      <PageSection title="Storage">
+        <StorageStatus />
+      </PageSection>
       <PageSection title="About">
         <p className="text-sm">
           Lamp {packageJson.version} · MIT licence ·{' '}

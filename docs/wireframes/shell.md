@@ -152,6 +152,12 @@ waits for it, except opening a chapter that isn't stored yet.
 │ It continues when you're online.     │
 ```
 
+Once every book is stored, the row shows its size and ✓, as in Settings above. A browser that
+can't keep files for offline use (not a secure context) says "This browser can't keep it for
+offline use; books load as they're opened." The storage row says "kept by the browser" once
+`storage.persist()` is granted, otherwise "the browser may clear it if the device runs low on
+space".
+
 In the reader, a book that hasn't arrived yet shows the loading state from
 [states.md](states.md#loading).
 

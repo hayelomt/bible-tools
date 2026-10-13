@@ -1,7 +1,15 @@
-import { TRANSLATION_NAMES, type TranslationId, type VerseRef } from '@lamp/domain';
+import type { BookText } from '@lamp/bible-data';
+import {
+  type BookCode,
+  DEFAULT_TRANSLATION,
+  TRANSLATION_NAMES,
+  type TranslationId,
+  type VerseRef,
+} from '@lamp/domain';
 import { type Editor, Extension, type NodeViewRenderer } from '@tiptap/core';
 import { NodeSelection, Selection } from '@tiptap/pm/state';
 import { useSyncExternalStore } from 'react';
+import { onBookArrived, snapshotText, whenBook } from '@/data/bible.ts';
 
 /** The chip open in the viewer, and where focus goes back to when it closes. */
 export interface OpenChip {
@@ -123,4 +131,57 @@ function openSelected({ editor }: { editor: Editor }): boolean {
   if (!(anchor instanceof HTMLElement)) return false;
   openChip(editor, anchor, selection.node.attrs as VerseRef);
   return true;
+}
+
+/**
+ * A chip inserted before its book was here (still on its way, or not downloaded yet while offline)
+ * holds no text; when the book arrives, it gets its snapshot (M2-11). Stored sections that aren't
+ * open get theirs from `fillStoredSnapshots`.
+ */
+export const VerseSnapshots = Extension.create<unknown, { stop?: () => void }>({
+  name: 'verseSnapshots',
+
+  addStorage() {
+    return {};
+  },
+
+  onCreate() {
+    const { editor } = this;
+    this.storage.stop = onBookArrived((code) => {
+      if (!waitingFor(editor, code)) return;
+      void whenBook(code).then((text) => text && fillSnapshots(editor, code, text));
+    });
+  },
+
+  onDestroy() {
+    this.storage.stop?.();
+  },
+});
+
+function isWaiting(ref: VerseRef, code: BookCode): boolean {
+  return ref.book === code && !ref.snapshotText && ref.translation === DEFAULT_TRANSLATION;
+}
+
+function waitingFor(editor: Editor, code: BookCode): boolean {
+  let found = false;
+  editor.state.doc.descendants((node) => {
+    if (node.type.name === 'verse' && isWaiting(node.attrs as VerseRef, code)) found = true;
+    return !found;
+  });
+  return found;
+}
+
+function fillSnapshots(editor: Editor, code: BookCode, text: BookText) {
+  if (editor.isDestroyed) return;
+  const { tr } = editor.state;
+  editor.state.doc.descendants((node, pos) => {
+    const ref = node.attrs as VerseRef;
+    if (node.type.name !== 'verse' || !isWaiting(ref, code)) return;
+    // The node has every attribute, unset ones as null; a passage leaves them out.
+    const passage = Object.fromEntries(Object.entries(ref).filter(([, v]) => v !== null));
+    const snapshot = snapshotText(text, passage as VerseRef);
+    if (snapshot) tr.setNodeAttribute(pos, 'snapshotText', snapshot);
+  });
+  // Not a step of its own for Undo: it completes the insert.
+  if (tr.docChanged) editor.view.dispatch(tr.setMeta('addToHistory', false));
 }

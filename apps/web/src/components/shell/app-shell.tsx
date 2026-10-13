@@ -7,6 +7,8 @@ import { BottomNav } from './bottom-nav.tsx';
 import { ScreenHeader } from './screen-header.tsx';
 import { Sidebar } from './sidebar.tsx';
 import { ShellSlots, useSlotRef } from './slots.tsx';
+import { UpdatePrompt } from './update-prompt.tsx';
+import { isTyping } from '@/lib/is-typing.ts';
 import { newLessonTarget } from '@/lib/new-lesson.ts';
 
 /**
@@ -33,6 +35,7 @@ export function AppShell() {
         <BottomNav />
       </div>
       <AppToaster />
+      <UpdatePrompt />
     </ShellSlots>
   );
 }
@@ -79,9 +82,4 @@ function useShortcuts() {
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [navigate]);
-}
-
-function isTyping(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
 }

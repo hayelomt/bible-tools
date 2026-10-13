@@ -36,6 +36,9 @@ export class RowNotFoundError extends Error {
   }
 }
 
+/** Actions being written. */
+const inFlight = new Set<Promise<unknown>>();
+
 /**
  * Runs `run` as one user action (TECH-DESIGN §6.1, §8.2): a single Dexie transaction that writes
  * the entity tables, their derived citations and the outbox entries together. If anything throws,
@@ -44,11 +47,27 @@ export class RowNotFoundError extends Error {
  * `run` must only await Dexie calls: awaiting anything else (fetch, timers) ends the transaction.
  */
 export function action<T>(db: LampDb, run: (writer: Writer) => Promise<T>): Promise<T> {
-  return db.transaction('rw', db.tables, async () => {
+  const write = db.transaction('rw', db.tables, async () => {
     const state = await db.syncState.get(SYNC_STATE_KEY);
     const now = new Date(Date.now() + (state?.clockOffsetMs ?? 0)).toISOString();
     return run(new TransactionWriter(db, now));
   });
+  inFlight.add(write);
+  const done = () => inFlight.delete(write);
+  void write.then(done, done);
+  return write;
+}
+
+/**
+ * Resolves once no action is being written, including ones queued behind those running now (a
+ * section's writes run one after another). The page waits for this before it reloads.
+ */
+export async function writesSettled(): Promise<void> {
+  while (inFlight.size > 0) {
+    await Promise.allSettled(inFlight);
+    // A queued write starts once the one before it is done.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
 }
 
 class TransactionWriter implements Writer {

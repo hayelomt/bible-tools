@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // `/api` goes to the API (`pnpm dev`: :3000). The E2E run points it at its own API instance.
 const apiUrl = process.env.LAMP_API_URL ?? 'http://127.0.0.1:3000';
@@ -44,6 +45,47 @@ function bibleText(): Plugin {
   };
 }
 
+/**
+ * The PWA (TECH-DESIGN §8.6): `src/sw.ts` precaches the app shell, built with the list of files
+ * Workbox injects. The Bible files are left out: the app downloads them in the background into
+ * their own cache (src/data/bible-download.ts). A new version waits for the user (`UpdatePrompt`).
+ */
+function pwa() {
+  return VitePWA({
+    strategies: 'injectManifest',
+    srcDir: 'src',
+    filename: 'sw.ts',
+    registerType: 'prompt',
+    // Registered by `UpdatePrompt`.
+    injectRegister: false,
+    injectManifest: {
+      globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+      // The Literata subsets for other scripts load only when such text shows; offline it falls
+      // back to the next font.
+      globIgnores: ['bible/**', '**/literata-{cyrillic,greek,vietnamese}*'],
+    },
+    // Already matched by the patterns above.
+    includeManifestIcons: false,
+    manifest: {
+      name: 'Lamp',
+      short_name: 'Lamp',
+      description: 'Sermon and Bible study notes, on your device and offline.',
+      lang: 'en',
+      start_url: '/',
+      scope: '/',
+      display: 'standalone',
+      // Parchment, the default theme.
+      background_color: '#f9f2e2',
+      theme_color: '#f9f2e2',
+      icons: [
+        { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    },
+  });
+}
+
 export default defineConfig({
   // The router plugin generates src/routeTree.gen.ts and must run before the React plugin.
   plugins: [
@@ -51,6 +93,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     bibleText(),
+    pwa(),
   ],
   resolve: {
     alias: { '@': fileURLToPath(new URL('src', import.meta.url)) },

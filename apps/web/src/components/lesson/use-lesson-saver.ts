@@ -2,6 +2,7 @@ import type { Lesson } from '@lamp/domain';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RowNotFoundError, type RowPatch } from '@/data/action.ts';
 import { createLesson, type LessonFields, updateLesson } from '@/data/actions/lessons.ts';
+import { requestPersistence } from '@/data/storage.ts';
 
 /** Typing settles for this long before it's stored (TECH-DESIGN §8.3 uses the same for notes). */
 export const SAVE_DELAY_MS = 500;
@@ -59,6 +60,7 @@ export function useLessonSaver(
         } else if (draftRef.current.title.trim()) {
           await createLesson({ ...draftRef.current, id });
           stored.current = true;
+          void requestPersistence();
         }
       })
       .catch((error: unknown) => {

@@ -3,8 +3,10 @@
   "compilerOptions": {
     "lib": ["es2024", "dom", "dom.iterable"],
     "jsx": "react-jsx",
-    "types": ["vite/client", "node"],
+    "types": ["vite/client", "node", "vite-plugin-pwa/react"],
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src", "*.config.ts"]
+  "include": ["src", "*.config.ts"],
+  // The service worker has its own globals (tsconfig.sw.json).
+  "exclude": ["src/sw.ts"]
 }

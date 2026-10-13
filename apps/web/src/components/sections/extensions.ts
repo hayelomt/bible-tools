@@ -2,7 +2,7 @@ import { type Editor, Extension, type Extensions, mergeAttributes, Node } from '
 import { Placeholder } from '@tiptap/extensions';
 import { Selection } from '@tiptap/pm/state';
 import { StarterKit } from '@tiptap/starter-kit';
-import { VerseChipKeys, verseChipView } from '@/components/verses/verse-chip.ts';
+import { VerseChipKeys, verseChipView, VerseSnapshots } from '@/components/verses/verse-chip.ts';
 import { VerseSuggestion } from '@/components/verses/verse-suggestion.ts';
 
 /**
@@ -196,6 +196,7 @@ export function sectionExtensions(options: {
     Verse,
     VerseSuggestion,
     VerseChipKeys,
+    VerseSnapshots,
     sectionKeys(options.handlers),
   ];
 }
