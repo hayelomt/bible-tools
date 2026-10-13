@@ -9,54 +9,150 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppSplatRouteImport } from './routes/_app/$'
+import { Route as AppReadRouteImport } from './routes/_app/read'
+import { Route as AppReviewRouteImport } from './routes/_app/review'
+import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as DevThemesRouteImport } from './routes/dev.themes'
+import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 
-const IndexRoute = IndexRouteImport.update({
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSplatRoute = AppSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReadRoute = AppReadRouteImport.update({
+  id: '/read',
+  path: '/read',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReviewRoute = AppReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSearchRoute = AppSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppRoute,
 } as any)
 const DevThemesRoute = DevThemesRouteImport.update({
   id: '/dev/themes',
   path: '/dev/themes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
+  '/$': typeof AppSplatRoute
+  '/read': typeof AppReadRoute
+  '/review': typeof AppReviewRoute
+  '/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
+  '/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/$': typeof AppSplatRoute
+  '/read': typeof AppReadRoute
+  '/review': typeof AppReviewRoute
+  '/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
+  '/': typeof AppIndexRoute
+  '/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/_app/$': typeof AppSplatRoute
+  '/_app/read': typeof AppReadRoute
+  '/_app/review': typeof AppReviewRoute
+  '/_app/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dev/themes'
+  fullPaths:
+    '/' | '/$' | '/read' | '/review' | '/search' | '/dev/themes' | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dev/themes'
-  id: '__root__' | '/' | '/dev/themes'
+  to: '/$' | '/read' | '/review' | '/search' | '/dev/themes' | '/' | '/settings'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/_app/$'
+    | '/_app/read'
+    | '/_app/review'
+    | '/_app/search'
+    | '/dev/themes'
+    | '/_app/'
+    | '/_app/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   DevThemesRoute: typeof DevThemesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/$': {
+      id: '/_app/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AppSplatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/read': {
+      id: '/_app/read'
+      path: '/read'
+      fullPath: '/read'
+      preLoaderRoute: typeof AppReadRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/review': {
+      id: '/_app/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AppReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/search': {
+      id: '/_app/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof AppRoute
     }
     '/dev/themes': {
       id: '/dev/themes'
@@ -65,11 +161,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevThemesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/settings/': {
+      id: '/_app/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppSplatRoute: typeof AppSplatRoute
+  AppReadRoute: typeof AppReadRoute
+  AppReviewRoute: typeof AppReviewRoute
+  AppSearchRoute: typeof AppSearchRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppSplatRoute: AppSplatRoute,
+  AppReadRoute: AppReadRoute,
+  AppReviewRoute: AppReviewRoute,
+  AppSearchRoute: AppSearchRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   DevThemesRoute: DevThemesRoute,
 }
 export const routeTree = rootRouteImport

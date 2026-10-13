@@ -17,6 +17,7 @@
     "@lamp/ui": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
+    "cn": "catalog:",
     "dexie": "catalog:",
     "dexie-react-hooks": "catalog:",
     "lucide-react": "catalog:",

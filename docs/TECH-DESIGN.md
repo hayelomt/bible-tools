@@ -270,6 +270,12 @@ React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui (in `packages/ui`), **Tan
 - **File-based routes** in `apps/web/src/routes`; the router Vite plugin writes `src/routeTree.gen.ts` on `dev` and `build`. The file is committed so typecheck works without a build, and is excluded from lint and Prettier.
 - Vite serves on `:5173` and proxies `/api` to `LAMP_API_URL` (default `http://127.0.0.1:3000`); `vite preview` (`:4173`) reuses the proxy.
 
+*Shell, built in M2-02:*
+- Every screen is a child of the pathless layout route `_app` (`src/routes/_app/`), which renders the shell: a top bar and a bottom bar under 1024 px, a sidebar from 1024 px, and the screen in a column of at most 42 rem. `/dev/themes` sits outside it. The layout's `beforeLoad` runs the device's first-run setup (`ensureDevice`, §6.1) before any screen shows.
+- A screen names itself with `staticData: { title, back? }`. The shell renders the title as the screen's only `h1`, and `back` adds `←` (and hides the phone's sync status and settings button, as on the wireframes' sub-screens).
+- The router's default error and not-found components render in place of the screen, so the navigation stays; a catch-all route (`_app/$`) keeps unknown addresses inside the shell. The error screen offers Reload and "Copy error details".
+- Read, Search and Review show one muted line until their milestones; Settings has the account section (text only for a guest until M3-05) and About, which also shows the server status from `/api/health`.
+
 *Screens* follow [UX-PATTERNS.md](UX-PATTERNS.md) and its wireframes (M1-14): bottom bar under 1024 px and sidebar above, 44 px touch targets on touch screens (enforced in `globals.css`), autosave with no Save buttons, undo for single deletes and a confirmation for anything larger.
 
 ### 8.2 Data flow
