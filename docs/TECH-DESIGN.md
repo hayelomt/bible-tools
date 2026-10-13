@@ -65,7 +65,8 @@ Principles:
 bible-tool/
 ├─ apps/
 │  ├─ web/            React 19 + Vite PWA (Dexie, TipTap, TanStack Router)
-│  └─ api/            NestJS 12 (ESM) + Prisma 7
+│  ├─ api/            NestJS 12 (ESM) + Prisma 7
+│  └─ e2e/            Playwright tests against the built web app and API
 ├─ packages/
 │  ├─ domain/         pure TS, no DOM or Node APIs: books, VerseRef, parser,
 │  │                  citation ordinals, fractional order, doc model, SM-2,
@@ -212,7 +213,7 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 
 | Module | Endpoints |
 |---|---|
-| `health` | `GET /api/health`: version, DB reachable |
+| `health` | `GET /api/health`: version, DB reachable (503 `SERVICE_UNAVAILABLE` when not) |
 | `auth` | `POST /api/auth/signup`, `/login`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password`, `/change-password`; `GET /api/auth/me` |
 | `sync` | `POST /api/sync/push`, `GET /api/sync/pull` |
 | `account` | `GET /api/account/devices`, `DELETE /api/account/devices/:id`, `DELETE /api/account` (deletes the account and all data) |
@@ -299,7 +300,8 @@ NestJS dependency injection reads `design:paramtypes` metadata. The API's `vites
 ### 10.2 Test databases (no Docker)
 - `scripts/dev-db.sh` (idempotent) uses the local Postgres (Postgres.app 18 on macOS, the distro package on Linux) to create the role `lamp` and the databases `lamp_dev`, `lamp_test` and `lamp_e2e`, and writes the connection strings to `apps/api/.env.local` and `.env.test`. Only creating the role needs an admin: the script uses `$PG_ADMIN` if set, else your own user when it is a superuser or has `CREATEROLE` (Postgres.app), else `sudo -u postgres psql` (the Linux package). Everything else runs as `lamp`, which has `CREATEDB` for Prisma's shadow database. `.env.test` also holds `E2E_DATABASE_URL` for Playwright.
 - **Integration tests:** a Vitest `globalSetup` runs `prisma migrate reset --force` on `lamp_test` once per run (Prisma 7 no longer seeds on reset), after checking that the database name ends in `_test`. Prisma refuses to reset when an AI agent runs it unless `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION` carries the user's consent; Turbo passes `PRISMA_*` through for `test:int`. Each test file then truncates all tables in `beforeEach` (one `TRUNCATE … RESTART IDENTITY CASCADE`). Test files run one at a time (`fileParallelism: false`). If the suite gets slow, switch to one database per Vitest worker, cloned from a migrated template database.
-- **E2E:** Playwright's `globalSetup` resets `lamp_e2e`, then starts the built API and `vite preview` through `webServer`.
+- **API integration tests** boot the real `AppModule` with `createTestApp()` (`apps/api/test/int/app.ts`) and call it through supertest; `test/health.int.test.ts` is the pattern (one app per file, `truncateAll` in `beforeEach`).
+- **E2E** (`apps/e2e`, `pnpm e2e`): `turbo run e2e` builds the workspace dependencies first, then Playwright starts the built API (`node dist/main.js` on `:3100`, so a running `pnpm dev` is never reused) and `vite preview` through `webServer`, and its `globalSetup` resets `lamp_e2e` (Playwright starts the web servers before the global setup; the API only connects on its first query). The database URL comes from `E2E_DATABASE_URL`, else `apps/api/.env.test`, and must name a `*_e2e` database. Tests run one worker at a time against the one database. Projects: Chromium (desktop) and WebKit (iPhone).
 - **CI (GitHub Actions):** installs PostgreSQL 18 from the PGDG apt repository on the Ubuntu runner and starts it, with no containers, so CI matches local and production. Jobs are lint + typecheck, unit, integration, and E2E (Chromium, plus WebKit for the iPhone path), all through Turbo with remote caching off.
 
 ## 11. Deployment (VPS)

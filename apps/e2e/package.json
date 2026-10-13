@@ -1,0 +1,20 @@
+{
+  "name": "@lamp/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright end-to-end tests: the built web app and API on the local lamp_e2e database",
+  "scripts": {
+    "e2e": "playwright test",
+    "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings tests *.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@lamp/api": "workspace:*",
+    "@lamp/config": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

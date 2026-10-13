@@ -7,3 +7,6 @@ dist/
 .turbo/
 coverage/
 **/src/generated/
+test-results/
+playwright-report/
+blob-report/

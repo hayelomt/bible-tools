@@ -12,6 +12,7 @@ export const ErrorCode = {
   UPGRADE_REQUIRED: 'UPGRADE_REQUIRED',
   TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -49,6 +50,7 @@ const codeByStatus: Partial<Record<number, ErrorCode>> = {
   [HttpStatus.PAYLOAD_TOO_LARGE]: ErrorCode.PAYLOAD_TOO_LARGE,
   [426]: ErrorCode.UPGRADE_REQUIRED,
   [HttpStatus.TOO_MANY_REQUESTS]: ErrorCode.TOO_MANY_REQUESTS,
+  [HttpStatus.SERVICE_UNAVAILABLE]: ErrorCode.SERVICE_UNAVAILABLE,
 };
 
 export function errorCodeForStatus(status: number): string {

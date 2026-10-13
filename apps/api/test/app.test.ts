@@ -6,6 +6,7 @@ import pkg from '../package.json' with { type: 'json' };
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 import { ApiException, ErrorCode } from '../src/common/errors.js';
+import { PrismaService } from '../src/prisma/prisma.service.js';
 
 @Controller('boom')
 class BoomController {
@@ -32,7 +33,11 @@ describe('API app', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
       controllers: [BoomController],
-    }).compile();
+    })
+      // Unit tests have no database; the integration suite runs the real one (test/*.int.test.ts).
+      .overrideProvider(PrismaService)
+      .useValue({ $queryRaw: async () => [] })
+      .compile();
     // No logger: the crash test would print its expected stack trace.
     app = moduleRef.createNestApplication({ logger: false });
     configureApp(app);

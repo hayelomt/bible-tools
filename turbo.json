@@ -27,7 +27,9 @@
       "passThroughEnv": ["DATABASE_URL", "PRISMA_*"]
     },
     "e2e": {
-      "cache": false
+      "dependsOn": ["^build"],
+      "cache": false,
+      "passThroughEnv": ["E2E_DATABASE_URL", "PRISMA_*", "CI"]
     }
   }
 }
