@@ -1,5 +1,7 @@
 import {
+  type ChangePasswordRequest,
   type ForgotPasswordRequest,
+  changePasswordRequestSchema,
   type LoginRequest,
   type MeResponse,
   type ResetPasswordRequest,
@@ -14,8 +16,8 @@ import {
 import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
-import type { User } from '../generated/prisma/client.js';
-import { CurrentUser, Public } from './auth.decorators.js';
+import type { Session, User } from '../generated/prisma/client.js';
+import { CurrentSession, CurrentUser, Public } from './auth.decorators.js';
 // Value imports, not `import type`: Nest resolves the constructor parameters from their classes.
 import { AuthService, type SignedIn, toMe } from './auth.service.js';
 import { SessionsService, readSessionToken } from './sessions.service.js';
@@ -102,6 +104,18 @@ export class AuthController {
     @Body({ schema: resetPasswordRequestSchema }) body: ResetPasswordRequest,
   ): Promise<void> {
     await this.auth.resetPassword(body);
+  }
+
+  /** Keeps this session and ends the others. Throttled like login: it checks a password. */
+  @UseGuards(ThrottlerGuard)
+  @Post('change-password')
+  @HttpCode(204)
+  async changePassword(
+    @Body({ schema: changePasswordRequestSchema }) body: ChangePasswordRequest,
+    @CurrentUser() user: User,
+    @CurrentSession() session: Session,
+  ): Promise<void> {
+    await this.auth.changePassword(user, session.id, body);
   }
 
   private signIn(res: Response, { me, session }: SignedIn): MeResponse {

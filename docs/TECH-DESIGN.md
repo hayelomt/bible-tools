@@ -239,14 +239,20 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 | `health` | `GET /api/health`: version, DB reachable (503 `SERVICE_UNAVAILABLE` when not) |
 | `auth` | `POST /api/auth/signup`, `/login`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password`, `/change-password`; `GET /api/auth/me` |
 | `sync` | `POST /api/sync/push`, `GET /api/sync/pull` |
-| `account` | `GET /api/account/devices`, `DELETE /api/account/devices/:id`, `DELETE /api/account` (deletes the account and all data; the body carries the current password, checked again) |
-| `admin` (CLI only) | `nest-commander` commands: `user:create`, `user:disable`, `user:verify`. Phase 1 has no admin UI. |
+| `account` | `GET /api/account/devices`, `DELETE /api/account/devices/:id`, `DELETE /api/account` (deletes the account and all data; the body carries the current password, checked again; §7.2) |
+| `admin` (CLI only) | `nest-commander` commands: `user:create`, `user:disable`, `user:enable`, `user:verify`. Phase 1 has no admin UI. |
 
 - **Validation:** `@Body({ schema })` and `@Query({ schema })` with `StandardSchemaValidationPipe`, using Zod schemas from `packages/domain`. Responses are typed with the same schemas.
 - **Errors:** one shape, `{ errorCode, message, details? }`, using the `errorCode` that NestJS 12 adds to `HttpException`.
 - **Data access:** a `PrismaService` wraps the generated client (`@prisma/adapter-pg`). Every repository method takes `userId` as its first argument. Integration tests check that one user can never read or write another user's rows (§10.2).
 - **Config:** `@nestjs/config` with a Zod `validationSchema`. The app refuses to start if `.env` is invalid.
 - **Logging:** the NestJS `ConsoleLogger` with structured params, written as JSON to journald in production. Request bodies are never logged.
+
+*Admin CLI, built in M3-04 (`apps/api/src/cli.ts`, `src/admin`):*
+- **Entry:** `CommandFactory.run(CliModule)`. `CliModule` loads the same validated config and `PrismaModule` as the API, and nothing of HTTP (no guards, throttles or mail). `nest build` compiles it next to `main.js` as `dist/cli.js`; `pnpm cli` builds, then runs it (README). The bundled release (M7-02) has to ship it too.
+- **Commands** take the email (citext, so any case). `user:create` sets the role (`--role`, checked in the command, since nest-commander lists choices without enforcing them) and marks the email verified, since the admin vouches for it; it ignores `SIGNUP_ENABLED` and applies the sign-up schema and the common-password list. `user:disable` sets `disabledAt` and deletes the account's sessions in one transaction; `user:enable` undoes it (added so a mistaken disable needs no SQL). Repeating a command reports that nothing changed and succeeds.
+- **The password** is never an argument (shell history). At a terminal it is asked twice, masked (nest-commander's `InquirerService`); otherwise it is the first line of stdin. `PasswordInput` is the one seam, replaced in the integration tests (`admin.int.test.ts`).
+- **Errors:** a `CliError` prints its message alone and exits 1; anything else prints in full.
 
 ### 7.2 Auth
 - **Passwords:** argon2id (`@node-rs/argon2`), at least 10 characters, checked against the zxcvbn-ts common-password list.
@@ -263,6 +269,11 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 - **Lockout and rate limits:** five failed logins for one email within 15 minutes lock that email for 15 minutes (`429 ACCOUNT_LOCKED` with `retryAfterSeconds`), whether or not an account has it. `@nestjs/throttler` allows 30 requests per IP and 10 per email in 15 minutes to sign-up, login and the email endpoints (§7.3) (`429 TOO_MANY_REQUESTS`). Both are in memory: the API is one process, and a restart only forgets the counts. `trust proxy` is `loopback`, so `req.ip` is the client behind Caddy.
 - **Validation:** a global `StandardSchemaValidationPipe` answers `400 VALIDATION_FAILED` with `details.issues` (path and message, never the value sent).
 - **Sign-up** creates only the user and its session, and sends the verification email (§7.3). The default settings and seeded tags for the account come with the guest data in M3-10, so a guest's own settings and tags aren't overwritten by server defaults.
+
+*Built in M3-03 (`apps/api/src/auth`, `src/account`):*
+- **Asking for the password again** (`AuthService.confirmPassword`): a wrong answer is `403 WRONG_PASSWORD`, not `401`, so the app doesn't take it for a lost session. Wrong answers count towards the login lockout of the account's email (`429 ACCOUNT_LOCKED`), so a stolen session can't be used to guess the password. Both endpoints use the auth throttles.
+- **Change password** (`POST /api/auth/change-password`, `{ currentPassword, newPassword }`, `204`): checks the common-password list, then sets the hash and deletes every other session of the account in one transaction. The session that asked stays signed in; the others get `401` on their next request and keep their notes.
+- **Delete account** (`DELETE /api/account`, `{ password }`, `204`): one `DELETE` of the user row. Every table with a `user_id` references the user with `ON DELETE CASCADE`, so sessions, email tokens, notes, citations, sync changes and devices all go in the same statement, and the response clears the cookie. The email can sign up again. The integration test fills every table that has a `user_id` column (found from `information_schema`, so a new table must be added to the fixture) and checks that none of the user's rows remain.
 
 ### 7.3 Email
 The **Resend** SDK sends in production (the domain verified with SPF and DKIM). In development and tests, emails are written to `apps/api/tmp/emails/*.eml`. The E2E tests read verification and reset links from there. Templates are plain HTML plus a text version.

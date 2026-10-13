@@ -87,6 +87,8 @@ export {
 export {
   type ChangePasswordRequest,
   changePasswordRequestSchema,
+  type DeleteAccountRequest,
+  deleteAccountRequestSchema,
   type ForgotPasswordRequest,
   forgotPasswordRequestSchema,
   type LoginRequest,

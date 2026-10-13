@@ -7,6 +7,8 @@ export const AuthErrorCode = {
   PASSWORD_TOO_COMMON: 'PASSWORD_TOO_COMMON',
   /** Wrong email or password; which one is never said. */
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  /** A signed-in user's password, asked again, was wrong (403, so the session isn't dropped). */
+  WRONG_PASSWORD: 'WRONG_PASSWORD',
   /** Too many failed logins for this email; `details.retryAfterSeconds` says how long. */
   ACCOUNT_LOCKED: 'ACCOUNT_LOCKED',
   ACCOUNT_DISABLED: 'ACCOUNT_DISABLED',

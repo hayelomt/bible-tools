@@ -6,6 +6,7 @@ import type { VerseRef } from '../verse-ref.ts';
 import { apiErrorSchema, devicesResponseSchema, healthResponseSchema } from './api.ts';
 import {
   changePasswordRequestSchema,
+  deleteAccountRequestSchema,
   loginRequestSchema,
   meResponseSchema,
   resetPasswordRequestSchema,
@@ -323,12 +324,14 @@ describe('auth schemas', () => {
     ['a token of the wrong length', verifyEmailRequestSchema, { token: 'abc' }],
     ['a token with other characters', verifyEmailRequestSchema, { token: '+'.repeat(43) }],
     ['an empty login password', loginRequestSchema, { email: 'a@b.co', password: '' }],
+    ['a deletion without the password', deleteAccountRequestSchema, { password: '' }],
   ] as const)('rejects %s', (_, schema, body) => {
     expect(schema.safeParse(body).success).toBe(false);
   });
 
   it('lets any non-empty password try to log in', () => {
     expect(loginRequestSchema.safeParse({ email: 'a@b.co', password: 'short' }).success).toBe(true);
+    expect(deleteAccountRequestSchema.safeParse({ password: 'short' }).success).toBe(true);
     expect(verifyEmailRequestSchema.safeParse({ token }).success).toBe(true);
   });
 

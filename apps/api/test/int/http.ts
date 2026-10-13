@@ -10,6 +10,8 @@ export interface Client {
   get(path: string, token?: string): request.Test;
   /** A POST from the site itself: same `Origin`, the session cookie when given. */
   post(path: string, body?: object, token?: string): request.Test;
+  /** A DELETE from the site itself, like `post`. */
+  delete(path: string, body?: object, token?: string): request.Test;
 }
 
 let nextIp = 1;
@@ -28,18 +30,19 @@ export async function createClient(t: TestApp): Promise<Client> {
   if (!t.server.listening) await t.app.listen(0, '127.0.0.1');
   const origin = `http://127.0.0.1:${(t.server.address() as AddressInfo).port}`;
   const ip = `203.0.113.${nextIp++ % 250}`;
+  const fromSite = (test: request.Test, body: object | undefined, token: string | undefined) =>
+    withSession(
+      test
+        .set('Origin', origin)
+        .set('X-Forwarded-For', ip)
+        .send(body ?? {}),
+      token,
+    );
   return {
     origin,
     get: (path, token) => withSession(request(origin).get(path).set('X-Forwarded-For', ip), token),
-    post: (path, body, token) =>
-      withSession(
-        request(origin)
-          .post(path)
-          .set('Origin', origin)
-          .set('X-Forwarded-For', ip)
-          .send(body ?? {}),
-        token,
-      ),
+    post: (path, body, token) => fromSite(request(origin).post(path), body, token),
+    delete: (path, body, token) => fromSite(request(origin).delete(path), body, token),
   };
 }
 

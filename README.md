@@ -56,15 +56,15 @@ pnpm dev                                  # web on http://localhost:5173, API on
 
 ### Commands
 
-| Command                                              | What it does                                                           |
-| ---------------------------------------------------- | ---------------------------------------------------------------------- |
-| `pnpm dev`                                           | Web app and API with reload                                            |
-| `pnpm lint` · `pnpm typecheck` · `pnpm format:check` | Static checks                                                          |
-| `pnpm test`                                          | Unit tests                                                             |
-| `pnpm test:int`                                      | API integration tests; resets `lamp_test_dev`                          |
+| Command                                              | What it does                                                          |
+| ---------------------------------------------------- | --------------------------------------------------------------------- |
+| `pnpm dev`                                           | Web app and API with reload                                           |
+| `pnpm lint` · `pnpm typecheck` · `pnpm format:check` | Static checks                                                         |
+| `pnpm test`                                          | Unit tests                                                            |
+| `pnpm test:int`                                      | API integration tests; resets `lamp_test_dev`                         |
 | `pnpm e2e`                                           | Builds the apps and runs Playwright (Chromium); resets `lamp_e2e_dev` |
-| `pnpm build`                                         | Production build of everything                                         |
-| `pnpm db:seed`                                       | A demo user with a few lessons in `lamp_dev`                           |
+| `pnpm build`                                         | Production build of everything                                        |
+| `pnpm db:seed`                                       | A demo user with a few lessons in `lamp_dev`                          |
 
 Notes live in the browser until sync arrives (M3), so the server seed doesn't show in the app. To
 try the app with data, open <http://localhost:5173/dev/seed> under `pnpm dev`: it clears this
@@ -72,6 +72,26 @@ browser's database, seeds a month of lessons (series, replies, verse chips, tags
 questions in each status), or adds 5,000 generated sections. Dev builds only.
 
 `pnpm e2e` needs Chromium once: `pnpm --filter @lamp/e2e exec playwright install chromium`.
+
+### Admin CLI
+
+Accounts can be managed from the command line, for example on a private server with
+`SIGNUP_ENABLED=false`. `pnpm cli <command>` builds the API and runs it against the database in
+`apps/api/.env.local` (`lamp_dev`); on a server, run `node dist/cli.js <command>` from `apps/api`
+with the API's environment. `pnpm cli --help` lists the commands, and `pnpm cli help <command>`
+explains one.
+
+| Command                                       | What it does                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------------------- |
+| `pnpm cli user:create <email> [--role admin]` | Creates an account with its email already verified, even with sign-up turned off. |
+| `pnpm cli user:disable <email>`               | Stops the account from signing in and signs out all its devices. Its data stays.  |
+| `pnpm cli user:enable <email>`                | Lets a disabled account sign in again.                                            |
+| `pnpm cli user:verify <email>`                | Marks the account's email verified without the link, so it can sync.              |
+
+`user:create` asks for the password twice, hidden; it is never taken as an argument, so it stays
+out of the shell history. In a script, pipe it in instead: `printf '%s\n' "$PASSWORD" | pnpm cli
+user:create reader@example.com`. The same rules as sign-up apply (at least 10 characters, not a
+common password). Emails match in any case. A command that refuses prints why and exits with 1.
 
 ## Contributing
 

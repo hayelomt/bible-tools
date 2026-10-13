@@ -9,6 +9,8 @@ export const MIN_PASSWORD_LENGTH = 10;
 const emailSchema = z.string().trim().max(254).pipe(z.email());
 /** The length rule only; the server also checks the common-password list (§7.2). */
 const passwordSchema = z.string().min(MIN_PASSWORD_LENGTH).max(256);
+/** A password being checked rather than set, so the length rule doesn't apply. */
+const currentPasswordSchema = z.string().min(1).max(256);
 /** Email and session tokens: 32 random bytes, base64url. */
 const tokenSchema = z.string().regex(/^[\w-]{43}$/, 'Not a valid token');
 
@@ -18,7 +20,7 @@ export type SignupRequest = z.infer<typeof signupRequestSchema>;
 /** Any non-empty password may try to log in; the length rule applies only when one is set. */
 export const loginRequestSchema = z.strictObject({
   email: emailSchema,
-  password: z.string().min(1).max(256),
+  password: currentPasswordSchema,
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
@@ -38,10 +40,14 @@ export const resetPasswordRequestSchema = z.strictObject({
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 
 export const changePasswordRequestSchema = z.strictObject({
-  currentPassword: z.string().min(1).max(256),
+  currentPassword: currentPasswordSchema,
   newPassword: passwordSchema,
 });
 export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;
+
+/** `DELETE /api/account`: the password again, since nothing can undo it (§12). */
+export const deleteAccountRequestSchema = z.strictObject({ password: currentPasswordSchema });
+export type DeleteAccountRequest = z.infer<typeof deleteAccountRequestSchema>;
 
 /** `GET /api/auth/me`, and the body of a successful sign-up or login. */
 export const meResponseSchema = z.strictObject({

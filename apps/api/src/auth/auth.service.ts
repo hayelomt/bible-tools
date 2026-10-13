@@ -1,4 +1,10 @@
-import type { LoginRequest, MeResponse, ResetPasswordRequest, SignupRequest } from '@lamp/domain';
+import type {
+  ChangePasswordRequest,
+  LoginRequest,
+  MeResponse,
+  ResetPasswordRequest,
+  SignupRequest,
+} from '@lamp/domain';
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 // Value imports, not `import type`: Nest resolves the constructor parameters from their classes.
 import { ConfigService } from '@nestjs/config';
@@ -168,6 +174,39 @@ export class AuthService {
       });
     });
     if (!user) throw invalidToken();
+    this.lockout.recordSuccess(user.email);
+  }
+
+  /**
+   * Sets a new password for a signed-in user and ends every other session (§7.2). The session
+   * that asked stays signed in.
+   */
+  async changePassword(user: User, sessionId: string, body: ChangePasswordRequest): Promise<void> {
+    await this.confirmPassword(user, body.currentPassword);
+    assertNotCommon(body.newPassword);
+    const passwordHash = await hashPassword(body.newPassword);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
+      this.prisma.session.deleteMany({ where: { userId: user.id, id: { not: sessionId } } }),
+    ]);
+  }
+
+  /**
+   * Asks a signed-in user for their password again, before a change that a stolen session must
+   * not be able to make. Wrong answers count towards the login lockout for the account's email,
+   * so a session can't be used to guess the password either.
+   */
+  async confirmPassword(user: User, password: string): Promise<void> {
+    const lockedFor = this.lockout.lockedFor(user.email);
+    if (lockedFor > 0) throw locked(lockedFor);
+    if (!(await verifyPassword(user.passwordHash, password))) {
+      this.lockout.recordFailure(user.email);
+      throw new ApiException(
+        HttpStatus.FORBIDDEN,
+        AuthErrorCode.WRONG_PASSWORD,
+        'That is not your current password',
+      );
+    }
     this.lockout.recordSuccess(user.email);
   }
 

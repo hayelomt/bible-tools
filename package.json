@@ -19,6 +19,7 @@
     "e2e": "turbo run e2e",
     "db:migrate": "pnpm --filter @lamp/api db:migrate",
     "db:seed": "pnpm --filter @lamp/api db:seed",
+    "cli": "pnpm --filter @lamp/api cli",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

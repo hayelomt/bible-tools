@@ -36,7 +36,7 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000;
     { provide: APP_GUARD, useClass: OriginGuard },
     { provide: APP_GUARD, useClass: SessionGuard },
   ],
-  exports: [SessionsService],
+  exports: [AuthService, SessionsService],
 })
 export class AuthModule {}
 

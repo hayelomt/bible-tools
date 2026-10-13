@@ -9,9 +9,18 @@ export const Public = (): MethodDecorator & ClassDecorator => SetMetadata(IS_PUB
 
 export type AuthRequest = Request & { auth?: Authenticated };
 
-/** The signed-in user, set by `SessionGuard`. Only for routes that aren't `@Public()`. */
-export const CurrentUser = createParamDecorator((_: unknown, context: ExecutionContext) => {
+function authOf(context: ExecutionContext): Authenticated {
   const auth = context.switchToHttp().getRequest<AuthRequest>().auth;
-  if (!auth) throw new Error('CurrentUser used on a route without a session');
-  return auth.user;
-});
+  if (!auth) throw new Error('CurrentUser or CurrentSession used on a route without a session');
+  return auth;
+}
+
+/** The signed-in user, set by `SessionGuard`. Only for routes that aren't `@Public()`. */
+export const CurrentUser = createParamDecorator(
+  (_: unknown, context: ExecutionContext) => authOf(context).user,
+);
+
+/** The session the request came with, set by `SessionGuard`, like `CurrentUser`. */
+export const CurrentSession = createParamDecorator(
+  (_: unknown, context: ExecutionContext) => authOf(context).session,
+);
