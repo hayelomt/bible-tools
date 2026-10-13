@@ -41,6 +41,7 @@ export {
   passageRange,
   passagesOverlap,
   rangesOverlap,
+  TRANSLATION_NAMES,
   TRANSLATIONS,
   type TranslationId,
   type VerseRef,

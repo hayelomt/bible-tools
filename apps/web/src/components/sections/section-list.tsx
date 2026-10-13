@@ -8,6 +8,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
+import { VerseViewer } from '@/components/verses/verse-viewer.tsx';
 import {
   type RemovedSections,
   removeSection,
@@ -403,6 +404,7 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
 
   return (
     <div className="flex flex-col gap-4">
+      <VerseViewer />
       <DndContext {...dndContext}>
         <SortableContext items={sortable} strategy={verticalListSortingStrategy}>
           <div ref={listRef} className="flex flex-col gap-3">

@@ -2,6 +2,7 @@ import { type Editor, Extension, type Extensions, mergeAttributes, Node } from '
 import { Placeholder } from '@tiptap/extensions';
 import { Selection } from '@tiptap/pm/state';
 import { StarterKit } from '@tiptap/starter-kit';
+import { VerseChipKeys, verseChipView } from '@/components/verses/verse-chip.ts';
 import { VerseSuggestion } from '@/components/verses/verse-suggestion.ts';
 
 /**
@@ -39,7 +40,8 @@ function verseField(name: string) {
 
 /**
  * A verse reference inside a note, stored with its snapshot (F3). An atom: the cursor and Backspace
- * treat it as one unit. `VerseSuggestion` inserts it and M2-10 gives it its chip; until then it shows as text.
+ * treat it as one unit. `VerseSuggestion` inserts it; in the editor it's drawn by `verseChipView`,
+ * and `renderHTML` is what copying it writes.
  */
 export const Verse = Node.create({
   name: 'verse',
@@ -76,6 +78,10 @@ export const Verse = Node.create({
       }),
       `${node.attrs.display} · ${node.attrs.translation}`,
     ];
+  },
+
+  addNodeView() {
+    return verseChipView;
   },
 
   renderText({ node }) {
@@ -189,6 +195,7 @@ export function sectionExtensions(options: {
     Placeholder.configure({ placeholder: ({ editor }) => options.placeholder(editor) }),
     Verse,
     VerseSuggestion,
+    VerseChipKeys,
     sectionKeys(options.handlers),
   ];
 }

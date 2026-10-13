@@ -4,6 +4,8 @@ import { type BookCode, chapterCount, getBook, verseCount } from './books.ts';
 export const TRANSLATIONS = ['WEB'] as const;
 export type TranslationId = (typeof TRANSLATIONS)[number];
 export const DEFAULT_TRANSLATION: TranslationId = 'WEB';
+/** Each translation's full name, as an expanded chip and the reader show it. */
+export const TRANSLATION_NAMES: Record<TranslationId, string> = { WEB: 'World English Bible' };
 
 /**
  * A passage, without the text: one verse, a verse range, a whole chapter, a chapter range or a

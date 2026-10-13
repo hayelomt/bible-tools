@@ -318,6 +318,12 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - **Text** (`data/bible.ts`): the web app serves `@lamp/bible-data`'s `dist/` under `/bible/` (a Vite plugin: from the package in dev, copied into the build). A book is fetched the first time a suggestion needs it and kept in memory for the session (decided 2026-10-13); M2-11 adds the service worker cache and the background download. Offline before that, suggestions still work and insert a chip without its snapshot, and the preview reads "Text not downloaded yet".
 - **Empty verses** (decided 2026-10-13): a verse WEB leaves out, on its own, snapshots as its footnote, marked: "[Not in WEB: TR adds …]", so a chip never holds nothing. In a range they're skipped.
 
+*Built in M2-10 (`verse-chip.ts`, `verse-viewer.tsx`):*
+- **The chip** is a plain DOM node view (no React per chip): the display reference and the translation label, `role="button"`, labelled "John 10:9, World English Bible, verse. Show text." The node is an atom, so the cursor and Backspace treat it as one unit. Copying still writes `renderHTML`'s `span[data-verse]`, so a pasted chip keeps its fields.
+- **Opening it:** a tap or click opens it without moving the cursor or bringing up the phone's keyboard (the chip takes the pointer events; ProseMirror ignores them). From the keyboard (decided 2026-10-13), ← or → selects the chip as one unit (a ring shows it), and Enter or Space opens it; Tab stays the section key.
+- **The viewer**, one for the page: a popover under the chip on a laptop, a bottom sheet on a phone (Base UI, with a `Popover` added to `@lamp/ui`). It shows the reference, the translation's full name (`TRANSLATION_NAMES`) and the snapshot, never the current text, so a corrected edition doesn't change a note (tested by serving a changed book after a reload). Esc, a tap outside or × closes it, and focus goes back to the note with the selection it had, only if the note had focus.
+- **A chip without its text** (decided 2026-10-13), inserted offline before its book arrived, says "Text not downloaded yet. It's added when the Bible is downloaded." M2-11 fills it in. A chip inserted while its book is still being fetched gets its text when the book arrives (not a step of its own for Undo), and an open viewer shows it.
+
 ### 8.4 Search and verse index
 - **Free text:** MiniSearch in a Web Worker, built from the plain text of sections, takeaways and questions at startup and updated after each action and pull. Target: 5,000 sections indexed in under 1 s on a mid-range phone.
 - **Verses and tags:** Dexie queries on `citations` (`startOrd`/`endOrd` index) and on the join tables. The search box detects a reference with `parseReference` and a `#tag` prefix.
@@ -474,6 +480,11 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 37 | Theme picker (2026-10-13) | A bottom sheet over Settings, on laptops too (narrow, centred); no `/settings/theme` address | §8.5 |
 | 38 | Section handle (2026-10-13) | One `⠿` that opens the menu on a tap and drags on a press; drag started from it, not by a long press on the text (which selects words) | §8.3 |
 | 39 | Drag and toasts (2026-10-13) | Drag uses dnd-kit (core + sortable) with our two-level drop rules (it replaced our own pointer code, whose landing line was hard to see); toasts are Sonner | §8.3 |
+| 40 | When the verse list opens (2026-10-13) | Once a number is typed after a book ("rom 8"), not on a book name alone | §8.3 |
+| 41 | Bible text before the service worker (2026-10-13) | Static files under `/bible/`, fetched on first use and kept for the session; the service worker cache comes in M2-11 | §8.3, §9 |
+| 42 | A verse WEB leaves out (2026-10-13) | On its own, the chip snapshots its footnote, marked "[Not in WEB: …]"; skipped in a range | §8.3, §9 |
+| 43 | A chip without its text (2026-10-13) | Says the text is coming; never shows text that wasn't captured | §8.3 |
+| 44 | Opening a chip from the keyboard (2026-10-13) | ← or → selects it, Enter or Space opens it; chips are not Tab stops | §8.3 |
 
 **Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
 

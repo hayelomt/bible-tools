@@ -68,6 +68,23 @@ export function bookState(code: BookCode): BookState {
   return loading;
 }
 
+/** The book's text once it's fetched (at once if it's here), or null if it can't be. */
+export function whenBook(code: BookCode): Promise<BookText | null> {
+  return new Promise((resolve) => {
+    /** True once the book is here or missing. */
+    const settled = () => {
+      const state = bookState(code);
+      if (state.status === 'loading') return false;
+      resolve(state.status === 'ready' ? state.text : null);
+      return true;
+    };
+    if (settled()) return;
+    const unsubscribe = subscribe(() => {
+      if (settled()) unsubscribe();
+    });
+  });
+}
+
 /** The book's text, re-rendering when it arrives. */
 export function useBook(code: BookCode): BookState {
   return useSyncExternalStore(subscribe, () => bookState(code));

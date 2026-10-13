@@ -33,6 +33,11 @@ the snapshot taken when the chip was inserted and never changes.
 Phase 2 adds "View in …" here for other downloaded translations, without changing the note.
 
 Screen readers hear the chip as a button: "John 10:9, World English Bible, verse. Show text."
+From the keyboard, ← or → selects the chip (a ring shows it), and Enter or Space opens it. Esc, a
+tap outside or × closes it, and the cursor is back where it was.
+
+A chip inserted offline before its book was downloaded shows, instead of the text: "Text not
+downloaded yet. It's added when the Bible is downloaded."
 
 ## Verse autocomplete (M2-09)
 
