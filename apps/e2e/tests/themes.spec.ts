@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { devices, expect, test } from '@playwright/test';
 
 test('the saved theme is applied before the app loads', async ({ page }) => {
   await page.addInitScript(() =>
@@ -39,4 +39,27 @@ test('the theme demo shows every preset in both modes, and switches the page', a
   await expect(html).toHaveClass('dark');
   await page.reload();
   await expect(html).toHaveAttribute('data-theme', 'cedar');
+});
+
+test.describe('on a phone', () => {
+  const { defaultBrowserType: _, ...phone } = devices['Pixel 7'];
+  test.use(phone);
+
+  test('every control is a 44 px touch target, with no sideways scroll', async ({ page }) => {
+    await page.goto('/dev/themes');
+    const slots = ['button', 'input', 'select-trigger', 'tabs-trigger'];
+    const smallest = await page.evaluate((names) => {
+      const heights = names.flatMap((name) =>
+        [...document.querySelectorAll(`[data-slot="${name}"]`)].map(
+          (element) => element.getBoundingClientRect().height,
+        ),
+      );
+      return Math.min(...heights);
+    }, slots);
+    expect(smallest).toBeGreaterThanOrEqual(44);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(0);
+  });
 });

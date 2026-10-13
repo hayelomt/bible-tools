@@ -75,7 +75,7 @@ bible-tool/
 │  ├─ ui/             shadcn/ui components, theme presets (CSS variables), tokens
 │  └─ config/         shared tsconfig, oxlint, Prettier and Vitest presets
 ├─ scripts/           dev-db.sh, check-node.sh
-├─ docs/              PRD, TECH-DESIGN, BACKLOG, UX-PATTERNS, decisions/
+├─ docs/              PRD, TECH-DESIGN, BACKLOG, UX-PATTERNS, wireframes/, decisions/
 ├─ turbo.json  pnpm-workspace.yaml  .nvmrc  package.json
 ```
 
@@ -261,9 +261,11 @@ React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui (in `packages/ui`), **Tan
 
 *Set up in M1-06:*
 - **shadcn/ui on Base UI** (`base-nova` style, the CLI's default) rather than Radix. Components live in `packages/ui/src/components` and import each other through the package name (`@lamp/ui/lib/utils`), as the shadcn monorepo layout expects; the app imports them the same way (`@lamp/ui/components/button`) and its own code through `@/`. Run `pnpm dlx shadcn@<version> add <name>` from `apps/web`, which writes into `packages/ui`.
-- `packages/ui/src/styles/globals.css` holds Tailwind, the tokens and `@theme inline`; the app imports it once (`@lamp/ui/globals.css`). It uses system fonts until the UX pass picks reading fonts.
+- `packages/ui/src/styles/globals.css` holds Tailwind, the tokens and `@theme inline`; the app imports it once (`@lamp/ui/globals.css`). Reading text uses Literata, the interface the system font (§8.5).
 - **File-based routes** in `apps/web/src/routes`; the router Vite plugin writes `src/routeTree.gen.ts` on `dev` and `build`. The file is committed so typecheck works without a build, and is excluded from lint and Prettier.
 - Vite serves on `:5173` and proxies `/api` to `LAMP_API_URL` (default `http://127.0.0.1:3000`); `vite preview` (`:4173`) reuses the proxy.
+
+*Screens* follow [UX-PATTERNS.md](UX-PATTERNS.md) and its wireframes (M1-14): bottom bar under 1024 px and sidebar above, 44 px touch targets on touch screens (enforced in `globals.css`), autosave with no Save buttons, undo for single deletes and a confirmation for anything larger.
 
 ### 8.2 Data flow
 Screens read with `useLiveQuery`, so any local write, including one applied from a pull, re-renders them. Writes go through **action functions** (`createLesson`, `addSection`, `promoteQuestion` …) in `src/data/actions/`. Each one is a single Dexie transaction (§6.1). Components never write to Dexie directly.
@@ -410,6 +412,10 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 22 | Empty WEB verses (2026-10-13) | `""` in the text, with the footnote kept in the `n` field | §9 |
 | 23 | Components in M1-13 (2026-10-13) | The core shadcn set is added now, so the presets are tuned against what M2 uses | §8.5 |
 | 24 | Reading font (2026-10-13) | Literata, self-hosted, for scripture and notes; the system font for the interface | §8.5 |
+| 25 | Touch targets (2026-10-13) | 44 px on touch screens through one `pointer: coarse` rule in `globals.css`; compact sizes with a mouse | UX-PATTERNS |
+| 26 | New lesson (2026-10-13) | One tap creates the lesson and opens it ready to type; the other details sit in a collapsible row | UX-PATTERNS |
+| 27 | Destructive actions (2026-10-13) | Undo for one thing; ask first for more than one, or for what can't be undone | UX-PATTERNS |
+| 28 | Wireframes (2026-10-13) | Text (ASCII) wireframes in `docs/wireframes/`, linked from UX-PATTERNS | UX-PATTERNS |
 
 **Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
 

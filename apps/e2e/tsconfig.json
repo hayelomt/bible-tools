@@ -3,6 +3,8 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    // Callbacks passed to page.evaluate() run in the browser.
+    "lib": ["es2024", "dom"],
     "types": ["node"]
   },
   "include": ["tests", "*.ts"]

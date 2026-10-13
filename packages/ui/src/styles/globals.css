@@ -102,6 +102,37 @@
   color-scheme: dark;
 }
 
+/*
+ * Touch targets (docs/UX-PATTERNS.md): on a touch screen every control is at least 44 px, while a
+ * mouse keeps the compact sizes. Outside any layer, so it wins over the components' size classes.
+ */
+@media (pointer: coarse) {
+  :is(
+    [data-slot='button'],
+    [data-slot='input'],
+    [data-slot='select-trigger'],
+    [data-slot='tabs-trigger'],
+    [data-slot='dropdown-menu-trigger'],
+    [data-slot='dropdown-menu-item'],
+    [data-slot='dropdown-menu-checkbox-item'],
+    [data-slot='dropdown-menu-radio-item'],
+    [data-slot='dropdown-menu-sub-trigger'],
+    [data-slot='select-item']
+  ) {
+    min-height: 2.75rem;
+  }
+  :is([data-slot='button'], [data-slot='dropdown-menu-trigger']) {
+    min-width: 2.75rem;
+  }
+  [data-slot='tabs-list'] {
+    height: auto;
+  }
+  /* A checkbox or switch is tapped through its label, which spans the row. */
+  [data-slot='label']:has([data-slot='checkbox'], [data-slot='switch']) {
+    min-height: 2.75rem;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

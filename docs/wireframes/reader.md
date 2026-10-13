@@ -1,0 +1,106 @@
+# Wireframes — reader, highlights and promotion
+
+Low-fi layouts for M5-01 to M5-04. Legend and shared rules: [shell.md](shell.md),
+[UX-PATTERNS.md](../UX-PATTERNS.md).
+
+## Chapter view (M5-01, M5-04)
+
+One chapter per page, in the reading face. The header names the translation. Swipe left or right
+(phone) or use `←` `→` (laptop) for the next or previous chapter; the arrows in the header do the
+same. The reader reopens where it was left.
+
+```text
+┌──────────────────────────────────────┐
+│ ‹      John 10 ▾      WEB          › │  ← ‹ › chapters · "John 10 ▾" opens the picker
+├──────────────────────────────────────┤
+│ ¹ "Most certainly, I tell you, one   │  ← verse numbers small and muted
+│ who doesn't enter by the door into   │
+│ the sheep fold, but climbs up some   │
+│ other way, is a thief and a robber.  │
+│ …                                    │
+│ ⁹ I am the door. If anyone enters  • │  ← • this verse has notes (M5-04)
+│ in by me, he will be saved…          │
+│ ¹⁰ The thief only comes to steal…    │
+│ ¹¹ ░I am the good shepherd. The good │  ← highlighted (yellow)
+│ ░shepherd lays down his life for the │
+│ ░sheep.░                           • │
+│ …                                    │
+│                                      │
+│ [ ‹ John 9 ]           [ John 11 › ] │
+├──────────────────────────────────────┤
+│ ▤ Lessons  ▢ Read  ⌕ Search  ✓ Review│
+└──────────────────────────────────────┘
+```
+
+Tapping a verse selects it; tapping more extends the selection. A marker `•` opens the verse index
+for that verse.
+
+## Book and chapter picker (M5-01)
+
+```text
+┌──────────────────────────────────────┐
+│ ← Choose a passage   [ Filter____ ]  │  ← "1 jo" narrows to 1 John
+├──────────────────────────────────────┤
+│ OLD TESTAMENT                        │
+│ Genesis   Exodus    Leviticus        │
+│ Numbers   Deuteronomy  Joshua  …     │
+│ NEW TESTAMENT                        │
+│ Matthew   Mark      Luke             │
+│ John ✓    Acts      Romans  …        │
+└──────────────────────────────────────┘
+```
+
+Choosing a book shows its chapters:
+
+```text
+│ ← John                               │
+│ [ 1][ 2][ 3][ 4][ 5][ 6][ 7]         │  ← 44 px squares
+│ [ 8][ 9][10][11][12][13][14]         │
+│ [15][16][17][18][19][20][21]         │
+```
+
+A one-chapter book (Jude) opens straight away.
+
+## Selected verses (M5-02, M5-03, M6-01)
+
+A bar replaces the bottom navigation while verses are selected.
+
+```text
+├──────────────────────────────────────┤
+│ John 10:9–11 selected            ✕   │
+│ ( ● ● ● ● )  Note  Add to lesson  ⋯  │  ← four highlight colours · ⋯: Memorise, Copy,
+│                                      │      Every note on John 10:9–11
+└──────────────────────────────────────┘
+```
+
+On a highlighted selection the colours include "Remove highlight". **Note** opens a short text
+field under the verse:
+
+```text
+│ ¹¹ ░I am the good shepherd…░         │
+│ ┌──────────────────────────────────┐ │
+│ │ Note on John 10:11               │ │
+│ │ [ Memorise this one▏          ]  │ │
+│ │                  [ Done ]        │ │
+│ └──────────────────────────────────┘ │
+```
+
+## Add to lesson (M5-03)
+
+```text
+┌──────────────────────────────────────┐
+│ Add John 10:11 to a lesson           │
+│                                      │
+│ ○ The Good Shepherd · Sun 12 Oct     │  ← recent lessons first
+│ ○ Abiding in the vine · Sun 5 Oct    │
+│ ○ Search lessons…                    │
+│ ○ New lesson "John 10:11"            │
+│                                      │
+│ Adds a section with the verse and    │
+│ your note.                           │
+│                  [ Cancel ] [ Add ]  │
+└──────────────────────────────────────┘
+```
+
+After adding, a toast: "Added to The Good Shepherd. `[ Open ]`". The highlight now links to that
+section.
