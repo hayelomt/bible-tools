@@ -15,7 +15,7 @@ Check the setup with:
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
-The wrong Node version stops every command with a message saying which one to use.
+`pnpm install` checks the Node version once and stops with a message saying which one to use.
 
 ## Picking a task
 
