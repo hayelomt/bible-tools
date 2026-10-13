@@ -1,4 +1,5 @@
 import type { Lesson } from '@lamp/domain';
+import { cn } from 'cn';
 import { ChevronDown } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { type SectionRequest, SectionList } from '@/components/sections/section-list.tsx';
@@ -7,11 +8,12 @@ import type { LessonFields } from '@/data/actions/lessons.ts';
 import { longDate, today } from '@/lib/dates.ts';
 import { SOURCE_LABELS } from '@/lib/labels.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
+import { AddButton } from './add-button.tsx';
 import { LessonDetails } from './lesson-details.tsx';
 import { LessonMenu } from './lesson-menu.tsx';
 import { PanelHeading } from './panel-heading.tsx';
 import { Questions } from './questions.tsx';
-import { Takeaways } from './takeaways.tsx';
+import { type PanelApi, Takeaways } from './takeaways.tsx';
 import { useLessonSaver } from './use-lesson-saver.ts';
 
 /** The side panel needs room for the sidebar, the 42 rem column and itself. */
@@ -58,6 +60,8 @@ export function LessonEditor({ id, lesson, seriesId, revealSection }: LessonEdit
     revealSection ? { kind: 'reveal', sectionId: revealSection, seq: 1 } : undefined,
   );
   const requests = useRef(1);
+  const takeaways = useRef<PanelApi>(null);
+  const questions = useRef<PanelApi>(null);
   const wide = useMediaQuery(WIDE);
   const titleId = useId();
   const errorId = useId();
@@ -65,12 +69,15 @@ export function LessonEditor({ id, lesson, seriesId, revealSection }: LessonEdit
   // An empty title isn't stored; the stored one stays until a new one is typed.
   const missingTitle = lesson !== null && !title.trim();
 
-  // Takeaways and questions belong to a stored lesson, like its sections.
+  // Takeaways and questions belong to a stored lesson, like its sections. On a phone they're added
+  // with the + button and show only once there's one, so an empty lesson stays uncluttered.
   const extras = lesson && (
     <>
-      <Takeaways lessonId={id} />
+      <Takeaways ref={takeaways} lessonId={id} hideWhenEmpty={!wide} />
       <Questions
+        ref={questions}
         lessonId={id}
+        hideWhenEmpty={!wide}
         onAnswer={(questionId) =>
           setRequest({ kind: 'answer', questionId, seq: ++requests.current })
         }
@@ -82,7 +89,8 @@ export function LessonEditor({ id, lesson, seriesId, revealSection }: LessonEdit
   );
 
   return (
-    <div className="flex flex-col gap-2">
+    // On a phone the page ends with room for the + button, so it never covers the last line.
+    <div className={cn('flex flex-col gap-2', lesson && !wide && 'pb-20')}>
       <ScreenTitle>
         <span className="sr-only">{lesson?.title ?? 'New lesson'}</span>
       </ScreenTitle>
@@ -189,7 +197,15 @@ export function LessonEditor({ id, lesson, seriesId, revealSection }: LessonEdit
         </div>
       )}
       {/* On a laptop they're in the side panel, under the details. */}
-      {!wide && extras && <div className="mt-8 flex flex-col gap-8">{extras}</div>}
+      {!wide && extras && (
+        <>
+          <div className="mt-8 flex flex-col gap-8 empty:hidden">{extras}</div>
+          <AddButton
+            onAddTakeaway={() => takeaways.current?.add()}
+            onAddQuestion={() => questions.current?.add()}
+          />
+        </>
+      )}
     </div>
   );
 }

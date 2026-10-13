@@ -204,6 +204,22 @@ Deleting a section **with replies** asks first, naming what goes:
 
 ## Takeaways and questions (M4-03, M4-04)
 
+**Phone:** a lesson without takeaways or questions shows neither list. A floating **+** above the
+bottom bar offers Add takeaway and Add question; a list shows after the sections once it has one.
+The **+** goes while anything is being typed, so it never covers the text or the editing toolbar.
+
+```text
+│ ┃ Write a note…                      │
+│                                      │
+│                       ┌────────────┐ │
+│                       │Add takeaway│ │
+│                       │Add question│ │
+│                       └────────────┘ │
+│                                 (+)  │
+├──────────────────────────────────────┤
+│ Lessons   Read   Search   Review     │
+```
+
 ```text
 │ QUESTIONS                     + Add  │
 │ ○ Who are the "other sheep"?       ⋮ │  ← ○ open

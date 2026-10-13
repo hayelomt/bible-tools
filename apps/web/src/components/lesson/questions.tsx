@@ -12,7 +12,7 @@ import { toast } from '@lamp/ui/components/sonner';
 import { cn } from 'cn';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronRight, Circle, CircleCheck, CirclePause, EllipsisVertical } from 'lucide-react';
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { type Ref, useId, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import {
   addQuestion,
   removeQuestion,
@@ -23,6 +23,7 @@ import {
 import { lessonQuestions } from '@/data/queries.ts';
 import { runWrite } from '@/lib/run-write.ts';
 import { PanelHeading } from './panel-heading.tsx';
+import type { PanelApi } from './takeaways.tsx';
 
 /** Colour is never the only signal (UX-PATTERNS): each status has an icon and a name. */
 const STATUS = {
@@ -33,6 +34,9 @@ const STATUS = {
 
 interface QuestionsProps {
   lessonId: string;
+  ref?: Ref<PanelApi>;
+  /** On a phone the list shows only once there's a question; the + button adds the first. */
+  hideWhenEmpty?: boolean;
   /** "Answer in a section": the section list adds it and puts the cursor in it. */
   onAnswer: (questionId: string) => void;
   /** `›` on an answered question: the section list shows its answer. */
@@ -44,13 +48,20 @@ interface QuestionsProps {
  * answered or parked. A question is answered in a section of the lesson, and turns answered as
  * soon as that section has text.
  */
-export function Questions({ lessonId, onAnswer, onShowAnswer }: QuestionsProps) {
+export function Questions({
+  lessonId,
+  ref,
+  hideWhenEmpty = false,
+  onAnswer,
+  onShowAnswer,
+}: QuestionsProps) {
   const questions = useLiveQuery(() => lessonQuestions(lessonId), [lessonId]);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const headingId = useId();
+  useImperativeHandle(ref, () => ({ add: () => setAdding(true) }), []);
 
-  if (!questions) return null;
+  if (!questions || (hideWhenEmpty && questions.length === 0 && !adding)) return null;
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-1">
       <PanelHeading id={headingId} add={{ label: 'Add question', onClick: () => setAdding(true) }}>

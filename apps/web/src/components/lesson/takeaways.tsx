@@ -3,7 +3,16 @@ import { Button } from '@lamp/ui/components/button';
 import { toast } from '@lamp/ui/components/sonner';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { XIcon } from 'lucide-react';
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type Ref,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   createTakeaway,
   removeTakeaway,
@@ -48,7 +57,19 @@ function deleteWithUndo(id: string) {
  * they're typed. "+ Add" or Enter starts the next one; Backspace in an empty one removes it, and
  * × deletes one with Undo. A new takeaway is a draft until it has text, like a section.
  */
-export function Takeaways({ lessonId }: { lessonId: string }) {
+/** What the lesson screen's + button asks of a list: start a new one, with the cursor in it. */
+export interface PanelApi {
+  add: () => void;
+}
+
+interface TakeawaysProps {
+  lessonId: string;
+  ref?: Ref<PanelApi>;
+  /** On a phone the list shows only once there's a takeaway; the + button adds the first. */
+  hideWhenEmpty?: boolean;
+}
+
+export function Takeaways({ lessonId, ref, hideWhenEmpty = false }: TakeawaysProps) {
   const stored = useLiveQuery(() => lessonTakeaways(lessonId), [lessonId]);
   const [drafts, setDrafts] = useState<string[]>([]);
   const [focus, setFocus] = useState<Focus | null>(null);
@@ -79,6 +100,8 @@ export function Takeaways({ lessonId }: { lessonId: string }) {
     focusAt(id, 'start');
   }, [focusAt]);
 
+  useImperativeHandle(ref, () => ({ add }), [add]);
+
   const discard = useCallback((id: string) => setDrafts((ds) => ds.filter((d) => d !== id)), []);
 
   /** Backspace in an empty takeaway: the cursor goes to the end of the one above as it goes. */
@@ -92,7 +115,7 @@ export function Takeaways({ lessonId }: { lessonId: string }) {
     [focusAt],
   );
 
-  if (!stored) return null;
+  if (!stored || (hideWhenEmpty && rows.length === 0)) return null;
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-1">
       <PanelHeading id={headingId} add={{ label: 'Add takeaway', onClick: add }}>

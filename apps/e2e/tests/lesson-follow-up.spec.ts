@@ -15,6 +15,15 @@ const undo = (page: Page, message: string) =>
   page.getByRole('listitem').filter({ hasText: message }).getByRole('button', { name: 'Undo' });
 const questionList = (page: Page) =>
   page.getByRole('region', { name: 'Questions' }).getByRole('listitem');
+/** Leaves the field being typed in, as tapping outside it does; the + button shows again. */
+const stopTyping = (page: Page) =>
+  page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+/** The + button a phone adds takeaways and questions with. */
+async function addFromButton(page: Page, item: 'Add takeaway' | 'Add question') {
+  await stopTyping(page);
+  await page.getByRole('button', { name: 'Add to lesson' }).click();
+  await page.getByRole('menuitem', { name: item }).click();
+}
 
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 360, height: 740 } });
@@ -24,9 +33,8 @@ test.describe('on a phone', () => {
   }) => {
     await page.goto('/');
     await newLesson(page, 'The Good Shepherd');
-    await expect(page.getByText('Nothing yet. A takeaway is one line')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Add takeaway' }).click();
+    await addFromButton(page, 'Add takeaway');
     await expect(takeaways(page)).toBeFocused();
     await page.keyboard.type('He knows his sheep by name.');
     await page.keyboard.press('Enter');
@@ -63,6 +71,10 @@ test.describe('on a phone', () => {
 
     // An empty takeaway goes as focus leaves it, without moving what was tapped from under the
     // pointer: "+ Add" under questions still opens its field.
+    await addFromButton(page, 'Add question');
+    await page.keyboard.type('Who is the door for?');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Escape');
     await takeaways(page).last().press('End');
     await takeaways(page).last().press('Enter');
     await expect(takeaways(page)).toHaveCount(3);
@@ -76,7 +88,7 @@ test.describe('on a phone', () => {
   }) => {
     await page.goto('/');
     await newLesson(page, 'The Good Shepherd');
-    await page.getByRole('button', { name: 'Add question' }).click();
+    await addFromButton(page, 'Add question');
     const field = page.getByRole('textbox', { name: 'New question' });
     await field.fill('What is the door?');
     await field.press('Enter');
@@ -122,7 +134,7 @@ test.describe('on a phone', () => {
   test('questions are parked and reopened, edited, and deleted with Undo', async ({ page }) => {
     await page.goto('/');
     await newLesson(page, 'The Good Shepherd');
-    await page.getByRole('button', { name: 'Add question' }).click();
+    await addFromButton(page, 'Add question');
     await page.keyboard.type('Thief or hired hand?');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Escape');
@@ -149,9 +161,40 @@ test.describe('on a phone', () => {
 
     await actions().click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
-    await expect(page.getByText('Nothing yet. A question is something')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Questions' })).toHaveCount(0);
     await undo(page, 'Question deleted.').click();
     await expect(questionList(page)).toHaveText(['Open: The thief or the hired hand?']);
+  });
+
+  test('takeaways and questions stay off the page until the + button adds one', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await newLesson(page, 'The Good Shepherd');
+    const plus = page.getByRole('button', { name: 'Add to lesson' });
+    // Not while the title is typed, either.
+    await expect(plus).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Takeaways' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Questions' })).toHaveCount(0);
+
+    // It goes while a section is typed in, so it covers neither the text nor the toolbar.
+    await page.getByRole('textbox', { name: 'Note', exact: true }).click();
+    await expect(page.getByRole('toolbar', { name: 'Editing' })).toBeVisible();
+    await expect(plus).toHaveCount(0);
+    await stopTyping(page);
+    await expect(plus).toBeVisible();
+
+    // A takeaway left empty goes, and its list with it.
+    await addFromButton(page, 'Add takeaway');
+    await expect(takeaways(page)).toBeFocused();
+    await takeaways(page).blur();
+    await expect(page.getByRole('region', { name: 'Takeaways' })).toHaveCount(0);
+
+    await addFromButton(page, 'Add takeaway');
+    await page.keyboard.type('He knows his sheep by name.');
+    await takeaways(page).blur();
+    await expect(page.getByRole('region', { name: 'Takeaways' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Questions' })).toHaveCount(0);
   });
 });
 
