@@ -3,13 +3,14 @@ import { createFileRoute } from '@tanstack/react-router';
 import { AppShell } from '@/components/shell/app-shell.tsx';
 import { db } from '@/data/db.ts';
 import { ensureDevice } from '@/data/setup.ts';
+import { restoreUnsaved } from '@/data/unsaved.ts';
 
 let deviceReady: Promise<void> | undefined;
 
 /** Every screen of the app, inside the shell. The device is set up before the first one shows. */
 export const Route = createFileRoute('/_app')({
   beforeLoad: () => {
-    deviceReady ??= ensureDevice(db, initialTheme());
+    deviceReady ??= ensureDevice(db, initialTheme()).then(() => restoreUnsaved(db));
     return deviceReady;
   },
   component: AppShell,

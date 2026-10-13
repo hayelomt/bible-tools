@@ -1,6 +1,7 @@
 import type { Lesson } from '@lamp/domain';
 import { ChevronDown } from 'lucide-react';
 import { useId, useState } from 'react';
+import { SectionList } from '@/components/sections/section-list.tsx';
 import { ScreenActions, ScreenTitle, SidePanel } from '@/components/shell/slots.tsx';
 import type { LessonFields } from '@/data/actions/lessons.ts';
 import { longDate, today } from '@/lib/dates.ts';
@@ -44,6 +45,9 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
   const { values, save, flush, saving } = saver;
   const [title, setTitle] = useState(values.title);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [sectionsSaving, setSectionsSaving] = useState(false);
+  // Enter in the title asks for the cursor in the first section; a count, so each Enter asks again.
+  const [focusFirst, setFocusFirst] = useState(0);
   const wide = useMediaQuery(WIDE);
   const titleId = useId();
   const errorId = useId();
@@ -58,7 +62,7 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
       </ScreenTitle>
       <ScreenActions>
         <output className="px-2 text-sm text-muted-foreground">
-          {lesson && !saving ? 'Saved' : ''}
+          {lesson && !saving && !sectionsSaving ? 'Saved' : ''}
         </output>
         {lesson && <LessonMenu lesson={lesson} />}
       </ScreenActions>
@@ -83,6 +87,14 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
           if (event.target.value.trim()) save({ title: event.target.value }, { debounce: true });
         }}
         onBlur={flush}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
+          event.preventDefault();
+          if (!title.trim()) return;
+          // A new lesson is stored now, so its first section can be typed in.
+          flush();
+          setFocusFirst((n) => n + 1);
+        }}
       />
       {missingTitle && (
         <p id={errorId} className="text-sm text-destructive">
@@ -138,6 +150,13 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
             <LessonDetails saver={saver} />
           </div>
         )
+      )}
+
+      {/* Sections belong to a stored lesson, so they show once the title is typed. */}
+      {lesson && (
+        <div className="mt-4">
+          <SectionList lessonId={id} focusFirst={focusFirst} onSavingChange={setSectionsSaving} />
+        </div>
       )}
     </div>
   );

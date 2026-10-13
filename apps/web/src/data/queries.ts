@@ -1,4 +1,4 @@
-import type { Lesson, Series } from '@lamp/domain';
+import type { Lesson, Section, Series } from '@lamp/domain';
 import { db as appDb, type LampDb } from './db.ts';
 
 /**
@@ -60,6 +60,11 @@ export async function lessonById(id: string, db: LampDb = appDb): Promise<Lesson
 export async function seriesById(id: string, db: LampDb = appDb): Promise<Series | null> {
   const row = await db.series.get(id);
   return row && notDeleted(row) ? row : null;
+}
+
+/** A lesson's sections, in no particular order (`outline` puts them in order). */
+export function lessonSections(lessonId: string, db: LampDb = appDb): Promise<Section[]> {
+  return db.section.where('lessonId').equals(lessonId).filter(notDeleted).toArray();
 }
 
 /** How many sections a lesson has, for the delete confirmation. */

@@ -1,8 +1,13 @@
 import { Link } from '@tanstack/react-router';
+import { useKeyboardInset } from '@/lib/use-keyboard.ts';
 import { NAV_ITEMS } from './nav-items.ts';
 
-/** The phone's bottom bar, under 1024 px (wireframes/shell.md). */
+/**
+ * The phone's bottom bar, under 1024 px (wireframes/shell.md). It hides while the on-screen
+ * keyboard is open, so the editing toolbar can sit on the keyboard (UX-PATTERNS "Phone keyboard").
+ */
 export function BottomNav() {
+  if (useKeyboardInset() > 0) return null;
   return (
     <nav
       aria-label="Main"

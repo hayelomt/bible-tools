@@ -125,9 +125,11 @@ show a drag handle on hover.
 └──────────┴──────────────────────────────────────────────┴──────────────────────┘
 ```
 
-**Editing keys:** Enter in an empty section ends it and starts the next one. Tab (or ⇥) makes the
-section a reply to the one above; Shift+Tab (⇤) moves it back out. A third level isn't offered: Tab
-does nothing in a reply.
+**Editing keys:** Enter on an empty last line ends the section and starts the next one; in an
+empty reply it moves the reply out. Tab (or ⇥) makes the section a reply to the one above; Shift+Tab
+(⇤) moves it back out. In a list they indent the list item instead. A third level isn't offered: Tab
+does nothing in a reply or in a section that has replies. Backspace in an empty section deletes it.
+The arrows move between sections at the first and last line, and Escape leaves the editor.
 
 ## Section menu, reorder and delete (M2-08)
 
