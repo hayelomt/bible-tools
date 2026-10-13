@@ -120,8 +120,14 @@ Section bodies are stored as **ProseMirror JSON**, the format TipTap uses (§8.3
 - `bodySchema`: Zod validation of the whole tree, run on the device and again on the server. Unknown node types are rejected.
 - `toPlainText(body)` for search, `citedRefs(body)` for citations, and `toMarkdown(body)` for export.
 
+*Built in M1-10 (`doc.ts`):*
+- Node and mark names are TipTap's (`bulletList`, `listItem`, `bold` …). Every node, mark and attribute object is strict, so unknown keys are rejected as well as unknown types; M2-07 configures TipTap to produce exactly these. A list item starts with a paragraph (`paragraph block*`), headings are level 3 only, link marks carry only `href` (http, https or mailto), and `verse` attrs are checked with `verseRefSchema` (the passage must exist in the book table).
+- Bodies nested more than 32 levels deep are rejected before parsing, so a hostile push can't exhaust the stack.
+- `toPlainText` writes one line per text block, with each chip as its display reference. `citedRefs` lists the chips in document order, repeats included.
+- `toMarkdown` writes a chip as "Romans 8:28 (WEB)" in the sentence and puts its snapshot after the paragraph as a quote: `> **Romans 8:28 (WEB)** …` (decided 2026-10-13).
+
 ### 4.3 Other domain modules
-- `order.ts`: fractional index keys (the `fractional-indexing` algorithm) for section siblings.
+- `order.ts`: fractional index keys for section siblings, using the `fractional-indexing` package (rocicorp, CC0). `keyAt(siblingKeys, index)` places an insert or a move; siblings sort by key, then by id (`compareOrder`), so two devices that insert at the same place offline still agree on the order. Keys compare by byte, matching the `"C"` collation on `section.order_key`.
 - `srs.ts`: SM-2 (ease, interval, next review) as pure functions of `(state, grade, today)`.
 - `sync.ts`: the change, push and pull types (§6) and the conflict rules as pure functions, so they can be unit-tested without a database.
 - `schemas/`: a Zod schema per entity and per API request or response.
@@ -384,6 +390,8 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 15 | Parser rules for ambiguous input (2026-10-13) | Ambiguous names list the candidates; unnumbered books win; bare numbers in one-chapter books are verses; part-verse letters dropped | §4.1 |
 | 16 | KJV verse numbers (2026-10-13) | Accepted and moved onto WEB's numbers, with the typed reference kept as `mappedFrom` | §4.1, §9 |
 | 17 | WEB source files (2026-10-13) | Downloaded by a script with a pinned checksum, gitignored, cached in CI | §9 |
+| 18 | Section order keys (2026-10-13) | The `fractional-indexing` package; ties broken by id | §4.3 |
+| 19 | Verse chips in Markdown export (2026-10-13) | Reference in the sentence, snapshot quoted after the paragraph | §4.2 |
 
 **Still open:** nothing blocks phase 1. Exact preset colours are tuned in the UX pass; mapping between other translations' numbering waits for a second translation in phase 2.
 

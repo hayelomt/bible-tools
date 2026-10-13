@@ -39,3 +39,26 @@ export {
   verseOrdinal,
 } from './verse-ref.ts';
 export { kjvToWeb } from './versification.ts';
+export {
+  type Block,
+  type Blockquote,
+  bodySchema,
+  type BulletList,
+  citedRefs,
+  emptyBody,
+  type Heading,
+  type InlineNode,
+  type ListItem,
+  type Mark,
+  MAX_BODY_DEPTH,
+  type OrderedList,
+  type Paragraph,
+  type SectionBody,
+  type TextBlock,
+  type TextNode,
+  toMarkdown,
+  toPlainText,
+  type VerseNode,
+} from './doc.ts';
+export { compareOrder, isOrderKey, keyAt, keyBetween, keysBetween } from './order.ts';
+export { passageSchema, verseRefSchema } from './schemas/verse-ref.ts';

@@ -18,5 +18,9 @@
     "oxlint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "fractional-indexing": "catalog:",
+    "zod": "catalog:"
   }
 }
