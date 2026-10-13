@@ -1,8 +1,6 @@
 import { emptyBody, newId, type SectionBody } from '@lamp/domain';
-import { Button } from '@lamp/ui/components/button';
 import type { Editor } from '@tiptap/core';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { RowNotFoundError } from '@/data/action.ts';
 import { removeSection, updateSection } from '@/data/actions/sections.ts';
@@ -139,11 +137,12 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
     [updateDrafts],
   );
 
-  // A lesson with no sections shows one empty draft, ready to type.
-  if (stored && rows.length === 0 && drafts.length === 0) {
-    const first = { id: newId(), ...endPlacement([]) };
-    draftsRef.current = [first];
-    setDrafts([first]);
+  // The lesson always ends with an empty section, ready to type: a new one appears as soon as the
+  // last one is stored, so there's no "+ Section" button to find.
+  if (stored && !trailingDraft(rows)) {
+    const next = { id: newId(), ...endPlacement(rows) };
+    draftsRef.current = [...draftsRef.current, next];
+    setDrafts(draftsRef.current);
   }
 
   useEffect(() => {
@@ -219,7 +218,23 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
       },
       setActive: (id, active) =>
         setActiveId((current) => (active ? id : current === id ? null : current)),
-      endSection: (id) => addDraft(afterPlacement(rowsRef.current, id)),
+      endSection: (id) => {
+        const all = rowsRef.current;
+        const row = rowOf(id);
+        const next = all[all.findIndex((r) => r.item.id === id) + 1];
+        // The empty section waiting below is the next one; no need for another.
+        if (
+          row &&
+          next &&
+          !next.item.stored &&
+          next.parent === row.parent &&
+          editors.current.get(next.item.id)?.isEmpty !== false
+        ) {
+          focusAt(next.item.id, 'start');
+        } else {
+          addDraft(afterPlacement(all, id));
+        }
+      },
       enterEmpty: (id) => {
         // Enter in an empty reply moves it out, as in a list; in an empty section it does nothing.
         if (rowOf(id)?.level === 1) outdent(id);
@@ -235,6 +250,11 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
         const row = all[index];
         if (!row || row.replies > 0 || all.length === 1) return false;
         const previous = all[index - 1];
+        // The empty section at the end stays; Backspace there only goes up.
+        if (trailingDraft(all)?.item.id === id) {
+          if (previous) focusAt(previous.item.id, 'end');
+          return true;
+        }
         if (previous) focusAt(previous.item.id, 'end');
         else focusAt(all[index + 1]!.item.id, 'start');
         if (isStored(id)) {
@@ -254,23 +274,12 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
         return true;
       },
       discardIfEmpty: (id) => {
-        if (isStored(id) || rowsRef.current.length === 1) return;
+        if (isStored(id) || trailingDraft(rowsRef.current)?.item.id === id) return;
         if (editors.current.get(id)?.isEmpty === false) return;
         updateDrafts((ds) => ds.filter((d) => d.id !== id));
       },
     };
   }, [lessonId, addDraft, updateDrafts]);
-
-  const addSection = () => {
-    const last = rows.at(-1);
-    const lastEditor = last && editors.current.get(last.item.id);
-    // An empty draft at the end is already a new section.
-    if (last && !last.item.stored && last.level === 0 && lastEditor?.isEmpty) {
-      setFocus({ id: last.item.id, at: 'start' });
-    } else {
-      addDraft(endPlacement(rows));
-    }
-  };
 
   if (!stored) return null;
   const activeRow = rows.find((r) => r.item.id === activeId);
@@ -288,10 +297,6 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
           />
         ))}
       </div>
-      <Button variant="outline" className="self-start" onClick={addSection}>
-        <Plus aria-hidden />
-        Section
-      </Button>
       {activeRow && activeEditor && (
         // On a phone the toolbar is fixed over the page; this keeps the last lines clear of it.
         <div aria-hidden className="h-12 lg:hidden" />
@@ -309,4 +314,10 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
       )}
     </div>
   );
+}
+
+/** The empty section at the end of the lesson: the last row, if it's a top-level draft. */
+function trailingDraft(rows: readonly SectionRow[]): SectionRow | undefined {
+  const last = rows.at(-1);
+  return last && !last.item.stored && last.level === 0 ? last : undefined;
 }

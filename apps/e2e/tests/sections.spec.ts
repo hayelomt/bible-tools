@@ -55,12 +55,20 @@ test('text typed and the tab closed at once is still there on reopen', async ({
   await expect(note(reopened)).toHaveText('Jesus is the door');
 });
 
-test('an empty section is a draft, stored once it has text', async ({ page }) => {
+test('the lesson ends with an empty section, stored once it has text', async ({ page }) => {
   await startLesson(page);
   await expect(note(page)).toHaveAttribute('data-level', '0');
   expect(await rows(page, 'section')).toEqual([]);
   await page.keyboard.type('A');
   await expect.poll(() => outline(page)).toEqual(['A']);
+
+  // An empty section waits at the end, so there's always a place to type; it isn't stored.
+  await expect(note(page, 1)).toHaveText('');
+  await note(page, 1).click();
+  await page.keyboard.type('B');
+  await expect.poll(() => outline(page)).toEqual(['A', 'B']);
+  await expect(note(page, 2)).toHaveText('');
+  await expect(page.getByRole('button', { name: 'Section' })).toHaveCount(0);
 });
 
 test('Enter, Tab and Shift+Tab shape the sections, two levels at most', async ({ page }) => {

@@ -75,9 +75,7 @@ never in the way of typing. Everything saves as it's typed; there's no Save butt
 │ ┃  ┃ Compare ⟦Psalm 23:1 · WEB⟧ — the│  ← reply (second level, indented)
 │ ┃  ┃ same shepherd.                ⋮ │
 │                                      │
-│ ┃ Write a note…▏                     │  ← empty section, ready to type
-│                                      │
-│ [ + Section ]                        │
+│ ┃ Write a note…▏                     │  ← always an empty section at the end, ready to type
 │                                      │
 │ TAKEAWAYS                     + Add  │  (M4-03)
 │ • He knows his sheep by name.        │
@@ -119,7 +117,7 @@ show a drag handle on hover.
 │          │       shepherd.                            ⋮ │                      │
 │          │ ⠿ Write a note…                              │ TAKEAWAYS     + Add  │
 │          │                                              │ • He knows his sheep │
-│          │ [ + Section ]                                │ QUESTIONS     + Add  │
+│          │                                              │ QUESTIONS     + Add  │
 │          │                                              │ ○ Who are the "other │
 │          │                                              │   sheep"?          ⋮ │
 └──────────┴──────────────────────────────────────────────┴──────────────────────┘
