@@ -58,8 +58,8 @@ takeaway or question, scrolled to it and highlighted. A lesson whose title match
 ```
 
 A verse query matches any chip that overlaps the passage, and a lesson whose main passage overlaps
-it (`Main passage: John 10`). Words like "rom 8" are not also searched as text. The verse index
-button comes with the verse index page (M4-07).
+it (`Main passage: John 10`). Words like "rom 8" are not also searched as text. "Verse index for
+…" opens the verse index page (M4-07); it shows when something cites the passage.
 
 ## Tag query
 

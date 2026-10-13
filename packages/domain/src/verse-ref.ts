@@ -1,4 +1,4 @@
-import { type BookCode, chapterCount, getBook, verseCount } from './books.ts';
+import { type BookCode, chapterCount, getBook, isBookCode, verseCount } from './books.ts';
 
 /** Translations with text in the app. Phase 1 ships WEB only (TECH-DESIGN §9). */
 export const TRANSLATIONS = ['WEB'] as const;
@@ -74,6 +74,47 @@ export function formatPassage(p: Passage): string {
   if (p.chapterEnd) end = `${DASH}${p.chapterEnd}:${p.verseEnd}`;
   else if (p.verseEnd !== undefined && p.verseEnd !== p.verseStart) end = `${DASH}${p.verseEnd}`;
   return `${book.refName} ${start}${end}`;
+}
+
+/**
+ * A passage as a short, exact address segment (the verse index URL): `ROM.8`, `ROM.8-9`,
+ * `ROM.8.28`, `ROM.8.28-30`, `ROM.7.24-8.2`. Unlike the display text it is never re-read by the
+ * parser, so no KJV numbering is mapped twice.
+ */
+export function passageSlug(p: Passage): string {
+  // `!= null`: a chip's attributes in the editor hold null for a missing field.
+  const start = [p.book, p.chapter, p.verseStart].filter((x) => x != null).join('.');
+  if (p.chapterEnd != null) {
+    return `${start}-${p.verseStart == null ? p.chapterEnd : `${p.chapterEnd}.${p.verseEnd}`}`;
+  }
+  if (p.verseEnd != null && p.verseEnd !== p.verseStart) return `${start}-${p.verseEnd}`;
+  return start;
+}
+
+const optionalNumber = (s: string | undefined) => (s === undefined ? undefined : Number(s));
+
+const SLUG = /^([1-3]?[A-Z]{2,3})\.(\d+)(?:\.(\d+))?(?:-(\d+)(?:\.(\d+))?)?$/;
+
+/** The passage a `passageSlug` stands for, or null when it isn't one or can't exist. */
+export function parsePassageSlug(slug: string): Passage | null {
+  const match = SLUG.exec(slug);
+  if (!match) return null;
+  const [, book = '', chapter, verseStart, end, endVerse] = match;
+  if (!isBookCode(book)) return null;
+  const p: Passage = { book, chapter: Number(chapter) };
+  if (verseStart === undefined) {
+    if (endVerse !== undefined) return null;
+    if (end !== undefined) p.chapterEnd = optionalNumber(end);
+  } else {
+    p.verseStart = optionalNumber(verseStart);
+    if (endVerse !== undefined) {
+      p.chapterEnd = optionalNumber(end);
+      p.verseEnd = optionalNumber(endVerse);
+    } else if (end !== undefined) {
+      p.verseEnd = optionalNumber(end);
+    }
+  }
+  return checkPassage(p) ? null : p;
 }
 
 const isWhole = (n: number | undefined) => n === undefined || (Number.isInteger(n) && n >= 0);

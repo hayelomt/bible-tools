@@ -12,6 +12,7 @@
   "devDependencies": {
     "@lamp/api": "workspace:*",
     "@lamp/config": "workspace:*",
+    "@lamp/domain": "workspace:*",
     "@lamp/web": "workspace:*",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",

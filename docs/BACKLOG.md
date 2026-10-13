@@ -92,8 +92,8 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 | ☑ | M4-04 | F5 Open questions: add, set status (open / answered / parked), promote to a child section titled with the question; answered once that section has a body | M | F5 | Tests: promotion links `answerSectionId`; an empty answer section leaves the question open |
 | ☑ | M4-05 | F6 Search index: MiniSearch in a Web Worker over sections, takeaways and questions, built at startup and updated after each action (and each pull, once M3 adds it) | M | §8.4, F6 | 5,000 seeded sections index in under 1 s on a mid-range phone (recorded: 5,050 rows in about 300 ms with Chrome's CPU slowed 4×, 2026-10-13; `search.spec.ts`) |
 | ☑ | M4-06 | F6 **Search UI**: one box for free text, `#tags` and verse queries (detected by the parser); results grouped by lesson; a result opens the lesson at the matching section | L | §8.4, F6 | Each query type returns the right sections in a fixture test; works offline |
-| ☐ | M4-07 | F7 **Verse index** page: every section, highlight and memory item citing a passage, newest first, with lesson, date and surrounding text; reachable from a chip and from search (adds the verse query's "Verse index for …" button, left out of M4-06) | M | §4.1, F7 | Opening `Rom 8` lists every citation that overlaps the chapter, including cross-chapter ranges |
-| ☐ | M4-08 | Gate test: seed a month of lessons, then find a note by tag, by free text and by verse | M | PRD *Milestones* C | Passes in CI |
+| ☑ | M4-07 | F7 **Verse index** page: every section, highlight and memory item citing a passage, newest first, with lesson, date and surrounding text; reachable from a chip and from search (adds the verse query's "Verse index for …" button, left out of M4-06). Built with notes and lesson main passages; highlights and memory items join with M5-02 and M6-01 (decided 2026-10-13) | M | §4.1, F7 | Opening `Rom 8` lists every citation that overlaps the chapter, including cross-chapter ranges (`search.test.ts`, `verse-index.spec.ts`) |
+| ☑ | M4-08 | Gate test: seed a month of lessons, then find a note by tag, by free text and by verse | M | PRD *Milestones* C | Passes in CI (`gate-find.spec.ts`; run locally, 2026-10-13) |
 
 ## M3 — Accounts and sync
 *PRD milestone B (F14, F15). **Gate:** notes captured offline on a phone appear on a laptop, and a two-device edit loses nothing. Built after M4 (see Order), so it syncs tags, takeaways and questions too, and adds the pull to M4-05's index updates.*
@@ -122,9 +122,9 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
 | ☐ | M5-01 | F8 Reader: WEB chapter view, book and chapter picker, previous and next by swipe and keyboard, reopens at the last position | M | §9, F8 | Any chapter opens offline; the last position survives a reload |
-| ☐ | M5-02 | F8 Highlights: select one or more verses, four colours, an optional note; edit and delete | M | F8 | Highlights sync and appear in the citation index |
+| ☐ | M5-02 | F8 Highlights: select one or more verses, four colours, an optional note; edit and delete. Adds highlight rows and the All / Notes / Highlights filter to the verse index (left out of M4-07) | M | F8 | Highlights sync and appear in the citation index |
 | ☐ | M5-03 | F8 Promote a highlight into a lesson section: pick a lesson or create one, insert a section with the verse chip and the note, set `promotedSectionId` | M | F8 | The new section appears in the lesson and the highlight links to it |
-| ☐ | M5-04 | Reader ↔ verse index: tapping a verse opens its verse index; verses with notes show a marker | S | F7, F8 | Markers match the citation index for the chapter |
+| ☐ | M5-04 | Reader ↔ verse index: tapping a verse opens its verse index; verses with notes show a marker. Adds the verse index's "Read ›" button (left out of M4-07) | S | F7, F8 | Markers match the citation index for the chapter |
 | ☐ | M5-05 | Gate test: open a chapter, highlight two verses, promote one into a new lesson, find it in the verse index | S | PRD *Milestones* D | Passes in CI |
 
 ## M6 — Loops and output
@@ -132,7 +132,7 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
-| ☐ | M6-01 | F10 Memory items: "Memorise" from the reader and from a chip; SM-2 in `domain/srs.ts` | M | §4.3, F10 | Unit tests cover every grade and the first three reviews |
+| ☐ | M6-01 | F10 Memory items: "Memorise" from the reader and from a chip; SM-2 in `domain/srs.ts`. Adds memory rows and the Memory filter to the verse index (left out of M4-07) | M | §4.3, F10 | Unit tests cover every grade and the first three reviews |
 | ☐ | M6-02 | F10 Review card: hide and reveal, grade buttons, progress per verse | M | F10 | Grading updates `nextReviewAt`; progress shows on the verse index page |
 | ☐ | M6-03 | F9 **Review queue**: open questions, takeaways from the last `reviewWindowDays` (default 14, set in settings), memory verses due today; park or answer a question from the queue | M | §8.8, F9 | An empty queue shows a done state; actions update the lesson; the window setting syncs |
 | ☐ | M6-04 | F9 Weekly reminder: Periodic Background Sync where supported (Chromium, installed app), otherwise a badge count on the Review tab | S | §8.8, F9 | Behaviour per browser is recorded in the README; unsupported browsers degrade silently |

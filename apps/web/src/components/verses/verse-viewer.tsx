@@ -1,4 +1,4 @@
-import { TRANSLATION_NAMES, type TranslationId } from '@lamp/domain';
+import { passageSlug, TRANSLATION_NAMES, type TranslationId } from '@lamp/domain';
 import {
   Popover,
   PopoverContent,
@@ -7,6 +7,8 @@ import {
   PopoverTitle,
 } from '@lamp/ui/components/popover';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@lamp/ui/components/sheet';
+import { Link } from '@tanstack/react-router';
+import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import {
@@ -14,6 +16,7 @@ import {
   closeChip,
   hoverLeave,
   hoverStay,
+  leaveChip,
   type OpenChip,
   useOpenChip,
 } from './verse-chip.ts';
@@ -53,6 +56,7 @@ export function VerseViewer() {
               <PopoverDescription>{translationName(shown)}</PopoverDescription>
             </PopoverHeader>
             <ChipText chip={shown} />
+            <IndexLink chip={shown} />
           </PopoverContent>
         )}
       </Popover>
@@ -70,8 +74,9 @@ export function VerseViewer() {
             <SheetTitle className="text-lg">{shown.ref.display}</SheetTitle>
             <SheetDescription>{translationName(shown)}</SheetDescription>
           </div>
-          <div className="px-4 pb-6">
+          <div className="flex flex-col gap-3 px-4 pb-6">
             <ChipText chip={shown} />
+            <IndexLink chip={shown} />
           </div>
         </SheetContent>
       )}
@@ -101,4 +106,19 @@ function ChipText({ chip: { ref } }: { chip: OpenChip }) {
     );
   }
   return <VerseText passage={ref} text={ref.snapshotText} className="text-[17px] leading-[1.6]" />;
+}
+
+/** To the verse index for the chip's passage (M4-07). */
+function IndexLink({ chip: { ref } }: { chip: OpenChip }) {
+  return (
+    <Link
+      to="/verses/$passage"
+      params={{ passage: passageSlug(ref) }}
+      className="-mx-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+      onClick={leaveChip}
+    >
+      Every note on {ref.display}
+      <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
+    </Link>
+  );
 }

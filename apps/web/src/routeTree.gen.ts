@@ -22,6 +22,7 @@ import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$l
 import { Route as AppSeriesSeriesIdRouteImport } from './routes/_app/series/$seriesId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
+import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -87,6 +88,11 @@ const AppTagsTagIdRoute = AppTagsTagIdRouteImport.update({
   path: '/tags/$tagId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppVersesPassageRoute = AppVersesPassageRouteImport.update({
+  id: '/verses/$passage',
+  path: '/verses/$passage',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
+  '/verses/$passage': typeof AppVersesPassageRoute
   '/lessons/': typeof AppLessonsIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
 }
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
+  '/verses/$passage': typeof AppVersesPassageRoute
   '/lessons': typeof AppLessonsIndexRoute
   '/settings': typeof AppSettingsIndexRoute
 }
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/_app/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/_app/tags/$tagId': typeof AppTagsTagIdRoute
+  '/_app/verses/$passage': typeof AppVersesPassageRoute
   '/_app/lessons/': typeof AppLessonsIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
 }
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/lessons/$lessonId'
     | '/series/$seriesId'
     | '/tags/$tagId'
+    | '/verses/$passage'
     | '/lessons/'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/lessons/$lessonId'
     | '/series/$seriesId'
     | '/tags/$tagId'
+    | '/verses/$passage'
     | '/lessons'
     | '/settings'
   id:
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/_app/lessons/$lessonId'
     | '/_app/series/$seriesId'
     | '/_app/tags/$tagId'
+    | '/_app/verses/$passage'
     | '/_app/lessons/'
     | '/_app/settings/'
   fileRoutesById: FileRoutesById
@@ -277,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTagsTagIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/verses/$passage': {
+      id: '/_app/verses/$passage'
+      path: '/verses/$passage'
+      fullPath: '/verses/$passage'
+      preLoaderRoute: typeof AppVersesPassageRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -289,6 +308,7 @@ interface AppRouteChildren {
   AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
   AppSeriesSeriesIdRoute: typeof AppSeriesSeriesIdRoute
   AppTagsTagIdRoute: typeof AppTagsTagIdRoute
+  AppVersesPassageRoute: typeof AppVersesPassageRoute
   AppLessonsIndexRoute: typeof AppLessonsIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
@@ -302,6 +322,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
   AppSeriesSeriesIdRoute: AppSeriesSeriesIdRoute,
   AppTagsTagIdRoute: AppTagsTagIdRoute,
+  AppVersesPassageRoute: AppVersesPassageRoute,
   AppLessonsIndexRoute: AppLessonsIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }

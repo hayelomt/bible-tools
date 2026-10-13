@@ -3,7 +3,9 @@ import {
   type Passage,
   checkPassage,
   formatPassage,
+  parsePassageSlug,
   passageRange,
+  passageSlug,
   passagesOverlap,
   rangesOverlap,
   verseOrdinal,
@@ -120,5 +122,41 @@ describe('checkPassage', () => {
     [rom({ chapter: 8, verseStart: 3, chapterEnd: 9 }), { code: 'invalid-shape' }],
   ])('%j → %j', (passage, error) => {
     expect(checkPassage(passage)).toEqual(error);
+  });
+});
+
+describe('passage slugs', () => {
+  it('round-trip every shape', () => {
+    const cases: [Passage, string][] = [
+      [rom({ chapter: 8 }), 'ROM.8'],
+      [rom({ chapter: 8, chapterEnd: 9 }), 'ROM.8-9'],
+      [rom({ chapter: 8, verseStart: 28 }), 'ROM.8.28'],
+      [rom({ chapter: 8, verseStart: 28, verseEnd: 30 }), 'ROM.8.28-30'],
+      [rom({ chapter: 7, verseStart: 24, chapterEnd: 8, verseEnd: 2 }), 'ROM.7.24-8.2'],
+      [{ book: '1JN', chapter: 4, verseStart: 8 }, '1JN.4.8'],
+    ];
+    for (const [passage, slug] of cases) {
+      expect(passageSlug(passage)).toBe(slug);
+      expect(parsePassageSlug(slug)).toEqual(passage);
+    }
+    expect(passageSlug(rom({ chapter: 8, verseStart: 28, verseEnd: 28 }))).toBe('ROM.8.28');
+    // As a chip's attributes hold them in the editor.
+    const attrs = { book: 'ROM', chapter: 8, verseStart: 28, chapterEnd: null, verseEnd: null };
+    expect(passageSlug(attrs as unknown as Passage)).toBe('ROM.8.28');
+  });
+
+  it("reject what isn't a passage that exists", () => {
+    for (const slug of [
+      '',
+      'ROM',
+      'XYZ.1',
+      'ROM.17',
+      'ROM.8.40',
+      'ROM.8-7',
+      'ROM.8-9.2',
+      'rom.8',
+    ]) {
+      expect(parsePassageSlug(slug)).toBeNull();
+    }
   });
 });

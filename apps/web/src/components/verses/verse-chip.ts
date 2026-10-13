@@ -59,6 +59,12 @@ export function closeChip() {
   editor.view.focus();
 }
 
+/** Closes the viewer without giving focus back: the user is leaving for another screen. */
+export function leaveChip() {
+  cancelHover();
+  setOpen(null);
+}
+
 /** Resting the pointer on a chip this long opens it; leaving it (and its popover) this long closes it. */
 const HOVER_OPEN_MS = 400;
 const HOVER_CLOSE_MS = 250;

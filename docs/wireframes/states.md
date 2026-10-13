@@ -27,7 +27,7 @@ One sentence on what will appear here, one on how it gets there, and at most one
 | Takeaways / questions | Nothing yet. A takeaway is one line you want to remember. | + Add |
 | Tag page | No notes tagged #*tag* yet. | — |
 | Search, no results | Nothing matches "*query*"… | — |
-| Verse index | Nothing cites *passage* yet. | Read *passage* |
+| Verse index | Nothing cites *passage* yet. | Read *passage* (with the reader, M5-04) |
 | Review | All caught up. | — |
 | Memory verses | No memory verses yet. Add one from a verse chip or the reader. | Open the Bible |
 | Devices (offline) | The list needs a connection. | — |

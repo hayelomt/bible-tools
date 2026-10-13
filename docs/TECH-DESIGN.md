@@ -346,6 +346,11 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - **Results** are grouped by lesson, newest first, three per lesson before "+ N more". In a lesson: the lesson itself (its title matched, a main passage overlaps the verse, or it has the tag), then sections in reading order, then takeaways and questions (decided 2026-10-13: lesson titles and main passages match too). A result opens the lesson at `?section=`, `?takeaway=` or `?question=`, scrolled to and highlighted for 2 s (decided 2026-10-13). The tag page uses the same list.
 - **Recent searches**: the last five that led to a result, kept in this browser only (`lamp.recentSearches`; decided 2026-10-13).
 
+*Built in M4-07:*
+- **Verse index** (`/verses/$passage`): the address is the passage's slug (`passageSlug` in `verse-ref.ts`: `ROM.8`, `ROM.8.28-30`, `ROM.7.24-8.2`), never re-read by the parser, so KJV numbering isn't mapped twice. `verseIndex` runs the same overlap query as a verse search and lists its rows flat, newest lesson first: a lesson whose main passage overlaps, then its sections in reading order, each with the lesson, the date and the text around the chip (`around` in `snippet.ts`). It opens from a chip ("Every note on …") and from a verse search ("Verse index for …").
+- Highlights and memory items, with the All / Notes / Highlights / Memory filter, join the page with M5-02 and M6-01; its "Read ›" button comes with the reader (M5-04) (decided 2026-10-13).
+- **The M4 gate** (`gate-find.spec.ts`) writes a month of lessons straight to the device, checked against the sync schemas and with citations from `citationsFor`, as a pull would leave them, then finds one note by tag, by text and by verse on a phone.
+
 ### 8.5 Theme
 - Presets live in `packages/ui/src/themes/*.css` as CSS variable sets for the shadcn tokens (`--background`, `--foreground`, `--primary`, `--muted`, `--accent`, `--ring`, `--radius`, …), each with light and dark values. They're selected with `<html data-theme="parchment" class="dark">`.
 - Tailwind v4 maps the tokens with `@theme inline`, so components use only semantic classes (`bg-background`, `text-primary`) and never raw colours.

@@ -3,6 +3,7 @@ import {
   formatPassage,
   type Lesson,
   type ParsedPassage,
+  type Passage,
   parseReference,
   passageRange,
   passagesOverlap,
@@ -117,10 +118,7 @@ export async function textResults(hits: TextHit[], db: LampDb = appDb): Promise<
  * Everything citing a passage that overlaps `passage` (F6: "Rom 8" matches any chip within the
  * chapter): sections by their verse chips, lessons by their main passages.
  */
-export async function verseResults(
-  passage: ParsedPassage,
-  db: LampDb = appDb,
-): Promise<ResultGroup[]> {
+export async function verseResults(passage: Passage, db: LampDb = appDb): Promise<ResultGroup[]> {
   const [start, end] = passageRange(passage);
   const citations = await db.citation
     .where('startOrd')
@@ -159,6 +157,24 @@ export async function verseResults(
       }
       return { lesson, items };
     }),
+  );
+}
+
+/** A row of the verse index: a section or a lesson's main passage, with its lesson. */
+export type VerseIndexEntry = Extract<ResultItem, { kind: 'lesson' | 'section' }> & {
+  lesson: Lesson;
+};
+
+/**
+ * The verse index (F7, wireframes/verses.md): everything citing a passage that overlaps
+ * `passage`, newest lesson first; in a lesson, its main passage, then sections in reading order.
+ */
+export async function verseIndex(passage: Passage, db: LampDb = appDb): Promise<VerseIndexEntry[]> {
+  const groups = await verseResults(passage, db);
+  return groups.flatMap(({ lesson, items }) =>
+    items.flatMap((item) =>
+      item.kind === 'lesson' || item.kind === 'section' ? [{ ...item, lesson }] : [],
+    ),
   );
 }
 

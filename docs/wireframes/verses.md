@@ -158,3 +158,11 @@ ranges that start in chapter 7 or run into chapter 9.
 
 Empty: "Nothing cites Romans 8 yet. Notes, highlights and memory verses on it will show here."
 `[ Read Romans 8 › ]`.
+
+*As built in M4-07:* notes and lessons only, so there's no filter yet, and the summary reads
+"5 notes · main passage of 1 lesson". A lesson whose main passage overlaps shows as a row:
+`LESSON · Sun 12 Oct`, its title, `Main passage: Romans 8`. In a note the cited chips are in bold,
+in the text around them. Highlights and memory items, with the filter, come with M5-02 and M6-01;
+`[ Read › ]` comes with the reader (M5-04). Until then the empty state reads "Nothing cites
+Romans 8 yet. Notes that cite it will show here." The address is `/verses/ROM.8`; one that isn't a
+passage shows "Passage not found".

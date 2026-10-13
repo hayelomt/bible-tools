@@ -351,6 +351,9 @@ importers:
       '@lamp/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@lamp/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@lamp/web':
         specifier: workspace:*
         version: link:../web

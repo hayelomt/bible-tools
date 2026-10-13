@@ -23,9 +23,10 @@ import {
   tagResults,
   tagSuggestions,
   textResults,
+  verseIndex,
   verseResults,
 } from './results.ts';
-import { snippet } from './snippet.ts';
+import { around, snippet } from './snippet.ts';
 import { TextIndex } from './text-index.ts';
 
 let db: LampDb;
@@ -135,6 +136,11 @@ const show = (value: string, terms: string[], context?: number) =>
     .map((s) => (s.match ? `**${s.text}**` : s.text))
     .join('');
 
+const marked = (value: string, phrases: string[], context?: number) =>
+  around(value, phrases, context)
+    .map((s) => (s.match ? `**${s.text}**` : s.text))
+    .join('');
+
 describe('parseQuery', () => {
   it('tells tags, verses and free text apart', () => {
     expect(parseQuery('  ')).toEqual({ kind: 'empty' });
@@ -223,6 +229,40 @@ describe('verse queries', () => {
   });
 });
 
+describe('verse index', () => {
+  it('lists every citation overlapping Rom 8, newest first, with its lesson and text', async () => {
+    const rom8 = parseQuery('Rom 8');
+    if (rom8.kind !== 'verse') throw new Error('not a verse query');
+    const entries = await verseIndex(rom8.passage, db);
+    expect(entries.map((e) => [e.kind, e.lesson.title, e.passages, e.text])).toEqual([
+      [
+        'section',
+        'The Good Shepherd',
+        ['Romans 8:28'],
+        'The same shepherd as in Psalm 23. Romans 8:28',
+      ],
+      [
+        'section',
+        'Justified by Faith',
+        ['Romans 7:24–8:2'],
+        'Who will deliver me? Romans 7:24–8:2',
+      ],
+    ]);
+    const john = parseQuery('John 10');
+    if (john.kind !== 'verse') throw new Error('not a verse query');
+    expect((await verseIndex(john.passage, db)).map((e) => [e.kind, e.passages])).toEqual([
+      ['lesson', ['John 10']],
+    ]);
+  });
+
+  it('follows deleted sections', async () => {
+    await removeSection(ids.deliver!, {}, db);
+    const rom8 = parseQuery('Rom 8');
+    if (rom8.kind !== 'verse') throw new Error('not a verse query');
+    expect((await verseIndex(rom8.passage, db)).map((e) => e.id)).toEqual([ids.psalm]);
+  });
+});
+
 describe('tag queries', () => {
   it('suggest tags that start with what is typed, most used first, with counts', async () => {
     const suggestions = await tagSuggestions('gr', db);
@@ -241,6 +281,16 @@ describe('tag queries', () => {
       'Justified by Faith: section deliver',
     ]);
     expect(await tagNamed('gra', db)).toBeNull();
+  });
+});
+
+describe('around', () => {
+  it('marks each phrase in order, around the first', () => {
+    expect(
+      marked('Romans 8:28 is like Romans 8:28 and Psalm 23', ['Romans 8:28', 'Psalm 23']),
+    ).toBe('**Romans 8:28** is like Romans 8:28 and **Psalm 23**');
+    const long = `${'word '.repeat(30)}Romans 8:28 ${'more '.repeat(30)}`;
+    expect(marked(long, ['Romans 8:28'], 20)).toMatch(/^…word .*\*\*Romans 8:28\*\* more.*more…$/);
   });
 });
 
