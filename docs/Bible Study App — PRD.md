@@ -1,6 +1,6 @@
 # Lamp — Bible Study App PRD
 
-Oct 12, 2026 · @Frost Biter · v1.2 (see [Change log](#change-log))
+Oct 13, 2026 · @Frost Biter · v1.3 (see [Change log](#change-log))
 
 ## Overview
 
@@ -166,7 +166,7 @@ Rules that follow from this:
 - The repo never contains an API key.
 - Every verse chip stores which translation its snapshot came from and labels it in the UI.
 - Reference normalisation (book code, chapter, verse range) is translation-independent; only the text lookup varies.
-- Versification differences between translations are out of scope for phase 1 and noted as a phase 2 risk.
+- References typed with KJV verse numbers that WEB places elsewhere (the Romans doxology, 16:25–27 → 14:24–26) are moved onto WEB's numbers, and the autocomplete says so. Mapping between other translations is a phase 2 risk.
 
 ## Technical architecture
 
@@ -225,7 +225,7 @@ Phase 2 builds on the accounts and sync from phase 1 to add sharing, community a
 - [x] ~~Pick the front-end framework and the IndexedDB wrapper before milestone A.~~ React + Dexie (TECH-DESIGN §2).
 - [x] ~~Decide whether verse chips re-render from the live translation or always show the snapshot.~~ Snapshot, with "View in …" for other downloaded translations (F3).
 - [x] ~~Settle the seeded tag list and whether tags are also applied at lesson level.~~ 24 themes; tags apply to lessons too (F4).
-- [ ] Versification differences across translations are ignored in phase 1; revisit when a second translation is added in phase 2.
+- [ ] Versification: phase 1 maps KJV numbers onto WEB's (TECH-DESIGN §9); revisit for other translations when a second one is added in phase 2.
 - [ ] Storage growth: WEB plus notes stays small; measure storage on a low-end phone before release.
 - [x] ~~Licence for the project itself (MIT or Apache-2.0) and a contributor guide.~~ MIT; the contributor guide is a backlog task.
 - [x] ~~Theme preset names and colours.~~ The reading-room set: Parchment, Vellum, Olive, Slate, Cedar, Midnight; colours tuned in the UX pass.
@@ -238,3 +238,4 @@ Phase 2 builds on the accounts and sync from phase 1 to add sharing, community a
 | 1.0 | 2026-10-12 | First version. |
 | 1.1 | 2026-10-12 | Technical design decisions: phase 1 gains a NestJS + PostgreSQL server, optional accounts (F14) and cross-device sync (F15), moved from phase 2. ESV (F13) moves to phase 2; phase 1 ships WEB only. Theme presets added (F16). Product decisions: guest use without an account, sign-out keeps notes on the device, chips show their snapshot, 24 seeded tags on sections and lessons, a 14-day review window, PDF through the print view, MIT licence, no admin UI. Verse references may cross chapters. Milestones become A–E, with accounts and sync as B. |
 | 1.2 | 2026-10-12 | Named the app **Lamp**. Theme presets settled (F16). Hosting on the existing VPS provider, email through Resend, errors to Sentry, backups by provider snapshots; see TECH-DESIGN §15. |
+| 1.3 | 2026-10-13 | Verse entry (F3) accepts KJV verse numbers that WEB places elsewhere and moves them onto WEB's; parser rules for ambiguous input settled (TECH-DESIGN §4.1, §15). |

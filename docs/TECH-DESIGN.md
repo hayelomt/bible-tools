@@ -105,7 +105,14 @@ interface VerseRef {
 
 - **Ordinals:** each verse maps to an integer `bookIndex·1,000,000 + chapter·1,000 + verse`. A reference becomes `[startOrd, endOrd]`; a whole chapter is `[c·1000+0, c·1000+999]`. Two references overlap when `a.start ≤ b.end && b.start ≤ a.end`. The verse index, verse search and reader markers all reduce to this one range query, on the device and on the server. Ordinals also make cross-chapter ranges free, which is why `chapterEnd` is included (closes BACKLOG gap 3).
 - **Book table:** codes, names, abbreviations, numbered-book variants (`1 Jn`, `I John`, `First John`) and the chapter and verse counts from the default translation.
-- **Parser:** `parseReference(input) → { ok, ref } | { ok: false, error }` and `suggest(input, limit) → Suggestion[]` for the autocomplete. Book names are matched by prefix and fuzzy matching (edit distance ≤ 2 on names of 4+ letters). Tests are table-driven.
+- **Parser:** `parseReference(input) → { ok, ref, mappedFrom? } | { ok: false, error }` and `suggest(input, limit) → Suggestion[]` for the autocomplete. Book names are matched by exact alias, then prefix, then fuzzy matching (edit distance ≤ 2 on names of 4+ letters, ranked relative to the alias length). Tests are table-driven. Rules settled on 2026-10-13:
+  - A name that fits several books is an error that lists them (`Jud` → Judges or Jude; `Sam` → 1 or 2 Samuel), and `suggest` offers each one.
+  - With no number typed, a book without a number wins over a numbered one (`Ti` → Titus, `Jhon` → John). `Tim` still means 1 or 2 Timothy.
+  - In a one-chapter book, a bare number is a verse (`Jude 3`, `Jude 1` = verse 1), and the book name alone is the whole book.
+  - Any other book name alone is an error ("Add a chapter"); `suggest` offers chapter 1.
+  - Psalms display as "Psalm 23" for one and "Psalms 1–2" for a range.
+  - Part-verse letters are accepted and dropped (`8:28a` → 8:28).
+  - KJV verse numbers that WEB places elsewhere are moved onto WEB's, and `mappedFrom` keeps what was typed (§9).
 
 ### 4.2 Section document model
 
@@ -286,7 +293,8 @@ The queue is a local query: open questions, takeaways from the last `reviewWindo
 - **Source:** WEB USFM from eBible.org. Its licence notice is kept in the package.
 - **Build:** `pnpm --filter bible-data build` → `dist/<translation>/<BOOK>.json` (`{ "c": [[ "v1 text", "v2 text", … ], …] }`) with footnotes and markup removed and the text unchanged (eBible's condition for keeping the "World English Bible" name), plus `manifest.json` (translations, books, verse counts, content hash and size per file). Files are named by content hash and served as immutable static files.
 - **Text lookup:** `getText(ref, translation)` in the web app loads the book file from the service worker cache and slices it. The server never needs Bible text in phase 1. It validates references against the book table only.
-- **Versification:** the book table uses WEB's chapter and verse counts. Differences between translations are out of scope for phase 1, as in the PRD. A reference past the end of a chapter in another translation shows "Not in this translation".
+- **Source files:** not committed. M1-12 adds a script that downloads the eBible.org zip, checks a pinned checksum and unzips it into `packages/bible-data/source/eng-web/` (gitignored); CI caches it. `@lamp/bible-data` tests compare the domain book table with that source chapter by chapter.
+- **Versification:** the book table uses WEB's chapter and verse counts, and WEB numbers are the canonical ones. Typed KJV numbers that WEB puts elsewhere are mapped by `domain/versification.ts`. A diff of the eBible.org KJV and WEB texts found only one such place: WEB prints the Romans doxology at 14:24–26 (KJV 16:25–27) and keeps 16:25 as an empty verse. Matthew 23:13–14 come in the opposite order in WEB, but both numbers exist there, so they follow WEB. WEB also has empty, footnote-only verses at Luke 17:36, Acts 8:37, 15:34 and 24:7; the snapshot for those is handled in M1-12 and M2-09. With a second translation (phase 2), a reference past the end of a chapter in that translation shows "Not in this translation".
 - **Chips and translations:** a chip always shows its snapshot with its translation label. Expanding it offers "View in …" for any other downloaded translation, and hides that option while WEB is the only one.
 - **More open translations, ESV and other licensed translations:** phase 2. Licensed ones go through a server proxy so the key never reaches the browser.
 
@@ -373,8 +381,11 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 12 | Hosting, email, errors | Existing VPS provider; Resend; Sentry free tier | §11 |
 | 13 | Backups | Provider snapshots plus a local nightly dump | §11.3 |
 | 14 | Sign-up and sessions | Open sign-up, verify before first sync; 90-day sessions renewed on use (confirmed) | §7.2 |
+| 15 | Parser rules for ambiguous input (2026-10-13) | Ambiguous names list the candidates; unnumbered books win; bare numbers in one-chapter books are verses; part-verse letters dropped | §4.1 |
+| 16 | KJV verse numbers (2026-10-13) | Accepted and moved onto WEB's numbers, with the typed reference kept as `mappedFrom` | §4.1, §9 |
+| 17 | WEB source files (2026-10-13) | Downloaded by a script with a pinned checksum, gitignored, cached in CI | §9 |
 
-**Still open:** nothing blocks phase 1. Exact preset colours are tuned in the UX pass; versification differences wait for a second translation in phase 2.
+**Still open:** nothing blocks phase 1. Exact preset colours are tuned in the UX pass; mapping between other translations' numbering waits for a second translation in phase 2.
 
 ## 16. PRD changes this design implies (applied in PRD v1.1)
 - **Architecture:** phase 1 now has a server (NestJS + Postgres) and accounts, with guest use still allowed. The "no backend" wording and the *Architecture* table need rewriting.

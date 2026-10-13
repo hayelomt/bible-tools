@@ -38,3 +38,4 @@ export {
   type VerseRef,
   verseOrdinal,
 } from './verse-ref.ts';
+export { kjvToWeb } from './versification.ts';

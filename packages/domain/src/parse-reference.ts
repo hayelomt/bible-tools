@@ -1,5 +1,6 @@
 import { BOOKS, type Book, type BookCode, bookKey, getBook } from './books.ts';
 import { type Passage, type PassageError, checkPassage, formatPassage } from './verse-ref.ts';
+import { kjvToWeb } from './versification.ts';
 
 /** A passage with its display text, as the parser returns it. */
 export interface ParsedPassage extends Passage {
@@ -14,7 +15,14 @@ export type ParseError =
   | { code: 'missing-chapter'; book: BookCode }
   | PassageError;
 
-export type ParseResult = { ok: true; ref: ParsedPassage } | { ok: false; error: ParseError };
+export type ParseResult =
+  | {
+      ok: true;
+      ref: ParsedPassage;
+      /** Set when KJV numbering was moved onto WEB's: "Romans 16:27" for a ref of Romans 14:26. */
+      mappedFrom?: string;
+    }
+  | { ok: false; error: ParseError };
 
 export interface BookMatch {
   book: Book;
@@ -25,6 +33,8 @@ export interface BookMatch {
 export interface Suggestion {
   ref: ParsedPassage;
   match: BookMatch['kind'];
+  /** As in ParseResult: the KJV-numbered reference this one was mapped from. */
+  mappedFrom?: string;
 }
 
 /**
@@ -56,7 +66,7 @@ export function suggest(input: string, limit = 5): Suggestion[] {
   for (const { book, kind } of matchBooks(split.book)) {
     const numbers = split.numbers || (book.verses.length === 1 ? '' : '1');
     const result = buildPassage(book, numbers, input);
-    if (result.ok) suggestions.push({ ref: result.ref, match: kind });
+    if (result.ok) suggestions.push({ ...result, match: kind });
     if (suggestions.length === limit) break;
   }
   return suggestions;
@@ -139,7 +149,10 @@ function buildPassage(book: Book, numbers: string, input: string): ParseResult {
   return finish({ book: code, chapter: first, verseStart: b, chapterEnd: c, verseEnd: d });
 }
 
-/** Drops redundant ends (8:28-28, 8-8, 8:28-8:30 → 8:28-30), checks the passage and formats it. */
+/**
+ * Drops redundant ends (8:28-28, 8-8, 8:28-8:30 → 8:28-30), moves KJV numbers onto WEB's
+ * (Rom 16:27 → 14:26), checks the passage and formats it.
+ */
 function finish(p: Passage): ParseResult {
   const passage: Passage = { book: p.book, chapter: p.chapter };
   if (p.verseStart !== undefined) passage.verseStart = p.verseStart;
@@ -150,9 +163,12 @@ function finish(p: Passage): ParseResult {
   ) {
     passage.verseEnd = p.verseEnd;
   }
-  const error = checkPassage(passage);
+  const mapped = kjvToWeb(passage);
+  const target = mapped ?? passage;
+  const error = checkPassage(target);
   if (error) return fail(error);
-  return { ok: true, ref: { ...passage, display: formatPassage(passage) } };
+  const ref = { ...target, display: formatPassage(target) };
+  return mapped ? { ok: true, ref, mappedFrom: formatPassage(passage) } : { ok: true, ref };
 }
 
 /**

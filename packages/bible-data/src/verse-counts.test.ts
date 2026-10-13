@@ -2,8 +2,9 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { BOOKS } from '@lamp/domain';
 import { describe, expect, it } from 'vitest';
 
-// The WEB USFM from eBible.org (eng-web_usfm.zip), unzipped. M1-12 puts it here; until then the
-// check is skipped, and the domain tests still check the totals and spot values.
+// The WEB USFM from eBible.org (eng-web_usfm.zip), unzipped. M1-12's download script puts it here
+// (gitignored); until then the check is skipped, and the domain tests still check the totals and
+// spot values.
 const SOURCE = new URL('../source/eng-web/', import.meta.url);
 
 /** Verses per chapter in one USFM book: the highest \v number in each \c. */
