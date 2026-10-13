@@ -18,5 +18,8 @@
     "oxlint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@lamp/domain": "workspace:*"
   }
 }
