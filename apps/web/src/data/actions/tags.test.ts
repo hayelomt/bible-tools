@@ -2,11 +2,19 @@ import { emptyBody, keyBetween, SEED_TAGS } from '@lamp/domain';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LampDb } from '../db.ts';
-import { allTags, tagsOf } from '../queries.ts';
+import { allTags, taggedWith, tagsOf } from '../queries.ts';
 import { ensureDevice } from '../setup.ts';
 import { createLesson, deleteLesson } from './lessons.ts';
 import { createSection } from './sections.ts';
-import { addTag, removeTag, restoreTag, type TagTarget } from './tags.ts';
+import {
+  addTag,
+  deleteTag,
+  removeTag,
+  renameTag,
+  restoreTag,
+  TagNameTakenError,
+  type TagTarget,
+} from './tags.ts';
 
 let db: LampDb;
 let dbCount = 0;
@@ -127,5 +135,84 @@ describe('tags', () => {
     await deleteLesson(lesson.id, db);
     expect(await names(lesson)).toEqual([]);
     expect(await names(section)).toEqual([]);
+  });
+
+  it('renames a tag everywhere it is used, and a change of case is a rename', async () => {
+    const { tag } = await addTag(section, 'covenant', db);
+    await addTag(lesson, 'covenant', db);
+    await renameTag(tag.id, ' #Covenant  love ', db);
+    expect(await names(section)).toEqual(['Covenant love']);
+    expect(await names(lesson)).toEqual(['Covenant love']);
+    await renameTag(tag.id, 'covenant LOVE', db);
+    expect(await names(section)).toEqual(['covenant LOVE']);
+  });
+
+  it('refuses a rename to a name another tag has, in any case', async () => {
+    const { tag } = await addTag(section, 'covenant', db);
+    await db.outbox.clear();
+    const error = await renameTag(tag.id, 'HOPE', db).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(TagNameTakenError);
+    expect((error as TagNameTakenError).existing.name).toBe('hope');
+    expect(await names(section)).toEqual(['covenant']);
+    expect(await db.outbox.count()).toBe(0);
+  });
+
+  it('deleting a tag takes it off every note, and the name can be used again', async () => {
+    const { tag } = await addTag(section, 'grace', db);
+    await addTag(lesson, 'grace', db);
+    await addTag(section, 'hope', db);
+    await deleteTag(tag.id, db);
+    expect(await names(section)).toEqual(['hope']);
+    expect(await names(lesson)).toEqual([]);
+    expect((await allTags(db)).map((t) => t.name)).not.toContain('grace');
+    expect(await taggedWith(tag.id, db)).toEqual([]);
+
+    const again = await addTag(section, 'Grace', db);
+    expect(again.tag).toMatchObject({ name: 'Grace', isSeeded: false });
+  });
+});
+
+const newLesson = (title: string, date: string) =>
+  createLesson(
+    {
+      seriesId: null,
+      title,
+      date,
+      source: 'sermon',
+      speaker: null,
+      church: null,
+      mainPassages: [],
+    },
+    db,
+  );
+const newSection = (lessonId: string, orderKey: string, parentId: string | null = null) =>
+  createSection({ lessonId, parentId, orderKey, body: emptyBody(), conflictOf: null }, db);
+
+describe('tag page', () => {
+  it('groups tagged sections and lessons by lesson, newest lesson first, sections in reading order', async () => {
+    const older = await newLesson('Abiding in the vine', '2026-10-05');
+    const first = await newSection(older.id, keyBetween(null, null));
+    const second = await newSection(older.id, keyBetween(first.orderKey, null));
+    const reply = await newSection(older.id, keyBetween(null, null), first.id);
+    for (const s of [second, reply, first])
+      await addTag({ kind: 'section', id: s.id }, 'grace', db);
+    const { tag } = await addTag(lesson, 'grace', db);
+    // Untagged notes don't show.
+    await addTag(section, 'hope', db);
+
+    const groups = await taggedWith(tag.id, db);
+    expect(groups.map((g) => [g.lesson.title, g.lessonTagged])).toEqual([
+      ['The Good Shepherd', true],
+      ['Abiding in the vine', false],
+    ]);
+    expect(groups[0]?.sections).toEqual([]);
+    expect(groups[1]?.sections.map((s) => s.id)).toEqual([first.id, reply.id, second.id]);
+  });
+
+  it('shows a section as soon as it is tagged, and not once the tag is taken off', async () => {
+    const { tag, link } = await addTag(section, 'grace', db);
+    expect((await taggedWith(tag.id, db))[0]?.sections.map((s) => s.id)).toEqual([section.id]);
+    await removeTag(link, db);
+    expect(await taggedWith(tag.id, db)).toEqual([]);
   });
 });

@@ -80,3 +80,41 @@ export function restoreTag(link: TagLink, db: LampDb = appDb): Promise<void> {
     await w.restore(link.entity, link.id);
   });
 }
+
+/** A rename to a name another tag already has, in any case; tags aren't merged. */
+export class TagNameTakenError extends Error {
+  constructor(readonly existing: Tag) {
+    super(`There's already a tag named ${existing.name}`);
+    this.name = 'TagNameTakenError';
+  }
+}
+
+/**
+ * Renames a tag, everywhere it's used: notes link to it by id. A change of case alone ("hope" to
+ * "Hope") is a rename; a name another tag has throws `TagNameTakenError`.
+ */
+export function renameTag(id: string, typed: string, db: LampDb = appDb): Promise<Tag> {
+  return action(db, async (w) => {
+    const name = normaliseTagName(typed);
+    if (!name) throw new Error('A tag needs a name');
+    const key = tagKey(name);
+    const other = await w.db.tag
+      .filter((t) => t.deletedAt === null && t.id !== id && tagKey(t.name) === key)
+      .first();
+    if (other) throw new TagNameTakenError(other);
+    return w.update('tag', id, { name });
+  });
+}
+
+const live = (link: { deletedAt: string | null }) => link.deletedAt === null;
+
+/** Deletes a tag and takes it off every section and lesson (the tag page asks first). */
+export function deleteTag(id: string, db: LampDb = appDb): Promise<void> {
+  return action(db, async (w) => {
+    const sectionTags = await w.db.sectionTag.where('tagId').equals(id).filter(live).primaryKeys();
+    const lessonTags = await w.db.lessonTag.where('tagId').equals(id).filter(live).primaryKeys();
+    for (const link of sectionTags) await w.remove('sectionTag', link);
+    for (const link of lessonTags) await w.remove('lessonTag', link);
+    await w.remove('tag', id);
+  });
+}

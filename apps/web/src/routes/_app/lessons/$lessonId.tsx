@@ -11,6 +11,8 @@ interface LessonSearch {
   new?: true;
   /** The series a draft starts in. */
   seriesId?: string;
+  /** A section to scroll to and highlight briefly (a tag page result). */
+  section?: string;
 }
 
 export const Route = createFileRoute('/_app/lessons/$lessonId')({
@@ -18,6 +20,7 @@ export const Route = createFileRoute('/_app/lessons/$lessonId')({
   validateSearch: (search: Record<string, unknown>): LessonSearch => ({
     new: search.new === true ? true : undefined,
     seriesId: typeof search.seriesId === 'string' ? search.seriesId : undefined,
+    section: typeof search.section === 'string' ? search.section : undefined,
   }),
   component: LessonScreen,
 });
@@ -45,5 +48,13 @@ function LessonScreen() {
       </>
     );
   }
-  return <LessonEditor key={lessonId} id={lessonId} lesson={lesson} seriesId={search.seriesId} />;
+  return (
+    <LessonEditor
+      key={lessonId}
+      id={lessonId}
+      lesson={lesson}
+      seriesId={search.seriesId}
+      revealSection={search.section}
+    />
+  );
 }

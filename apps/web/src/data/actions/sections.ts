@@ -1,6 +1,7 @@
 import type { Section } from '@lamp/domain';
 import { action, type NewRow, type RowPatch } from '../action.ts';
 import { db as appDb, type LampDb } from '../db.ts';
+import { syncAnswers } from './questions.ts';
 
 export type SectionFields = NewRow<'section'>;
 
@@ -9,13 +10,20 @@ export function createSection(fields: SectionFields, db: LampDb = appDb): Promis
   return action(db, (w) => w.create('section', fields));
 }
 
-/** Changes a section's body, or moves it (a new `parentId` and `orderKey`). */
+/**
+ * Changes a section's body, or moves it (a new `parentId` and `orderKey`). A question answered in
+ * the section turns answered, or back to open, with its text.
+ */
 export function updateSection(
   id: string,
   patch: RowPatch<'section'>,
   db: LampDb = appDb,
 ): Promise<Section> {
-  return action(db, (w) => w.update('section', id, patch));
+  return action(db, async (w) => {
+    const section = await w.update('section', id, patch);
+    if (patch.body) await syncAnswers(w, [section]);
+    return section;
+  });
 }
 
 /** What a delete removed, so Undo can bring exactly that back. */
@@ -52,6 +60,8 @@ export function removeSection(
       await w.remove('section', sectionId);
       removed.sectionTags.push(...tags);
     }
+    // A question answered here is open again (and answered again on Undo).
+    await syncAnswers(w, await w.db.section.bulkGet(removed.sections).then(present));
     return removed;
   });
 }
@@ -62,5 +72,8 @@ export function restoreSections(removed: RemovedSections, db: LampDb = appDb): P
     // A parent before its replies, which `removeSection` lists last.
     for (const id of removed.sections.toReversed()) await w.restore('section', id);
     for (const id of removed.sectionTags) await w.restore('sectionTag', id);
+    await syncAnswers(w, await w.db.section.bulkGet(removed.sections).then(present));
   });
 }
+
+const present = <T>(rows: (T | undefined)[]) => rows.filter((r): r is T => r !== undefined);

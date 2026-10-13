@@ -27,6 +27,8 @@ interface SectionEditorProps {
   row: SectionRow;
   api: SectionListApi;
   focus: FocusRequest | undefined;
+  /** Briefly highlighted: opened from a tag page or a question's answer. */
+  flash?: boolean;
   /** It takes part in a drag: everything but the empty section at the end. */
   sortable: boolean;
   /**
@@ -45,7 +47,14 @@ const PLACEHOLDERS = { 0: 'Write a note…', 1: 'Write a reply…' } as const;
  * when the row goes, so a section never has unsaved text for more than a second. A draft is
  * stored, with its id, once it has text.
  */
-export function SectionEditor({ row, api, focus, sortable, drag }: SectionEditorProps) {
+export function SectionEditor({
+  row,
+  api,
+  focus,
+  flash = false,
+  sortable,
+  drag,
+}: SectionEditorProps) {
   const { item, level } = row;
   const id = item.id;
   const { setNodeRef, setActivatorNodeRef, listeners, transform, transition } = useSortable({
@@ -230,9 +239,11 @@ export function SectionEditor({ row, api, focus, sortable, drag }: SectionEditor
       )}
       <div
         className={cn(
-          'min-w-0 flex-1 border-l-2 pl-3 transition-colors focus-within:border-primary',
+          'min-w-0 flex-1 rounded-r-md border-l-2 pl-3 transition-colors duration-700 focus-within:border-primary',
+          flash && 'border-primary bg-primary/10',
           slot !== undefined && 'invisible',
         )}
+        data-flash={flash || undefined}
       >
         <EditorContent editor={editor} />
         {item.stored && (

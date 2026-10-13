@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useId } from 'react';
 import { tagsOf } from '@/data/queries.ts';
 import { TagInput } from './tag-input.tsx';
+import { TagPageLink } from './tag-page-link.tsx';
 
 interface SectionTagsProps {
   sectionId: string;
@@ -12,7 +13,7 @@ interface SectionTagsProps {
 }
 
 /**
- * A section's tags, under its text (wireframes/lessons.md): `#grace` as plain words, or the tag
+ * A section's tags, under its text (wireframes/lessons.md): `#grace` as links to their pages, or the tag
  * input while they're being edited.
  */
 export function SectionTags({ sectionId, editing, onDone }: SectionTagsProps) {
@@ -46,7 +47,9 @@ export function SectionTags({ sectionId, editing, onDone }: SectionTagsProps) {
       className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-sm break-all text-muted-foreground"
     >
       {applied.map(({ tag, link }) => (
-        <li key={link.id}>#{tag.name}</li>
+        <li key={link.id}>
+          <TagPageLink tag={tag} />
+        </li>
       ))}
     </ul>
   );

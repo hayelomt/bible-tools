@@ -86,9 +86,9 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
 | ☑ | M4-01 | F4 Tag input with autocomplete on sections and lessons: seeded and custom tags, a new tag on Enter | M | F4 | Custom tags show in autocomplete (and sync, checked in M3); the same name can't be created twice with different case |
-| ☐ | M4-02 | F4 Tag page: every section and lesson with the tag, grouped by lesson, newest first | S | F4 | A section shows up immediately after tagging |
-| ☐ | M4-03 | F5 Takeaways on a lesson: add, edit, delete | S | F5 | Takeaways carry `createdAt` for the review queue (and sync, checked in M3) |
-| ☐ | M4-04 | F5 Open questions: add, set status (open / answered / parked), promote to a child section titled with the question; answered once that section has a body | M | F5 | Tests: promotion links `answerSectionId`; an empty answer section leaves the question open |
+| ☑ | M4-02 | F4 Tag page: every section and lesson with the tag, grouped by lesson, newest first | S | F4 | A section shows up immediately after tagging |
+| ☑ | M4-03 | F5 Takeaways on a lesson: add, edit, delete | S | F5 | Takeaways carry `createdAt` for the review queue (and sync, checked in M3) |
+| ☑ | M4-04 | F5 Open questions: add, set status (open / answered / parked), promote to a child section titled with the question; answered once that section has a body | M | F5 | Tests: promotion links `answerSectionId`; an empty answer section leaves the question open |
 | ☐ | M4-05 | F6 Search index: MiniSearch in a Web Worker over sections, takeaways and questions, built at startup and updated after each action (and each pull, once M3 adds it) | M | §8.4, F6 | 5,000 seeded sections index in under 1 s on a mid-range phone (recorded) |
 | ☐ | M4-06 | F6 **Search UI**: one box for free text, `#tags` and verse queries (detected by the parser); results grouped by lesson; a result opens the lesson at the matching section | L | §8.4, F6 | Each query type returns the right sections in a fixture test; works offline |
 | ☐ | M4-07 | F7 **Verse index** page: every section, highlight and memory item citing a passage, newest first, with lesson, date and surrounding text; reachable from a chip and from search | M | §4.1, F7 | Opening `Rom 8` lists every citation that overlaps the chapter, including cross-chapter ranges |

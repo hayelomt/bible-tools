@@ -17,6 +17,7 @@ import {
 } from '@/data/actions/tags.ts';
 import { allTags, tagsOf } from '@/data/queries.ts';
 import { matchTags } from './match-tags.ts';
+import { TagPageLink } from './tag-page-link.tsx';
 
 interface TagInputProps {
   /** The text field's id, for its `<label>`. */
@@ -165,7 +166,7 @@ export function TagInput({ id, target, focusOnMount = false, onEscape }: TagInpu
               key={link.id}
               className="flex items-center gap-0.5 rounded-lg bg-secondary py-0.5 pl-2.5 text-sm break-all text-secondary-foreground"
             >
-              #{tag.name}
+              <TagPageLink tag={tag} />
               <Button
                 variant="ghost"
                 size="icon-xs"

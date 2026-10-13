@@ -1,7 +1,7 @@
 import type { Lesson } from '@lamp/domain';
 import { ChevronDown } from 'lucide-react';
-import { useId, useState } from 'react';
-import { SectionList } from '@/components/sections/section-list.tsx';
+import { useId, useRef, useState } from 'react';
+import { type SectionRequest, SectionList } from '@/components/sections/section-list.tsx';
 import { ScreenActions, ScreenTitle, SidePanel } from '@/components/shell/slots.tsx';
 import type { LessonFields } from '@/data/actions/lessons.ts';
 import { longDate, today } from '@/lib/dates.ts';
@@ -9,6 +9,9 @@ import { SOURCE_LABELS } from '@/lib/labels.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { LessonDetails } from './lesson-details.tsx';
 import { LessonMenu } from './lesson-menu.tsx';
+import { PanelHeading } from './panel-heading.tsx';
+import { Questions } from './questions.tsx';
+import { Takeaways } from './takeaways.tsx';
 import { useLessonSaver } from './use-lesson-saver.ts';
 
 /** The side panel needs room for the sidebar, the 42 rem column and itself. */
@@ -20,6 +23,8 @@ interface LessonEditorProps {
   lesson: Lesson | null;
   /** The series a new lesson starts in ("New lesson in John"). */
   seriesId?: string;
+  /** A section to scroll to and highlight as the lesson opens (a tag page result). */
+  revealSection?: string;
 }
 
 /** What a new lesson starts with (wireframes/lessons.md): today, a sermon, no series. */
@@ -40,7 +45,7 @@ function newLesson(seriesId?: string): LessonFields {
  * the title, large, then a line with the date and source that opens the details. On a wide laptop
  * the details sit in the side panel instead. Everything saves as it's typed; there's no Save.
  */
-export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
+export function LessonEditor({ id, lesson, seriesId, revealSection }: LessonEditorProps) {
   const saver = useLessonSaver(id, lesson, () => newLesson(seriesId));
   const { values, save, flush, saving } = saver;
   const [title, setTitle] = useState(values.title);
@@ -48,12 +53,33 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
   const [sectionsSaving, setSectionsSaving] = useState(false);
   // Enter in the title asks for the cursor in the first section; a count, so each Enter asks again.
   const [focusFirst, setFocusFirst] = useState(0);
+  // Asks of the section list: show a section, or answer a question in a new one.
+  const [request, setRequest] = useState<SectionRequest | undefined>(
+    revealSection ? { kind: 'reveal', sectionId: revealSection, seq: 1 } : undefined,
+  );
+  const requests = useRef(1);
   const wide = useMediaQuery(WIDE);
   const titleId = useId();
   const errorId = useId();
   const detailsId = useId();
   // An empty title isn't stored; the stored one stays until a new one is typed.
   const missingTitle = lesson !== null && !title.trim();
+
+  // Takeaways and questions belong to a stored lesson, like its sections.
+  const extras = lesson && (
+    <>
+      <Takeaways lessonId={id} />
+      <Questions
+        lessonId={id}
+        onAnswer={(questionId) =>
+          setRequest({ kind: 'answer', questionId, seq: ++requests.current })
+        }
+        onShowAnswer={(sectionId) =>
+          setRequest({ kind: 'reveal', sectionId, seq: ++requests.current })
+        }
+      />
+    </>
+  );
 
   return (
     <div className="flex flex-col gap-2">
@@ -135,15 +161,13 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
 
       {wide ? (
         <SidePanel>
-          <section aria-labelledby={detailsId} className="flex flex-col gap-4">
-            <h2
-              id={detailsId}
-              className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-            >
-              Details
-            </h2>
-            <LessonDetails saver={saver} lessonId={lesson ? id : null} />
-          </section>
+          <div className="flex flex-col gap-8">
+            <section aria-labelledby={detailsId} className="flex flex-col gap-3">
+              <PanelHeading id={detailsId}>Details</PanelHeading>
+              <LessonDetails saver={saver} lessonId={lesson ? id : null} />
+            </section>
+            {extras}
+          </div>
         </SidePanel>
       ) : (
         detailsOpen && (
@@ -156,9 +180,16 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
       {/* Sections belong to a stored lesson, so they show once the title is typed. */}
       {lesson && (
         <div className="mt-4">
-          <SectionList lessonId={id} focusFirst={focusFirst} onSavingChange={setSectionsSaving} />
+          <SectionList
+            lessonId={id}
+            focusFirst={focusFirst}
+            request={request}
+            onSavingChange={setSectionsSaving}
+          />
         </div>
       )}
+      {/* On a laptop they're in the side panel, under the details. */}
+      {!wide && extras && <div className="mt-8 flex flex-col gap-8">{extras}</div>}
     </div>
   );
 }

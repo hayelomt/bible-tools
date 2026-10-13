@@ -1,13 +1,14 @@
 import { DndContext, DragOverlay, type DropAnimation } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { emptyBody, newId, type SectionBody } from '@lamp/domain';
+import { emptyBody, keyBetween, newId, type SectionBody } from '@lamp/domain';
 import { toast } from '@lamp/ui/components/sonner';
 import type { Editor } from '@tiptap/core';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
+import { promoteQuestion } from '@/data/actions/questions.ts';
 import { useAutoPreview } from '@/components/verses/verse-preview.ts';
 import { VerseViewer } from '@/components/verses/verse-viewer.tsx';
 import {
@@ -50,10 +51,12 @@ export type SectionRow = OutlineRow<SectionItem>;
 
 type MoveFocus = Extract<FocusRequest['at'], 'keep' | 'handle'>;
 
-/** The list's own side of the API: a drop, and a delete the dialog confirmed. */
+/** The list's own side of the API: a drop, a delete the dialog confirmed, and an answer. */
 interface ListApi extends SectionListApi {
   drop: (id: string, drop: Drop) => void;
   confirmRemove: (id: string) => void;
+  /** "Answer in a section": the question's section at the end, with the cursor under its heading. */
+  answer: (questionId: string) => void;
 }
 
 /** A move shown before it's stored; `storedAt` is the row's `updatedAt` once its write is done. */
@@ -98,10 +101,22 @@ export interface SectionListApi {
   discardIfEmpty: (id: string) => void;
 }
 
+/**
+ * Something the lesson screen asks of the list, numbered so asking twice acts twice: answer a
+ * question in a new section, or show a section (scrolled to and briefly highlighted).
+ */
+export type SectionRequest =
+  | { kind: 'answer'; questionId: string; seq: number }
+  | { kind: 'reveal'; sectionId: string; seq: number };
+
+/** How long a revealed section stays highlighted. */
+const FLASH_MS = 2000;
+
 interface SectionListProps {
   lessonId: string;
   /** Bumped to put the cursor in the first section (Enter in the title). */
   focusFirst: number;
+  request?: SectionRequest;
   onSavingChange: (saving: boolean) => void;
 }
 
@@ -110,7 +125,7 @@ interface SectionListProps {
  * row. New sections are drafts until they have text, like a new lesson. Tab, Shift+Tab, Enter and
  * Backspace move between sections and change the level, and the toolbar does the same by touch.
  */
-export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionListProps) {
+export function SectionList({ lessonId, focusFirst, request, onSavingChange }: SectionListProps) {
   const stored = useLiveQuery(() => lessonSections(lessonId), [lessonId]);
   useAutoPreview();
   const [drafts, setDrafts] = useState<OutlineItem[]>([]);
@@ -123,6 +138,7 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
   const [writing, setWriting] = useState(0);
   // The section with replies whose delete is being asked about.
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
 
   const draftsRef = useRef(drafts);
   const created = useRef(new Set<string>());
@@ -207,6 +223,25 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
     // Only a new request moves the cursor, not new rows.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [focusFirst, stored === undefined]);
+
+  // Each request is handled once, as soon as the sections are read.
+  const handled = useRef(0);
+  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => {
+    if (!request || !stored || request.seq === handled.current) return;
+    handled.current = request.seq;
+    if (request.kind === 'answer') {
+      apiRef.current?.answer(request.questionId);
+      return;
+    }
+    const element = listRef.current?.querySelector(`[data-section="${request.sectionId}"]`);
+    if (!element) return;
+    element.scrollIntoView({ block: 'center' });
+    setFlash(request.sectionId);
+    clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlash(null), FLASH_MS);
+  }, [request, stored]);
+  useEffect(() => () => clearTimeout(flashTimer.current), []);
 
   const saving = dirty.size > 0 || writing > 0;
   useEffect(() => onSavingChange(saving), [saving, onSavingChange]);
@@ -351,6 +386,28 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
         else deleteNow(id, false);
       },
       confirmRemove: (id) => deleteNow(id, true),
+      answer: (questionId) => {
+        // The answer goes where the empty section at the end is, which moves below it. One with
+        // text being stored stays above the answer instead.
+        const trailing = trailingDraft(rowsRef.current);
+        const end = endPlacement(rowsRef.current).orderKey;
+        const empty = trailing && editors.current.get(trailing.item.id)?.isEmpty !== false;
+        const orderKey = empty ? trailing.item.orderKey : end;
+        if (empty) {
+          updateDrafts((ds) =>
+            ds.map((d) =>
+              d.id === trailing.item.id ? { ...d, orderKey: keyBetween(orderKey, null) } : d,
+            ),
+          );
+        }
+        const id = newId();
+        enqueue(async () => {
+          // A question answered before gets its section back rather than a second one.
+          const section = await promoteQuestion(questionId, { id, orderKey });
+          created.current.add(section.id);
+          focusAt(section.id, 'end');
+        });
+      },
       wasDragged,
       drop: (id, drop) => moveToTarget(id, drop, 'handle'),
       backspaceEmpty: (id) => {
@@ -416,6 +473,7 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
                 row={row}
                 api={api}
                 focus={focus?.id === row.item.id ? focus : undefined}
+                flash={flash === row.item.id}
                 sortable={sortable.includes(row.item.id)}
                 drag={
                   drag?.id === row.item.id

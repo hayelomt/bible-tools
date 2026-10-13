@@ -1,4 +1,12 @@
-import type { Lesson, Section, Series, Tag } from '@lamp/domain';
+import {
+  compareOrder,
+  type Lesson,
+  type Question,
+  type Section,
+  type Series,
+  type Tag,
+  type Takeaway,
+} from '@lamp/domain';
 import type { TagLink, TagTarget } from './actions/tags.ts';
 import { db as appDb, type LampDb } from './db.ts';
 
@@ -101,4 +109,86 @@ export async function tagsOf(target: TagTarget, db: LampDb = appDb): Promise<App
         a.link.createdAt.localeCompare(b.link.createdAt) || a.link.id.localeCompare(b.link.id),
     )
     .map(({ link, tag }) => ({ tag, link: { entity, id: link.id } }));
+}
+
+/** A tag by id: `null` when it doesn't exist or was deleted. */
+export async function tagById(id: string, db: LampDb = appDb): Promise<Tag | null> {
+  const row = await db.tag.get(id);
+  return row && notDeleted(row) ? row : null;
+}
+
+/** A lesson on a tag page: the lesson itself if it has the tag, and its sections that do. */
+export interface TaggedLesson {
+  lesson: Lesson;
+  lessonTagged: boolean;
+  /** In reading order: a section, then its replies. */
+  sections: Section[];
+}
+
+/**
+ * Everything with a tag (F4, wireframes/lessons.md "Tag page"), grouped by lesson, newest lesson
+ * first.
+ */
+export async function taggedWith(tagId: string, db: LampDb = appDb): Promise<TaggedLesson[]> {
+  const [sectionLinks, lessonLinks] = await Promise.all([
+    db.sectionTag.where('tagId').equals(tagId).filter(notDeleted).toArray(),
+    db.lessonTag.where('tagId').equals(tagId).filter(notDeleted).toArray(),
+  ]);
+  const sections = (await db.section.bulkGet(sectionLinks.map((l) => l.sectionId))).filter(
+    (s): s is Section => !!s && notDeleted(s),
+  );
+  const lessonIds = new Set([
+    ...lessonLinks.map((l) => l.lessonId),
+    ...sections.map((s) => s.lessonId),
+  ]);
+  const lessons = (await db.lesson.bulkGet([...lessonIds])).filter(
+    (l): l is Lesson => !!l && notDeleted(l),
+  );
+  const tagged = new Set(lessonLinks.map((l) => l.lessonId));
+
+  return Promise.all(
+    lessons
+      .toSorted(byDate)
+      .toReversed()
+      .map(async (lesson) => {
+        const own = sections.filter((s) => s.lessonId === lesson.id);
+        const parents = own.some((s) => s.parentId) ? await lessonSections(lesson.id, db) : own;
+        return {
+          lesson,
+          lessonTagged: tagged.has(lesson.id),
+          sections: readingOrder(own, parents),
+        };
+      }),
+  );
+}
+
+/**
+ * Sections in the order the lesson shows them: by their top-level section, which comes before
+ * its replies. `all` holds the parents of any replies among `sections`.
+ */
+function readingOrder(sections: Section[], all: Section[]): Section[] {
+  const byId = new Map(all.map((s) => [s.id, s]));
+  const top = (s: Section) => (s.parentId && byId.get(s.parentId)) || s;
+  return sections.toSorted(
+    (a, b) =>
+      compareOrder(top(a), top(b)) ||
+      Number(top(a) !== a) - Number(top(b) !== b) ||
+      compareOrder(a, b),
+  );
+}
+
+/** In the order they were added; the list adds at the end. */
+const byCreation = (a: { createdAt: string; id: string }, b: { createdAt: string; id: string }) =>
+  a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id);
+
+/** A lesson's takeaways (F5), oldest first. */
+export async function lessonTakeaways(lessonId: string, db: LampDb = appDb): Promise<Takeaway[]> {
+  const rows = await db.takeaway.where('lessonId').equals(lessonId).filter(notDeleted).toArray();
+  return rows.toSorted(byCreation);
+}
+
+/** A lesson's questions (F5), oldest first, with or without an answer. */
+export async function lessonQuestions(lessonId: string, db: LampDb = appDb): Promise<Question[]> {
+  const rows = await db.question.where('lessonId').equals(lessonId).filter(notDeleted).toArray();
+  return rows.toSorted(byCreation);
 }
