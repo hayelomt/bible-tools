@@ -42,10 +42,19 @@ test('in airplane mode after the first load, every screen works and any book ope
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Settings');
-  for (const title of ['Read', 'Search', 'Review', 'Lessons']) {
-    await page.getByRole('link', { name: title, exact: true }).first().click();
+  for (const [link, title] of [
+    ['Read', 'John 1'],
+    ['Search', 'Search'],
+    ['Review', 'Review'],
+    ['Lessons', 'Lessons'],
+  ] as const) {
+    await page.getByRole('link', { name: link, exact: true }).first().click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
   }
+
+  // Any chapter in the reader, as from a bookmark.
+  await page.goto('/read/2KI.5');
+  await expect(page.locator('[data-verse="14"]')).toContainText('dipped himself seven times');
 
   // Straight to an address, as from a bookmark: the same page, from the service worker.
   await page.goto('/review');

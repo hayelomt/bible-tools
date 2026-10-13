@@ -121,7 +121,7 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
-| ☐ | M5-01 | F8 Reader: WEB chapter view, book and chapter picker, previous and next by swipe and keyboard, reopens at the last position | M | §9, F8 | Any chapter opens offline; the last position survives a reload |
+| ☑ | M5-01 | F8 Reader: WEB chapter view, book and chapter picker, previous and next by swipe and keyboard, reopens at the last position | M | §9, F8 | Any chapter opens offline; the last position survives a reload (`reader.spec.ts`, `offline.spec.ts`). Decided 2026-10-13: chapters at `/read/JHN.10`, John 1 first, the place (chapter and verse) kept on the device only, the picker a dialog |
 | ☐ | M5-02 | F8 Highlights: select one or more verses, four colours, an optional note; edit and delete. Adds highlight rows and the All / Notes / Highlights filter to the verse index (left out of M4-07) | M | F8 | Highlights sync and appear in the citation index |
 | ☐ | M5-03 | F8 Promote a highlight into a lesson section: pick a lesson or create one, insert a section with the verse chip and the note, set `promotedSectionId` | M | F8 | The new section appears in the lesson and the highlight links to it |
 | ☐ | M5-04 | Reader ↔ verse index: tapping a verse opens its verse index; verses with notes show a marker. Adds the verse index's "Read ›" button (left out of M4-07) | S | F7, F8 | Markers match the citation index for the chapter |

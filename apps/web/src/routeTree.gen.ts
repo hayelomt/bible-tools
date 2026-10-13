@@ -14,7 +14,6 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppSplatRouteImport } from './routes/_app/$'
 import { Route as AppCheckEmailRouteImport } from './routes/_app/check-email'
 import { Route as AppForgotPasswordRouteImport } from './routes/_app/forgot-password'
-import { Route as AppReadRouteImport } from './routes/_app/read'
 import { Route as AppResetPasswordRouteImport } from './routes/_app/reset-password'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
@@ -26,6 +25,8 @@ import { Route as DevSeedRouteImport } from './routes/dev.seed'
 import { Route as DevThemesRouteImport } from './routes/dev.themes'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
+import { Route as AppReadIndexRouteImport } from './routes/_app/read/index'
+import { Route as AppReadChapterRouteImport } from './routes/_app/read/$chapter'
 import { Route as AppSeriesSeriesIdRouteImport } from './routes/_app/series/$seriesId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsDevicesRouteImport } from './routes/_app/settings/devices'
@@ -55,11 +56,6 @@ const AppCheckEmailRoute = AppCheckEmailRouteImport.update({
 const AppForgotPasswordRoute = AppForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppReadRoute = AppReadRouteImport.update({
-  id: '/read',
-  path: '/read',
   getParentRoute: () => AppRoute,
 } as any)
 const AppResetPasswordRoute = AppResetPasswordRouteImport.update({
@@ -117,6 +113,16 @@ const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
   path: '/lessons/$lessonId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReadIndexRoute = AppReadIndexRouteImport.update({
+  id: '/read/',
+  path: '/read/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReadChapterRoute = AppReadChapterRouteImport.update({
+  id: '/read/$chapter',
+  path: '/read/$chapter',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSeriesSeriesIdRoute = AppSeriesSeriesIdRouteImport.update({
   id: '/series/$seriesId',
   path: '/series/$seriesId',
@@ -153,7 +159,6 @@ export interface FileRoutesByFullPath {
   '/$': typeof AppSplatRoute
   '/check-email': typeof AppCheckEmailRoute
   '/forgot-password': typeof AppForgotPasswordRoute
-  '/read': typeof AppReadRoute
   '/reset-password': typeof AppResetPasswordRoute
   '/review': typeof AppReviewRoute
   '/search': typeof AppSearchRoute
@@ -164,19 +169,20 @@ export interface FileRoutesByFullPath {
   '/dev/seed': typeof DevSeedRoute
   '/dev/themes': typeof DevThemesRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/read/$chapter': typeof AppReadChapterRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/settings/devices': typeof AppSettingsDevicesRoute
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
   '/lessons/': typeof AppLessonsIndexRoute
+  '/read/': typeof AppReadIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/$': typeof AppSplatRoute
   '/check-email': typeof AppCheckEmailRoute
   '/forgot-password': typeof AppForgotPasswordRoute
-  '/read': typeof AppReadRoute
   '/reset-password': typeof AppResetPasswordRoute
   '/review': typeof AppReviewRoute
   '/search': typeof AppSearchRoute
@@ -188,12 +194,14 @@ export interface FileRoutesByTo {
   '/dev/themes': typeof DevThemesRoute
   '/': typeof AppIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/read/$chapter': typeof AppReadChapterRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/settings/devices': typeof AppSettingsDevicesRoute
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
   '/lessons': typeof AppLessonsIndexRoute
+  '/read': typeof AppReadIndexRoute
   '/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -202,7 +210,6 @@ export interface FileRoutesById {
   '/_app/$': typeof AppSplatRoute
   '/_app/check-email': typeof AppCheckEmailRoute
   '/_app/forgot-password': typeof AppForgotPasswordRoute
-  '/_app/read': typeof AppReadRoute
   '/_app/reset-password': typeof AppResetPasswordRoute
   '/_app/review': typeof AppReviewRoute
   '/_app/search': typeof AppSearchRoute
@@ -214,12 +221,14 @@ export interface FileRoutesById {
   '/dev/themes': typeof DevThemesRoute
   '/_app/': typeof AppIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/_app/read/$chapter': typeof AppReadChapterRoute
   '/_app/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/_app/settings/devices': typeof AppSettingsDevicesRoute
   '/_app/settings/password': typeof AppSettingsPasswordRoute
   '/_app/tags/$tagId': typeof AppTagsTagIdRoute
   '/_app/verses/$passage': typeof AppVersesPassageRoute
   '/_app/lessons/': typeof AppLessonsIndexRoute
+  '/_app/read/': typeof AppReadIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -229,7 +238,6 @@ export interface FileRouteTypes {
     | '/$'
     | '/check-email'
     | '/forgot-password'
-    | '/read'
     | '/reset-password'
     | '/review'
     | '/search'
@@ -240,19 +248,20 @@ export interface FileRouteTypes {
     | '/dev/seed'
     | '/dev/themes'
     | '/lessons/$lessonId'
+    | '/read/$chapter'
     | '/series/$seriesId'
     | '/settings/devices'
     | '/settings/password'
     | '/tags/$tagId'
     | '/verses/$passage'
     | '/lessons/'
+    | '/read/'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/$'
     | '/check-email'
     | '/forgot-password'
-    | '/read'
     | '/reset-password'
     | '/review'
     | '/search'
@@ -264,12 +273,14 @@ export interface FileRouteTypes {
     | '/dev/themes'
     | '/'
     | '/lessons/$lessonId'
+    | '/read/$chapter'
     | '/series/$seriesId'
     | '/settings/devices'
     | '/settings/password'
     | '/tags/$tagId'
     | '/verses/$passage'
     | '/lessons'
+    | '/read'
     | '/settings'
   id:
     | '__root__'
@@ -277,7 +288,6 @@ export interface FileRouteTypes {
     | '/_app/$'
     | '/_app/check-email'
     | '/_app/forgot-password'
-    | '/_app/read'
     | '/_app/reset-password'
     | '/_app/review'
     | '/_app/search'
@@ -289,12 +299,14 @@ export interface FileRouteTypes {
     | '/dev/themes'
     | '/_app/'
     | '/_app/lessons/$lessonId'
+    | '/_app/read/$chapter'
     | '/_app/series/$seriesId'
     | '/_app/settings/devices'
     | '/_app/settings/password'
     | '/_app/tags/$tagId'
     | '/_app/verses/$passage'
     | '/_app/lessons/'
+    | '/_app/read/'
     | '/_app/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -340,13 +352,6 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof AppForgotPasswordRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/read': {
-      id: '/_app/read'
-      path: '/read'
-      fullPath: '/read'
-      preLoaderRoute: typeof AppReadRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/reset-password': {
@@ -426,6 +431,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLessonsLessonIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/read/': {
+      id: '/_app/read/'
+      path: '/read'
+      fullPath: '/read/'
+      preLoaderRoute: typeof AppReadIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/read/$chapter': {
+      id: '/_app/read/$chapter'
+      path: '/read/$chapter'
+      fullPath: '/read/$chapter'
+      preLoaderRoute: typeof AppReadChapterRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/series/$seriesId': {
       id: '/_app/series/$seriesId'
       path: '/series/$seriesId'
@@ -475,7 +494,6 @@ interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
   AppCheckEmailRoute: typeof AppCheckEmailRoute
   AppForgotPasswordRoute: typeof AppForgotPasswordRoute
-  AppReadRoute: typeof AppReadRoute
   AppResetPasswordRoute: typeof AppResetPasswordRoute
   AppReviewRoute: typeof AppReviewRoute
   AppSearchRoute: typeof AppSearchRoute
@@ -484,12 +502,14 @@ interface AppRouteChildren {
   AppVerifyEmailRoute: typeof AppVerifyEmailRoute
   AppIndexRoute: typeof AppIndexRoute
   AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
+  AppReadChapterRoute: typeof AppReadChapterRoute
   AppSeriesSeriesIdRoute: typeof AppSeriesSeriesIdRoute
   AppSettingsDevicesRoute: typeof AppSettingsDevicesRoute
   AppSettingsPasswordRoute: typeof AppSettingsPasswordRoute
   AppTagsTagIdRoute: typeof AppTagsTagIdRoute
   AppVersesPassageRoute: typeof AppVersesPassageRoute
   AppLessonsIndexRoute: typeof AppLessonsIndexRoute
+  AppReadIndexRoute: typeof AppReadIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
@@ -497,7 +517,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
   AppCheckEmailRoute: AppCheckEmailRoute,
   AppForgotPasswordRoute: AppForgotPasswordRoute,
-  AppReadRoute: AppReadRoute,
   AppResetPasswordRoute: AppResetPasswordRoute,
   AppReviewRoute: AppReviewRoute,
   AppSearchRoute: AppSearchRoute,
@@ -506,12 +525,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppVerifyEmailRoute: AppVerifyEmailRoute,
   AppIndexRoute: AppIndexRoute,
   AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
+  AppReadChapterRoute: AppReadChapterRoute,
   AppSeriesSeriesIdRoute: AppSeriesSeriesIdRoute,
   AppSettingsDevicesRoute: AppSettingsDevicesRoute,
   AppSettingsPasswordRoute: AppSettingsPasswordRoute,
   AppTagsTagIdRoute: AppTagsTagIdRoute,
   AppVersesPassageRoute: AppVersesPassageRoute,
   AppLessonsIndexRoute: AppLessonsIndexRoute,
+  AppReadIndexRoute: AppReadIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 

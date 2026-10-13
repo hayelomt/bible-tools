@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { ResultList } from '@/components/search/result-list.tsx';
 import { count } from '@/lib/labels.ts';
 import { recentSearches, rememberSearch } from '@/lib/recent-searches.ts';
+import { useAfter } from '@/lib/use-after.ts';
 import { searchText, useIndexStatus } from '@/search/client.ts';
 import {
   parseQuery,
@@ -185,15 +186,6 @@ function useTextSearch(text: string) {
 }
 
 /** True once `ms` have passed: placeholders show only for a wait worth showing (UX-PATTERNS). */
-function useAfter(ms: number) {
-  const [passed, setPassed] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setPassed(true), ms);
-    return () => clearTimeout(timer);
-  }, [ms]);
-  return passed;
-}
-
 function TextResults({ text, onOpen }: { text: string; onOpen: () => void }) {
   const status = useIndexStatus();
   const state = useTextSearch(text);

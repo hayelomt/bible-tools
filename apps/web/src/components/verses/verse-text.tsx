@@ -3,7 +3,7 @@ import { cn } from 'cn';
 import { type BookState, type NumberedVerse, numberedVerses, useBook } from '@/data/bible.ts';
 
 /** A verse number before its text, raised without making its line taller. */
-const NUMBER_CLASS =
+export const NUMBER_CLASS =
   'relative -top-[0.5em] mr-0.5 align-baseline font-sans not-italic text-[0.65em] leading-none text-muted-foreground';
 
 function verses(book: BookState, passage: Passage, text: string): NumberedVerse[] | null {

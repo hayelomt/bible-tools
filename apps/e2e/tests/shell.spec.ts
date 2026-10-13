@@ -2,7 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 const SCREENS = [
   ['/', 'Lessons'],
-  ['/read', 'Read'],
+  ['/read', 'John 1'],
   ['/search', 'Search'],
   ['/review', 'Review'],
   ['/settings', 'Settings'],
@@ -47,7 +47,7 @@ test.describe('on a phone', () => {
       'page',
     );
     await nav.getByRole('link', { name: 'Read' }).click();
-    await expect(page).toHaveURL(/\/read$/);
+    await expect(page).toHaveURL(/\/read\/JHN\.1$/);
     await expect(nav.getByRole('link', { name: 'Read' })).toHaveAttribute('aria-current', 'page');
     await expect(nav.getByRole('link', { name: 'Lessons' })).not.toHaveAttribute('aria-current');
 

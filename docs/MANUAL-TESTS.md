@@ -48,3 +48,17 @@ app's browser, with the API stopped and started for the connection (the Vite pro
    go back online in DevTools (at once).
    - The outbox empties, and the server has the note with every sentence, as one section and no
      conflicted copy (`select body from section …` on `lamp_dev`).
+
+## Swiping chapters on a phone (M5-01)
+
+E2E sends made-up touch events; this checks a real finger, where a swipe and a scroll share the
+same gesture. Use the installed app on an iPhone and on an Android phone.
+
+1. Open Read, then John 10. Swipe left across the text: John 11 opens at its top.
+2. Swipe right: John 10 again. Swipe right on Matthew 1: Malachi 4.
+3. Scroll up and down through a chapter, including quick diagonal flicks. **The chapter never
+   changes** while scrolling.
+4. Press and hold a word to select it, then drag the selection handles sideways. The chapter
+   doesn't change.
+5. Scroll to the middle of a chapter, wait a second, close the app and open it again on Read: the
+   same verse is at the top.
