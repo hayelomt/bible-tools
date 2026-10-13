@@ -552,7 +552,7 @@ It then copies the release to `/srv/lamp/releases/<version>`, runs `prisma migra
 
 ## 12. Security and privacy
 - Notes are personal: no analytics on content, and logs never contain request bodies or note text.
-- Every query is scoped by `userId` (§7.1), and the isolation tests are part of the integration suite.
+- Every query is scoped by `userId` (§7.1), and the isolation tests are part of the integration suite (`apps/api/test/isolation.int.test.ts`, M3-13). One account fills every table through the API; another then tries to read it (pull, account, devices), overwrite or delete each entity, reference each entity through every id column (`ENTITY_TABLES` refs), reuse a change id, sign out a device id both accounts share, and sign out, change the password and delete its own account. Every row the first account has, in every table, must be unchanged, and it must still be signed in. The tables come from the schema (`Prisma.ModelName` and every `user_id` column), so a new model is covered or fails the fixture check.
 - Rich text is rendered from validated ProseMirror JSON by TipTap. User HTML is never inserted into the page.
 - The push body size is capped, and the size of each entity field is capped by Zod.
 - Caddy sets CSP (`default-src 'self'`; scripts by hash for the theme snippet), HSTS, `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`.
