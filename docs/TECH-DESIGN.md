@@ -130,7 +130,12 @@ Section bodies are stored as **ProseMirror JSON**, the format TipTap uses (§8.3
 - `order.ts`: fractional index keys for section siblings, using the `fractional-indexing` package (rocicorp, CC0). `keyAt(siblingKeys, index)` places an insert or a move; siblings sort by key, then by id (`compareOrder`), so two devices that insert at the same place offline still agree on the order. Keys compare by byte, matching the `"C"` collation on `section.order_key`.
 - `srs.ts`: SM-2 (ease, interval, next review) as pure functions of `(state, grade, today)`.
 - `sync.ts`: the change, push and pull types (§6) and the conflict rules as pure functions, so they can be unit-tested without a database.
-- `schemas/`: a Zod schema per entity and per API request or response.
+- `schemas/`: a Zod schema per entity and per API request or response. *Built in M1-11:*
+  - **Entity rows** (`entities.ts`) are the database columns minus `userId`, as the device stores them and sync sends them: every column present (nullable ones as `null`), times as ISO strings in UTC, `date` as `YYYY-MM-DD`, and `rev` as a plain number (a per-user counter never nears 2^53; the API converts the bigint at the edge; decided 2026-10-13). Objects are strict, ids are UUIDv7, one-line text is trimmed. `citationSchema` has no sync fields, since citations are never pushed.
+  - **Sync** (`sync.ts`): a change is `{ changeId, baseRev, clientTime, entity, entityId, op, row }`. An upsert carries the whole row without `rev` (its id must equal `entityId`); a delete carries no row. Settings are one row per account, so their changes have no `entityId` and are upserts only. Push takes 1–100 changes; each result is `applied`, `conflict` (with a `resolution` and, for a conflicted copy, its `copyId`) or `rejected`. The pull query coerces its string parameters and defaults `limit` to 500.
+  - **Auth** (`auth.ts`): emails are trimmed but keep their case (the column is citext); new passwords need 10–256 characters, while login accepts any non-empty password; email tokens are 43-character base64url strings. `resend-verification` has an empty body, since the user is signed in.
+  - **API** (`api.ts`): health, the error body, and the devices list. The API imports these types (type-only, so its build needs nothing from `domain` until the bundling in §11.2), and the web app parses `/api/health` with the same schema.
+  - **Contract test** (`apps/api/test/contract.int.test.ts`): compares each schema with the migrated database (field names, nullability, wire type, and the values and ranges in CHECK constraints), and fails if a table has neither a schema nor a place on the server-only list (`session`, `email_token`, `sync_change`).
 - `seed-tags.ts`: the 24 seeded themes, copied into every new device and account: *grace, faith, prayer, hope, love, holiness, obedience, suffering, identity, worship, mission, repentance, forgiveness, salvation, the cross, resurrection, Holy Spirit, church, wisdom, justice, fear, stewardship, family, promises*.
 
 ## 5. Data model (Prisma, PostgreSQL)
@@ -392,6 +397,7 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 17 | WEB source files (2026-10-13) | Downloaded by a script with a pinned checksum, gitignored, cached in CI | §9 |
 | 18 | Section order keys (2026-10-13) | The `fractional-indexing` package; ties broken by id | §4.3 |
 | 19 | Verse chips in Markdown export (2026-10-13) | Reference in the sentence, snapshot quoted after the paragraph | §4.2 |
+| 20 | `rev` on the wire (2026-10-13) | A plain number; the API converts Postgres bigint at the edge | §4.3 |
 
 **Still open:** nothing blocks phase 1. Exact preset colours are tuned in the UX pass; mapping between other translations' numbering waits for a second translation in phase 2.
 

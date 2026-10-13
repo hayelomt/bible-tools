@@ -1,0 +1,358 @@
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { emptyBody } from '../doc.ts';
+import { keyBetween } from '../order.ts';
+import { SEED_TAGS } from '../seed-tags.ts';
+import type { VerseRef } from '../verse-ref.ts';
+import { apiErrorSchema, devicesResponseSchema, healthResponseSchema } from './api.ts';
+import {
+  changePasswordRequestSchema,
+  loginRequestSchema,
+  meResponseSchema,
+  resetPasswordRequestSchema,
+  signupRequestSchema,
+  verifyEmailRequestSchema,
+} from './auth.ts';
+import {
+  citationSchema,
+  ENTITY_NAMES,
+  ENTITY_SCHEMAS,
+  type EntityName,
+  tagSchema,
+} from './entities.ts';
+import {
+  type Change,
+  changeSchema,
+  type PulledRow,
+  pullQuerySchema,
+  pullResponseSchema,
+  pushRequestSchema,
+  pushResponseSchema,
+} from './sync.ts';
+
+const id = (n: number) => `0199c3a0-0000-7000-8000-${String(n).padStart(12, '0')}`;
+const NOW = '2026-10-13T04:05:06.789Z';
+const meta = (n: number) => ({
+  id: id(n),
+  createdAt: NOW,
+  updatedAt: NOW,
+  rev: 3,
+  deletedAt: null,
+});
+const ROM_8_28: VerseRef = {
+  book: 'ROM',
+  chapter: 8,
+  verseStart: 28,
+  display: 'Romans 8:28',
+  translation: 'WEB',
+};
+
+/** One valid row per synced entity. */
+const ROWS: { [E in EntityName]: unknown } = {
+  userSettings: {
+    themePreset: 'parchment',
+    colorMode: 'system',
+    defaultTranslation: 'WEB',
+    reviewWindowDays: 14,
+    rev: 1,
+    updatedAt: NOW,
+  },
+  series: { ...meta(1), title: 'Romans', description: '', kind: 'sermon_series' },
+  lesson: {
+    ...meta(2),
+    seriesId: id(1),
+    title: 'More than conquerors',
+    date: '2026-10-04',
+    source: 'sermon',
+    speaker: 'Pastor A',
+    church: null,
+    mainPassages: [ROM_8_28],
+  },
+  section: {
+    ...meta(3),
+    lessonId: id(2),
+    parentId: null,
+    orderKey: keyBetween(),
+    body: emptyBody(),
+    conflictOf: null,
+  },
+  tag: { ...meta(4), name: 'grace', isSeeded: true },
+  sectionTag: { ...meta(5), tagId: id(4), sectionId: id(3) },
+  lessonTag: { ...meta(6), tagId: id(4), lessonId: id(2) },
+  takeaway: { ...meta(7), lessonId: id(2), text: 'Nothing separates us.' },
+  question: {
+    ...meta(8),
+    lessonId: id(2),
+    text: 'What is foreknowledge?',
+    status: 'open',
+    answerSectionId: null,
+  },
+  highlight: { ...meta(9), ref: ROM_8_28, colour: 'yellow', note: null, promotedSectionId: id(3) },
+  memoryItem: {
+    ...meta(10),
+    ref: ROM_8_28,
+    ease: 2.5,
+    interval: 0,
+    nextReviewAt: NOW,
+    reviewCount: 0,
+  },
+};
+
+describe('entity schemas', () => {
+  it('cover the 11 synced entities', () => {
+    expect(ENTITY_NAMES).toEqual(Object.keys(ROWS));
+  });
+
+  describe.each(ENTITY_NAMES)('%s', (entity) => {
+    const schema = ENTITY_SCHEMAS[entity];
+    const row = ROWS[entity] as Record<string, unknown>;
+
+    it('accepts a valid row unchanged', () => {
+      expect(schema.parse(row)).toEqual(row);
+    });
+
+    it('rejects a missing field, an unknown field and a userId', () => {
+      for (const key of Object.keys(row)) {
+        const { [key]: _omitted, ...rest } = row;
+        expect({ key, ok: schema.safeParse(rest).success }).toEqual({ key, ok: false });
+      }
+      expect(schema.safeParse({ ...row, extra: 1 }).success).toBe(false);
+      expect(schema.safeParse({ ...row, userId: id(99) }).success).toBe(false);
+    });
+
+    it('rejects a bigint or negative rev, and a timestamp with an offset', () => {
+      expect(schema.safeParse({ ...row, rev: 3n }).success).toBe(false);
+      expect(schema.safeParse({ ...row, rev: -1 }).success).toBe(false);
+      expect(schema.safeParse({ ...row, updatedAt: '2026-10-13T06:05:06+02:00' }).success).toBe(
+        false,
+      );
+    });
+  });
+
+  it.each([
+    ['a UUIDv4 id', 'series', { id: '9b2f6f0e-8f5b-4b8e-9c3c-6a1f3d6c2b1a' }],
+    ['an empty title', 'series', { title: '  ' }],
+    ['an unknown series kind', 'series', { kind: 'podcast' }],
+    ['a date with a time', 'lesson', { date: '2026-10-04T00:00:00Z' }],
+    [
+      'a main passage that does not exist',
+      'lesson',
+      { mainPassages: [{ ...ROM_8_28, verseStart: 40 }] },
+    ],
+    ['an invalid order key', 'section', { orderKey: 'a00' }],
+    ['an invalid body', 'section', { body: { type: 'doc', content: [] } }],
+    ['a tag name over 50 characters', 'tag', { name: 'x'.repeat(51) }],
+    ['an unknown question status', 'question', { status: 'closed' }],
+    ['an unknown colour', 'highlight', { colour: 'red' }],
+    ['an ease below 1.3', 'memoryItem', { ease: 1.2 }],
+    ['a fractional interval', 'memoryItem', { interval: 1.5 }],
+    ['an unknown theme', 'userSettings', { themePreset: 'neon' }],
+    ['a review window of 0 days', 'userSettings', { reviewWindowDays: 0 }],
+  ] as [string, EntityName, Record<string, unknown>][])('rejects %s', (_, entity, change) => {
+    const row = { ...(ROWS[entity] as object), ...change };
+    expect(ENTITY_SCHEMAS[entity].safeParse(row).success).toBe(false);
+  });
+
+  it('trims one-line text', () => {
+    expect(tagSchema.parse({ ...(ROWS.tag as object), name: '  hope ' }).name).toBe('hope');
+  });
+
+  it('accepts every seeded tag as a tag name', () => {
+    for (const name of SEED_TAGS)
+      expect(tagSchema.parse({ ...(ROWS.tag as object), name }).name).toBe(name);
+  });
+
+  it('accepts a citation, which has no sync fields', () => {
+    const citation = {
+      id: id(20),
+      sourceType: 'section',
+      sourceId: id(3),
+      lessonId: id(2),
+      book: 'ROM',
+      startOrd: 45_008_028,
+      endOrd: 45_008_028,
+    };
+    expect(citationSchema.parse(citation)).toEqual(citation);
+    expect(citationSchema.safeParse({ ...citation, rev: 1 }).success).toBe(false);
+  });
+});
+
+describe('sync schemas', () => {
+  const { rev: _rev, ...lessonRow } = ROWS.lesson as Record<string, unknown>;
+  const upsert = {
+    changeId: id(100),
+    baseRev: 0,
+    clientTime: NOW,
+    entity: 'lesson',
+    entityId: id(2),
+    op: 'upsert',
+    row: lessonRow,
+  };
+  const remove = {
+    changeId: id(101),
+    baseRev: 3,
+    clientTime: NOW,
+    entity: 'tag',
+    entityId: id(4),
+    op: 'delete',
+  };
+  const { rev: _settingsRev, ...settingsRow } = ROWS.userSettings as Record<string, unknown>;
+  const settings = {
+    changeId: id(102),
+    baseRev: 1,
+    clientTime: NOW,
+    entity: 'userSettings',
+    op: 'upsert',
+    row: settingsRow,
+  };
+
+  it('accepts an upsert, a delete and a settings change', () => {
+    expect(changeSchema.parse(upsert)).toEqual(upsert);
+    expect(changeSchema.parse(remove)).toEqual(remove);
+    expect(changeSchema.parse(settings)).toEqual(settings);
+  });
+
+  it.each([
+    ['a row id that differs from entityId', { ...upsert, entityId: id(9) }],
+    ['a row with rev (the server assigns it)', { ...upsert, row: ROWS.lesson }],
+    ['a row of another entity', { ...upsert, entity: 'tag' }],
+    ['an upsert without a row', { ...remove, op: 'upsert' }],
+    ['a delete with a row', { ...remove, row: ROWS.tag }],
+    ['an unknown entity', { ...remove, entity: 'citation' }],
+    ['an unknown op', { ...remove, op: 'patch' }],
+    ['a settings delete', { ...settings, op: 'delete' }],
+    ['a settings change with an entityId', { ...settings, entityId: id(1) }],
+  ])('rejects a change with %s', (_, change) => {
+    expect(changeSchema.safeParse(change).success).toBe(false);
+  });
+
+  it('narrows a change by entity and op', () => {
+    const change = changeSchema.parse(upsert);
+    if (change.entity === 'lesson' && change.op === 'upsert') {
+      expectTypeOf(change.row.mainPassages).toEqualTypeOf<VerseRef[]>();
+    }
+    expectTypeOf<Extract<Change, { op: 'delete' }>>().not.toHaveProperty('row');
+    expectTypeOf<Extract<PulledRow, { entity: 'tag' }>['row']['name']>().toBeString();
+  });
+
+  it('limits a push to 1–100 changes', () => {
+    const push = {
+      deviceId: id(50),
+      deviceName: 'Firefox on Linux',
+      clientVersion: '0.1.0',
+      changes: [upsert],
+    };
+    expect(pushRequestSchema.parse(push)).toEqual(push);
+    expect(pushRequestSchema.safeParse({ ...push, changes: [] }).success).toBe(false);
+    const many = Array.from({ length: 101 }, (_, i) => ({ ...remove, changeId: id(200 + i) }));
+    expect(pushRequestSchema.safeParse({ ...push, changes: many.slice(0, 100) }).success).toBe(
+      true,
+    );
+    expect(pushRequestSchema.safeParse({ ...push, changes: many }).success).toBe(false);
+  });
+
+  it('accepts each kind of push result', () => {
+    const results = [
+      { changeId: id(100), status: 'applied', rev: 4 },
+      {
+        changeId: id(101),
+        status: 'conflict',
+        rev: 5,
+        resolution: 'conflicted-copy',
+        copyId: id(30),
+      },
+      { changeId: id(102), status: 'rejected', errorCode: 'FORBIDDEN', message: 'Not your lesson' },
+    ];
+    expect(pushResponseSchema.parse({ results })).toEqual({ results });
+    expect(
+      pushResponseSchema.safeParse({ results: [{ ...results[1], resolution: 'merged' }] }).success,
+    ).toBe(false);
+  });
+
+  it('reads the pull query from strings, with a default limit', () => {
+    expect(pullQuerySchema.parse({ cursor: '120' })).toEqual({ cursor: 120, limit: 500 });
+    expect(pullQuerySchema.parse({ cursor: '0', limit: '50' })).toEqual({ cursor: 0, limit: 50 });
+    for (const query of [
+      {},
+      { cursor: '-1' },
+      { cursor: 'x' },
+      { cursor: '1.5' },
+      { cursor: '0', limit: '501' },
+    ]) {
+      expect({ query, ok: pullQuerySchema.safeParse(query).success }).toEqual({ query, ok: false });
+    }
+  });
+
+  it('accepts a pull page with rows of every entity', () => {
+    const page = {
+      rows: ENTITY_NAMES.map((entity) => ({ entity, row: ROWS[entity] })),
+      nextCursor: 3,
+      hasMore: false,
+      serverTime: NOW,
+      minClientVersion: '0.1.0',
+    };
+    expect(pullResponseSchema.parse(page)).toEqual(page);
+    const wrong = { ...page, rows: [{ entity: 'tag', row: ROWS.lesson }] };
+    expect(pullResponseSchema.safeParse(wrong).success).toBe(false);
+  });
+});
+
+describe('auth schemas', () => {
+  const token = 'A'.repeat(42) + '_';
+
+  it('trims the email and keeps its case (the column is citext)', () => {
+    expect(
+      signupRequestSchema.parse({ email: ' Reader@Example.com ', password: 'long enough' }),
+    ).toEqual({
+      email: 'Reader@Example.com',
+      password: 'long enough',
+    });
+  });
+
+  it.each([
+    ['an invalid email', signupRequestSchema, { email: 'reader', password: 'long enough' }],
+    ['a password under 10 characters', signupRequestSchema, { email: 'a@b.co', password: 'short' }],
+    [
+      'a new password under 10 characters',
+      changePasswordRequestSchema,
+      { currentPassword: 'x', newPassword: 'short' },
+    ],
+    ['a reset with a short password', resetPasswordRequestSchema, { token, password: 'short' }],
+    ['a token of the wrong length', verifyEmailRequestSchema, { token: 'abc' }],
+    ['a token with other characters', verifyEmailRequestSchema, { token: '+'.repeat(43) }],
+    ['an empty login password', loginRequestSchema, { email: 'a@b.co', password: '' }],
+  ] as const)('rejects %s', (_, schema, body) => {
+    expect(schema.safeParse(body).success).toBe(false);
+  });
+
+  it('lets any non-empty password try to log in', () => {
+    expect(loginRequestSchema.safeParse({ email: 'a@b.co', password: 'short' }).success).toBe(true);
+    expect(verifyEmailRequestSchema.safeParse({ token }).success).toBe(true);
+  });
+
+  it('describes the signed-in user', () => {
+    const me = { id: id(1), email: 'reader@example.com', emailVerifiedAt: null, role: 'user' };
+    expect(meResponseSchema.parse(me)).toEqual(me);
+    expect(meResponseSchema.safeParse({ ...me, passwordHash: 'x' }).success).toBe(false);
+  });
+});
+
+describe('api schemas', () => {
+  it('accepts health, errors and devices', () => {
+    expect(healthResponseSchema.parse({ status: 'ok', version: '0.1.0' })).toBeDefined();
+    const error = {
+      statusCode: 400,
+      errorCode: 'VALIDATION_FAILED',
+      message: 'Bad',
+      details: [{ path: 'x' }],
+    };
+    expect(apiErrorSchema.parse(error)).toEqual(error);
+    const device = {
+      id: '9b2f6f0e-8f5b-4b8e-9c3c-6a1f3d6c2b1a',
+      name: 'Safari on iPhone',
+      clientVersion: '0.1.0',
+      createdAt: NOW,
+      lastSyncAt: null,
+    };
+    expect(devicesResponseSchema.parse({ devices: [device] })).toEqual({ devices: [device] });
+  });
+});

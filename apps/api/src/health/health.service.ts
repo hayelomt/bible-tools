@@ -1,12 +1,11 @@
+import type { HealthResponse } from '@lamp/domain';
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ApiException, ErrorCode } from '../common/errors.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { appVersion } from '../version.js';
 
-export interface Health {
-  status: 'ok';
-  version: string;
-}
+/** The shared schema's type; a type-only import, so the build needs nothing from domain. */
+export type Health = HealthResponse;
 
 @Injectable()
 export class HealthService {

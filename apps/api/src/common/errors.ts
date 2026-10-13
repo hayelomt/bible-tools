@@ -1,3 +1,4 @@
+import type { ApiError } from '@lamp/domain';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 /** Machine-readable codes the web app switches on. Feature modules add their own. */
@@ -17,13 +18,8 @@ export const ErrorCode = {
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
-/** The one error body every endpoint returns. */
-export interface ApiErrorBody {
-  statusCode: number;
-  errorCode: string;
-  message: string;
-  details?: unknown;
-}
+/** The one error body every endpoint returns (`apiErrorSchema` in domain). */
+export type ApiErrorBody = ApiError;
 
 /**
  * An HttpException with details for the client. Any HttpException can set its code with Nest's own

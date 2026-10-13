@@ -1,11 +1,8 @@
-/** `GET /api/health`. Moves to the shared schemas in `domain` with M1-11. */
-export interface Health {
-  status: 'ok';
-  version: string;
-}
+import { type HealthResponse, healthResponseSchema } from '@lamp/domain';
 
-export async function fetchHealth(): Promise<Health> {
+/** `GET /api/health`, checked against the schema the API shares. */
+export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch('/api/health');
   if (!res.ok) throw new Error(`GET /api/health returned ${res.status}`);
-  return (await res.json()) as Health;
+  return healthResponseSchema.parse(await res.json());
 }

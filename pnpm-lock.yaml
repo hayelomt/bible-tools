@@ -294,6 +294,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@lamp/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@lamp/ui':
         specifier: workspace:*
         version: link:../../packages/ui
