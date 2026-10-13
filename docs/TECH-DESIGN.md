@@ -307,6 +307,11 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - **Demo page:** `/dev/themes` in the web app shows the 15 components (button, badge, card, alert, input, textarea, label, checkbox, switch, tabs, separator, select, dropdown menu, tooltip, dialog) and reading text in all 12 preset and mode panels, with buttons that switch the page itself. Popups render in a portal, so they take the page's preset. The route stays in production builds, linked from nowhere, so presets can be checked on a real phone against the deployed app.
 - **Fonts:** the interface uses the system font. Scripture and notes use Literata (`font-serif`), self-hosted from `@fontsource-variable/literata` with the weight axis, upright and italic. The browser downloads only the subsets a page needs (Latin is 52 KB per style).
 
+*Picker, built in M2-03:*
+- `/settings/theme` shows the mode control and the six presets as a radio group of cards, each drawn in its own preset and the current mode; Settings has the same mode control and a link naming the current preset. Midnight in light mode offers "Use dark mode". Both controls are native radios, so arrow keys work and a choice applies at once.
+- The choice is written with the `updateSettings` action (stored in the local `UserSettings` and queued for sync). The shell's `useThemeSync` watches the settings with `useLiveQuery`, applies them to `<html>`, follows the device while the mode is "system", and mirrors them to `localStorage` for the inline script. A pulled settings row (M3) takes effect the same way. `/dev/themes` sits outside the shell, so its buttons change only the mirror.
+- An E2E test picks every preset in both modes and reloads with the app's scripts blocked: the inline script alone shows the chosen theme, so there is no flash of the default.
+
 ### 8.6 PWA
 - `vite-plugin-pwa` (Workbox) in `injectManifest` mode: precaches the app shell; installable manifest; `navigator.storage.persist()` requested after sign-in or the first lesson.
 - **Bible text:** WEB is downloaded in the background after the first load (about 1–1.5 MB compressed) and served cache-first. Settings show download progress and storage use.

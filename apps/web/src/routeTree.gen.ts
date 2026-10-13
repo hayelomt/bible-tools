@@ -17,6 +17,7 @@ import { Route as AppReviewRouteImport } from './routes/_app/review'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as DevThemesRouteImport } from './routes/dev.themes'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
+import { Route as AppSettingsThemeRouteImport } from './routes/_app/settings/theme'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -57,6 +58,11 @@ const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   path: '/settings/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsThemeRoute = AppSettingsThemeRouteImport.update({
+  id: '/settings/theme',
+  path: '/settings/theme',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof AppReviewRoute
   '/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
+  '/settings/theme': typeof AppSettingsThemeRoute
   '/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
   '/': typeof AppIndexRoute
+  '/settings/theme': typeof AppSettingsThemeRoute
   '/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -85,14 +93,30 @@ export interface FileRoutesById {
   '/_app/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/settings/theme': typeof AppSettingsThemeRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/$' | '/read' | '/review' | '/search' | '/dev/themes' | '/settings/'
+    | '/'
+    | '/$'
+    | '/read'
+    | '/review'
+    | '/search'
+    | '/dev/themes'
+    | '/settings/theme'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/$' | '/read' | '/review' | '/search' | '/dev/themes' | '/' | '/settings'
+  to:
+    | '/$'
+    | '/read'
+    | '/review'
+    | '/search'
+    | '/dev/themes'
+    | '/'
+    | '/settings/theme'
+    | '/settings'
   id:
     | '__root__'
     | '/_app'
@@ -102,6 +126,7 @@ export interface FileRouteTypes {
     | '/_app/search'
     | '/dev/themes'
     | '/_app/'
+    | '/_app/settings/theme'
     | '/_app/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -168,6 +193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/theme': {
+      id: '/_app/settings/theme'
+      path: '/settings/theme'
+      fullPath: '/settings/theme'
+      preLoaderRoute: typeof AppSettingsThemeRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -177,6 +209,7 @@ interface AppRouteChildren {
   AppReviewRoute: typeof AppReviewRoute
   AppSearchRoute: typeof AppSearchRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppSettingsThemeRoute: typeof AppSettingsThemeRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
@@ -186,6 +219,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReviewRoute: AppReviewRoute,
   AppSearchRoute: AppSearchRoute,
   AppIndexRoute: AppIndexRoute,
+  AppSettingsThemeRoute: AppSettingsThemeRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 

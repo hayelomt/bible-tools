@@ -1,5 +1,6 @@
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { useThemeSync } from '@/lib/theme.ts';
 import { BottomNav } from './bottom-nav.tsx';
 import { ScreenHeader } from './screen-header.tsx';
 import { Sidebar } from './sidebar.tsx';
@@ -10,6 +11,7 @@ import { Sidebar } from './sidebar.tsx';
  */
 export function AppShell() {
   useShortcuts();
+  useThemeSync();
   return (
     <div className="min-h-svh lg:flex">
       <Sidebar />

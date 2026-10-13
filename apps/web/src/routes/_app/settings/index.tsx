@@ -1,6 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { PRESETS } from '@lamp/ui/themes/presets';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { ChevronRight } from 'lucide-react';
 import { ApiStatus } from '@/components/api-status.tsx';
+import { ModeControl } from '@/components/mode-control.tsx';
 import { SettingsSection } from '@/components/settings-section.tsx';
+import { useSettings } from '@/data/use-settings.ts';
 import packageJson from '../../../../package.json' with { type: 'json' };
 
 const SOURCE_URL = 'https://github.com/hayelomt/bible-tools';
@@ -12,12 +16,29 @@ export const Route = createFileRoute('/_app/settings/')({
 
 /** One scrolling page in sections (wireframes/shell.md "Settings"). */
 function Settings() {
+  const settings = useSettings();
+  const preset = PRESETS.find((p) => p.id === settings?.themePreset);
   return (
     <div className="flex flex-col gap-8">
       <SettingsSection title="Account">
         {/* M3-05 adds sign-up and sign-in here; a guest is never asked before then. */}
         <p>Your notes are only on this device.</p>
       </SettingsSection>
+      {settings && (
+        <SettingsSection title="Appearance">
+          <Link
+            to="/settings/theme"
+            className="-mx-2 flex min-h-9 items-center justify-between gap-4 rounded-lg px-2 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+          >
+            Theme
+            <span className="flex items-center gap-1 text-muted-foreground">
+              {preset?.name}
+              <ChevronRight className="size-4" aria-hidden />
+            </span>
+          </Link>
+          <ModeControl value={settings.colorMode} />
+        </SettingsSection>
+      )}
       <SettingsSection title="About">
         <p className="text-sm">
           Lamp {packageJson.version} · MIT licence ·{' '}
