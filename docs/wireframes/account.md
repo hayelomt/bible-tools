@@ -224,4 +224,4 @@ The one action that needs typing to confirm.
 └──────────────────────────────────────┘
 ```
 
-The password is asked again because this is the one change that can't be undone from any device.
+The password is asked again because this is the one change that can't be undone from any device (decision 30).

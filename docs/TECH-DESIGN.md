@@ -206,7 +206,7 @@ A conflict is a change whose `baseRev` is older than the server row's `rev`, mea
 | Case | Resolution |
 |---|---|
 | Both sides changed a row, and it isn't a section body change on both | **Last write wins** by adjusted `updatedAt` (§6.5). The losing values are discarded. |
-| Section `body` changed on both sides | The newer body stays on the section. The older body is saved as a **new sibling section** with `conflictOf` set and a label "Conflicted copy · <device> · <time>". Nothing typed is lost; the user merges by hand and deletes the copy. |
+| Section `body` changed on both sides | The newer body stays on the section. The older body is saved as a **new sibling section** with `conflictOf` set and a label "Conflicted copy · <device> · <time>". Nothing typed is lost; the user merges by hand and deletes the copy, or taps "Keep this instead", which moves the copy's body onto the section and deletes the copy in one local action. |
 | One side deleted, the other edited | **Edit wins**: the row is restored with the edit. |
 | Both deleted | No-op. |
 | A row references a parent that was deleted (e.g. a section added under a deleted lesson) | The parent is restored, so the new content is never left orphaned. |
@@ -234,7 +234,7 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 | `health` | `GET /api/health`: version, DB reachable (503 `SERVICE_UNAVAILABLE` when not) |
 | `auth` | `POST /api/auth/signup`, `/login`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password`, `/change-password`; `GET /api/auth/me` |
 | `sync` | `POST /api/sync/push`, `GET /api/sync/pull` |
-| `account` | `GET /api/account/devices`, `DELETE /api/account/devices/:id`, `DELETE /api/account` (deletes the account and all data) |
+| `account` | `GET /api/account/devices`, `DELETE /api/account/devices/:id`, `DELETE /api/account` (deletes the account and all data; the body carries the current password, checked again) |
 | `admin` (CLI only) | `nest-commander` commands: `user:create`, `user:disable`, `user:verify`. Phase 1 has no admin UI. |
 
 - **Validation:** `@Body({ schema })` and `@Query({ schema })` with `StandardSchemaValidationPipe`, using Zod schemas from `packages/domain`. Responses are typed with the same schemas.
@@ -293,7 +293,7 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - The `dark` variant is `&:where(.dark, .dark *):not(:where(.light, .light *))`, so a `.light` element inside a dark page switches back. The demo uses it to show both modes side by side.
 - `@lamp/ui/themes/presets` has the preset list (checked against `THEME_PRESETS` in `domain`), `resolveMode`, `applyTheme`, and `readTheme`/`saveTheme` for the `localStorage` key `lamp.theme`. The inline script in `index.html` repeats that logic, since it has to run before any module loads; an E2E test checks it with the app's scripts blocked.
 - **The contrast test** (`themes.test.ts`) converts each token from OKLCH to sRGB, composites translucent colours the way the browser does, and checks 29 (light) or 31 (dark) pairs per preset, taken from how the components combine them: text on its background at 4.5:1, including hover and tinted states (`bg-primary/80`, `bg-destructive/10` and `/20`, `dark:bg-input/30`); field borders, switch tracks, checked controls and the focus ring at 3:1 (WCAG 1.4.11). `--border` is decorative (dividers, card edges) and is not checked. Every colour must be inside sRGB.
-- **Demo page:** `/dev/themes` in the web app shows the 15 components (button, badge, card, alert, input, textarea, label, checkbox, switch, tabs, separator, select, dropdown menu, tooltip, dialog) and reading text in all 12 preset and mode panels, with buttons that switch the page itself. Popups render in a portal, so they take the page's preset.
+- **Demo page:** `/dev/themes` in the web app shows the 15 components (button, badge, card, alert, input, textarea, label, checkbox, switch, tabs, separator, select, dropdown menu, tooltip, dialog) and reading text in all 12 preset and mode panels, with buttons that switch the page itself. Popups render in a portal, so they take the page's preset. The route stays in production builds, linked from nowhere, so presets can be checked on a real phone against the deployed app.
 - **Fonts:** the interface uses the system font. Scripture and notes use Literata (`font-serif`), self-hosted from `@fontsource-variable/literata` with the weight axis, upright and italic. The browser downloads only the subsets a page needs (Latin is 52 KB per style).
 
 ### 8.6 PWA
@@ -362,7 +362,7 @@ It then copies the release to `/srv/lamp/releases/<version>`, runs `prisma migra
 - Rich text is rendered from validated ProseMirror JSON by TipTap. User HTML is never inserted into the page.
 - The push body size is capped, and the size of each entity field is capped by Zod.
 - Caddy sets CSP (`default-src 'self'`; scripts by hash for the theme snippet), HSTS, `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`.
-- Account deletion removes every row the user owns in one transaction and ends all sessions.
+- Account deletion needs the current password again, removes every row the user owns in one transaction and ends all sessions.
 
 ## 13. Local development
 
@@ -417,6 +417,9 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 27 | Destructive actions (2026-10-13) | Undo for one thing; ask first for more than one, or for what can't be undone | UX-PATTERNS |
 | 28 | Wireframes (2026-10-13) | Text (ASCII) wireframes in `docs/wireframes/`, linked from UX-PATTERNS | UX-PATTERNS |
 | 29 | Copyright and conduct (2026-10-13) | MIT © "The Lamp contributors"; the Contributor Covenant 2.1 adopted by link, reports to a maintainer privately; vulnerabilities through GitHub's private reporting | — |
+| 30 | Deleting an account (2026-10-13) | Asks for the password again and the typed word DELETE | §7.1, §12 |
+| 31 | Theme demo route (2026-10-13) | `/dev/themes` stays in production builds, unlinked | §8.5 |
+| 32 | Resolving a conflicted copy (2026-10-13) | "Keep this instead" swaps the copy's body in and deletes the copy, besides merging by hand | §6.4 |
 
 **Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
 

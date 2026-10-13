@@ -93,7 +93,7 @@ beside it as a copy. The copy is a normal section with a label and two actions.
 │ └──────────────────────────────────┘ │
 ```
 
-- **Keep this instead** replaces the section's text with the copy's and deletes the copy.
+- **Keep this instead** replaces the section's text with the copy's and deletes the copy, in one action (decision 32).
 - **Delete** removes the copy, with an undo toast.
 - The user can also copy text across by hand and then delete the copy.
 - The lesson list shows "1 conflicted copy" on the lesson until it's resolved.
