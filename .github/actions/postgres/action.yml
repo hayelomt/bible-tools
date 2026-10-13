@@ -1,0 +1,26 @@
+name: PostgreSQL 18
+description: >
+  PostgreSQL 18 from the PGDG apt repository on the runner itself (no service containers, so CI
+  matches local and production; TECH-DESIGN §10.2), then scripts/dev-db.sh for the role, the
+  databases and apps/api/.env.test.
+runs:
+  using: composite
+  steps:
+    - name: Install PostgreSQL 18 (PGDG)
+      shell: bash
+      run: |
+        # The runner image ships an older Postgres. Drop its clusters so 18 gets port 5432.
+        if command -v pg_lsclusters >/dev/null; then
+          pg_lsclusters -h | while read -r version cluster _; do
+            sudo pg_dropcluster --stop "$version" "$cluster"
+          done
+        fi
+        sudo apt-get install -y -qq postgresql-common
+        sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+        sudo apt-get install -y -qq postgresql-18
+        sudo systemctl start postgresql
+        pg_lsclusters
+    - name: Create the lamp role and databases
+      shell: bash
+      # Uses `sudo -u postgres psql` for the role, as on a Linux dev machine.
+      run: sh scripts/dev-db.sh
