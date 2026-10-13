@@ -2,6 +2,7 @@ import { type Editor, Extension, type Extensions, mergeAttributes, Node } from '
 import { Placeholder } from '@tiptap/extensions';
 import { Selection } from '@tiptap/pm/state';
 import { StarterKit } from '@tiptap/starter-kit';
+import { VerseSuggestion } from '@/components/verses/verse-suggestion.ts';
 
 /**
  * The editor for one section (TECH-DESIGN §8.3), set up to produce only what a section body allows
@@ -38,7 +39,7 @@ function verseField(name: string) {
 
 /**
  * A verse reference inside a note, stored with its snapshot (F3). An atom: the cursor and Backspace
- * treat it as one unit. M2-09 inserts it and M2-10 gives it its chip; until then it shows as text.
+ * treat it as one unit. `VerseSuggestion` inserts it and M2-10 gives it its chip; until then it shows as text.
  */
 export const Verse = Node.create({
   name: 'verse',
@@ -187,6 +188,7 @@ export function sectionExtensions(options: {
     }),
     Placeholder.configure({ placeholder: ({ editor }) => options.placeholder(editor) }),
     Verse,
+    VerseSuggestion,
     sectionKeys(options.handlers),
   ];
 }

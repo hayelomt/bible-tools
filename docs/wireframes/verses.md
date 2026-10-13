@@ -36,8 +36,9 @@ Screen readers hear the chip as a button: "John 10:9, World English Bible, verse
 
 ## Verse autocomplete (M2-09)
 
-The list opens when the text just before the cursor parses as a reference, and closes as soon as
-it doesn't. Each suggestion shows its WEB text, so the user never leaves the note.
+The list opens when the text just before the cursor parses as a reference with a number ("rom 8",
+"Jude 3"; a book name alone doesn't open it), and closes as soon as it doesn't, or a space follows.
+The selected suggestion shows its WEB text, so the user never leaves the note.
 
 ```text
 │ ┃ Paul says in rom 8:28▏             │
@@ -47,8 +48,6 @@ it doesn't. Each suggestion shows its WEB text, so the user never leaves the not
 │ │ together for good for those who  │ │
 │ │ love God…                        │ │
 │ ├──────────────────────────────────┤ │
-│ │ Romans 8:28–30                   │ │
-│ │ Romans 8                         │ │
 │ └──────────────────────────────────┘ │
 │ ↑↓ choose · Enter insert · Esc keep  │  ← hint, laptop only
 ```
@@ -63,10 +62,12 @@ A name that matches several books lists them all (decision 15):
 ```text
 │ ┃ see jo 3▏                          │
 │ ┌──────────────────────────────────┐ │
-│ │ John 3                           │ │
+│ │ Joshua 3                     WEB │ │  ← shortest name first (M1-09)
+│ │ …                                │ │
 │ │ Job 3                            │ │
 │ │ Joel 3                           │ │
 │ │ Jonah 3                          │ │
+│ │ John 3                           │ │
 │ └──────────────────────────────────┘ │
 ```
 
@@ -89,9 +90,12 @@ A reference that can't exist explains why, with nothing to insert:
 │ └──────────────────────────────────┘ │
 ```
 
+A verse WEB leaves out (Acts 8:37) shows its footnote, and the chip keeps it: "[Not in WEB: TR adds
+Philip said, …]".
+
 If the WEB text isn't downloaded yet (first minutes after install), suggestions still appear and
 insert a chip; the preview reads "Text not downloaded yet", and the chip's snapshot is filled in
-when the book arrives.
+when the book arrives (M2-11).
 
 ## Verse index (M4-07)
 
