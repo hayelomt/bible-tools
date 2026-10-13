@@ -66,7 +66,7 @@ M1 ──▶ M2 (A) ──▶ M3 (B) ──▶ M4 (C) ──▶ M5 (D) ──▶
 
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
-| ☐ | M2-01 | **Dexie data layer**: tables mirroring §5.2, `outbox`, `syncState`; an action helper that writes the entity tables, the derived citations and the outbox entry **in one transaction**; seeded tags on first run | L | §6.1, §8.2 | Tests with fake-indexeddb: a failure inside an action leaves no table change, citation or outbox entry |
+| ☑ | M2-01 | **Dexie data layer**: tables mirroring §5.2, `outbox`, `syncState`; an action helper that writes the entity tables, the derived citations and the outbox entry **in one transaction**; seeded tags on first run | L | §6.1, §8.2 | Tests with fake-indexeddb: a failure inside an action leaves no table change, citation or outbox entry |
 | ☐ | M2-02 | App shell: routes, bottom navigation on phones and a sidebar on laptops, settings page, error boundary; starts as a guest with no sign-in prompt | M | §8.1, F12 | Every route renders at 360 px and 1280 px with no horizontal scroll |
 | ☐ | M2-03 | F16 Theme picker in settings (preset + light / dark / system), stored in local `UserSettings` and mirrored to `localStorage`; an inline script applies it before the first paint | S | §8.5, F16 | Reloading in any preset and mode shows no flash of the default theme |
 | ☐ | M2-04 | F1 Lesson create and edit on one screen: title, date (defaults to today), source, speaker, church, main passages through the reference input | M | F1 | A lesson can be created with only a title; main passages are stored as normalised refs |

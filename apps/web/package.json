@@ -17,6 +17,9 @@
     "@lamp/ui": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
+    "dexie": "catalog:",
+    "dexie-react-hooks": "catalog:",
+    "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
@@ -30,6 +33,7 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "fake-indexeddb": "catalog:",
     "happy-dom": "catalog:",
     "oxlint": "catalog:",
     "tailwindcss": "catalog:",

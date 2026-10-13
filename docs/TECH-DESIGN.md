@@ -181,6 +181,11 @@ Dexie holds one table per synced entity (same fields as §5.2 minus `userId`), p
 
 **Every user action is one Dexie transaction** that writes the entity tables, the derived citations and the outbox entry together. If the tab dies halfway, nothing from that action is saved and nothing is queued.
 
+*Built in M2-01 (`apps/web/src/data`):*
+- **Tables** are named after the sync entities (`lesson`, `section`, `sectionTag` …) and hold the rows exactly as the domain schemas define them, so a pulled row is stored as is. `userSettings` and `syncState` are one row each, under fixed keys. `citation` is indexed on `sourceId`, `lessonId`, `startOrd` and `endOrd`; `outbox` on an auto-increment `seq` (push order) and `[entity+entityId]` (the pull check in §6.3).
+- **`action(db, run)`** opens one read-write transaction over every table and hands `run` a writer: `create`, `update`, `remove` (a tombstone) and `updateSettings`. Each write fills in the sync fields (a new UUIDv7 id, `rev` 0 for a new row, `updatedAt` from the clock-adjusted time of the action), validates the row with its domain schema, rebuilds the row's citations with `citationsFor` (in `domain`, so the server uses the same function) and appends the change to the outbox with the row's current `rev` as `baseRev`. Anything thrown aborts the whole action. Actions in `src/data/actions/` wrap it; the outbox is not coalesced yet (M3-09 can merge queued upserts of one row before a push).
+- **First run** (`ensureDevice`) creates `syncState` with a new device id, the default settings and the 24 seeded tags, once, even with several tabs open. The seeded tags are queued, since notes will link to them; the default settings are not, so a guest who later signs in takes the account's settings instead of overwriting them with this device's defaults. The initial theme comes from the `localStorage` mirror (§8.5).
+
 ### 6.2 Push — `POST /api/sync/push`
 Request: `{ deviceId, clientVersion, changes: Change[] }` (up to 100 changes, 1 MB at most). For each change, in order, the server opens **one transaction per change** and:
 1. Returns the stored result if the `changeId` has already been processed (idempotent replay).

@@ -22,6 +22,14 @@ export {
   type Suggestion,
   suggest,
 } from './parse-reference.ts';
+export {
+  type CitationEntry,
+  CITING_ENTITIES,
+  type CitingEntity,
+  citationsFor,
+  isCitingEntity,
+} from './citations.ts';
+export { newId } from './ids.ts';
 export { SEED_TAGS } from './seed-tags.ts';
 export {
   DEFAULT_TRANSLATION,

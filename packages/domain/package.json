@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "fractional-indexing": "catalog:",
+    "uuid": "catalog:",
     "zod": "catalog:"
   }
 }
