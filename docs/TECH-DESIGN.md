@@ -467,7 +467,7 @@ pnpm db:migrate              # prisma migrate dev on lamp_dev
 pnpm dev                     # turbo: web on :5173, api on :3000 (Vite proxies /api)
 pnpm test | test:int | e2e
 ```
-Development emails land in `apps/api/tmp/emails/`. `pnpm db:seed` creates a demo user with a few lessons.
+Development emails land in `apps/api/tmp/emails/`. `pnpm db:seed` creates a demo user with a few lessons. Until sync (M3), the app's own data is seeded in the browser: `/dev/seed` (`apps/web/src/dev/seed.ts`, dev builds only) clears the device database and writes a demo month through the app's actions, or adds 5,000 generated sections.
 
 ## 14. Performance budgets
 - First load (app shell, without Bible text): ≤ 250 KB of JavaScript, gzipped.

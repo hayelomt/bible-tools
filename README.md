@@ -66,6 +66,11 @@ pnpm dev                                  # web on http://localhost:5173, API on
 | `pnpm build`                                         | Production build of everything                                    |
 | `pnpm db:seed`                                       | A demo user with a few lessons in `lamp_dev`                      |
 
+Notes live in the browser until sync arrives (M3), so the server seed doesn't show in the app. To
+try the app with data, open <http://localhost:5173/dev/seed> under `pnpm dev`: it clears this
+browser's database, seeds a month of lessons (series, replies, verse chips, tags, takeaways,
+questions in each status), or adds 5,000 generated sections. Dev builds only.
+
 `pnpm e2e` needs Chromium once: `pnpm --filter @lamp/e2e exec playwright install chromium`.
 
 ## Contributing

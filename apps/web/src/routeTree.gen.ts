@@ -16,6 +16,7 @@ import { Route as AppReadRouteImport } from './routes/_app/read'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as DevLooksRouteImport } from './routes/dev.looks'
+import { Route as DevSeedRouteImport } from './routes/dev.seed'
 import { Route as DevThemesRouteImport } from './routes/dev.themes'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
@@ -56,6 +57,11 @@ const AppSearchRoute = AppSearchRouteImport.update({
 const DevLooksRoute = DevLooksRouteImport.update({
   id: '/dev/looks',
   path: '/dev/looks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevSeedRoute = DevSeedRouteImport.update({
+  id: '/dev/seed',
+  path: '/dev/seed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevThemesRoute = DevThemesRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof AppReviewRoute
   '/search': typeof AppSearchRoute
   '/dev/looks': typeof DevLooksRoute
+  '/dev/seed': typeof DevSeedRoute
   '/dev/themes': typeof DevThemesRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/review': typeof AppReviewRoute
   '/search': typeof AppSearchRoute
   '/dev/looks': typeof DevLooksRoute
+  '/dev/seed': typeof DevSeedRoute
   '/dev/themes': typeof DevThemesRoute
   '/': typeof AppIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/_app/review': typeof AppReviewRoute
   '/_app/search': typeof AppSearchRoute
   '/dev/looks': typeof DevLooksRoute
+  '/dev/seed': typeof DevSeedRoute
   '/dev/themes': typeof DevThemesRoute
   '/_app/': typeof AppIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/search'
     | '/dev/looks'
+    | '/dev/seed'
     | '/dev/themes'
     | '/lessons/$lessonId'
     | '/series/$seriesId'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/search'
     | '/dev/looks'
+    | '/dev/seed'
     | '/dev/themes'
     | '/'
     | '/lessons/$lessonId'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/_app/review'
     | '/_app/search'
     | '/dev/looks'
+    | '/dev/seed'
     | '/dev/themes'
     | '/_app/'
     | '/_app/lessons/$lessonId'
@@ -193,6 +205,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   DevLooksRoute: typeof DevLooksRoute
+  DevSeedRoute: typeof DevSeedRoute
   DevThemesRoute: typeof DevThemesRoute
 }
 
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       path: '/dev/looks'
       fullPath: '/dev/looks'
       preLoaderRoute: typeof DevLooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/seed': {
+      id: '/dev/seed'
+      path: '/dev/seed'
+      fullPath: '/dev/seed'
+      preLoaderRoute: typeof DevSeedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev/themes': {
@@ -332,6 +352,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   DevLooksRoute: DevLooksRoute,
+  DevSeedRoute: DevSeedRoute,
   DevThemesRoute: DevThemesRoute,
 }
 export const routeTree = rootRouteImport
