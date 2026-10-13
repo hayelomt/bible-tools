@@ -274,7 +274,11 @@ describe('sync schemas', () => {
   });
 
   it('reads the pull query from strings, with a default limit', () => {
-    const v = { clientVersion: '0.1.0' };
+    const v = {
+      clientVersion: '0.1.0',
+      deviceId: '0199e0a0-0000-7000-8000-000000000001',
+      deviceName: 'Chrome on Android',
+    };
     expect(pullQuerySchema.parse({ cursor: '120', ...v })).toEqual({
       cursor: 120,
       limit: 500,
@@ -289,6 +293,8 @@ describe('sync schemas', () => {
       {},
       { cursor: '0' },
       { cursor: '0', clientVersion: 'new' },
+      { cursor: '0', clientVersion: '0.1.0' },
+      { cursor: '0', ...v, deviceId: 'phone' },
       { cursor: '-1', ...v },
       { cursor: 'x', ...v },
       { cursor: '1.5', ...v },

@@ -6,6 +6,8 @@ import { runEmail } from './mail.js';
 /** Rows and changes as a device sends them (`changeSchema`), and the calls to push them. */
 
 export const DEVICE_ID = '0199e0a0-0000-7000-8000-000000000001';
+/** The device a pull names, as query parameters. */
+export const PULL_DEVICE = `deviceId=${DEVICE_ID}&deviceName=Chrome%20on%20Android`;
 export const EARLIER = '2026-10-13T09:00:00.000Z';
 export const NOW = '2026-10-13T10:00:00.000Z';
 export const LATER = '2026-10-13T11:00:00.000Z';

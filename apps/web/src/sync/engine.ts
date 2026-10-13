@@ -43,7 +43,7 @@ export interface SyncStatus {
 
 export interface SyncApi {
   push(body: PushRequest): Promise<PushResponse>;
-  pull(cursor: number): Promise<PullResponse>;
+  pull(cursor: number, device: { deviceId: string; deviceName: string }): Promise<PullResponse>;
 }
 
 export interface SyncDeps {
@@ -239,16 +239,17 @@ export class SyncEngine {
 
   /** Pulls pages until the server has nothing newer, counting rows towards the first total. */
   private async pullAll(): Promise<void> {
-    const { db, api } = this.deps;
+    const { db, api, deviceName } = this.deps;
     const state = await db.syncState.get(SYNC_STATE_KEY);
     if (!state) return;
+    const device = { deviceId: state.deviceId, deviceName };
     const firstSync = state.cursor === 0;
     let cursor = state.cursor;
     let total: number | undefined;
     let done = 0;
     for (;;) {
       const sentAt = Date.now();
-      const page = await api.pull(cursor);
+      const page = await api.pull(cursor, device);
       total ??= page.remaining;
       const offset = clockOffset(page.serverTime, sentAt, Date.now());
       await applyPage(db, page, offset);

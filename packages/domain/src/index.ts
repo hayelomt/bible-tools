@@ -90,6 +90,8 @@ export {
   type ApiError,
   apiErrorSchema,
   type Device,
+  deviceParamsSchema,
+  type DeviceParams,
   deviceSchema,
   type DevicesResponse,
   devicesResponseSchema,

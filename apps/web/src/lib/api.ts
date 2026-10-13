@@ -1,5 +1,6 @@
 import {
   type ChangePasswordRequest,
+  type Device,
   type ForgotPasswordRequest,
   type HealthResponse,
   type LoginRequest,
@@ -11,6 +12,7 @@ import {
   type SignupRequest,
   type VerifyEmailRequest,
   apiErrorSchema,
+  devicesResponseSchema,
   healthResponseSchema,
   meResponseSchema,
   pullResponseSchema,
@@ -48,7 +50,11 @@ export class NetworkError extends Error {
   }
 }
 
-async function request(method: 'GET' | 'POST', path: string, body?: unknown): Promise<Response> {
+async function request(
+  method: 'GET' | 'POST' | 'DELETE',
+  path: string,
+  body?: unknown,
+): Promise<Response> {
   const init: RequestInit =
     body === undefined
       ? { method }
@@ -128,9 +134,30 @@ export async function pushChanges(body: PushRequest): Promise<PushResponse> {
   return pushResponseSchema.parse(await res.json());
 }
 
+/** The device a pull comes from, so the server can list it (§6.6). */
+export interface PullDevice {
+  deviceId: string;
+  deviceName: string;
+}
+
 /** `GET /api/sync/pull` (§6.3): one page after `cursor`. */
-export async function pullChanges(cursor: number): Promise<PullResponse> {
-  const query = new URLSearchParams({ cursor: String(cursor), clientVersion: CLIENT_VERSION });
+export async function pullChanges(cursor: number, device: PullDevice): Promise<PullResponse> {
+  const query = new URLSearchParams({
+    cursor: String(cursor),
+    ...device,
+    clientVersion: CLIENT_VERSION,
+  });
   const res = await request('GET', `/api/sync/pull?${query}`);
   return pullResponseSchema.parse(await res.json());
+}
+
+/** `GET /api/account/devices`: the devices signed in to the account (§6.6). */
+export async function fetchDevices(): Promise<Device[]> {
+  const res = await request('GET', '/api/account/devices');
+  return devicesResponseSchema.parse(await res.json()).devices;
+}
+
+/** `DELETE /api/account/devices/:id`: signs that device out; it keeps its notes. */
+export async function signOutDevice(id: string): Promise<void> {
+  await request('DELETE', `/api/account/devices/${id}`);
 }

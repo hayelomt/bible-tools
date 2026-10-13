@@ -87,8 +87,12 @@ class FakeServer implements SyncApi {
     return { results: request.changes.map((change) => this.apply(change)) };
   }
 
-  async pull(cursor: number): Promise<PullResponse> {
+  /** The device each pull named. */
+  pulledBy: { deviceId: string; deviceName: string }[] = [];
+
+  async pull(cursor: number, by = { deviceId: '', deviceName: '' }): Promise<PullResponse> {
     this.fail();
+    this.pulledBy.push(by);
     const after = [...this.rows.values()]
       .filter(({ row }) => row.rev > cursor)
       .toSorted((a, b) => a.row.rev - b.row.rev);
@@ -528,6 +532,11 @@ describe('the engine', () => {
       deviceId: (await state()).deviceId,
       deviceName: 'Chrome on Android',
       clientVersion: '0.0.0',
+    });
+    // Pulls name the device too, so it's listed from its first sync (§6.6).
+    expect(server.pulledBy[0]).toEqual({
+      deviceId: (await state()).deviceId,
+      deviceName: 'Chrome on Android',
     });
     expect(server.pushes[0]!.changes).toHaveLength(SEEDED_TAGS + 1);
     expect(server.pushes[0]!.changes[0]).not.toHaveProperty('sent');

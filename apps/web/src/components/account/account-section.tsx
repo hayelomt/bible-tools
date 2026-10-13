@@ -9,6 +9,7 @@ import { PageSection } from '@/components/page-section.tsx';
 import { db, SYNC_STATE_KEY } from '@/data/db.ts';
 import { setAccount, useAccount } from '@/lib/account.ts';
 import { logout } from '@/lib/api.ts';
+import { useDevices } from '@/lib/devices.ts';
 import { authErrorMessage } from '@/lib/auth-messages.ts';
 import { count, maskEmail } from '@/lib/labels.ts';
 import { useOnline } from '@/lib/use-online.ts';
@@ -17,14 +18,14 @@ import { FormError, linkClass, OfflineNote } from './fields.tsx';
 
 /**
  * Settings → Account (wireframes/shell.md "Settings"): an invitation for a guest, never a blocker.
- * Devices and account deletion join it with M3-12 and M3-03's screen.
+ * Devices (M3-12) list the account's devices; account deletion joins it with M3-03's screen.
  */
 export function AccountSection() {
   const account = useAccount().data;
   return (
     <PageSection title="Account">
       {account ? (
-        <SignedIn email={account.email} verified={!!account.emailVerifiedAt} />
+        <SignedIn userId={account.id} email={account.email} verified={!!account.emailVerifiedAt} />
       ) : (
         <Guest />
       )}
@@ -60,8 +61,17 @@ function Guest() {
   );
 }
 
-function SignedIn({ email, verified }: { email: string; verified: boolean }) {
+function SignedIn({
+  userId,
+  email,
+  verified,
+}: {
+  userId: string;
+  email: string;
+  verified: boolean;
+}) {
   const queryClient = useQueryClient();
+  const devices = useDevices(userId).data;
   const online = useOnline();
   const [asking, setAsking] = useState(false);
   const unsynced = useLiveQuery(() => unsyncedCount(db), []) ?? 0;
@@ -83,6 +93,9 @@ function SignedIn({ email, verified }: { email: string; verified: boolean }) {
           Verify your email ›
         </Link>
       )}
+      <Link to="/settings/devices" className={linkClass}>
+        Devices{devices?.length ? ` · ${count(devices.length, 'device')}` : ''} ›
+      </Link>
       <Link to="/settings/password" className={linkClass}>
         Change password ›
       </Link>

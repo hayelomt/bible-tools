@@ -30,3 +30,7 @@ export type Device = z.infer<typeof deviceSchema>;
 
 export const devicesResponseSchema = z.strictObject({ devices: z.array(deviceSchema) });
 export type DevicesResponse = z.infer<typeof devicesResponseSchema>;
+
+/** `DELETE /api/account/devices/:id`: signs that device out. */
+export const deviceParamsSchema = z.strictObject({ id: z.uuid() });
+export type DeviceParams = z.infer<typeof deviceParamsSchema>;

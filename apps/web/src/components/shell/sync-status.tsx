@@ -13,6 +13,7 @@ import { noteVerificationSent, refreshAccount, useAccount } from '@/lib/account.
 import { ApiRequestError, resendVerification } from '@/lib/api.ts';
 import { authErrorMessage } from '@/lib/auth-messages.ts';
 import { agoLabel, momentLabel } from '@/lib/dates.ts';
+import { useDevices } from '@/lib/devices.ts';
 import { count, maskEmail } from '@/lib/labels.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { useOnline } from '@/lib/use-online.ts';
@@ -99,6 +100,8 @@ interface Sync {
   view: SyncView;
   status: EngineStatus;
   signedIn: boolean;
+  /** The signed-in account's id, for its devices. */
+  userId: string | null;
   email: string | null;
   waiting: number;
   rejected: RejectedChange[];
@@ -130,6 +133,7 @@ function useSync(): Sync {
     view,
     status,
     signedIn: !!account,
+    userId: account?.id ?? null,
     email: account?.email ?? details?.state?.ownerEmail ?? null,
     waiting: details?.waiting ?? 0,
     rejected,
@@ -248,9 +252,7 @@ function SyncPanel({ sync, onDone }: { sync: Sync; onDone: () => void }) {
           {clock}
         </p>
       )}
-      {sync.signedIn && sync.email && (
-        <p className="text-sm break-all text-muted-foreground">{maskEmail(sync.email)}</p>
-      )}
+      {sync.userId && sync.email && <AccountLine userId={sync.userId} email={sync.email} />}
       {canSync && (
         <Button
           variant="outline"
@@ -262,6 +264,17 @@ function SyncPanel({ sync, onDone }: { sync: Sync; onDone: () => void }) {
         </Button>
       )}
     </div>
+  );
+}
+
+/** "a•••@example.com · 2 devices": the count from the devices list, once it's known (§6.6). */
+function AccountLine({ userId, email }: { userId: string; email: string }) {
+  const devices = useDevices(userId).data;
+  return (
+    <p className="text-sm break-all text-muted-foreground">
+      {maskEmail(email)}
+      {devices?.length ? ` · ${count(devices.length, 'device')}` : ''}
+    </p>
   );
 }
 

@@ -152,11 +152,14 @@ export const pushResponseSchema = z.strictObject({ results: z.array(pushResultSc
 export type PushResponse = z.infer<typeof pushResponseSchema>;
 
 /**
- * `GET /api/sync/pull?cursor=<rev>&limit=500&clientVersion=1.2.3` (§6.3). Query values arrive as
+ * `GET /api/sync/pull?cursor=<rev>&limit=500&deviceId=…&deviceName=…&clientVersion=1.2.3` (§6.3). Query values arrive as
  * strings.
  */
 export const pullQuerySchema = z.strictObject({
   cursor: z.coerce.number().pipe(revSchema),
+  /** As in a push: the device is recorded on its first sync, and its session linked to it (§6.6). */
+  deviceId: z.uuid(),
+  deviceName: lineSchema(100),
   /** As in a push: older than `MIN_CLIENT_VERSION` gets `426`. */
   clientVersion: clientVersionSchema,
   limit: z.coerce.number().pipe(z.int().min(1).max(MAX_PULL_LIMIT)).default(MAX_PULL_LIMIT),

@@ -36,6 +36,9 @@ class FakeApi {
       const cursor = Number(new URL(route.request().url()).searchParams.get('cursor'));
       return answer(route, this.pull(cursor));
     });
+    await target.route('**/api/account/devices', (route) =>
+      route.fulfill({ json: { devices: [device('Chrome on Windows'), device('Safari on iOS')] } }),
+    );
     await target.route('**/api/sync/push', (route) => {
       const { changes } = route.request().postDataJSON() as { changes: Change[] };
       this.pushed.push(...changes);
@@ -43,6 +46,15 @@ class FakeApi {
     });
   }
 }
+
+let devices = 0;
+const device = (name: string) => ({
+  id: `019a0000-0000-7000-8000-0000000002${String(++devices).padStart(2, '0')}`,
+  name,
+  clientVersion: '0.0.0',
+  createdAt: '2026-10-01T00:00:00.000Z',
+  lastSyncAt: new Date().toISOString(),
+});
 
 let rev = 100;
 const page = (rowsOut: object[], cursor: number, extra: object = {}) => ({
@@ -111,7 +123,7 @@ test('synced, and Sync now', async ({ page: p }) => {
   await expect(status(p)).toHaveText('Synced');
   const panel = await openPanel(p);
   await expect(panel.getByText('Synced just now')).toBeVisible();
-  await expect(panel.getByText('r•••@example.com')).toBeVisible();
+  await expect(panel.getByText('r•••@example.com · 2 devices')).toBeVisible();
   const before = api.pulls;
   await panel.getByRole('button', { name: 'Sync now' }).click();
   await expect.poll(() => api.pulls).toBeGreaterThan(before);

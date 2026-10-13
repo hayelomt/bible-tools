@@ -1,33 +1,9 @@
-import { readdir, readFile } from 'node:fs/promises';
 import { expect, type Page, test } from '@playwright/test';
-import { newLesson } from './helpers.ts';
+import { linkTo, newLesson } from './helpers.ts';
 
-// Where the API's MockResend writes in development and tests (TECH-DESIGN §7.3).
-const EMAIL_DIR = new URL('../../api/tmp/emails/', import.meta.url);
 const RUN = Date.now().toString(36);
 const PASSWORD = 'lamp unto my feet 119';
 const NEW_PASSWORD = 'light unto my path 105';
-
-/** The token of the newest `path` link sent to `address`, waiting for the email to be written. */
-async function linkTo(address: string, path: string): Promise<string> {
-  let link = '';
-  await expect
-    .poll(async () => {
-      const files = (await readdir(EMAIL_DIR).catch(() => []))
-        .filter((f) => f.endsWith('.eml') && f.includes(`-${address}-`))
-        .toSorted()
-        .toReversed();
-      for (const file of files) {
-        const match = new RegExp(`https?://[^\\s"<]+${path}\\?token=[\\w-]{43}`).exec(
-          await readFile(new URL(file, EMAIL_DIR), 'utf8'),
-        );
-        if (match) return (link = match[0]);
-      }
-      return '';
-    })
-    .not.toBe('');
-  return link;
-}
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/signin');

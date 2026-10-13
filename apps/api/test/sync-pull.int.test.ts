@@ -64,7 +64,12 @@ const pullRequest = (
     as = account,
   }: { limit?: number; clientVersion?: string; as?: Account } = {},
 ) => {
-  const query = new URLSearchParams({ cursor: String(cursor), clientVersion });
+  const query = new URLSearchParams({
+    cursor: String(cursor),
+    clientVersion,
+    deviceId: sync.DEVICE_ID,
+    deviceName: 'Chrome on Android',
+  });
   if (limit !== undefined) query.set('limit', String(limit));
   return client.get(`/api/sync/pull?${query}`, as.token);
 };
@@ -203,7 +208,7 @@ describe('paging', () => {
   it('refuses a bad cursor or limit', async () => {
     for (const query of ['cursor=-1', 'cursor=x', 'cursor=0&limit=0', 'cursor=0&limit=501', '']) {
       const res = await client
-        .get(`/api/sync/pull?${query}&clientVersion=0.0.0`, account.token)
+        .get(`/api/sync/pull?${query}&clientVersion=0.0.0&${sync.PULL_DEVICE}`, account.token)
         .expect(400);
       expect(errorCode(res)).toBe('VALIDATION_FAILED');
     }
@@ -358,7 +363,7 @@ describe('the cursor never skips a row under concurrent pushes', () => {
 
 describe('who may pull', () => {
   it('needs a session and a verified email', async () => {
-    await client.get('/api/sync/pull?cursor=0&clientVersion=0.0.0').expect(401);
+    await client.get(`/api/sync/pull?cursor=0&clientVersion=0.0.0&${sync.PULL_DEVICE}`).expect(401);
     const unverified = await sync.signUp(t, client, { verified: false });
     const res = await pullRequest(0, { as: unverified }).expect(403);
     expect(errorCode(res)).toBe('EMAIL_NOT_VERIFIED');
@@ -383,6 +388,6 @@ describe('who may pull', () => {
   it('refuses a version that is not major.minor.patch', async () => {
     const res = await pullRequest(0, { clientVersion: 'latest' }).expect(400);
     expect(errorCode(res)).toBe('VALIDATION_FAILED');
-    await client.get('/api/sync/pull?cursor=0', account.token).expect(400);
+    await client.get(`/api/sync/pull?cursor=0&${sync.PULL_DEVICE}`, account.token).expect(400);
   });
 });

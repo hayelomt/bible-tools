@@ -28,6 +28,7 @@ import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
 import { Route as AppSeriesSeriesIdRouteImport } from './routes/_app/series/$seriesId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
+import { Route as AppSettingsDevicesRouteImport } from './routes/_app/settings/devices'
 import { Route as AppSettingsPasswordRouteImport } from './routes/_app/settings/password'
 import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
 import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
@@ -126,6 +127,11 @@ const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   path: '/settings/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsDevicesRoute = AppSettingsDevicesRouteImport.update({
+  id: '/settings/devices',
+  path: '/settings/devices',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsPasswordRoute = AppSettingsPasswordRouteImport.update({
   id: '/settings/password',
   path: '/settings/password',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/dev/themes': typeof DevThemesRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
+  '/settings/devices': typeof AppSettingsDevicesRoute
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
+  '/settings/devices': typeof AppSettingsDevicesRoute
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/_app/series/$seriesId': typeof AppSeriesSeriesIdRoute
+  '/_app/settings/devices': typeof AppSettingsDevicesRoute
   '/_app/settings/password': typeof AppSettingsPasswordRoute
   '/_app/tags/$tagId': typeof AppTagsTagIdRoute
   '/_app/verses/$passage': typeof AppVersesPassageRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/dev/themes'
     | '/lessons/$lessonId'
     | '/series/$seriesId'
+    | '/settings/devices'
     | '/settings/password'
     | '/tags/$tagId'
     | '/verses/$passage'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/'
     | '/lessons/$lessonId'
     | '/series/$seriesId'
+    | '/settings/devices'
     | '/settings/password'
     | '/tags/$tagId'
     | '/verses/$passage'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/lessons/$lessonId'
     | '/_app/series/$seriesId'
+    | '/_app/settings/devices'
     | '/_app/settings/password'
     | '/_app/tags/$tagId'
     | '/_app/verses/$passage'
@@ -428,6 +440,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/devices': {
+      id: '/_app/settings/devices'
+      path: '/settings/devices'
+      fullPath: '/settings/devices'
+      preLoaderRoute: typeof AppSettingsDevicesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/password': {
       id: '/_app/settings/password'
       path: '/settings/password'
@@ -466,6 +485,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
   AppSeriesSeriesIdRoute: typeof AppSeriesSeriesIdRoute
+  AppSettingsDevicesRoute: typeof AppSettingsDevicesRoute
   AppSettingsPasswordRoute: typeof AppSettingsPasswordRoute
   AppTagsTagIdRoute: typeof AppTagsTagIdRoute
   AppVersesPassageRoute: typeof AppVersesPassageRoute
@@ -487,6 +507,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
   AppSeriesSeriesIdRoute: AppSeriesSeriesIdRoute,
+  AppSettingsDevicesRoute: AppSettingsDevicesRoute,
   AppSettingsPasswordRoute: AppSettingsPasswordRoute,
   AppTagsTagIdRoute: AppTagsTagIdRoute,
   AppVersesPassageRoute: AppVersesPassageRoute,
