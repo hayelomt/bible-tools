@@ -10,7 +10,7 @@
   },
   "scripts": {
     "preinstall": "sh scripts/check-node.sh",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --ui=tui",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
