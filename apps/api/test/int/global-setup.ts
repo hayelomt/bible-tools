@@ -6,8 +6,8 @@ export default function setup(): void {
   if (!url) {
     throw new Error('DATABASE_URL is not set: run scripts/dev-db.sh to write apps/api/.env.test');
   }
-  // The reset is destructive, so make sure this is the test database. The `_dev` suffix is what
-  // lets Prisma's agent checkpoint allow `migrate reset` on a development database.
+  // The reset is destructive, so make sure this is the test database. Under an AI agent, Prisma
+  // also needs PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION (TECH-DESIGN §10.2).
   const database = new URL(url).pathname.slice(1);
   if (!database.endsWith('_test_dev')) {
     throw new Error(

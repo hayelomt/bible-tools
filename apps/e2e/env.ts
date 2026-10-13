@@ -6,8 +6,7 @@ const API_ENV_TEST = new URL('../api/.env.test', import.meta.url);
 /**
  * The lamp_e2e_dev connection string: `E2E_DATABASE_URL` from the environment (CI), else from
  * apps/api/.env.test (written by scripts/dev-db.sh). Throws unless the database is a *_e2e_dev
- * one, because the global setup resets it. The `_dev` suffix is what lets Prisma's agent
- * checkpoint allow `migrate reset` on a development database.
+ * one, because the global setup resets it.
  */
 export function e2eDatabaseUrl(): string {
   const fromFile = existsSync(API_ENV_TEST)

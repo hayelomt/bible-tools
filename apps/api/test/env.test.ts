@@ -22,7 +22,15 @@ describe('env validation', () => {
       PORT: 3000,
       LOG_LEVEL: 'info',
       DATABASE_URL,
+      SIGNUP_ENABLED: true,
+      COOKIE_SECURE: true,
     });
+  });
+
+  it('reads the switches as true/false strings', () => {
+    const DATABASE_URL = 'postgresql://lamp:lamp@127.0.0.1:5432/lamp_dev';
+    expect(envSchema.parse({ DATABASE_URL, SIGNUP_ENABLED: 'false' }).SIGNUP_ENABLED).toBe(false);
+    expect(envSchema.safeParse({ DATABASE_URL, COOKIE_SECURE: 'maybe' }).success).toBe(false);
   });
 
   it('requires a postgresql:// DATABASE_URL', () => {

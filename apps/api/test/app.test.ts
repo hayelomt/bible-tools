@@ -5,9 +5,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pkg from '../package.json' with { type: 'json' };
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
+import { Public } from '../src/auth/auth.decorators.js';
 import { ApiException, ErrorCode } from '../src/common/errors.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 
+@Public()
 @Controller('boom')
 class BoomController {
   @Get('crash')

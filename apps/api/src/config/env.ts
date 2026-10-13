@@ -8,6 +8,11 @@ export const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   // Written to .env.local / .env.test by scripts/dev-db.sh
   DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, 'must be a postgresql:// URL'),
+  // false: no new accounts (a private family deployment); users come from the admin CLI.
+  SIGNUP_ENABLED: z.stringbool().default(true),
+  // The session cookie's Secure flag. Browsers accept Secure cookies on localhost, so turn it
+  // off only to sign in over plain HTTP from another machine (a phone on the LAN).
+  COOKIE_SECURE: z.stringbool().default(true),
 });
 
 export type Env = z.infer<typeof envSchema>;

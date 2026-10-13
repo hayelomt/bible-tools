@@ -19,13 +19,16 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@lamp/domain": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
+    "@nestjs/throttler": "catalog:",
     "@node-rs/argon2": "catalog:",
     "@prisma/adapter-pg": "catalog:",
     "@prisma/client": "catalog:",
+    "@zxcvbn-ts/language-common": "catalog:",
     "nestjs-pino": "catalog:",
     "pino": "catalog:",
     "pino-http": "catalog:",
@@ -35,7 +38,6 @@
   },
   "devDependencies": {
     "@lamp/config": "workspace:*",
-    "@lamp/domain": "workspace:*",
     "@nestjs/cli": "catalog:",
     "@nestjs/testing": "catalog:",
     "@swc/cli": "catalog:",

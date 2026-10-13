@@ -57,8 +57,9 @@ milestone with the next free ID; a change of scope also needs an entry in the PR
 | End to end  | `pnpm e2e`      | `apps/e2e/tests`                 | Local Postgres (`lamp_e2e_dev`), Chromium |
 
 - `test:int` and `e2e` **reset their database** (`prisma migrate reset`) before running. They only
-  ever touch `lamp_test_dev` and `lamp_e2e_dev`, never `lamp_dev`. Those names include `_dev` so
-  Prisma's agent checkpoint allows the reset on a development database.
+  ever touch `lamp_test_dev` and `lamp_e2e_dev`, never `lamp_dev`, and refuse any other database.
+  When an AI agent runs them, Prisma refuses the reset until you consent: the agent asks, then sets
+  `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION` to your reply (TECH-DESIGN §10.2).
 - Add tests with the change. The _Done when_ column of each task says which tests prove it.
 - `packages/domain` runs its tests with coverage, and fails below its thresholds (the parser keeps
   at least 95% branch coverage).
