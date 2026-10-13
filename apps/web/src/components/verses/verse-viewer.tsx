@@ -9,13 +9,23 @@ import {
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@lamp/ui/components/sheet';
 import { useState } from 'react';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
-import { closeChip, type OpenChip, useOpenChip } from './verse-chip.ts';
+import {
+  chipAt,
+  closeChip,
+  hoverLeave,
+  hoverStay,
+  type OpenChip,
+  useOpenChip,
+} from './verse-chip.ts';
 import { LAPTOP_QUERY } from './verse-suggestions.tsx';
+import { VerseText } from './verse-text.tsx';
 
 /**
  * An open verse chip (wireframes/verses.md "Verse chip"): its reference, the translation's name and
  * the text captured when it was inserted, which never changes. A popover under the chip on a
- * laptop, a bottom sheet on a phone; Esc, a tap outside or × closes it. One for the page.
+ * laptop, a bottom sheet on a phone; Esc, a tap outside or × closes it. One for the page. Opened
+ * by resting the mouse on the chip, the popover leaves focus in the note and closes as the pointer
+ * leaves both.
  */
 export function VerseViewer() {
   const open = useOpenChip();
@@ -31,8 +41,11 @@ export function VerseViewer() {
           <PopoverContent
             anchor={shown.anchor}
             align="start"
-            // Focus goes back to the note by `closeChip`.
+            // Focus goes back to the note by `closeChip`; on hover it never left.
+            initialFocus={!shown.hover}
             finalFocus={false}
+            onMouseEnter={hoverStay}
+            onMouseLeave={hoverLeave}
             className="w-80 gap-3 p-4"
           >
             <PopoverHeader>
@@ -66,8 +79,12 @@ export function VerseViewer() {
   );
 }
 
-function onOpenChange(next: boolean) {
-  if (!next) closeChip();
+function onOpenChange(next: boolean, details: { reason: string; event: Event }) {
+  if (next) return;
+  // A click on the open chip opens it (pinning one open on hover); it isn't a press outside.
+  const target = details.event.target;
+  if (details.reason === 'outside-press' && target instanceof Node && chipAt(target)) return;
+  closeChip();
 }
 
 function translationName({ ref }: OpenChip): string {
@@ -83,5 +100,5 @@ function ChipText({ chip: { ref } }: { chip: OpenChip }) {
       </p>
     );
   }
-  return <p className="font-serif text-[17px] leading-[1.6]">{ref.snapshotText}</p>;
+  return <VerseText passage={ref} text={ref.snapshotText} className="text-[17px] leading-[1.6]" />;
 }

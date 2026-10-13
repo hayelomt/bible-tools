@@ -6,6 +6,7 @@ import { snapshotText, useBook } from '@/data/bible.ts';
 import { useKeyboardInset } from '@/lib/use-keyboard.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import type { PassageEntry, VerseSuggestionProps } from './verse-suggestion.ts';
+import { VerseText } from './verse-text.tsx';
 
 /** Above this width the list hangs under the cursor; below it, it sits above the toolbar. */
 export const LAPTOP_QUERY = '(min-width: 1024px)';
@@ -145,23 +146,21 @@ function Option({ id, entry, selected, onChoose }: OptionProps) {
   );
 }
 
-/** The selected passage's WEB text, a few lines of it. */
+/** The selected passage's WEB text, numbered, a few lines of it. */
 function Preview({ passage }: { passage: ParsedPassage }) {
   const book = useBook(passage.book);
-  const text =
-    book.status === 'ready'
-      ? snapshotText(book.text, passage)
-      : book.status === 'missing'
-        ? 'Text not downloaded yet'
-        : '…';
+  if (book.status === 'ready') {
+    return (
+      <VerseText
+        passage={passage}
+        text={snapshotText(book.text, passage)}
+        className="line-clamp-3"
+      />
+    );
+  }
   return (
-    <span
-      className={cn(
-        'line-clamp-3',
-        book.status === 'ready' ? 'font-serif' : 'text-muted-foreground',
-      )}
-    >
-      {text}
+    <span className="line-clamp-3 text-muted-foreground">
+      {book.status === 'missing' ? 'Text not downloaded yet' : '…'}
     </span>
   );
 }

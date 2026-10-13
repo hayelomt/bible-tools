@@ -75,6 +75,7 @@ blocker.
 │                                      │
 │ BIBLE                                │
 │ World English Bible       4.1 MB  ✓  │
+│ Show verse text in notes      [○ ]   │  ← wireframes/verses.md
 │                                      │
 │ REVIEW                               │
 │ Keep takeaways in review  [ 14 ] days│

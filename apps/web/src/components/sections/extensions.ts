@@ -3,6 +3,7 @@ import { Placeholder } from '@tiptap/extensions';
 import { Selection } from '@tiptap/pm/state';
 import { StarterKit } from '@tiptap/starter-kit';
 import { VerseChipKeys, verseChipView, VerseSnapshots } from '@/components/verses/verse-chip.ts';
+import { VersePreviews } from '@/components/verses/verse-preview.ts';
 import { VerseSuggestion } from '@/components/verses/verse-suggestion.ts';
 
 /**
@@ -197,6 +198,7 @@ export function sectionExtensions(options: {
     VerseSuggestion,
     VerseChipKeys,
     VerseSnapshots,
+    VersePreviews,
     sectionKeys(options.handlers),
   ];
 }

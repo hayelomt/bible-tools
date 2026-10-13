@@ -1,6 +1,6 @@
 import type { BookText } from '@lamp/bible-data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { bookState, snapshotText, whenBook } from './bible.ts';
+import { bookState, numberedVerses, snapshotText, whenBook } from './bible.ts';
 
 // Acts 8 in miniature: verse 3 is one WEB leaves out.
 const BOOK: BookText = {
@@ -25,6 +25,33 @@ describe('snapshotText', () => {
     expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 3 })).toBe(
       '[Not in WEB: TR adds a verse.]',
     );
+  });
+});
+
+describe('numberedVerses', () => {
+  const ACTS_8_9: BookText = { ...BOOK, c: [...BOOK.c, ['Nine one.', 'Nine two.']] };
+
+  it('numbers the verses of the snapshot, skipping one left out', () => {
+    const passage = { book: 'ACT', chapter: 8, verseStart: 2, verseEnd: 4 } as const;
+    expect(numberedVerses(BOOK, passage, 'Two. Four.')).toEqual([
+      { label: '2', text: 'Two.' },
+      { label: '4', text: 'Four.' },
+    ]);
+  });
+
+  it('gives the chapter where a new one starts', () => {
+    const passage = { book: 'ACT', chapter: 8, verseStart: 4, chapterEnd: 9, verseEnd: 1 } as const;
+    expect(numberedVerses(ACTS_8_9, passage, 'Four. Nine one.')).toEqual([
+      { label: '4', text: 'Four.' },
+      { label: '9:1', text: 'Nine one.' },
+    ]);
+  });
+
+  it('gives null when the snapshot isn’t the book’s text', () => {
+    const passage = { book: 'ACT', chapter: 8, verseStart: 1, verseEnd: 2 } as const;
+    expect(numberedVerses(BOOK, passage, 'One. Two, as first published.')).toBeNull();
+    const leftOut = { book: 'ACT', chapter: 8, verseStart: 3 } as const;
+    expect(numberedVerses(BOOK, leftOut, '[Not in WEB: TR adds a verse.]')).toBeNull();
   });
 });
 

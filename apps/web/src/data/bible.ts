@@ -163,3 +163,29 @@ export function snapshotText(book: BookText, passage: Passage): string {
     .filter(Boolean);
   return notes.length > 0 ? `[Not in ${DEFAULT_TRANSLATION}: ${notes.join(' ')}]` : '';
 }
+
+/** A verse of a snapshot, with its number: "28", or "9:1" where a new chapter starts. */
+export interface NumberedVerse {
+  label: string;
+  text: string;
+}
+
+/**
+ * A snapshot split into its numbered verses, from the book's verse texts. The text shown is still
+ * the snapshot: it's split only where the book's verses join up to exactly it, so null when the
+ * text was captured from an edition since corrected, or for an empty verse's footnote.
+ */
+export function numberedVerses(
+  book: BookText,
+  passage: Passage,
+  snapshot: string,
+): NumberedVerse[] | null {
+  // A chip's node holds its unset fields as null; a passage leaves them out.
+  const cleaned = Object.fromEntries(Object.entries(passage).filter(([, v]) => v !== null));
+  const verses = passageVerses(book, cleaned as Passage).filter((v) => v.text);
+  if (verses.length === 0 || verses.map((v) => v.text).join(' ') !== snapshot) return null;
+  return verses.map((v, i) => ({
+    label: i > 0 && v.chapter !== verses[i - 1]!.chapter ? `${v.chapter}:${v.verse}` : `${v.verse}`,
+    text: v.text,
+  }));
+}

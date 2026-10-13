@@ -53,6 +53,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     colorMode: 'system',
     defaultTranslation: 'WEB',
     reviewWindowDays: 14,
+    autoPreviewVerses: false,
     rev: 1,
     updatedAt: NOW,
   },

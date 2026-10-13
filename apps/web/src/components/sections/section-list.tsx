@@ -8,6 +8,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
+import { useAutoPreview } from '@/components/verses/verse-preview.ts';
 import { VerseViewer } from '@/components/verses/verse-viewer.tsx';
 import {
   type RemovedSections,
@@ -111,6 +112,7 @@ interface SectionListProps {
  */
 export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionListProps) {
   const stored = useLiveQuery(() => lessonSections(lessonId), [lessonId]);
+  useAutoPreview();
   const [drafts, setDrafts] = useState<OutlineItem[]>([]);
   // Moves and removals show at once, before the live query catches up, so focus stays put.
   const [moves, setMoves] = useState<ReadonlyMap<string, Move>>(new Map());

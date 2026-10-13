@@ -224,6 +224,74 @@ test('a chip opens the text it captured, which never changes', async ({ page }) 
     ]);
 });
 
+test('resting the mouse on a chip opens it; focus stays in the note', async ({ page }) => {
+  await startLesson(page);
+  await page.keyboard.type('Rom 8:28-29');
+  await page.keyboard.press('Enter');
+  await chip(page, 'Romans 8:28–29').hover();
+  // Numbered: each verse after its number.
+  await expect(viewer(page)).toContainText('28We know that all things work together for good');
+  await expect(viewer(page).locator('sup')).toHaveText(['28', '29']);
+  await expect(note(page)).toBeFocused();
+  // Into the popover and out of both: it closes, and typing goes on where it was.
+  await viewer(page).hover();
+  await expect(viewer(page)).toBeVisible();
+  await page.mouse.move(0, 0);
+  await expect(viewer(page)).toBeHidden();
+  await page.keyboard.type('and');
+  await expect(note(page)).toHaveText('Romans 8:28–29 · WEB and');
+
+  // A click keeps it open after the mouse leaves.
+  await chip(page, 'Romans 8:28–29').hover();
+  await expect(viewer(page)).toBeVisible();
+  await chip(page, 'Romans 8:28–29').click();
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(500);
+  await expect(viewer(page)).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(viewer(page)).toBeHidden();
+});
+
+test('with "Show verse text in notes" on, a paragraph’s chips show their text under it', async ({
+  page,
+}) => {
+  await startLesson(page);
+  await page.keyboard.type('Paul says in Rom 8:38-9:1');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('and Ps 23:1');
+  await page.keyboard.press('Enter');
+  const preview = note(page).locator('[data-verse-preview]');
+  await expect(preview).toHaveCount(0);
+
+  const lesson = page.url();
+  await page.goto('/settings');
+  const setting = page.getByRole('switch', { name: /Show verse text in notes/ });
+  await setting.click();
+  await expect(setting).toBeChecked();
+  await page.goto(lesson);
+
+  // One quote under the paragraph, numbered, a new chapter with its number; not part of the note.
+  await expect(preview).toHaveCount(1);
+  await expect(preview).toContainText('Romans 8:38–9:1 · WEB');
+  await expect(preview).toContainText('Psalm 23:1 · WEB');
+  await expect(preview.locator('sup')).toHaveText(['38', '39', '9:1', '1']);
+  await expect(preview).toContainText('1Yahweh is my shepherd');
+  await expect
+    .poll(() => chips(page))
+    .toEqual([
+      expect.objectContaining({ display: 'Romans 8:38–9:1' }),
+      expect.objectContaining({ display: 'Psalm 23:1' }),
+    ]);
+
+  // Off again: gone.
+  await page.goto('/settings');
+  await setting.click();
+  await expect(setting).not.toBeChecked();
+  await page.goto(lesson);
+  await expect(note(page)).toContainText('Psalm 23:1 · WEB');
+  await expect(preview).toHaveCount(0);
+});
+
 test('from the keyboard: arrow onto a chip, Enter opens it, Backspace deletes it whole', async ({
   page,
 }) => {

@@ -68,6 +68,7 @@ describe('first run', () => {
       themePreset: 'parchment',
       colorMode: 'system',
       reviewWindowDays: 14,
+      autoPreviewVerses: false,
       rev: 0,
     });
     const tags = await db.tag.toArray();

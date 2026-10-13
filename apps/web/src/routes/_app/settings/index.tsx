@@ -5,6 +5,7 @@ import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
 import { StorageStatus } from '@/components/storage-status.tsx';
 import { ThemeSheet } from '@/components/theme-sheet.tsx';
+import { VersePreviewSetting } from '@/components/verse-preview-setting.tsx';
 import { useSettings } from '@/data/use-settings.ts';
 import packageJson from '../../../../package.json' with { type: 'json' };
 
@@ -32,6 +33,7 @@ function Settings() {
       )}
       <PageSection title="Bible">
         <BibleStatus />
+        {settings && <VersePreviewSetting value={settings.autoPreviewVerses} />}
       </PageSection>
       <PageSection title="Storage">
         <StorageStatus />

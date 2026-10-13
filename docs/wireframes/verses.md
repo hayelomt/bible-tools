@@ -14,7 +14,10 @@ cursor moves over it, and Backspace deletes it whole.
 ```
 
 Tapping it opens the captured text: a bottom sheet on a phone, a popover on a laptop. The text is
-the snapshot taken when the chip was inserted and never changes.
+the snapshot taken when the chip was inserted and never changes. On a laptop, resting the mouse on
+the chip opens the popover too, leaving the cursor in the note; it closes when the mouse leaves the
+chip and the popover, unless the chip was clicked. Each verse starts with its number (²⁸ … ²⁹ …, and
+"9:1" where a new chapter starts), once the book is on the device.
 
 ```text
 ┌──────────────────────────────────────┐
@@ -38,6 +41,22 @@ tap outside or × closes it, and the cursor is back where it was.
 
 A chip inserted offline before its book was downloaded shows, instead of the text: "Text not
 downloaded yet. It's added when the Bible is downloaded."
+
+### Verse text in notes
+
+With Settings → Bible → "Show verse text in notes" on (off by default, synced), each paragraph's
+chips show their text under it, numbered, as a quote that isn't part of the note: it can't be
+edited, and isn't saved, copied or exported with it.
+
+```text
+│ ┃ Paul says in ⟦Romans 8:38–39 · WEB⟧│
+│ ┃ and ⟦Psalm 23:1 · WEB⟧.            │
+│ ┃ ▏Romans 8:38–39 · WEB              │  ← text-xs, muted
+│ ┃ ▏³⁸ For I am persuaded that neither│  ← font-serif
+│ ┃ ▏death… ³⁹ nor height, nor depth…  │
+│ ┃ ▏Psalm 23:1 · WEB                  │
+│ ┃ ▏¹ Yahweh is my shepherd…          │
+```
 
 ## Verse autocomplete (M2-09)
 

@@ -84,6 +84,15 @@ export class LampDb extends Dexie {
       outbox: '++seq, [entity+entityId]',
       syncState: '',
     });
+    // `autoPreviewVerses` added; off until the user turns it on. Not queued: it's the default.
+    this.version(2).upgrade((tx) =>
+      tx
+        .table('userSettings')
+        .toCollection()
+        .modify((settings: Partial<UserSettings>) => {
+          settings.autoPreviewVerses ??= false;
+        }),
+    );
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {

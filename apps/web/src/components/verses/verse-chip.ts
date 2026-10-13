@@ -19,6 +19,8 @@ export interface OpenChip {
   editor: Editor;
   /** The editor's selection when it had focus as the chip opened; null when it didn't. */
   selection: Selection | null;
+  /** Opened by resting the pointer on it: focus stays in the note, and it closes as it leaves. */
+  hover?: boolean;
 }
 
 let open: OpenChip | null = null;
@@ -29,25 +31,73 @@ function setOpen(chip: OpenChip | null) {
   for (const listener of listeners) listener();
 }
 
-/** Opens a chip in the viewer (`VerseViewer`). */
+/** Opens a chip in the viewer (`VerseViewer`); one open on hover stays open. */
 export function openChip(editor: Editor, anchor: HTMLElement, ref: VerseRef) {
+  cancelHover();
+  if (open?.hover && open.anchor === anchor) {
+    setOpen({ ...open, hover: false });
+    return;
+  }
   setOpen({ ref, anchor, editor, selection: editor.isFocused ? editor.state.selection : null });
 }
 
 /**
  * Closes the viewer. If the editor had focus, it gets it back with the selection it had (the
- * chip itself, when it was opened from the keyboard), unless the text changed meanwhile.
+ * chip itself, when it was opened from the keyboard), unless the text changed meanwhile. One
+ * opened on hover never took focus, so there's nothing to give back.
  */
 export function closeChip() {
   const chip = open;
+  cancelHover();
   setOpen(null);
-  if (!chip?.selection || chip.editor.isDestroyed) return;
+  if (!chip?.selection || chip.hover || chip.editor.isDestroyed) return;
   const { editor, selection } = chip;
   if (editor.state.doc.eq(selection.$anchor.doc)) {
     const restored = Selection.fromJSON(editor.state.doc, selection.toJSON());
     editor.view.dispatch(editor.state.tr.setSelection(restored));
   }
   editor.view.focus();
+}
+
+/** Resting the pointer on a chip this long opens it; leaving it (and its popover) this long closes it. */
+const HOVER_OPEN_MS = 400;
+const HOVER_CLOSE_MS = 250;
+/** Hover opens a chip on a laptop with a mouse (`LAPTOP_QUERY`); a phone's sheet opens on a tap. */
+const HOVER_QUERY = '(min-width: 1024px) and (hover: hover) and (pointer: fine)';
+let hoverTimer: ReturnType<typeof setTimeout> | undefined;
+
+function cancelHover() {
+  clearTimeout(hoverTimer);
+  hoverTimer = undefined;
+}
+
+function hoverOpen(editor: Editor, anchor: HTMLElement, ref: () => VerseRef) {
+  if (!window.matchMedia(HOVER_QUERY).matches) return;
+  // One opened by a click or the keyboard stays until it's closed.
+  if (open && !open.hover) return;
+  cancelHover();
+  if (open?.anchor === anchor) return;
+  hoverTimer = setTimeout(() => {
+    if (!anchor.isConnected || editor.isDestroyed) return;
+    setOpen({ ref: ref(), anchor, editor, selection: null, hover: true });
+  }, HOVER_OPEN_MS);
+}
+
+/** The pointer left a chip or its popover: one open on hover closes unless it comes back. */
+export function hoverLeave() {
+  cancelHover();
+  if (!open?.hover) return;
+  hoverTimer = setTimeout(closeChip, HOVER_CLOSE_MS);
+}
+
+/** The pointer is on the popover of a chip open on hover: it stays open. */
+export function hoverStay() {
+  if (open?.hover) cancelHover();
+}
+
+/** Whether `target` is in the chip open in the viewer. */
+export function chipAt(target: Node): boolean {
+  return !!open?.anchor.contains(target);
 }
 
 /** The chip open in the viewer, if any. */
@@ -75,8 +125,8 @@ const SELECTED_CLASS = ['ring-2', 'ring-primary'];
 /**
  * How a `verse` node shows in the editor (F3, wireframes/verses.md "Verse chip"): the display
  * reference and the translation label, read as a button. A tap or click opens the viewer without
- * moving the cursor (or opening the keyboard); the node is an atom, so the cursor and Backspace
- * treat it as one unit.
+ * moving the cursor (or opening the keyboard); on a laptop, so does resting the mouse on it. The
+ * node is an atom, so the cursor and Backspace treat it as one unit.
  */
 export const verseChipView: NodeViewRenderer = ({ node: initial, editor }) => {
   let node = initial;
@@ -93,6 +143,8 @@ export const verseChipView: NodeViewRenderer = ({ node: initial, editor }) => {
   // Keep focus (and the cursor) where it is; the click opens the chip.
   dom.addEventListener('mousedown', (event) => event.preventDefault());
   dom.addEventListener('click', () => openChip(editor, dom, node.attrs as VerseRef));
+  dom.addEventListener('mouseenter', () => hoverOpen(editor, dom, () => node.attrs as VerseRef));
+  dom.addEventListener('mouseleave', hoverLeave);
   return {
     dom,
     update: (updated) => {

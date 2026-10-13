@@ -34,6 +34,7 @@ export function ensureDevice(db: LampDb, initial: InitialSettings): Promise<void
           ...initial,
           defaultTranslation: DEFAULT_TRANSLATION,
           reviewWindowDays: DEFAULT_REVIEW_WINDOW_DAYS,
+          autoPreviewVerses: false,
           rev: 0,
           updatedAt: w.now,
         },

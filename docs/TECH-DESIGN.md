@@ -153,7 +153,7 @@ Section bodies are stored as **ProseMirror JSON**, the format TipTap uses (§8.3
 | `User` | id, email (unique, citext), passwordHash, emailVerifiedAt, role (`user`/`admin`), syncRev BigInt, disabledAt | `syncRev` is the per-user revision counter (§6.3) |
 | `Session` | id, userId, tokenHash, createdAt, lastSeenAt, expiresAt, userAgent | Opaque cookie token; only its SHA-256 is stored |
 | `EmailToken` | id, userId, kind (`verify`/`reset`), tokenHash, expiresAt, usedAt | Single use |
-| `UserSettings` | userId (PK), themePreset, colorMode (`light`/`dark`/`system`), defaultTranslation, reviewWindowDays, rev, updatedAt | Synced like other entities |
+| `UserSettings` | userId (PK), themePreset, colorMode (`light`/`dark`/`system`), defaultTranslation, reviewWindowDays, autoPreviewVerses, rev, updatedAt | Synced like other entities |
 | `Series` | id, userId, title, description, kind, … | |
 | `Lesson` | id, userId, seriesId?, title, date (`date`), source, speaker?, church?, mainPassages jsonb | |
 | `Section` | id, userId, lessonId, parentId?, orderKey, body jsonb, conflictOf? | `conflictOf` points to the section a conflicted copy came from (§6.4) |
@@ -322,6 +322,9 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - **The chip** is a plain DOM node view (no React per chip): the display reference and the translation label, `role="button"`, labelled "John 10:9, World English Bible, verse. Show text." The node is an atom, so the cursor and Backspace treat it as one unit. Copying still writes `renderHTML`'s `span[data-verse]`, so a pasted chip keeps its fields.
 - **Opening it:** a tap or click opens it without moving the cursor or bringing up the phone's keyboard (the chip takes the pointer events; ProseMirror ignores them). From the keyboard (decided 2026-10-13), ← or → selects the chip as one unit (a ring shows it), and Enter or Space opens it; Tab stays the section key.
 - **The viewer**, one for the page: a popover under the chip on a laptop, a bottom sheet on a phone (Base UI, with a `Popover` added to `@lamp/ui`). It shows the reference, the translation's full name (`TRANSLATION_NAMES`) and the snapshot, never the current text, so a corrected edition doesn't change a note (tested by serving a changed book after a reload). Esc, a tap outside or × closes it, and focus goes back to the note with the selection it had, only if the note had focus.
+- **Hover** (decided 2026-10-13): on a laptop with a mouse, resting on a chip for 400 ms opens the popover without taking focus from the note; it closes 250 ms after the pointer leaves the chip and the popover. A click pins it open (a click on the open chip isn't a press outside).
+- **Verse numbers** (decided 2026-10-13): the stored snapshot stays one string. The viewer, the autocomplete and the previews split it into numbered verses from the book's verse texts (`numberedVerses`), only where those join up to exactly the snapshot; otherwise (a corrected edition, a footnote, a book not downloaded) the text shows without numbers.
+- **Verse text in notes** (`verse-preview.ts`, decided 2026-10-13): with `UserSettings.autoPreviewVerses` on, each text block's chips get a widget decoration after the block holding their snapshots, numbered. Not part of the document, so never saved, copied or exported; redrawn when the setting changes or a book arrives.
 - **A chip without its text** (decided 2026-10-13), inserted offline before its book arrived, says "Text not downloaded yet. It's added when the Bible is downloaded." M2-11 fills it in. A chip inserted while its book is still being fetched gets its text when the book arrives (not a step of its own for Undo), and an open viewer shows it.
 
 ### 8.4 Search and verse index
@@ -494,6 +497,9 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 42 | A verse WEB leaves out (2026-10-13) | On its own, the chip snapshots its footnote, marked "[Not in WEB: …]"; skipped in a range | §8.3, §9 |
 | 43 | A chip without its text (2026-10-13) | Says the text is coming; never shows text that wasn't captured | §8.3 |
 | 44 | Opening a chip from the keyboard (2026-10-13) | ← or → selects it, Enter or Space opens it; chips are not Tab stops | §8.3 |
+| 45 | Hovering a chip (2026-10-13) | On a laptop, opens the popover without taking focus; a click pins it | §8.3 |
+| 46 | Verse numbers (2026-10-13) | Added when shown, from the book's verse texts, never stored; none when the snapshot doesn't match | §8.3 |
+| 47 | Verse text in notes (2026-10-13) | A synced setting, off by default; the text shows as a quote under the paragraph, not part of the note | §8.3 |
 | 45 | App icon (2026-10-13) | A clay oil lamp in Parchment's red on cream; an SVG that can be replaced later | §8.6 |
 | 46 | Where the Bible text is kept (2026-10-13) | A Cache Storage cache the page fills (books cache-first, manifest network-first), not a service-worker route | §8.6, §9 |
 | 47 | The update prompt (2026-10-13) | Hidden while any text field has focus; Later waits for the next start; Reload waits for writes in flight | §8.6 |

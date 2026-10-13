@@ -53,6 +53,8 @@ export const userSettingsSchema = z.strictObject({
   colorMode: z.enum(COLOR_MODES),
   defaultTranslation: z.enum(TRANSLATIONS),
   reviewWindowDays: z.int().min(1).max(365),
+  /** Each paragraph's verse chips show their text under it (F3). */
+  autoPreviewVerses: z.boolean(),
   rev: revSchema,
   updatedAt: timestampSchema,
 });
