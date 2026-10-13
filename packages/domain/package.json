@@ -10,10 +10,11 @@
   "scripts": {
     "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings src",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run --coverage"
   },
   "devDependencies": {
     "@lamp/config": "workspace:*",
+    "@vitest/coverage-v8": "catalog:",
     "oxlint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

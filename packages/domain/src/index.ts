@@ -11,6 +11,17 @@ export {
   isBookCode,
   verseCount,
 } from './books.ts';
+export {
+  type BookMatch,
+  describeParseError,
+  matchBooks,
+  type ParsedPassage,
+  type ParseError,
+  type ParseResult,
+  parseReference,
+  type Suggestion,
+  suggest,
+} from './parse-reference.ts';
 export { SEED_TAGS } from './seed-tags.ts';
 export {
   DEFAULT_TRANSLATION,
