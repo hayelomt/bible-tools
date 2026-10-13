@@ -15,12 +15,19 @@ describe('env validation', () => {
   });
 
   it('applies defaults', () => {
-    expect(envSchema.parse({})).toEqual({
+    const DATABASE_URL = 'postgresql://lamp:lamp@127.0.0.1:5432/lamp_dev';
+    expect(envSchema.parse({ DATABASE_URL })).toEqual({
       NODE_ENV: 'development',
       HOST: '127.0.0.1',
       PORT: 3000,
       LOG_LEVEL: 'info',
+      DATABASE_URL,
     });
+  });
+
+  it('requires a postgresql:// DATABASE_URL', () => {
+    expect(envSchema.safeParse({}).success).toBe(false);
+    expect(envSchema.safeParse({ DATABASE_URL: 'mysql://x' }).success).toBe(false);
   });
 
   it('stops startup with a message naming every bad variable', async () => {

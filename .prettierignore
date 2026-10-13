@@ -3,3 +3,4 @@ docs/
 dist/
 coverage/
 .turbo/
+**/src/generated/

@@ -14,6 +14,10 @@
     "lint": "sh scripts/check-node.sh && turbo run lint",
     "typecheck": "sh scripts/check-node.sh && turbo run typecheck",
     "test": "sh scripts/check-node.sh && turbo run test",
+    "test:int": "sh scripts/check-node.sh && turbo run test:int",
+    "e2e": "sh scripts/check-node.sh && turbo run e2e",
+    "db:migrate": "pnpm --filter @lamp/api db:migrate",
+    "db:seed": "pnpm --filter @lamp/api db:seed",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

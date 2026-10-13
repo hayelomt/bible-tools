@@ -16,6 +16,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "noEmit": true,
+    // Internal packages are consumed as TS source, so their relative imports name the .ts file.
+    "allowImportingTsExtensions": true,
     "types": []
   }
 }

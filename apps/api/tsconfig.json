@@ -9,5 +9,5 @@
     "strictPropertyInitialization": false,
     "outDir": "dist"
   },
-  "include": ["src", "test", "*.config.ts"]
+  "include": ["src", "test", "prisma", "*.config.ts"]
 }

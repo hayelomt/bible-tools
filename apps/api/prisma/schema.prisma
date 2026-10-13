@@ -1,0 +1,373 @@
+// Lamp data model (TECH-DESIGN §5). Conventions:
+// - ids are UUIDv7. Synced rows get theirs from the client (offline creates); the default is
+//   for rows the server creates itself and for the seed.
+// - Synced rows carry userId, createdAt, updatedAt (client time, adjusted, §6.5), rev (server
+//   assigned, §6.3) and deletedAt (tombstone). updatedAt is not @updatedAt: the client sets it.
+// - Enum-like columns are text with check constraints, and Tag/SectionTag/LessonTag uniqueness
+//   is a partial index (WHERE deleted_at IS NULL). Both live in raw SQL in the migrations, along
+//   with the citext extension and the "C" collation on section.order_key.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  // The build (SWC) keeps import specifiers as written, so they must name the emitted .js
+  // files. Without this, Prisma picks .ts because tsconfig allows .ts imports.
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// role: user | admin
+model User {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  email           String    @unique @db.Citext
+  passwordHash    String    @map("password_hash")
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  role            String    @default("user")
+  syncRev         BigInt    @default(0) @map("sync_rev")
+  disabledAt      DateTime? @map("disabled_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions    Session[]
+  emailTokens EmailToken[]
+  settings    UserSettings?
+  series      Series[]
+  lessons     Lesson[]
+  sections    Section[]
+  tags        Tag[]
+  sectionTags SectionTag[]
+  lessonTags  LessonTag[]
+  takeaways   Takeaway[]
+  questions   Question[]
+  highlights  Highlight[]
+  memoryItems MemoryItem[]
+  citations   Citation[]
+  syncChanges SyncChange[]
+  devices     Device[]
+
+  @@map("user")
+}
+
+model Session {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  // SHA-256 of the cookie token, hex
+  tokenHash  String   @unique @map("token_hash")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSeenAt DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(3)
+  userAgent  String?  @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+// kind: verify | reset
+model EmailToken {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  kind      String
+  tokenHash String    @unique @map("token_hash")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_token")
+}
+
+// themePreset: parchment | vellum | olive | slate | cedar | midnight
+// colorMode: light | dark | system
+model UserSettings {
+  userId             String   @id @map("user_id") @db.Uuid
+  themePreset        String   @default("parchment") @map("theme_preset")
+  colorMode          String   @default("system") @map("color_mode")
+  defaultTranslation String   @default("WEB") @map("default_translation")
+  reviewWindowDays   Int      @default(14) @map("review_window_days")
+  rev                BigInt   @default(0)
+  updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+// kind: sermon_series | book_study | custom
+model Series {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  title       String
+  description String    @default("")
+  kind        String    @default("custom")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev         BigInt    @default(0)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([userId, rev])
+  @@map("series")
+}
+
+// source: sermon | personal | group
+// mainPassages: VerseRef[] (domain schema)
+model Lesson {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  seriesId     String?   @map("series_id") @db.Uuid
+  title        String
+  date         DateTime  @db.Date
+  source       String    @default("sermon")
+  speaker      String?
+  church       String?
+  mainPassages Json      @default("[]") @map("main_passages")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev          BigInt    @default(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series    Series?     @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  sections  Section[]
+  tags      LessonTag[]
+  takeaways Takeaway[]
+  questions Question[]
+  citations Citation[]
+
+  @@index([userId, rev])
+  @@index([seriesId])
+  @@map("lesson")
+}
+
+// body: restricted ProseMirror JSON (domain bodySchema)
+// orderKey: fractional index key among siblings; column collation is "C" (byte order)
+model Section {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  lessonId   String    @map("lesson_id") @db.Uuid
+  parentId   String?   @map("parent_id") @db.Uuid
+  orderKey   String    @map("order_key")
+  body       Json
+  conflictOf String?   @map("conflict_of") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev        BigInt    @default(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson             Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  parent             Section?     @relation("SectionTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children           Section[]    @relation("SectionTree")
+  conflictSource     Section?     @relation("ConflictCopies", fields: [conflictOf], references: [id], onDelete: SetNull)
+  conflictCopies     Section[]    @relation("ConflictCopies")
+  tags               SectionTag[]
+  answeredQuestions  Question[]
+  promotedHighlights Highlight[]
+
+  @@index([userId, rev])
+  @@index([lessonId, parentId, orderKey])
+  @@map("section")
+}
+
+// name is citext; unique per user among non-deleted rows (partial index in SQL)
+model Tag {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  name      String    @db.Citext
+  isSeeded  Boolean   @default(false) @map("is_seeded")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections SectionTag[]
+  lessons  LessonTag[]
+
+  @@index([userId, rev])
+  @@map("tag")
+}
+
+model SectionTag {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tagId     String    @map("tag_id") @db.Uuid
+  sectionId String    @map("section_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@index([tagId])
+  @@map("section_tag")
+}
+
+model LessonTag {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tagId     String    @map("tag_id") @db.Uuid
+  lessonId  String    @map("lesson_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@index([tagId])
+  @@map("lesson_tag")
+}
+
+model Takeaway {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  lessonId  String    @map("lesson_id") @db.Uuid
+  text      String
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@index([lessonId])
+  @@map("takeaway")
+}
+
+// status: open | answered | parked
+model Question {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  lessonId        String    @map("lesson_id") @db.Uuid
+  text            String
+  status          String    @default("open")
+  answerSectionId String?   @map("answer_section_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev             BigInt    @default(0)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson        Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  answerSection Section? @relation(fields: [answerSectionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, rev])
+  @@index([lessonId])
+  @@map("question")
+}
+
+// ref: VerseRef; colour: yellow | green | blue | pink
+model Highlight {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  ref               Json
+  colour            String
+  note              String?
+  promotedSectionId String?   @map("promoted_section_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev               BigInt    @default(0)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotedSection Section? @relation(fields: [promotedSectionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, rev])
+  @@map("highlight")
+}
+
+// ref: VerseRef; SM-2 state (domain srs.ts)
+model MemoryItem {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  ref          Json
+  ease         Float     @default(2.5)
+  interval     Int       @default(0)
+  nextReviewAt DateTime  @default(now()) @map("next_review_at") @db.Timestamptz(3)
+  reviewCount  Int       @default(0) @map("review_count")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev          BigInt    @default(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@index([userId, nextReviewAt])
+  @@map("memory_item")
+}
+
+// Derived from the source row on every write and never pushed by the client.
+// sourceType: lesson | section | highlight | memory_item. sourceId has no foreign key (it points
+// at whichever table sourceType names); the rows are rebuilt with their source.
+model Citation {
+  id         String  @id @default(uuid(7)) @db.Uuid
+  userId     String  @map("user_id") @db.Uuid
+  sourceType String  @map("source_type")
+  sourceId   String  @map("source_id") @db.Uuid
+  lessonId   String? @map("lesson_id") @db.Uuid
+  book       String
+  startOrd   Int     @map("start_ord")
+  endOrd     Int     @map("end_ord")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startOrd, endOrd])
+  @@index([sourceType, sourceId])
+  @@map("citation")
+}
+
+// One row per pushed change (id = changeId), so a replayed change returns its stored result.
+// status: applied | conflict | rejected. deviceId has no foreign key: removing a device must not
+// forget which changes were already applied.
+model SyncChange {
+  id         String   @id @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  deviceId   String   @map("device_id") @db.Uuid
+  receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz(3)
+  status     String
+  error      Json?
+  resultRev  BigInt?  @map("result_rev")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, receivedAt])
+  @@map("sync_change")
+}
+
+// The id is the device's own (syncState.deviceId). A device can sync with more than one account
+// over its life (§6.6), so the key is (userId, id).
+model Device {
+  id            String    @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  name          String
+  clientVersion String    @map("client_version")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSyncAt    DateTime? @map("last_sync_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, id])
+  @@map("device")
+}

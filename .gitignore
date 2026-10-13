@@ -6,3 +6,4 @@ tmp/
 dist/
 .turbo/
 coverage/
+**/src/generated/

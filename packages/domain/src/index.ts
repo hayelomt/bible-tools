@@ -1,3 +1,2 @@
-// Public API of @lamp/domain. Empty until its first backlog task lands.
-// oxlint-disable-next-line unicorn/require-module-specifiers
-export {};
+// Public API of @lamp/domain.
+export { SEED_TAGS } from './seed-tags.ts';

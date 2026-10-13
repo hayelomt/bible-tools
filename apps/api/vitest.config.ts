@@ -10,7 +10,14 @@ export default mergeConfig(
     oxc: false,
     plugins: [swc.vite({ module: { type: 'es6' } })],
     test: {
-      env: { LOG_LEVEL: 'silent' },
+      // Integration tests have their own config (vitest.int.config.ts).
+      exclude: ['**/node_modules/**', '**/*.int.test.ts'],
+      env: {
+        LOG_LEVEL: 'silent',
+        // Unit tests never reach a database (Prisma connects on the first query); the app
+        // only needs a valid URL to start.
+        DATABASE_URL: 'postgresql://unit-tests@127.0.0.1:1/no_database',
+      },
     },
   }),
 );

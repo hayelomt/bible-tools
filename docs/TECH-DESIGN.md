@@ -81,7 +81,7 @@ bible-tool/
 - **Runtime:** Node **24 LTS** (pinned in `.nvmrc` and `engines`). The NestJS 12 CLI needs Node 22.22.3+ or 24.15+. This machine has 22.22.2, so upgrade before scaffolding.
 - **Module format:** ESM everywhere (`"type": "module"`). NestJS 12 and Prisma 7 are both ESM-first.
 - **Tooling:** pnpm 10. Turborepo tasks are `dev`, `build`, `lint`, `typecheck`, `test`, `test:int` and `e2e`. oxlint (the NestJS 12 default) lints the whole repo and Prettier formats it.
-- **Internal packages** are consumed as TypeScript source (`"exports": "./src/index.ts"`): Vite and Vitest compile them directly, and the API bundles them at build time (§11.2). This avoids a build step per package during development.
+- **Internal packages** are consumed as TypeScript source (`"exports": "./src/index.ts"`): Vite and Vitest compile them directly, and the API bundles them at build time (§11.2). This avoids a build step per package during development. Their relative imports name the `.ts` file (`./seed-tags.ts`, allowed by `allowImportingTsExtensions` in the base tsconfig), so they resolve the same way under bundler and `nodenext` resolution, in tsx and in Node's type stripping. The API's own sources keep `.js` specifiers, because SWC emits them unchanged.
 - **Versions** are pinned exactly in `package.json` at scaffold time and kept current by Renovate. This document names major versions only.
 
 ## 4. Domain model (`packages/domain`)
@@ -138,20 +138,20 @@ Section bodies are stored as **ProseMirror JSON**, the format TipTap uses (§8.3
 | `Series` | id, userId, title, description, kind, … | |
 | `Lesson` | id, userId, seriesId?, title, date (`date`), source, speaker?, church?, mainPassages jsonb | |
 | `Section` | id, userId, lessonId, parentId?, orderKey, body jsonb, conflictOf? | `conflictOf` points to the section a conflicted copy came from (§6.4) |
-| `Tag` | id, userId, name, isSeeded | Unique (userId, lower(name)) among non-deleted rows; the seeded tags are copied into each new account |
-| `SectionTag`, `LessonTag` | id, userId, tagId, sectionId / lessonId | Join rows with their own id and tombstone, so they sync like any other row |
+| `Tag` | id, userId, name (citext), isSeeded | Unique (userId, name) among non-deleted rows, case-insensitive through citext; the seeded tags are copied into each new account |
+| `SectionTag`, `LessonTag` | id, userId, tagId, sectionId / lessonId | Join rows with their own id and tombstone, so they sync like any other row; one non-deleted link per (section or lesson, tag) |
 | `Takeaway` | id, userId, lessonId, text | |
 | `Question` | id, userId, lessonId, text, status, answerSectionId? | |
 | `Highlight` | id, userId, ref jsonb, colour, note?, promotedSectionId? | |
 | `MemoryItem` | id, userId, ref jsonb, ease, interval, nextReviewAt, reviewCount | |
 | `Citation` | id, userId, sourceType, sourceId, lessonId?, book, startOrd, endOrd | **Derived:** rebuilt from the source row on every write, on the server and on the device. Index on `(user_id, start_ord, end_ord)`. Never pushed by the client. |
 | `SyncChange` | id (= change id), userId, deviceId, receivedAt, status (`applied`/`conflict`/`rejected`), error jsonb, resultRev | Makes each change idempotent and records what happened (§6) |
-| `Device` | id, userId, name, lastSyncAt, clientVersion | Created on first sync; shown in account settings with "Sign out this device" |
+| `Device` | id, userId, name, lastSyncAt, clientVersion | Primary key (userId, id): the id is the device's own `syncState.deviceId`, and one device can sync with several accounts over its life (§6.6). Created on first sync; shown in account settings with "Sign out this device" |
 
 `Citation` is the only table the client never writes to the server. Both sides compute it from the source rows with the same domain function, so it can't disagree.
 
 ### 5.3 Migrations
-`prisma migrate dev` creates migrations locally and `prisma migrate deploy` applies them at release. Raw SQL in migrations adds what Prisma can't express: `citext`, partial unique indexes (`WHERE deleted_at IS NULL`) and check constraints on enum-like text columns.
+`prisma migrate dev` creates migrations locally and `prisma migrate deploy` applies them at release. Raw SQL in migrations adds what Prisma can't express: `citext`, partial unique indexes (`WHERE deleted_at IS NULL`), check constraints on enum-like text columns, and the `"C"` collation on `section.order_key` (fractional keys compare byte by byte). *Checked at M1-04: `prisma migrate dev` leaves all of these alone (no drift), and an integration test runs `prisma migrate diff --exit-code` against the migrated database.* Enum values: series kind `sermon_series`/`book_study`/`custom`, lesson source `sermon`/`personal`/`group`, question status `open`/`answered`/`parked`, highlight colour `yellow`/`green`/`blue`/`pink`, citation sourceType `lesson`/`section`/`highlight`/`memory_item`. Foreign keys cascade from the user (account deletion) and from a lesson to its contents; optional links (a lesson's series, a question's answer section, a highlight's promoted section, `conflictOf`) are set to null. `Citation.sourceId` and `SyncChange.deviceId` have no foreign key. The Prisma client is generated into `apps/api/src/generated/` (git-ignored) by the Turbo task `db:generate` and on install.
 
 ## 6. Sync
 
@@ -298,7 +298,7 @@ NestJS dependency injection reads `design:paramtypes` metadata. The API's `vites
 
 ### 10.2 Test databases (no Docker)
 - `scripts/dev-db.sh` (idempotent) uses the local Postgres (Postgres.app 18 on macOS, the distro package on Linux) to create the role `lamp` and the databases `lamp_dev`, `lamp_test` and `lamp_e2e`, and writes the connection strings to `apps/api/.env.local` and `.env.test`. Only creating the role needs an admin: the script uses `$PG_ADMIN` if set, else your own user when it is a superuser or has `CREATEROLE` (Postgres.app), else `sudo -u postgres psql` (the Linux package). Everything else runs as `lamp`, which has `CREATEDB` for Prisma's shadow database. `.env.test` also holds `E2E_DATABASE_URL` for Playwright.
-- **Integration tests:** a Vitest `globalSetup` runs `prisma migrate reset --force --skip-seed` on `lamp_test` once per run. Each test file then truncates all tables in `beforeEach` (one `TRUNCATE … RESTART IDENTITY CASCADE`). Test files run one at a time (`fileParallelism: false`). If the suite gets slow, switch to one database per Vitest worker, cloned from a migrated template database.
+- **Integration tests:** a Vitest `globalSetup` runs `prisma migrate reset --force` on `lamp_test` once per run (Prisma 7 no longer seeds on reset), after checking that the database name ends in `_test`. Prisma refuses to reset when an AI agent runs it unless `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION` carries the user's consent; Turbo passes `PRISMA_*` through for `test:int`. Each test file then truncates all tables in `beforeEach` (one `TRUNCATE … RESTART IDENTITY CASCADE`). Test files run one at a time (`fileParallelism: false`). If the suite gets slow, switch to one database per Vitest worker, cloned from a migrated template database.
 - **E2E:** Playwright's `globalSetup` resets `lamp_e2e`, then starts the built API and `vite preview` through `webServer`.
 - **CI (GitHub Actions):** installs PostgreSQL 18 from the PGDG apt repository on the Ubuntu runner and starts it, with no containers, so CI matches local and production. Jobs are lint + typecheck, unit, integration, and E2E (Chromium, plus WebKit for the iPhone path), all through Turbo with remote caching off.
 
