@@ -16,6 +16,9 @@ import { Route as AppReadRouteImport } from './routes/_app/read'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as DevThemesRouteImport } from './routes/dev.themes'
+import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
+import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
+import { Route as AppSeriesSeriesIdRouteImport } from './routes/_app/series/$seriesId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsThemeRouteImport } from './routes/_app/settings/theme'
 
@@ -53,6 +56,21 @@ const DevThemesRoute = DevThemesRouteImport.update({
   path: '/dev/themes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppLessonsIndexRoute = AppLessonsIndexRouteImport.update({
+  id: '/lessons/',
+  path: '/lessons/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
+  id: '/lessons/$lessonId',
+  path: '/lessons/$lessonId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSeriesSeriesIdRoute = AppSeriesSeriesIdRouteImport.update({
+  id: '/series/$seriesId',
+  path: '/series/$seriesId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -71,7 +89,10 @@ export interface FileRoutesByFullPath {
   '/review': typeof AppReviewRoute
   '/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
+  '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/settings/theme': typeof AppSettingsThemeRoute
+  '/lessons/': typeof AppLessonsIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -81,7 +102,10 @@ export interface FileRoutesByTo {
   '/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
   '/': typeof AppIndexRoute
+  '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/settings/theme': typeof AppSettingsThemeRoute
+  '/lessons': typeof AppLessonsIndexRoute
   '/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -93,7 +117,10 @@ export interface FileRoutesById {
   '/_app/search': typeof AppSearchRoute
   '/dev/themes': typeof DevThemesRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/_app/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/_app/settings/theme': typeof AppSettingsThemeRoute
+  '/_app/lessons/': typeof AppLessonsIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -105,7 +132,10 @@ export interface FileRouteTypes {
     | '/review'
     | '/search'
     | '/dev/themes'
+    | '/lessons/$lessonId'
+    | '/series/$seriesId'
     | '/settings/theme'
+    | '/lessons/'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -115,7 +145,10 @@ export interface FileRouteTypes {
     | '/search'
     | '/dev/themes'
     | '/'
+    | '/lessons/$lessonId'
+    | '/series/$seriesId'
     | '/settings/theme'
+    | '/lessons'
     | '/settings'
   id:
     | '__root__'
@@ -126,7 +159,10 @@ export interface FileRouteTypes {
     | '/_app/search'
     | '/dev/themes'
     | '/_app/'
+    | '/_app/lessons/$lessonId'
+    | '/_app/series/$seriesId'
     | '/_app/settings/theme'
+    | '/_app/lessons/'
     | '/_app/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -186,6 +222,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevThemesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/lessons/': {
+      id: '/_app/lessons/'
+      path: '/lessons'
+      fullPath: '/lessons/'
+      preLoaderRoute: typeof AppLessonsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/lessons/$lessonId': {
+      id: '/_app/lessons/$lessonId'
+      path: '/lessons/$lessonId'
+      fullPath: '/lessons/$lessonId'
+      preLoaderRoute: typeof AppLessonsLessonIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/series/$seriesId': {
+      id: '/_app/series/$seriesId'
+      path: '/series/$seriesId'
+      fullPath: '/series/$seriesId'
+      preLoaderRoute: typeof AppSeriesSeriesIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/': {
       id: '/_app/settings/'
       path: '/settings'
@@ -209,7 +266,10 @@ interface AppRouteChildren {
   AppReviewRoute: typeof AppReviewRoute
   AppSearchRoute: typeof AppSearchRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
+  AppSeriesSeriesIdRoute: typeof AppSeriesSeriesIdRoute
   AppSettingsThemeRoute: typeof AppSettingsThemeRoute
+  AppLessonsIndexRoute: typeof AppLessonsIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
@@ -219,7 +279,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppReviewRoute: AppReviewRoute,
   AppSearchRoute: AppSearchRoute,
   AppIndexRoute: AppIndexRoute,
+  AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
+  AppSeriesSeriesIdRoute: AppSeriesSeriesIdRoute,
   AppSettingsThemeRoute: AppSettingsThemeRoute,
+  AppLessonsIndexRoute: AppLessonsIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 

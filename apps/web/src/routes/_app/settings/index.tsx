@@ -3,7 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { ChevronRight } from 'lucide-react';
 import { ApiStatus } from '@/components/api-status.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
-import { SettingsSection } from '@/components/settings-section.tsx';
+import { PageSection } from '@/components/page-section.tsx';
 import { useSettings } from '@/data/use-settings.ts';
 import packageJson from '../../../../package.json' with { type: 'json' };
 
@@ -20,12 +20,12 @@ function Settings() {
   const preset = PRESETS.find((p) => p.id === settings?.themePreset);
   return (
     <div className="flex flex-col gap-8">
-      <SettingsSection title="Account">
+      <PageSection title="Account">
         {/* M3-05 adds sign-up and sign-in here; a guest is never asked before then. */}
         <p>Your notes are only on this device.</p>
-      </SettingsSection>
+      </PageSection>
       {settings && (
-        <SettingsSection title="Appearance">
+        <PageSection title="Appearance">
           <Link
             to="/settings/theme"
             className="-mx-2 flex min-h-9 items-center justify-between gap-4 rounded-lg px-2 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
@@ -37,9 +37,9 @@ function Settings() {
             </span>
           </Link>
           <ModeControl value={settings.colorMode} />
-        </SettingsSection>
+        </PageSection>
       )}
-      <SettingsSection title="About">
+      <PageSection title="About">
         <p className="text-sm">
           Lamp {packageJson.version} · MIT licence ·{' '}
           <a className="text-primary underline-offset-4 hover:underline" href={SOURCE_URL}>
@@ -56,7 +56,7 @@ function Settings() {
           </a>
         </p>
         <ApiStatus />
-      </SettingsSection>
+      </PageSection>
     </div>
   );
 }

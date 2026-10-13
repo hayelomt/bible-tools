@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Settings } from 'lucide-react';
-import { db } from '@/data/db.ts';
+import { allSeries } from '@/data/queries.ts';
 import { NAV_ITEMS } from './nav-items.ts';
 import { SyncStatus } from './sync-status.tsx';
 
@@ -10,10 +10,7 @@ const itemClass =
 
 /** The laptop's sidebar, from 1024 px (wireframes/shell.md). */
 export function Sidebar() {
-  const series = useLiveQuery(
-    () => db.series.filter((s) => s.deletedAt === null).sortBy('title'),
-    [],
-  );
+  const series = useLiveQuery(() => allSeries(), []);
 
   return (
     <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col gap-6 border-r bg-card p-4 lg:flex">
@@ -37,10 +34,12 @@ export function Sidebar() {
           <h2 id="sidebar-series" className="px-3 text-xs font-medium text-muted-foreground">
             Series
           </h2>
-          <ul className="overflow-y-auto">
+          <ul className="flex flex-col gap-1 overflow-y-auto">
             {series.map((s) => (
-              <li key={s.id} className="truncate px-3 py-1.5 text-sm">
-                {s.title}
+              <li key={s.id}>
+                <Link to="/series/$seriesId" params={{ seriesId: s.id }} className={itemClass}>
+                  <span className="truncate">{s.title}</span>
+                </Link>
               </li>
             ))}
           </ul>

@@ -38,10 +38,14 @@ export function ErrorScreen({ error }: ErrorComponentProps) {
   );
 }
 
-export function NotFoundScreen() {
+export function NotFoundScreen({
+  children = "There's nothing at this address.",
+}: {
+  children?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col items-start gap-3">
-      <p>There's nothing at this address.</p>
+      <p>{children}</p>
       <Link to="/" data-slot="button" className={buttonVariants()}>
         Go to lessons
       </Link>

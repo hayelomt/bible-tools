@@ -1,0 +1,144 @@
+import type { Lesson } from '@lamp/domain';
+import { ChevronDown } from 'lucide-react';
+import { useId, useState } from 'react';
+import { ScreenActions, ScreenTitle, SidePanel } from '@/components/shell/slots.tsx';
+import type { LessonFields } from '@/data/actions/lessons.ts';
+import { longDate, today } from '@/lib/dates.ts';
+import { SOURCE_LABELS } from '@/lib/labels.ts';
+import { useMediaQuery } from '@/lib/use-media-query.ts';
+import { LessonDetails } from './lesson-details.tsx';
+import { LessonMenu } from './lesson-menu.tsx';
+import { useLessonSaver } from './use-lesson-saver.ts';
+
+/** The side panel needs room for the sidebar, the 42 rem column and itself. */
+const WIDE = '(min-width: 80rem)';
+
+interface LessonEditorProps {
+  id: string;
+  /** The stored lesson; `null` for a new one that hasn't got a title yet. */
+  lesson: Lesson | null;
+  /** The series a new lesson starts in ("New lesson in John"). */
+  seriesId?: string;
+}
+
+/** What a new lesson starts with (wireframes/lessons.md): today, a sermon, no series. */
+function newLesson(seriesId?: string): LessonFields {
+  return {
+    seriesId: seriesId ?? null,
+    title: '',
+    date: today(),
+    source: 'sermon',
+    speaker: null,
+    church: null,
+    mainPassages: [],
+  };
+}
+
+/**
+ * Lesson capture and edit on one screen (F1, wireframes/lessons.md "Lesson: capture and edit"):
+ * the title, large, then a line with the date and source that opens the details. On a wide laptop
+ * the details sit in the side panel instead. Everything saves as it's typed; there's no Save.
+ */
+export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
+  const saver = useLessonSaver(id, lesson, () => newLesson(seriesId));
+  const { values, save, flush, saving } = saver;
+  const [title, setTitle] = useState(values.title);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const wide = useMediaQuery(WIDE);
+  const titleId = useId();
+  const errorId = useId();
+  const detailsId = useId();
+  // An empty title isn't stored; the stored one stays until a new one is typed.
+  const missingTitle = lesson !== null && !title.trim();
+
+  return (
+    <div className="flex flex-col gap-2">
+      <ScreenTitle>
+        <span className="sr-only">{lesson?.title ?? 'New lesson'}</span>
+      </ScreenTitle>
+      <ScreenActions>
+        <output className="px-2 text-sm text-muted-foreground">
+          {lesson && !saving ? 'Saved' : ''}
+        </output>
+        {lesson && <LessonMenu lesson={lesson} />}
+      </ScreenActions>
+
+      <label htmlFor={titleId} className="sr-only">
+        Title
+      </label>
+      <input
+        id={titleId}
+        value={title}
+        maxLength={200}
+        placeholder="Lesson title"
+        // A new lesson opens ready to type its title (wireframes/lessons.md).
+        // oxlint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={lesson === null}
+        autoComplete="off"
+        aria-invalid={missingTitle || undefined}
+        aria-describedby={missingTitle ? errorId : undefined}
+        className="w-full bg-transparent font-serif text-2xl font-semibold outline-none placeholder:text-muted-foreground lg:text-3xl"
+        onChange={(event) => {
+          setTitle(event.target.value);
+          if (event.target.value.trim()) save({ title: event.target.value }, { debounce: true });
+        }}
+        onBlur={flush}
+      />
+      {missingTitle && (
+        <p id={errorId} className="text-sm text-destructive">
+          A lesson needs a title.
+        </p>
+      )}
+
+      <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
+        <span>{longDate(values.date)}</span>
+        <span aria-hidden>·</span>
+        <span>{SOURCE_LABELS[values.source]}</span>
+        {values.speaker && (
+          <>
+            <span aria-hidden>·</span>
+            <span>{values.speaker}</span>
+          </>
+        )}
+        {!wide && (
+          <>
+            <span aria-hidden>·</span>
+            <button
+              type="button"
+              aria-expanded={detailsOpen}
+              aria-controls={detailsId}
+              onClick={() => setDetailsOpen((open) => !open)}
+              className="-mx-1 flex items-center gap-0.5 rounded-md px-1 text-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+            >
+              Details
+              <ChevronDown
+                aria-hidden
+                className={`size-4 transition-transform ${detailsOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+          </>
+        )}
+      </p>
+
+      {wide ? (
+        <SidePanel>
+          <section aria-labelledby={detailsId} className="flex flex-col gap-4">
+            <h2
+              id={detailsId}
+              className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+            >
+              Details
+            </h2>
+            <LessonDetails saver={saver} />
+          </section>
+        </SidePanel>
+      ) : (
+        detailsOpen && (
+          <div id={detailsId} className="mt-2 rounded-xl border p-4">
+            <LessonDetails saver={saver} />
+          </div>
+        )
+      )}
+    </div>
+  );
+}

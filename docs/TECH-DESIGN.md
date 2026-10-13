@@ -276,6 +276,15 @@ React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui (in `packages/ui`), **Tan
 - The router's default error and not-found components render in place of the screen, so the navigation stays; a catch-all route (`_app/$`) keeps unknown addresses inside the shell. The error screen offers Reload and "Copy error details".
 - Read, Search and Review show one muted line until their milestones; Settings has the account section (text only for a guest until M3-05) and About, which also shows the server status from `/api/health`.
 
+*Lessons and series, built in M2-04 to M2-06:*
+- A screen whose title comes from data (a lesson, a series) fills the shell's `h1` through `ScreenTitle`, and can add header controls (`ScreenActions`: "Saved", `⋯`) and a side panel (`SidePanel`). These are portals into slots of the shell (`components/shell/slots.tsx`), so their content keeps the screen's state.
+- Routes: `/` (lessons home: New lesson, the five most recent lessons, the series), `/lessons` (all lessons, newest first), `/lessons/$lessonId` and `/series/$seriesId`. `n` starts a new lesson from anywhere but a text field.
+- **A new lesson is a draft until its title has text.** "New lesson" makes the id at once and opens `/lessons/<id>?new=true`; the lesson is stored with that id once a title is typed, so the address never changes, and the `?new` is then dropped. Leaving before typing a title stores nothing. A cleared title isn't stored: the screen says "A lesson needs a title." and the old one stays.
+- The lesson screen saves as it's typed (`useLessonSaver`): typed fields after 500 ms, choices at once, writes one after another so an update never overtakes the create, and a flush on blur, on leaving the screen and when the page is hidden. Changes not stored yet are shown on top of the stored row, so a second change made before the first is stored builds on it.
+- Main passages use the reference input (`PassageInput`): `suggest()` completions in an ARIA combobox, a KJV-numbered reference explained in its option, an unreadable one explained under the field. They're stored as normalised `VerseRef`s without a snapshot (the lesson cites the passage, it doesn't quote it) and indexed as citations.
+- Details open in place under the title, or sit in a side panel from 1280 px, where the sidebar, the 42 rem column and the panel fit side by side.
+- Deleting a lesson tombstones its sections and their tags, its tags, takeaways and questions in the same action. Deleting a series keeps its lessons, without a series. Both ask first.
+
 *Screens* follow [UX-PATTERNS.md](UX-PATTERNS.md) and its wireframes (M1-14): bottom bar under 1024 px and sidebar above, 44 px touch targets on touch screens (enforced in `globals.css`), autosave with no Save buttons, undo for single deletes and a confirmation for anything larger.
 
 ### 8.2 Data flow

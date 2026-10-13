@@ -1,19 +1,11 @@
 import { applyTheme, resolveMode, saveTheme } from '@lamp/ui/themes/presets';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect } from 'react';
 import { useSettings } from '@/data/use-settings.ts';
-
-const darkQuery = () => matchMedia('(prefers-color-scheme: dark)');
+import { useMediaQuery } from './use-media-query.ts';
 
 /** Whether the device asks for dark mode, live. */
 export function usePrefersDark(): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const query = darkQuery();
-      query.addEventListener('change', onChange);
-      return () => query.removeEventListener('change', onChange);
-    },
-    () => darkQuery().matches,
-  );
+  return useMediaQuery('(prefers-color-scheme: dark)');
 }
 
 /**

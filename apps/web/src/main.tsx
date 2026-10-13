@@ -12,7 +12,7 @@ const router = createRouter({
   routeTree,
   // Rendered in place of the failing screen, so the shell around it stays.
   defaultErrorComponent: ErrorScreen,
-  defaultNotFoundComponent: NotFoundScreen,
+  defaultNotFoundComponent: () => <NotFoundScreen />,
 });
 
 declare module '@tanstack/react-router' {
