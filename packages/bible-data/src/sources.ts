@@ -12,7 +12,7 @@ export const SOURCES: TranslationSource[] = [
     licence:
       'Public domain. “World English Bible” is a trademark of eBible.org; changed text must not use the name.',
     url: 'https://ebible.org/Scriptures/eng-web_usfm.zip',
-    sha256: '3e2521d1a53656e1371e6701e46ed9ac2634061478def673976d88dad34f0156',
+    sha256: 'b60e412e342c9dc5fb4b7d899a1073f9966c45068d3604adacc8d4e009dc228c',
     dir: fileURLToPath(new URL('../source/eng-web/', import.meta.url)),
     notice: 'copr.htm',
   },
