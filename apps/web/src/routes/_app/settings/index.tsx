@@ -1,9 +1,8 @@
-import { PRESETS } from '@lamp/ui/themes/presets';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ChevronRight } from 'lucide-react';
+import { createFileRoute } from '@tanstack/react-router';
 import { ApiStatus } from '@/components/api-status.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
+import { ThemeSheet } from '@/components/theme-sheet.tsx';
 import { useSettings } from '@/data/use-settings.ts';
 import packageJson from '../../../../package.json' with { type: 'json' };
 
@@ -17,7 +16,6 @@ export const Route = createFileRoute('/_app/settings/')({
 /** One scrolling page in sections (wireframes/shell.md "Settings"). */
 function Settings() {
   const settings = useSettings();
-  const preset = PRESETS.find((p) => p.id === settings?.themePreset);
   return (
     <div className="flex flex-col gap-8">
       <PageSection title="Account">
@@ -26,16 +24,7 @@ function Settings() {
       </PageSection>
       {settings && (
         <PageSection title="Appearance">
-          <Link
-            to="/settings/theme"
-            className="-mx-2 flex min-h-9 items-center justify-between gap-4 rounded-lg px-2 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
-          >
-            Theme
-            <span className="flex items-center gap-1 text-muted-foreground">
-              {preset?.name}
-              <ChevronRight className="size-4" aria-hidden />
-            </span>
-          </Link>
+          <ThemeSheet />
           <ModeControl value={settings.colorMode} />
         </PageSection>
       )}

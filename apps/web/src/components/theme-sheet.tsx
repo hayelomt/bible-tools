@@ -1,20 +1,50 @@
 import { Button } from '@lamp/ui/components/button';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@lamp/ui/components/sheet';
 import { PRESETS, resolveMode } from '@lamp/ui/themes/presets';
-import { createFileRoute } from '@tanstack/react-router';
-import { Check } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { updateSettings } from '@/data/actions/settings.ts';
 import { useSettings } from '@/data/use-settings.ts';
 import { usePrefersDark } from '@/lib/theme.ts';
 
-export const Route = createFileRoute('/_app/settings/theme')({
-  staticData: { title: 'Theme', back: '/settings' },
-  component: ThemePicker,
-});
+/**
+ * The Theme row in Settings, naming the current preset, and the bottom sheet it opens (F16,
+ * wireframes/shell.md "Theme picker"). The sheet is the same on a laptop, centred and no wider
+ * than the column. It closes with Esc, a tap outside or ×; a choice applies at once.
+ */
+export function ThemeSheet() {
+  const settings = useSettings();
+  if (!settings) return null;
+  const preset = PRESETS.find((p) => p.id === settings.themePreset);
+  return (
+    <Sheet>
+      <SheetTrigger className="-mx-2 flex min-h-9 items-center justify-between gap-4 rounded-lg px-2 text-left outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11">
+        Theme
+        <span className="flex items-center gap-1 text-muted-foreground">
+          {preset?.name}
+          <ChevronRight className="size-4" aria-hidden />
+        </span>
+      </SheetTrigger>
+      <SheetContent
+        side="bottom"
+        // Narrow and centred on a laptop; clear of the home indicator on a phone; fades only
+        // when motion is reduced (UX-PATTERNS "Accessibility").
+        className="mx-auto max-h-[85svh] w-full max-w-2xl gap-0 overflow-y-auto rounded-t-2xl border-x pb-[env(safe-area-inset-bottom)] motion-reduce:data-ending-style:translate-y-0 motion-reduce:data-starting-style:translate-y-0"
+      >
+        <div className="px-4 pt-4 pb-2">
+          <SheetTitle className="text-lg">Theme</SheetTitle>
+        </div>
+        <div className="px-4 pb-6">
+          <ThemePicker />
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 /**
- * The theme picker (F16, wireframes/shell.md "Theme picker"). Each card is drawn in its own preset
- * in the current mode, so the choice is visible before it's made; a tap applies it at once.
+ * The mode control and the six presets. Each card is drawn in its own preset in the current mode,
+ * so the choice is visible before it's made.
  */
 function ThemePicker() {
   const settings = useSettings();

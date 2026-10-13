@@ -326,7 +326,7 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - **Fonts:** the interface uses the system font. Scripture and notes use Literata (`font-serif`), self-hosted from `@fontsource-variable/literata` with the weight axis, upright and italic. The browser downloads only the subsets a page needs (Latin is 52 KB per style).
 
 *Picker, built in M2-03:*
-- `/settings/theme` shows the mode control and the six presets as a radio group of cards, each drawn in its own preset and the current mode; Settings has the same mode control and a link naming the current preset. Midnight in light mode offers "Use dark mode". Both controls are native radios, so arrow keys work and a choice applies at once.
+- The theme picker is a bottom sheet over Settings (`ThemeSheet`, shadcn's Sheet on Base UI's dialog; decided 2026-10-13, replacing the `/settings/theme` screen), the same on a laptop but centred and no wider than the column. It shows the mode control and the six presets as a radio group of cards, each drawn in its own preset and the current mode; Settings has the same mode control and the Theme row naming the current preset, which opens the sheet. Each mode control has its own radio group name (`useId`), since both are on the page at once. Midnight in light mode offers "Use dark mode". Both controls are native radios, so arrow keys work and a choice applies at once.
 - The choice is written with the `updateSettings` action (stored in the local `UserSettings` and queued for sync). The shell's `useThemeSync` watches the settings with `useLiveQuery`, applies them to `<html>`, follows the device while the mode is "system", and mirrors them to `localStorage` for the inline script. A pulled settings row (M3) takes effect the same way. `/dev/themes` sits outside the shell, so its buttons change only the mirror.
 - An E2E test picks every preset in both modes and reloads with the app's scripts blocked: the inline script alone shows the chosen theme, so there is no flash of the default.
 
@@ -458,6 +458,7 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 34 | Empty sections (2026-10-13) | A new section is a draft until it has text; Backspace in an empty one deletes it | §8.3 |
 | 35 | Tab on a section with replies (2026-10-13) | Does nothing, as in a reply; a third level is never made | §8.3 |
 | 36 | Editing toolbar (2026-10-13) | The full toolbar in M2-07, on the keyboard on a phone | §8.3, UX-PATTERNS |
+| 37 | Theme picker (2026-10-13) | A bottom sheet over Settings, on laptops too (narrow, centred); no `/settings/theme` address | §8.5 |
 
 **Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
 

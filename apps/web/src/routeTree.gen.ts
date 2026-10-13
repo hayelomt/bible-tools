@@ -20,7 +20,6 @@ import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
 import { Route as AppSeriesSeriesIdRouteImport } from './routes/_app/series/$seriesId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
-import { Route as AppSettingsThemeRouteImport } from './routes/_app/settings/theme'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -76,11 +75,6 @@ const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   path: '/settings/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppSettingsThemeRoute = AppSettingsThemeRouteImport.update({
-  id: '/settings/theme',
-  path: '/settings/theme',
-  getParentRoute: () => AppRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -91,7 +85,6 @@ export interface FileRoutesByFullPath {
   '/dev/themes': typeof DevThemesRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
-  '/settings/theme': typeof AppSettingsThemeRoute
   '/lessons/': typeof AppLessonsIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
 }
@@ -104,7 +97,6 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
-  '/settings/theme': typeof AppSettingsThemeRoute
   '/lessons': typeof AppLessonsIndexRoute
   '/settings': typeof AppSettingsIndexRoute
 }
@@ -119,7 +111,6 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/_app/series/$seriesId': typeof AppSeriesSeriesIdRoute
-  '/_app/settings/theme': typeof AppSettingsThemeRoute
   '/_app/lessons/': typeof AppLessonsIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
 }
@@ -134,7 +125,6 @@ export interface FileRouteTypes {
     | '/dev/themes'
     | '/lessons/$lessonId'
     | '/series/$seriesId'
-    | '/settings/theme'
     | '/lessons/'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -147,7 +137,6 @@ export interface FileRouteTypes {
     | '/'
     | '/lessons/$lessonId'
     | '/series/$seriesId'
-    | '/settings/theme'
     | '/lessons'
     | '/settings'
   id:
@@ -161,7 +150,6 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/lessons/$lessonId'
     | '/_app/series/$seriesId'
-    | '/_app/settings/theme'
     | '/_app/lessons/'
     | '/_app/settings/'
   fileRoutesById: FileRoutesById
@@ -250,13 +238,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/settings/theme': {
-      id: '/_app/settings/theme'
-      path: '/settings/theme'
-      fullPath: '/settings/theme'
-      preLoaderRoute: typeof AppSettingsThemeRouteImport
-      parentRoute: typeof AppRoute
-    }
   }
 }
 
@@ -268,7 +249,6 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
   AppSeriesSeriesIdRoute: typeof AppSeriesSeriesIdRoute
-  AppSettingsThemeRoute: typeof AppSettingsThemeRoute
   AppLessonsIndexRoute: typeof AppLessonsIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
@@ -281,7 +261,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
   AppSeriesSeriesIdRoute: AppSeriesSeriesIdRoute,
-  AppSettingsThemeRoute: AppSettingsThemeRoute,
   AppLessonsIndexRoute: AppLessonsIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }

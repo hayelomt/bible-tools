@@ -104,13 +104,16 @@ Signed in, the account section becomes (M3-03, M3-12):
 
 ## Theme picker (M2-03)
 
+A bottom sheet over Settings, opened from the Theme row (decided 2026-10-13). On a laptop it's
+the same sheet, centred and no wider than the column. It closes with Esc, a tap outside or ×.
 Each card is drawn in its own preset (`data-theme` on the card) in the current mode, so the choice
 is visible before it's made. A tap applies it at once; there is no Save.
 
 ```text
-┌──────────────────────────────────────┐
-│ ← Theme                              │
-├──────────────────────────────────────┤
+│ Settings (dimmed)                    │
+╭──────────────────────────────────────╮
+│ Theme                              × │
+│                                      │
 │ Mode       ( Light | Dark | System ) │
 │                                      │
 │ ┌────────────────┐ ┌────────────────┐│
@@ -126,7 +129,7 @@ is visible before it's made. A tap applies it at once; there is no Save.
 │                                      │
 │ Midnight is made for dark mode.      │  ← only with Midnight in light mode
 │ [ Use dark mode ]                    │
-└──────────────────────────────────────┘
+└──────────────────────────────────────┘  ← scrolls inside the sheet past 85 % of the screen
 ```
 
 The cards are a radio group: arrow keys move, the selected card has `aria-checked`.
