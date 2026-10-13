@@ -42,7 +42,8 @@ const CONTRACTS: Contract[] = [
   ...Object.entries(ENTITY_TABLES).map(([entity, table]) => ({
     table,
     schema: ENTITY_SCHEMAS[entity as EntityName] as z.ZodObject,
-    serverOnly: ['user_id'],
+    // section.body_rev tells the push whether a body changed after a change's baseRev (§6.4).
+    serverOnly: entity === 'section' ? ['user_id', 'body_rev'] : ['user_id'],
   })),
   { table: 'citation', schema: citationSchema, serverOnly: ['user_id'] },
   { table: 'device', schema: deviceSchema, serverOnly: ['user_id'] },

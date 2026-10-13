@@ -104,7 +104,10 @@ class TransactionWriter implements Writer {
   ): Promise<EntityRow<E>> {
     const current = await this.db.rows(entity).get(id);
     if (!current || current.deletedAt !== null) throw new RowNotFoundError(entity, id);
-    return this.write(entity, { ...current, ...patch, updatedAt: this.now });
+    return this.write(entity, { ...current, ...patch, updatedAt: this.now }, [
+      ...Object.keys(patch),
+      'updatedAt',
+    ]);
   }
 
   async remove(entity: RowEntity, id: string): Promise<void> {
@@ -129,7 +132,10 @@ class TransactionWriter implements Writer {
     const current = await this.db.rows(entity).get(id);
     if (!current) throw new RowNotFoundError(entity, id);
     if (current.deletedAt === null) return;
-    await this.write(entity, { ...current, updatedAt: this.now, deletedAt: null });
+    await this.write(entity, { ...current, updatedAt: this.now, deletedAt: null }, [
+      'deletedAt',
+      'updatedAt',
+    ]);
   }
 
   async updateSettings(patch: SettingsPatch): Promise<UserSettings> {
@@ -149,12 +155,20 @@ class TransactionWriter implements Writer {
       entity: 'userSettings',
       op: 'upsert',
       row,
+      changed: [...Object.keys(patch), 'updatedAt'] as (keyof typeof row)[],
     });
     return settings;
   }
 
-  /** Validates and stores a row, rebuilds its citations and queues the upsert. */
-  private async write<E extends RowEntity>(entity: E, input: EntityRow<E>): Promise<EntityRow<E>> {
+  /**
+   * Validates and stores a row, rebuilds its citations and queues the upsert. `changed` names the
+   * fields edited, so a conflict takes only those from this device (§6.4); a new row sends none.
+   */
+  private async write<E extends RowEntity>(
+    entity: E,
+    input: EntityRow<E>,
+    changed?: string[],
+  ): Promise<EntityRow<E>> {
     const row = ENTITY_SCHEMAS[entity].parse(input) as EntityRow<E>;
     await this.db.rows(entity).put(row);
     this.changed.push({ entity, id: row.id });
@@ -168,6 +182,7 @@ class TransactionWriter implements Writer {
       entityId: row.id,
       op: 'upsert',
       row: sent,
+      ...(changed ? { changed } : {}),
     } as unknown as OutboxChange);
     return row;
   }

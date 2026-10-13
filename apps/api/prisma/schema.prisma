@@ -164,6 +164,9 @@ model Section {
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt  DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
   rev        BigInt    @default(0)
+  // Server only: the rev that last changed body, so a push can tell whether the body changed
+  // after its baseRev (§6.4).
+  bodyRev    BigInt    @default(0) @map("body_rev")
   deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -342,7 +345,8 @@ model Citation {
 
 // One row per pushed change (id = changeId), so a replayed change returns its stored result.
 // status: applied | conflict | rejected. deviceId has no foreign key: removing a device must not
-// forget which changes were already applied.
+// forget which changes were already applied. A conflict keeps its resolution (CONFLICT_RESOLUTIONS
+// in domain) and, for a conflicted copy, the copy's id; a rejection keeps its error.
 model SyncChange {
   id         String   @id @db.Uuid
   userId     String   @map("user_id") @db.Uuid
@@ -351,6 +355,8 @@ model SyncChange {
   status     String
   error      Json?
   resultRev  BigInt?  @map("result_rev")
+  resolution String?
+  copyId     String?  @map("copy_id") @db.Uuid
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

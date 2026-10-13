@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { type Env, envFilePaths, envSchema } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { SyncModule } from './sync/sync.module.js';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PrismaModule,
     AuthModule,
     AccountModule,
+    SyncModule,
     HealthModule,
   ],
 })

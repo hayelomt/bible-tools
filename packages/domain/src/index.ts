@@ -73,6 +73,17 @@ export {
   type VerseNode,
 } from './doc.ts';
 export { compareOrder, isOrderKey, keyAt, keyBetween, keysBetween } from './order.ts';
+export {
+  conflictedCopy,
+  type DeleteInput,
+  type Outcome,
+  PARENT_COLUMNS,
+  resolveDelete,
+  resolveUpsert,
+  sameJson,
+  type SyncRow,
+  type UpsertInput,
+} from './sync.ts';
 export { passageSchema, verseRefSchema } from './schemas/verse-ref.ts';
 export {
   type ApiError,
@@ -148,6 +159,7 @@ export {
   type Change,
   changeSchema,
   CONFLICT_RESOLUTIONS,
+  type ConflictResolution,
   MAX_CHANGES_PER_PUSH,
   MAX_PULL_LIMIT,
   type PulledRow,
@@ -156,6 +168,8 @@ export {
   pullQuerySchema,
   type PullResponse,
   pullResponseSchema,
+  type PushEnvelope,
+  pushEnvelopeSchema,
   type PushRequest,
   pushRequestSchema,
   type PushResponse,

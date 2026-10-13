@@ -3,6 +3,7 @@ import {
   Catch,
   type ExceptionFilter,
   HttpException,
+  HttpStatus,
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
@@ -32,6 +33,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ...(details === undefined ? {} : { details }),
       };
     }
+    const bodyError = bodyParserError(exception);
+    if (bodyError) return bodyError;
     this.logger.error(exception);
     return {
       statusCode: 500,
@@ -39,6 +42,27 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message: 'Internal server error',
     };
   }
+}
+
+/**
+ * Express's body parser fails before Nest sees the request, with a plain error carrying a client
+ * status. Its message isn't passed on: a JSON syntax error can quote the body.
+ */
+function bodyParserError(exception: unknown): ApiErrorBody | undefined {
+  if (typeof exception !== 'object' || exception === null) return undefined;
+  const { type, status } = exception as { type?: unknown; status?: unknown };
+  if (typeof type !== 'string' || !type.startsWith('entity.') || typeof status !== 'number') {
+    return undefined;
+  }
+  if (status < 400 || status >= 500) return undefined;
+  return {
+    statusCode: status,
+    errorCode: errorCodeForStatus(status),
+    message:
+      status === HttpStatus.PAYLOAD_TOO_LARGE
+        ? 'The request body is too large'
+        : 'The request body is not valid',
+  };
 }
 
 function messageOf(exception: HttpException): string {

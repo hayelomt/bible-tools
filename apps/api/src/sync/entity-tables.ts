@@ -1,0 +1,104 @@
+import type { EntityName, EntityRow, SyncRow } from '@lamp/domain';
+import type { Prisma } from '../generated/prisma/client.js';
+
+export type Tx = Prisma.TransactionClient;
+
+/** The entities stored one row per id; settings are one row per account instead. */
+export type RowEntity = Exclude<EntityName, 'userSettings'>;
+
+/** A stored row as the push reads it: the sync columns, and whatever else the model has. */
+export interface StoredRow {
+  id: string;
+  userId: string;
+  rev: bigint;
+  deletedAt: Date | null;
+  [column: string]: unknown;
+}
+
+/** The part of a Prisma model delegate the push uses, the same for every row entity. */
+export interface RowModel {
+  findUnique(args: { where: { id: string } }): Promise<StoredRow | null>;
+  create(args: { data: Record<string, unknown> }): Promise<unknown>;
+  update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<unknown>;
+}
+
+interface EntityTable {
+  model: (tx: Tx) => RowModel;
+  /** Columns that hold another row's id, and that row's entity. */
+  refs: Readonly<Record<string, RowEntity>>;
+  /** Columns sent as ISO strings and stored as timestamps or dates. */
+  times: readonly string[];
+}
+
+const SYNC_TIMES = ['createdAt', 'updatedAt', 'deletedAt'];
+
+// Prisma's delegates have generic signatures that don't narrow to `RowModel`, so they are asserted.
+const model = (pick: (tx: Tx) => unknown) => pick as (tx: Tx) => RowModel;
+
+export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
+  series: { model: model((tx) => tx.series), refs: {}, times: SYNC_TIMES },
+  lesson: {
+    model: model((tx) => tx.lesson),
+    refs: { seriesId: 'series' },
+    times: [...SYNC_TIMES, 'date'],
+  },
+  section: {
+    model: model((tx) => tx.section),
+    refs: { lessonId: 'lesson', parentId: 'section', conflictOf: 'section' },
+    times: SYNC_TIMES,
+  },
+  tag: { model: model((tx) => tx.tag), refs: {}, times: SYNC_TIMES },
+  sectionTag: {
+    model: model((tx) => tx.sectionTag),
+    refs: { tagId: 'tag', sectionId: 'section' },
+    times: SYNC_TIMES,
+  },
+  lessonTag: {
+    model: model((tx) => tx.lessonTag),
+    refs: { tagId: 'tag', lessonId: 'lesson' },
+    times: SYNC_TIMES,
+  },
+  takeaway: { model: model((tx) => tx.takeaway), refs: { lessonId: 'lesson' }, times: SYNC_TIMES },
+  question: {
+    model: model((tx) => tx.question),
+    refs: { lessonId: 'lesson', answerSectionId: 'section' },
+    times: SYNC_TIMES,
+  },
+  highlight: {
+    model: model((tx) => tx.highlight),
+    refs: { promotedSectionId: 'section' },
+    times: SYNC_TIMES,
+  },
+  memoryItem: {
+    model: model((tx) => tx.memoryItem),
+    refs: {},
+    times: [...SYNC_TIMES, 'nextReviewAt'],
+  },
+};
+
+/** Columns that never leave the server; `rev` travels beside the row. */
+const SERVER_COLUMNS = new Set(['userId', 'rev', 'bodyRev']);
+
+/** A stored row as the device has it, without `rev`: times become ISO strings, a date `YYYY-MM-DD`. */
+export function toRow<E extends EntityName>(stored: object): SyncRow<E> {
+  const row: Record<string, unknown> = {};
+  for (const [column, value] of Object.entries(stored)) {
+    if (SERVER_COLUMNS.has(column)) continue;
+    if (!(value instanceof Date)) row[column] = value;
+    else row[column] = column === 'date' ? value.toISOString().slice(0, 10) : value.toISOString();
+  }
+  return row as SyncRow<E>;
+}
+
+/** A pushed row (no `rev`) as Prisma column values: times become `Date`s. */
+export function toColumns(
+  entity: RowEntity,
+  row: Omit<EntityRow<RowEntity>, 'rev'>,
+): Record<string, unknown> {
+  const columns: Record<string, unknown> = { ...row };
+  for (const time of ENTITY_TABLES[entity].times) {
+    const value = columns[time] as string | null;
+    columns[time] = value === null ? null : new Date(value);
+  }
+  return columns;
+}

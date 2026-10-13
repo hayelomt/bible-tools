@@ -9,6 +9,8 @@ export function configureApp(app: INestApplication): void {
   app.setGlobalPrefix('api');
   // Caddy proxies from the same machine, so `req.ip` (rate limits) is the client's address.
   (app as NestExpressApplication).set('trust proxy', 'loopback');
+  // A push carries up to 100 changes in at most 1 MB (§6.2); Express's default is 100 kB.
+  (app as NestExpressApplication).useBodyParser('json', { limit: '1mb' });
   // `@Body({ schema })` and `@Query({ schema })` validate with the shared Zod schemas. The
   // details name the fields but never echo their values (a password could be one).
   app.useGlobalPipes(

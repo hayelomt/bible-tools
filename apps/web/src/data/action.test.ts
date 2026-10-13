@@ -180,6 +180,29 @@ describe('action', () => {
     expect(await db.outbox.orderBy('seq').last()).toMatchObject({ baseRev: 7 });
   });
 
+  it('names the fields each change edited, so a conflict takes only those', async () => {
+    const lesson = await action(db, (w) => w.create('lesson', LESSON));
+    expect(await db.outbox.orderBy('seq').last()).not.toHaveProperty('changed');
+
+    await action(db, (w) => w.update('lesson', lesson.id, { title: 'Renamed' }));
+    const update = await db.outbox.orderBy('seq').last();
+    expect(update).toMatchObject({ changed: ['title', 'updatedAt'] });
+    const { seq: _, ...sent } = update!;
+    expect(changeSchema.parse(sent)).toEqual(sent);
+
+    await action(db, (w) => w.remove('lesson', lesson.id));
+    await action(db, (w) => w.restore('lesson', lesson.id));
+    expect(await db.outbox.orderBy('seq').last()).toMatchObject({
+      changed: ['deletedAt', 'updatedAt'],
+    });
+
+    await action(db, (w) => w.updateSettings({ look: 'folio' }));
+    expect(await db.outbox.orderBy('seq').last()).toMatchObject({
+      entity: 'userSettings',
+      changed: ['look', 'updatedAt'],
+    });
+  });
+
   describe('when something fails, nothing is saved or queued', () => {
     it('an error thrown after some writes', async () => {
       const before = await snapshot();

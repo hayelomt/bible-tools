@@ -18,6 +18,13 @@ const changeFields = {
   clientTime: timestampSchema,
 };
 
+/**
+ * The fields of the row this device edited since `baseRev`. In a conflict, only these are taken
+ * from the change (§6.4). Missing means every field, as for a new row.
+ */
+const changedOf = (row: z.ZodObject) =>
+  z.array(row.keyof()).max(Object.keys(row.shape).length).optional();
+
 /** Upsert sends the whole row without `rev`, which the server assigns. Delete sends no row. */
 function changeOf<const E extends Exclude<EntityName, 'userSettings'>, R extends z.ZodObject>(
   entity: E,
@@ -31,6 +38,7 @@ function changeOf<const E extends Exclude<EntityName, 'userSettings'>, R extends
         entityId: idSchema,
         op: z.literal('upsert'),
         row,
+        changed: changedOf(row),
       })
       .refine((change) => sameId(change as unknown as { entityId: string; row: { id: string } }), {
         message: 'The row id must match entityId',
@@ -49,11 +57,13 @@ const sameId = (change: { entityId: string; row: { id: string } }) =>
   change.row.id === change.entityId;
 
 /** Settings are one row per account: no id, and never deleted. */
+const settingsRow = ENTITY_SCHEMAS.userSettings.omit({ rev: true });
 const settingsChange = z.strictObject({
   ...changeFields,
   entity: z.literal('userSettings'),
   op: z.literal('upsert'),
-  row: ENTITY_SCHEMAS.userSettings.omit({ rev: true }),
+  row: settingsRow,
+  changed: changedOf(settingsRow),
 });
 
 export const changeSchema = z.discriminatedUnion('entity', [
@@ -82,6 +92,19 @@ export const pushRequestSchema = z.strictObject({
 });
 export type PushRequest = z.infer<typeof pushRequestSchema>;
 
+/**
+ * What the server checks of a push as a whole. Each change only needs its `changeId` here and is
+ * validated on its own with `changeSchema`, so one bad change is rejected without failing the
+ * others (§6.2).
+ */
+export const pushEnvelopeSchema = pushRequestSchema.extend({
+  changes: z
+    .array(z.looseObject({ changeId: idSchema }))
+    .min(1)
+    .max(MAX_CHANGES_PER_PUSH),
+});
+export type PushEnvelope = z.infer<typeof pushEnvelopeSchema>;
+
 /** How a conflict was settled (§6.4). */
 export const CONFLICT_RESOLUTIONS = [
   /** Last write wins, and this change was the later write. */
@@ -97,6 +120,7 @@ export const CONFLICT_RESOLUTIONS = [
   /** The row's parent had been deleted and was restored. */
   'parent-restored',
 ] as const;
+export type ConflictResolution = (typeof CONFLICT_RESOLUTIONS)[number];
 
 export const pushResultSchema = z.discriminatedUnion('status', [
   z.strictObject({ changeId: idSchema, status: z.literal('applied'), rev: revSchema }),
