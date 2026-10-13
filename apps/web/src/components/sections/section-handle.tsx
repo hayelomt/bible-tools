@@ -5,6 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@lamp/ui/components/dropdown-menu';
+import type { DraggableSyntheticListeners } from '@dnd-kit/core';
+import { cn } from 'cn';
 import { GripVertical } from 'lucide-react';
 import { type RefObject, useState } from 'react';
 import type { SectionListApi, SectionRow } from './section-list.tsx';
@@ -13,6 +15,10 @@ interface SectionHandleProps {
   row: SectionRow;
   api: SectionListApi;
   ref: RefObject<HTMLButtonElement | null>;
+  /** dnd-kit's hold on the handle: pressing and moving it drags the section. */
+  drag: { ref: (element: HTMLElement | null) => void; listeners: DraggableSyntheticListeners };
+  /** Its section is the slot of a drag in progress. */
+  hidden: boolean;
 }
 
 /**
@@ -20,7 +26,7 @@ interface SectionHandleProps {
  * gives up a single 44 px gutter. A tap, a click or Enter opens the section menu; pressing and
  * dragging moves the section (`useSectionDrag`). The menu is the keyboard's way to reorder.
  */
-export function SectionHandle({ row, api, ref }: SectionHandleProps) {
+export function SectionHandle({ row, api, ref, drag, hidden }: SectionHandleProps) {
   const [open, setOpen] = useState(false);
   const id = row.item.id;
   const can = open ? api.can(id) : undefined;
@@ -35,15 +41,21 @@ export function SectionHandle({ row, api, ref }: SectionHandleProps) {
   return (
     <>
       <Button
-        ref={ref}
+        ref={(element) => {
+          ref.current = element;
+          drag.ref(element);
+        }}
         variant="ghost"
         size="icon"
         aria-label={row.level === 1 ? 'Reply actions' : 'Section actions'}
         aria-haspopup="menu"
         aria-expanded={open}
         title="Drag to move, or click for actions"
-        className="shrink-0 cursor-grab touch-pan-y text-muted-foreground select-none [-webkit-touch-callout:none] pointer-fine:opacity-0 pointer-fine:group-focus-within/section:opacity-100 pointer-fine:group-hover/section:opacity-100 pointer-fine:aria-expanded:opacity-100"
-        onPointerDown={(event) => api.startDrag(id, event)}
+        className={cn(
+          'shrink-0 cursor-grab touch-pan-y text-muted-foreground select-none [-webkit-touch-callout:none] pointer-fine:opacity-0 pointer-fine:group-focus-within/section:opacity-100 pointer-fine:group-hover/section:opacity-100 pointer-fine:aria-expanded:opacity-100',
+          hidden && 'invisible',
+        )}
+        {...drag.listeners}
         onClick={() => {
           // The click that ends a drag doesn't open the menu.
           if (!api.wasDragged()) setOpen(true);

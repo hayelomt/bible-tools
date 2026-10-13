@@ -202,37 +202,39 @@ test('the section menu reorders and deletes, with Undo, and asks before taking r
   await expect(page.getByRole('textbox', { name: /^(Note|Reply)$/ })).toHaveCount(2);
 });
 
-test('dragging a section moves it, and the right half makes it a reply', async ({ page }) => {
+test('dragging a section moves it, and pulling it right makes it a reply', async ({ page }) => {
   await threeSections(page);
   const row = (n: number) => page.locator('[data-section]').nth(n);
 
-  /** Presses on the handle of row `from` and lets go at (x, y) in the list. */
-  async function drag(from: number, to: { x: number; y: number }, cancel = false) {
+  /**
+   * Presses on the handle of row `from`, moves it `right` px sideways and down to `y`, and lets go.
+   * The card that follows the pointer shows while it's held.
+   */
+  async function drag(from: number, to: { right: number; y: number }, cancel = false) {
     await row(from).hover();
     const box = (await handle(page, from).boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    const x = box.x + box.width / 2;
+    await page.mouse.move(x, box.y + box.height / 2);
     await page.mouse.down();
-    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.move(x + to.right, to.y, { steps: 12 });
+    await expect(page.locator('[data-section] .border-dashed')).toBeVisible();
     if (cancel) await page.keyboard.press('Escape');
     await page.mouse.up();
   }
-  const list = (await row(0).boundingBox())!;
-  const left = list.x + 20;
-  const right = list.x + list.width * 0.75;
 
   // C, dropped above A.
   const a = (await row(0).boundingBox())!;
-  await drag(2, { x: left, y: a.y + 2 });
+  await drag(2, { right: 0, y: a.y + 2 });
   await expect.poll(() => outline(page)).toEqual(['C', 'A', 'B']);
 
-  // B, dropped on the right half just below A, becomes A's reply.
+  // B, pulled right just below A, becomes A's reply.
   const b = (await row(2).boundingBox())!;
-  await drag(2, { x: right, y: b.y - 2 });
+  await drag(2, { right: 40, y: b.y + 4 });
   await expect.poll(() => outline(page)).toEqual(['C', 'A', '  B']);
 
   // Escape cancels a drag.
   const c = (await row(0).boundingBox())!;
-  await drag(0, { x: left, y: c.y + 200 }, true);
+  await drag(0, { right: 0, y: c.y + 200 }, true);
   await page.waitForTimeout(100);
   expect(await outline(page)).toEqual(['C', 'A', '  B']);
   // A drag doesn't open the menu.
@@ -318,6 +320,8 @@ test.describe('on a phone', () => {
       await touch('touchEnd', 0, 0);
       await expect.poll(() => outline(page)).toEqual(['C', 'A', 'B']);
       await expect(page.getByRole('menu')).toBeHidden();
+      // The rows slide into their new places before the next tap.
+      await expect(page.locator('[data-section][style*="translate"]')).toHaveCount(0);
 
       // A tap opens the menu; the Undo toast sits above the bottom bar.
       await handle(page, 0).tap();

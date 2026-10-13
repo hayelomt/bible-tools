@@ -1,3 +1,5 @@
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { SectionBody } from '@lamp/domain';
 import { resolveFocusPosition } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -24,8 +26,13 @@ interface SectionEditorProps {
   row: SectionRow;
   api: SectionListApi;
   focus: FocusRequest | undefined;
-  /** It's being dragged (or is a reply of the section being dragged). */
-  dragging: boolean;
+  /** It takes part in a drag: everything but the empty section at the end. */
+  sortable: boolean;
+  /**
+   * While a section is dragged: it's the slot where it would land (at that level, or null when it
+   * can't land there), or it's one of its replies, folded away until the drop.
+   */
+  drag: { slot: 0 | 1 | null } | 'folded' | undefined;
 }
 
 const LABELS = { 0: 'Note', 1: 'Reply' } as const;
@@ -37,9 +44,13 @@ const PLACEHOLDERS = { 0: 'Write a note…', 1: 'Write a reply…' } as const;
  * when the row goes, so a section never has unsaved text for more than a second. A draft is
  * stored, with its id, once it has text.
  */
-export function SectionEditor({ row, api, focus, dragging }: SectionEditorProps) {
+export function SectionEditor({ row, api, focus, sortable, drag }: SectionEditorProps) {
   const { item, level } = row;
   const id = item.id;
+  const { setNodeRef, setActivatorNodeRef, listeners, transform, transition } = useSortable({
+    id,
+    disabled: !sortable,
+  });
   const handle = useRef<HTMLButtonElement>(null);
   const stored = useRef(item.stored);
   const pending = useRef<SectionBody | undefined>(undefined);
@@ -190,20 +201,47 @@ export function SectionEditor({ row, api, focus, dragging }: SectionEditorProps)
     };
   }, [flush]);
 
+  const slot = typeof drag === 'object' ? drag.slot : undefined;
   return (
     <div
+      ref={setNodeRef}
       data-section={id}
       className={cn(
-        'group/section flex items-start gap-1 transition-opacity',
-        level === 1 && 'ml-6',
-        dragging && 'opacity-40',
+        'group/section relative flex items-start gap-1',
+        (slot === undefined ? level : slot) === 1 && 'ml-6',
+        drag === 'folded' && 'hidden',
       )}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
     >
-      <div className="min-w-0 flex-1 border-l-2 pl-3 transition-colors focus-within:border-primary">
+      {slot !== undefined && (
+        // Where the dragged section will land, at the level it will land at; the card above it
+        // follows the pointer (DragPreview).
+        <div
+          aria-hidden
+          className={cn(
+            'absolute inset-0 z-10 rounded-lg border-2 border-dashed transition-colors',
+            slot === null
+              ? 'border-muted-foreground/40 bg-muted'
+              : 'border-primary/60 bg-primary/10',
+          )}
+        />
+      )}
+      <div
+        className={cn(
+          'min-w-0 flex-1 border-l-2 pl-3 transition-colors focus-within:border-primary',
+          slot !== undefined && 'invisible',
+        )}
+      >
         <EditorContent editor={editor} />
       </div>
       {item.stored ? (
-        <SectionHandle row={row} api={api} ref={handle} />
+        <SectionHandle
+          row={row}
+          api={api}
+          ref={handle}
+          drag={{ ref: setActivatorNodeRef, listeners }}
+          hidden={slot !== undefined}
+        />
       ) : (
         // A draft has nothing to move or delete yet; the space keeps the text from shifting.
         <div aria-hidden className="w-8 shrink-0 pointer-coarse:w-11" />

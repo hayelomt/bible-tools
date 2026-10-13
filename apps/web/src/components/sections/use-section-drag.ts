@@ -1,11 +1,23 @@
-import { type PointerEvent, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type Announcements,
+  type DndContextProps,
+  type DragMoveEvent,
+  MeasuringStrategy,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type Drop, dropAt, movingRows } from './outline.ts';
 import type { SectionRow } from './section-list.tsx';
 
-/** A drag in progress: the section, and the line showing where it would land, if anywhere. */
+/** A drag in progress: the section, and where it would land, if anywhere. */
 export interface DragState {
   id: string;
-  line: { top: number; level: 0 | 1 } | null;
+  drop: Drop | null;
 }
 
 /** A finger must rest this long on the handle before it drags; moving sooner scrolls the page. */
@@ -13,148 +25,127 @@ const HOLD_MS = 250;
 /** A mouse drags once it has moved this far, so a click still opens the menu. */
 const MOUSE_SLOP_PX = 4;
 const TOUCH_SLOP_PX = 8;
-/** Near the top or bottom of the screen the page scrolls while dragging. */
-const SCROLL_EDGE_PX = 72;
+/** Half a reply's indent: a section pulled this far right lands as a reply. */
+const REPLY_PX = 12;
 
 interface Options {
-  /** The element holding the rows; the line is placed in it (it must be positioned). */
+  /** The element holding the rows; the dragged section's left edge is measured against it. */
   list: RefObject<HTMLElement | null>;
-  rows: RefObject<readonly SectionRow[]>;
-  /** The lesson's last row is the empty section waiting at the end: nothing lands below it. */
-  hasTrailingDraft: (rows: readonly SectionRow[]) => boolean;
+  rows: readonly SectionRow[];
+  /** The empty section waiting at the end, if any: it doesn't move and nothing lands below it. */
+  trailingId: string | undefined;
   onDrop: (id: string, drop: Drop) => void;
 }
 
+const announcements: Announcements = {
+  onDragStart: () => 'Picked up a section.',
+  onDragOver: () => undefined,
+  onDragEnd: ({ over }) => (over ? 'Section moved.' : 'Section put back.'),
+  onDragCancel: () => 'Moving cancelled.',
+};
+
 /**
- * Dragging a section by its handle (wireframes/lessons.md), with pointer events, so mouse, pen
- * and touch work the same way. The pointer's height picks the gap between rows, and the right half
- * of the list makes the section a reply, within the two-level rules of `dropAt`. Escape cancels.
+ * Dragging a section by its handle (wireframes/lessons.md), with dnd-kit: the section follows the
+ * pointer as a card, the other rows make room, and a slot shows where it will land. The slot's
+ * order comes from the sortable list; pulling the card right makes it a reply, within the
+ * two-level rules of `dropAt`. A section's replies go with it, folded away while it's dragged.
+ * Escape cancels.
  */
-export function useSectionDrag({ list, rows, hasTrailingDraft, onDrop }: Options) {
+export function useSectionDrag({ list, rows, trailingId, onDrop }: Options) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragged = useRef(false);
-  const stop = useRef<() => void>(undefined);
-  useEffect(() => () => stop.current?.(), []);
+  const rowsRef = useRef(rows);
+  useEffect(() => {
+    rowsRef.current = rows;
+  });
 
-  const start = useCallback(
-    (id: string, event: PointerEvent<HTMLElement>) => {
-      if (event.button !== 0) return;
-      stop.current?.();
-      dragged.current = false;
-      const handle = event.currentTarget;
-      const touch = event.pointerType === 'touch';
-      const from = { x: event.clientX, y: event.clientY };
-      const at = { ...from };
-      let started = false;
-      let drop: Drop | null = null;
-      let frame = 0;
-
-      /** Works out the gap under the pointer and draws the line there. */
-      const update = () => {
-        const container = list.current;
-        const all = rows.current;
-        if (!container) return;
-        const moving = movingRows(all, id);
-        const left = all.filter((r) => !moving.includes(r));
-        const rects = left.map((r) =>
-          container.querySelector(`[data-section="${r.item.id}"]`)!.getBoundingClientRect(),
-        );
-        const last = hasTrailingDraft(all) ? left.length - 1 : left.length;
-        const gap = Math.min(rects.filter((r) => (r.top + r.bottom) / 2 < at.y).length, last);
-        const box = container.getBoundingClientRect();
-        drop = dropAt(all, id, gap, at.x > box.left + box.width / 2);
-        const above = rects[gap - 1];
-        const below = rects[gap];
-        // Halfway between the two rows (they're 12 px apart).
-        const y = above ? above.bottom + 6 : below ? below.top - 6 : box.top;
-        setDrag({ id, line: drop && { top: y - box.top, level: drop.level } });
-      };
-
-      const scroll = () => {
-        const height = window.visualViewport?.height ?? window.innerHeight;
-        const by =
-          at.y < SCROLL_EDGE_PX
-            ? at.y - SCROLL_EDGE_PX
-            : at.y > height - SCROLL_EDGE_PX
-              ? at.y - (height - SCROLL_EDGE_PX)
-              : 0;
-        if (by !== 0) {
-          window.scrollBy(0, by / 4);
-          update();
-        }
-        frame = requestAnimationFrame(scroll);
-      };
-
-      const begin = () => {
-        started = true;
-        dragged.current = true;
-        if (handle.isConnected) handle.setPointerCapture(event.pointerId);
-        document.documentElement.classList.add('select-none');
-        update();
-        frame = requestAnimationFrame(scroll);
-      };
-
-      const hold = touch ? setTimeout(begin, HOLD_MS) : undefined;
-
-      const onMove = (e: globalThis.PointerEvent) => {
-        if (e.pointerId !== event.pointerId) return;
-        at.x = e.clientX;
-        at.y = e.clientY;
-        if (started) {
-          update();
-          return;
-        }
-        const moved = Math.hypot(at.x - from.x, at.y - from.y);
-        // A finger moving before the hold is up is scrolling, not dragging.
-        if (touch && moved > TOUCH_SLOP_PX) end();
-        else if (!touch && moved > MOUSE_SLOP_PX) begin();
-      };
-      // Once dragging, a finger mustn't scroll the page as well.
-      const onTouchMove = (e: TouchEvent) => {
-        if (started && e.cancelable) e.preventDefault();
-      };
-      const onUp = (e: globalThis.PointerEvent) => {
-        if (e.pointerId !== event.pointerId) return;
-        const landed = started ? drop : null;
-        end();
-        if (landed) onDrop(id, landed);
-      };
-      const onKey = (e: KeyboardEvent) => {
-        if (started && e.key === 'Escape') {
-          e.preventDefault();
-          end();
-        }
-      };
-
-      const end = () => {
-        clearTimeout(hold);
-        cancelAnimationFrame(frame);
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-        window.removeEventListener('pointercancel', end);
-        window.removeEventListener('touchmove', onTouchMove);
-        window.removeEventListener('keydown', onKey, true);
-        document.documentElement.classList.remove('select-none');
-        stop.current = undefined;
-        if (started) setDrag(null);
-      };
-      stop.current = end;
-
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-      window.addEventListener('pointercancel', end);
-      window.addEventListener('touchmove', onTouchMove, { passive: false });
-      window.addEventListener('keydown', onKey, true);
-    },
-    [list, rows, hasTrailingDraft, onDrop],
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: MOUSE_SLOP_PX } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: HOLD_MS, tolerance: TOUCH_SLOP_PX } }),
   );
 
-  /** Whether the press that just ended was a drag (so its click doesn't open the menu). */
-  const wasDragged = useCallback(() => {
-    const was = dragged.current;
-    dragged.current = false;
-    return was;
-  }, []);
+  // The sortable rows: all but the empty section at the end and the dragged section's replies.
+  const items = useMemo(() => {
+    const folded = drag ? movingRows(rows, drag.id).filter((r) => r.item.id !== drag.id) : [];
+    return rows
+      .filter((r) => r.item.id !== trailingId && !folded.includes(r))
+      .map((r) => r.item.id);
+  }, [rows, trailingId, drag]);
+  const itemsRef = useRef(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  });
 
-  return { drag, start, wasDragged };
+  /** Where the section would land, from the row it's over and how far right the card is. */
+  const project = useCallback(
+    ({ active, over }: Pick<DragMoveEvent, 'active' | 'over'>): Drop | null => {
+      const id = String(active.id);
+      const all = rowsRef.current;
+      const ids = itemsRef.current;
+      const from = ids.indexOf(id);
+      const to = over ? ids.indexOf(String(over.id)) : from;
+      if (from < 0 || to < 0) return null;
+      // The rows left once the section is lifted out are `ids` without it, so its index is the gap.
+      const gap = arrayMove(ids, from, to).indexOf(id);
+      const left = active.rect.current.translated?.left ?? 0;
+      const box = list.current?.getBoundingClientRect();
+      const reply = box !== undefined && left - box.left >= REPLY_PX;
+      return dropAt(all, id, gap, reply);
+    },
+    [list],
+  );
+
+  const update = useCallback(
+    (event: Pick<DragMoveEvent, 'active' | 'over'>) => {
+      const drop = project(event);
+      const id = String(event.active.id);
+      setDrag((current) =>
+        current?.id === id &&
+        current.drop?.parent === drop?.parent &&
+        current.drop?.after === drop?.after &&
+        current.drop?.level === drop?.level
+          ? current
+          : { id, drop },
+      );
+    },
+    [project],
+  );
+
+  const settle = () => {
+    document.documentElement.classList.remove('select-none');
+    // After the click that ends the press, which mustn't open the menu.
+    setTimeout(() => {
+      dragged.current = false;
+    }, 0);
+  };
+
+  const context: DndContextProps = {
+    sensors,
+    collisionDetection: closestCenter,
+    // Rows change height as replies fold away and as the slot moves between levels.
+    measuring: { droppable: { strategy: MeasuringStrategy.Always } },
+    accessibility: { announcements },
+    onDragStart: ({ active }) => {
+      dragged.current = true;
+      document.documentElement.classList.add('select-none');
+      setDrag({ id: String(active.id), drop: null });
+    },
+    onDragMove: update,
+    onDragOver: update,
+    onDragEnd: (event) => {
+      settle();
+      const drop = project(event);
+      setDrag(null);
+      if (drop) onDrop(String(event.active.id), drop);
+    },
+    onDragCancel: () => {
+      settle();
+      setDrag(null);
+    },
+  };
+
+  /** Whether the press that just ended was a drag (so its click doesn't open the menu). */
+  const wasDragged = useCallback(() => dragged.current, []);
+
+  return { context, items, drag, wasDragged };
 }

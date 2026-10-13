@@ -13,6 +13,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@dnd-kit/core": "catalog:",
+    "@dnd-kit/sortable": "catalog:",
+    "@dnd-kit/utilities": "catalog:",
     "@lamp/domain": "workspace:*",
     "@lamp/ui": "workspace:*",
     "@tanstack/react-query": "catalog:",

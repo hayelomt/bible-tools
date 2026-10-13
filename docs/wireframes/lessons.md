@@ -147,8 +147,9 @@ itself, and Escape leaves the editor.
 
 Each section has one `⠿` (decided 2026-10-13): a tap or click opens this menu, and pressing and
 dragging it moves the section. A finger is held on it for a moment first, so a quick swipe still
-scrolls. A line shows where the section will land, and dropping it on the right half of the column
-makes it a reply (not for a section that has replies). Escape cancels. Focus returns to the `⠿`
+scrolls. The section then follows the finger as a card, the other sections make room, and a dashed
+slot shows where it will land. Pulling the card a little to the right makes it a reply (the slot
+indents; not for a section that has replies). Escape cancels. Focus returns to the `⠿`
 after Move up or Move down, so the keyboard can keep going. The empty section at the end has no `⠿`.
 
 Deleting a section **without replies** happens at once, with an undo toast:

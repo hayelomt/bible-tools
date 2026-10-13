@@ -1,17 +1,11 @@
+import { DndContext, DragOverlay, type DropAnimation } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { emptyBody, newId, type SectionBody } from '@lamp/domain';
 import { toast } from '@lamp/ui/components/sonner';
 import type { Editor } from '@tiptap/core';
-import { cn } from 'cn';
 import { useLiveQuery } from 'dexie-react-hooks';
-import {
-  type PointerEvent,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
 import {
@@ -39,6 +33,7 @@ import {
   type Target,
   targetPlacement,
 } from './outline.ts';
+import { DragPreview } from './drag-preview.tsx';
 import { type FocusRequest, SectionEditor } from './section-editor.tsx';
 import { useSectionDrag } from './use-section-drag.ts';
 
@@ -93,7 +88,6 @@ export interface SectionListApi {
   reply: (id: string) => void;
   /** Deletes at once with an Undo toast, or asks first when the section has replies. */
   remove: (id: string) => void;
-  startDrag: (id: string, event: PointerEvent<HTMLElement>) => void;
   /** Whether the press that just ended was a drag, not a click. */
   wasDragged: () => boolean;
   backspaceEmpty: (id: string) => boolean;
@@ -174,15 +168,11 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
   const apiRef = useRef<ListApi | null>(null);
   const onDrop = useCallback((id: string, drop: Drop) => apiRef.current?.drop(id, drop), []);
   const {
+    context: dndContext,
+    items: sortable,
     drag,
-    start: startDrag,
     wasDragged,
-  } = useSectionDrag({
-    list: listRef,
-    rows: rowsRef,
-    hasTrailingDraft: (all) => trailingDraft(all) !== undefined,
-    onDrop,
-  });
+  } = useSectionDrag({ list: listRef, rows, trailingId: trailingDraft(rows)?.item.id, onDrop });
 
   const updateDrafts = useCallback((change: (drafts: OutlineItem[]) => OutlineItem[]) => {
     draftsRef.current = change(draftsRef.current);
@@ -358,7 +348,6 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
         else deleteNow(id, false);
       },
       confirmRemove: (id) => deleteNow(id, true),
-      startDrag,
       wasDragged,
       drop: (id, drop) => moveToTarget(id, drop, 'handle'),
       backspaceEmpty: (id) => {
@@ -396,7 +385,7 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
         updateDrafts((ds) => ds.filter((d) => d.id !== id));
       },
     };
-  }, [lessonId, addDraft, updateDrafts, startDrag, wasDragged]);
+  }, [lessonId, addDraft, updateDrafts, wasDragged]);
   useLayoutEffect(() => {
     apiRef.current = api;
   });
@@ -404,33 +393,48 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
   if (!stored) return null;
   const activeRow = rows.find((r) => r.item.id === activeId);
   const activeEditor = activeId ? editors.current.get(activeId) : undefined;
-  const dragging = drag ? movingRows(rows, drag.id).map((r) => r.item.id) : [];
+  const folded = drag
+    ? movingRows(rows, drag.id)
+        .filter((r) => r.item.id !== drag.id)
+        .map((r) => r.item.id)
+    : [];
+  const draggedRow = drag && rows.find((r) => r.item.id === drag.id);
   const toDelete = rows.find((r) => r.item.id === confirmDelete);
 
   return (
     <div className="flex flex-col gap-4">
-      <div ref={listRef} className="relative flex flex-col gap-3">
-        {rows.map((row) => (
-          <SectionEditor
-            key={row.item.id}
-            row={row}
-            api={api}
-            focus={focus?.id === row.item.id ? focus : undefined}
-            dragging={dragging.includes(row.item.id)}
-          />
-        ))}
-        {drag?.line && (
-          // Where the dragged section will land; indented when it lands as a reply.
-          <div
-            aria-hidden
-            className={cn(
-              'pointer-events-none absolute right-0 h-0.5 -translate-y-1/2 rounded-full bg-primary',
-              drag.line.level === 1 ? 'left-6' : 'left-0',
-            )}
-            style={{ top: drag.line.top }}
-          />
-        )}
-      </div>
+      <DndContext {...dndContext}>
+        <SortableContext items={sortable} strategy={verticalListSortingStrategy}>
+          <div ref={listRef} className="flex flex-col gap-3">
+            {rows.map((row) => (
+              <SectionEditor
+                key={row.item.id}
+                row={row}
+                api={api}
+                focus={focus?.id === row.item.id ? focus : undefined}
+                sortable={sortable.includes(row.item.id)}
+                drag={
+                  drag?.id === row.item.id
+                    ? { slot: drag.drop?.level ?? null }
+                    : folded.includes(row.item.id)
+                      ? 'folded'
+                      : undefined
+                }
+              />
+            ))}
+          </div>
+        </SortableContext>
+        {/* The card keeps its own height; the drop only slides it into place, never stretches it. */}
+        <DragOverlay style={{ height: 'auto' }} dropAnimation={dropAnimation}>
+          {draggedRow && (
+            <DragPreview
+              row={draggedRow}
+              text={editors.current.get(draggedRow.item.id)?.getText() ?? ''}
+              level={drag.drop?.level ?? draggedRow.level}
+            />
+          )}
+        </DragOverlay>
+      </DndContext>
       {toDelete && (
         <ConfirmDialog
           open
@@ -459,6 +463,14 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
     </div>
   );
 }
+
+const dropAnimation: DropAnimation = {
+  duration: 180,
+  keyframes: ({ transform }) => [
+    { transform: CSS.Translate.toString(transform.initial) },
+    { transform: CSS.Translate.toString(transform.final) },
+  ],
+};
 
 /** The empty section at the end of the lesson: the last row, if it's a top-level draft. */
 function trailingDraft(rows: readonly SectionRow[]): SectionRow | undefined {
