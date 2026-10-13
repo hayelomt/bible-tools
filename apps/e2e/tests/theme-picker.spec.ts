@@ -75,7 +75,10 @@ for (const [name, viewport] of [
       })
       .toBe(viewport.height);
     expect((await sheet.boundingBox())!.width).toBeLessThanOrEqual(42 * 16);
-    await expect(sheet.getByRole('radio', { name: 'Cedar' })).toBeInViewport();
+    // The looks come first, so the presets may be below the fold: the sheet scrolls inside.
+    const cedar = sheet.getByRole('radio', { name: 'Cedar' });
+    await cedar.scrollIntoViewIfNeeded();
+    await expect(cedar).toBeInViewport();
 
     await sheet.getByRole('radio', { name: 'Olive' }).click();
     await page.keyboard.press('Escape');

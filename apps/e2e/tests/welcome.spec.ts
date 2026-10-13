@@ -27,11 +27,12 @@ test('a new device picks a look and mode first, then lands on the first-run home
   await page.reload();
   await expect(html).toHaveAttribute('data-look', 'folio');
   await expect(html).toHaveClass('dark');
+  // Folio's corners, compared as a number: the built stylesheet writes it as `.125rem`.
   expect(
     await page.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue('--radius'),
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--radius')),
     ),
-  ).toBe('0.125rem');
+  ).toBe(0.125);
   await page.unroute('**/*.js');
 
   // Done once per device.
