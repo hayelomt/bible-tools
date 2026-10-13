@@ -69,8 +69,54 @@ export async function matchTagsByName(db: LampDb): Promise<void> {
         }
       }
     }
+    await mergeLinks(db, changed);
   });
   emitRowsChanged(changed);
+}
+
+/**
+ * Merges the links the server never took into the account's live link of the same tag on the same
+ * note: an account can't have that twice, so the push would be refused as `DUPLICATE`. This happens
+ * when two devices put the same tag on a note offline (and after a tag is matched by name, above).
+ * The local links and their queued changes go. If the user took them all off, the last thing they
+ * did there was untag the note, so the account's link is taken off too, at that time.
+ */
+async function mergeLinks(db: LampDb, changed: RowRef[]): Promise<void> {
+  for (const { entity, owner } of LINKS) {
+    const table = db.rows(entity);
+    const links = await table.toArray();
+    const linkKey = (link: (typeof links)[number]) =>
+      `${link.tagId}:${(link as Record<string, unknown>)[owner] as string}`;
+    const local = Map.groupBy(
+      links.filter((link) => link.rev === 0),
+      linkKey,
+    );
+    for (const target of links) {
+      const same = local.get(linkKey(target));
+      if (target.rev === 0 || target.deletedAt !== null || !same) continue;
+      const queued = same.map((link) => queuedFor(db, { entity, entityId: link.id }));
+      const entries = await Promise.all(queued.map((q) => q.toArray()));
+      if (entries.flat().some(unanswered)) continue;
+      for (const q of queued) await q.delete();
+      await table.bulkDelete(same.map((link) => link.id));
+      changed.push(...same.map((link) => ({ entity, id: link.id })));
+      if (same.some((link) => link.deletedAt === null)) continue;
+      const at = same
+        .map((link) => link.deletedAt!)
+        .toSorted()
+        .at(-1)!;
+      await table.update(target.id, { updatedAt: at, deletedAt: at });
+      await db.outbox.add({
+        changeId: newId(),
+        baseRev: target.rev,
+        clientTime: at,
+        entity,
+        entityId: target.id,
+        op: 'delete',
+      });
+      changed.push({ entity, id: target.id });
+    }
+  }
 }
 
 const nameKey = (tag: Tag) => tag.name.toLowerCase();

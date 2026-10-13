@@ -24,7 +24,7 @@ import {
 import { addQuestion, promoteQuestion } from '@/data/actions/questions.ts';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { updateSettings } from '@/data/actions/settings.ts';
-import { addTag } from '@/data/actions/tags.ts';
+import { addTag, removeTag } from '@/data/actions/tags.ts';
 import { onRowsChanged, type RowRef } from '@/data/changes.ts';
 import {
   LampDb,
@@ -146,7 +146,20 @@ class FakeServer implements SyncApi {
     if (change.op === 'upsert' && 'tagId' in change.row && !this.get('tag', change.row.tagId)) {
       return refuse('REFERENCE_NOT_FOUND');
     }
+    // A tag is on a section or lesson once.
+    if (
+      change.op === 'upsert' &&
+      (change.entity === 'sectionTag' || change.entity === 'lessonTag')
+    ) {
+      const row = change.row as Record<string, unknown>;
+      const owner = change.entity === 'sectionTag' ? 'sectionId' : 'lessonId';
+      const taken = this.all(change.entity).some(
+        (link) => link.id !== row.id && link.tagId === row.tagId && link[owner] === row[owner],
+      );
+      if (taken && row.deletedAt === null) return refuse('DUPLICATE');
+    }
     const stored = this.get(change.entity, id);
+    if (change.op === 'delete' && !stored) return refuse('NOT_FOUND');
     const row =
       change.op === 'delete'
         ? { ...stored, deletedAt: change.clientTime, updatedAt: change.clientTime }
@@ -200,6 +213,9 @@ afterEach(async () => {
   vi.useRealTimers();
   await db.delete();
 });
+
+const live = <T extends { deletedAt: string | null }>(rows: T[]) =>
+  rows.filter((row) => row.deletedAt === null);
 
 const state = async (on = db) => (await on.syncState.get(SYNC_STATE_KEY))!;
 
@@ -797,6 +813,46 @@ describe('guests and devices (§6.6)', () => {
     expect(server.all('lessonTag')).toHaveLength(1);
     await engines[0]!.syncNow();
     expect(await db.lessonTag.toArray()).toEqual(await other.lessonTag.toArray());
+    await other.delete();
+  });
+
+  it('merges a link refused because another device put the same tag on offline', async () => {
+    const server = new FakeServer();
+    const other = await device();
+    const kept = await createLesson(LESSON, db);
+    const untagged = await createLesson({ ...LESSON, title: 'Untagged' }, db);
+    const again = await createLesson({ ...LESSON, title: 'Tagged again' }, db);
+    await engineFor(db, server).syncNow();
+    await engineFor(other, server).syncNow();
+    const grace = SEED_TAGS[0]!;
+    for (const lesson of [kept, untagged, again]) {
+      await addTag({ kind: 'lesson', id: lesson.id }, grace, db);
+    }
+    await addTag({ kind: 'lesson', id: kept.id }, grace, other);
+    // The other device takes its own link off one lesson, and off then on again another.
+    const { link } = await addTag({ kind: 'lesson', id: untagged.id }, grace, other);
+    await removeTag(link, other);
+    const { link: first } = await addTag({ kind: 'lesson', id: again.id }, grace, other);
+    await removeTag(first, other);
+    await addTag({ kind: 'lesson', id: again.id }, grace, other);
+
+    await engines[0]!.syncNow();
+    await engines[1]!.syncNow();
+    expect((await other.outbox.toArray()).some((e) => e.rejected?.errorCode === 'DUPLICATE')).toBe(
+      true,
+    );
+    await engines[1]!.syncNow();
+    await engines[0]!.syncNow();
+
+    expect(await other.outbox.count()).toBe(0);
+    // One link each, the first device's; the lesson untagged there is untagged everywhere.
+    const links = server.all('lessonTag');
+    expect(links.map((l) => l.lessonId).toSorted()).toEqual([kept.id, again.id].toSorted());
+    for (const on of [db, other]) {
+      expect(new Set(live(await on.lessonTag.toArray()).map((l) => l.id))).toEqual(
+        new Set(links.map((l) => l.id)),
+      );
+    }
     await other.delete();
   });
 

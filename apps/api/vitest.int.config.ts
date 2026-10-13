@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
@@ -10,9 +11,12 @@ if (existsSync('.env.test')) process.loadEnvFile('.env.test');
 export default defineConfig({
   oxc: false,
   plugins: [swc.vite({ module: { type: 'es6' } })],
+  // The sync contract test (M3-14) is web code: the web app's sync engine against this API.
+  resolve: { alias: { '@': fileURLToPath(new URL('../web/src', import.meta.url)) } },
   test: {
-    include: ['test/**/*.int.test.ts'],
-    globalSetup: ['test/int/global-setup.ts'],
+    dir: '..',
+    include: ['api/test/**/*.int.test.ts', 'web/src/**/*.int.test.ts'],
+    globalSetup: ['test/int/global-setup.ts', 'test/int/api-server.ts'],
     // One database, so files run one at a time; each test truncates in beforeEach.
     fileParallelism: false,
     env: { LOG_LEVEL: 'silent' },
