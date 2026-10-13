@@ -416,6 +416,7 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 26 | New lesson (2026-10-13) | One tap creates the lesson and opens it ready to type; the other details sit in a collapsible row | UX-PATTERNS |
 | 27 | Destructive actions (2026-10-13) | Undo for one thing; ask first for more than one, or for what can't be undone | UX-PATTERNS |
 | 28 | Wireframes (2026-10-13) | Text (ASCII) wireframes in `docs/wireframes/`, linked from UX-PATTERNS | UX-PATTERNS |
+| 29 | Copyright and conduct (2026-10-13) | MIT © "The Lamp contributors"; the Contributor Covenant 2.1 adopted by link, reports to a maintainer privately; vulnerabilities through GitHub's private reporting | — |
 
 **Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
 

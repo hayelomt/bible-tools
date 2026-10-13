@@ -1,0 +1,23 @@
+name: Backlog task
+description: Claim a task from docs/BACKLOG.md, or propose a new one.
+title: 'M?-??: '
+labels: [task]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Title the issue with the task ID and name from
+        [the backlog](https://github.com/hayelomt/bible-tools/blob/main/docs/BACKLOG.md), e.g.
+        "M2-04: Lesson create and edit". For a new task, describe it and suggest a milestone.
+  - type: textarea
+    id: plan
+    attributes:
+      label: Plan
+      description: How you'll build it, and anything in the task you'd like to settle first.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: The backlog's condition, or for a new task, what proves it's finished.

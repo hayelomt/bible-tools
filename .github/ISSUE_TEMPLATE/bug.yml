@@ -1,0 +1,43 @@
+name: Bug report
+description: Something doesn't work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a lesson
+        2. Type "Rom 8:28" in a section
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: e.g. Pixel 7, Chrome 140, installed app
+    validations:
+      required: true
+  - type: dropdown
+    id: account
+    attributes:
+      label: Account
+      options:
+        - Guest (no account)
+        - Signed in
+        - Not sure
+  - type: textarea
+    id: details
+    attributes:
+      label: Error details or screenshots
+      description: >-
+        "Copy error details" from the error screen helps. Please remove anything private from your
+        notes before pasting.
