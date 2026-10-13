@@ -14,10 +14,24 @@ import { NavigationRoute, registerRoute } from 'workbox-routing';
  */
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: (PrecacheEntry | string)[] };
 
+/** `LOOKS_CACHE` in src/lib/looks.ts, which the worker can't import (it pulls in React). */
+const LOOKS_CACHE = 'lamp-looks';
+/** A downloaded look's built stylesheet or font (the precache leaves them out). */
+const LOOK_FILE =
+  /^\/assets\/(folio|soft|lamplight|fraunces|inter-tight|jetbrains-mono)-[\w-]+\.(css|woff2)$/;
+
 // Workbox's injection point, named by Workbox.
 // oxlint-disable-next-line no-underscore-dangle
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
+
+// The chosen look's stylesheet and fonts, from the copy the page stores (src/lib/looks.ts), so
+// the inline script's <link> works offline. Anything not stored goes to the network.
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && LOOK_FILE.test(url.pathname),
+  async ({ request }) =>
+    (await caches.match(request, { cacheName: LOOKS_CACHE })) ?? fetch(request),
+);
 
 // Every address in the app is the same page; the router shows the screen.
 registerRoute(

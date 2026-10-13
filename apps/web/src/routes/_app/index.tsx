@@ -5,10 +5,12 @@ import { ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { LessonList } from '@/components/lesson/lesson-list.tsx';
 import { SeriesDialog } from '@/components/series/series-dialog.tsx';
+import { Welcome } from '@/components/welcome.tsx';
 import { PageSection } from '@/components/page-section.tsx';
 import { allLessons, allSeries } from '@/data/queries.ts';
 import { count } from '@/lib/labels.ts';
 import { newLessonTarget } from '@/lib/new-lesson.ts';
+import { useWelcomed } from '@/lib/welcome.ts';
 
 /** How many lessons the home screen lists before "Show all". */
 const RECENT = 5;
@@ -20,14 +22,18 @@ export const Route = createFileRoute('/_app/')({
 
 /**
  * The lessons home (F1, wireframes/lessons.md "Lessons home"): "New lesson" first and one tap,
- * the recent lessons, then the series. A first run shows a welcome that leads to the first lesson.
+ * the recent lessons, then the series. A new device first picks its look (`Welcome`), then a first
+ * run shows a welcome that leads to the first lesson.
  */
 function LessonsHome() {
   const navigate = useNavigate();
   const lessons = useLiveQuery(() => allLessons(), []);
   const series = useLiveQuery(() => allSeries(), []);
   const [creatingSeries, setCreatingSeries] = useState(false);
+  const welcomed = useWelcomed();
   if (!lessons || !series) return null;
+  // Someone with lessons already set the app up before the welcome existed.
+  if (!welcomed && lessons.length === 0 && series.length === 0) return <Welcome />;
 
   const newLesson = (
     <Button size="lg" onClick={() => void navigate(newLessonTarget())}>
@@ -83,7 +89,7 @@ function LessonsHome() {
           }
         >
           {series.length > 0 ? (
-            <ul className="flex flex-col divide-y">
+            <ul data-slot="row-list" className="flex flex-col divide-y">
               {series.map((s) => (
                 <li key={s.id}>
                   <Link
@@ -91,7 +97,7 @@ function LessonsHome() {
                     params={{ seriesId: s.id }}
                     className="-mx-2 flex items-center gap-2 rounded-lg px-2 py-3 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
-                    <span className="min-w-0 flex-1 break-words">
+                    <span data-slot="row-title" className="min-w-0 flex-1 break-words">
                       {s.title}
                       <span className="text-muted-foreground">
                         {' '}

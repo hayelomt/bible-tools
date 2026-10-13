@@ -21,6 +21,6 @@ export const Route = createFileRoute('/_app')({
 
 /** A first run keeps the theme the `localStorage` mirror already shows (§8.5). */
 function initialTheme() {
-  const { preset, mode } = readTheme(localStorage);
-  return { themePreset: preset, colorMode: mode };
+  const { preset, mode, look } = readTheme(localStorage);
+  return { themePreset: preset, colorMode: mode, look };
 }

@@ -16,7 +16,10 @@ export function ScreenHeader() {
   const actionsSlot = useSlotRef('actions');
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background px-4 lg:static lg:h-auto lg:border-0 lg:bg-transparent lg:px-0 lg:pt-10 lg:pb-6">
+    <header
+      data-slot="screen-header"
+      className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background px-4 lg:static lg:h-auto lg:border-0 lg:bg-transparent lg:px-0 lg:pt-10 lg:pb-6"
+    >
       {back && (
         <Link
           to={back}
@@ -27,7 +30,10 @@ export function ScreenHeader() {
           <ArrowLeft />
         </Link>
       )}
-      <h1 className="min-w-0 flex-1 truncate text-lg font-semibold lg:text-2xl">
+      <h1
+        data-slot="screen-title"
+        className="min-w-0 flex-1 truncate text-lg font-semibold lg:text-2xl"
+      >
         {title}
         <span ref={titleSlot} className="contents" />
       </h1>

@@ -46,7 +46,7 @@ let dbCount = 0;
 
 beforeEach(async () => {
   db = new LampDb(`test-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system' });
+  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
 });
 
 afterEach(async () => {
@@ -67,6 +67,7 @@ describe('first run', () => {
     expect(await db.userSettings.get(SETTINGS_KEY)).toMatchObject({
       themePreset: 'parchment',
       colorMode: 'system',
+      look: 'classic',
       reviewWindowDays: 14,
       autoPreviewVerses: false,
       rev: 0,
@@ -85,8 +86,8 @@ describe('first run', () => {
   it('runs once, however often it is called', async () => {
     const before = await snapshot();
     await Promise.all([
-      ensureDevice(db, { themePreset: 'midnight', colorMode: 'dark' }),
-      ensureDevice(db, { themePreset: 'midnight', colorMode: 'dark' }),
+      ensureDevice(db, { themePreset: 'midnight', colorMode: 'dark', look: 'classic' }),
+      ensureDevice(db, { themePreset: 'midnight', colorMode: 'dark', look: 'classic' }),
     ]);
     expect(await snapshot()).toEqual(before);
   });

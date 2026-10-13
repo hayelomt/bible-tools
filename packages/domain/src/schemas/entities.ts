@@ -34,6 +34,8 @@ export const THEME_PRESETS = [
   'midnight',
 ] as const;
 export const COLOR_MODES = ['light', 'dark', 'system'] as const;
+/** How the interface is drawn; `classic` is built in, the others are downloaded when chosen. */
+export const THEME_LOOKS = ['classic', 'folio', 'soft', 'lamplight'] as const;
 export const USER_ROLES = ['user', 'admin'] as const;
 
 /** Fields every synced row carries (§5.1). */
@@ -51,6 +53,8 @@ const synced = {
 export const userSettingsSchema = z.strictObject({
   themePreset: z.enum(THEME_PRESETS),
   colorMode: z.enum(COLOR_MODES),
+  /** Folio brings its own colours; the preset applies to Classic. */
+  look: z.enum(THEME_LOOKS),
   defaultTranslation: z.enum(TRANSLATIONS),
   reviewWindowDays: z.int().min(1).max(365),
   /** Each paragraph's verse chips show their text under it (F3). */

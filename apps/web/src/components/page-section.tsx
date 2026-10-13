@@ -12,8 +12,15 @@ export function PageSection({ title, action, children }: PageSectionProps) {
   const id = useId();
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3">
-      <div className="flex min-h-7 items-center justify-between gap-4">
-        <h2 id={id} className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <div
+        data-slot="page-section-header"
+        className="flex min-h-7 items-center justify-between gap-4"
+      >
+        <h2
+          id={id}
+          data-slot="page-section-title"
+          className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+        >
           {title}
         </h2>
         {action}

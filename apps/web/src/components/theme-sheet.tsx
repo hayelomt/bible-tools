@@ -1,27 +1,32 @@
 import { Button } from '@lamp/ui/components/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@lamp/ui/components/sheet';
-import { PRESETS, resolveMode } from '@lamp/ui/themes/presets';
+import { LOOKS, PRESETS, resolveMode } from '@lamp/ui/themes/presets';
 import { Check, ChevronRight } from 'lucide-react';
+import { LookPicker } from '@/components/look-picker.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { updateSettings } from '@/data/actions/settings.ts';
 import { useSettings } from '@/data/use-settings.ts';
 import { usePrefersDark } from '@/lib/theme.ts';
 
 /**
- * The Theme row in Settings, naming the current preset, and the bottom sheet it opens (F16,
+ * The Theme row in Settings, naming the current look (or preset, for Classic), and the bottom
+ * sheet it opens (F16,
  * wireframes/shell.md "Theme picker"). The sheet is the same on a laptop, centred and no wider
  * than the column. It closes with Esc, a tap outside or ×; a choice applies at once.
  */
 export function ThemeSheet() {
   const settings = useSettings();
   if (!settings) return null;
-  const preset = PRESETS.find((p) => p.id === settings.themePreset);
+  const current =
+    settings.look === 'classic'
+      ? PRESETS.find((p) => p.id === settings.themePreset)
+      : LOOKS.find((l) => l.id === settings.look);
   return (
     <Sheet>
       <SheetTrigger className="-mx-2 flex min-h-9 items-center justify-between gap-4 rounded-lg px-2 text-left outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11">
         Theme
         <span className="flex items-center gap-1 text-muted-foreground">
-          {preset?.name}
+          {current?.name}
           <ChevronRight className="size-4" aria-hidden />
         </span>
       </SheetTrigger>
@@ -43,8 +48,9 @@ export function ThemeSheet() {
 }
 
 /**
- * The mode control and the six presets. Each card is drawn in its own preset in the current mode,
- * so the choice is visible before it's made.
+ * The looks, the mode control and, for Classic, the six presets. Each preset card is drawn in its
+ * own preset in the current mode, so the choice is visible before it's made. A downloaded look
+ * brings its own colours, so the presets are hidden with it.
  */
 function ThemePicker() {
   const settings = useSettings();
@@ -54,9 +60,20 @@ function ThemePicker() {
 
   return (
     <div className="flex flex-col gap-6">
+      <LookPicker />
       <ModeControl value={settings.colorMode} />
+      {settings.look === 'classic' && <PresetPicker mode={mode} />}
+    </div>
+  );
+}
+
+function PresetPicker({ mode }: { mode: 'light' | 'dark' }) {
+  const settings = useSettings();
+  if (!settings) return null;
+  return (
+    <>
       <fieldset>
-        <legend className="sr-only">Theme</legend>
+        <legend className="sr-only">Colours</legend>
         <div className="grid grid-cols-2 gap-3">
           {PRESETS.map((preset) => (
             <label
@@ -103,6 +120,6 @@ function ThemePicker() {
           </Button>
         </div>
       )}
-    </div>
+    </>
   );
 }

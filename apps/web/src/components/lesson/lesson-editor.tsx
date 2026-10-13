@@ -81,6 +81,7 @@ export function LessonEditor({ id, lesson, seriesId }: LessonEditorProps) {
         autoComplete="off"
         aria-invalid={missingTitle || undefined}
         aria-describedby={missingTitle ? errorId : undefined}
+        data-slot="lesson-title-input"
         className="w-full bg-transparent font-serif text-2xl font-semibold outline-none placeholder:text-muted-foreground lg:text-3xl"
         onChange={(event) => {
           setTitle(event.target.value);

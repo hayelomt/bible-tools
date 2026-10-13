@@ -12,7 +12,7 @@ interface LessonListProps {
 export function LessonList({ lessons, series }: LessonListProps) {
   const seriesTitle = new Map(series?.map((s) => [s.id, s.title]));
   return (
-    <ul className="flex flex-col divide-y">
+    <ul data-slot="row-list" className="flex flex-col divide-y">
       {lessons.map((lesson) => {
         const meta = [
           shortDate(lesson.date),
@@ -26,8 +26,12 @@ export function LessonList({ lessons, series }: LessonListProps) {
               params={{ lessonId: lesson.id }}
               className="-mx-2 flex flex-col gap-0.5 rounded-lg px-2 py-3 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
             >
-              <span className="font-medium break-words">{lesson.title}</span>
-              <span className="text-sm break-words text-muted-foreground">{meta.join(' · ')}</span>
+              <span data-slot="row-title" className="font-medium break-words">
+                {lesson.title}
+              </span>
+              <span data-slot="row-meta" className="text-sm break-words text-muted-foreground">
+                {meta.join(' · ')}
+              </span>
             </Link>
           </li>
         );

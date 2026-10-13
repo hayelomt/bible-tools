@@ -1,0 +1,234 @@
+/*
+ * Folio: the app drawn like a printed study Bible. Display serif headings (Fraunces), hairline
+ * rules, small capitals, one vermilion; no shadows on the page. Downloaded when the look is chosen
+ * (apps/web/src/lib/looks.ts) and applied with `<html data-look="folio">`; it is plain CSS outside
+ * Tailwind's layers, so these rules win over the components' utilities. Folio sets its own
+ * colours in both modes, replacing the preset's; the contrast test checks them like a preset.
+ * Keep rules flat (no nesting) so the test can read the colour tokens.
+ */
+@import '@fontsource-variable/fraunces/wght.css';
+@import '@fontsource-variable/fraunces/wght-italic.css';
+
+:root[data-look='folio'] {
+  --radius: 0.125rem;
+  --background: oklch(0.966 0.013 85);
+  --foreground: oklch(0.22 0.014 60);
+  --card: oklch(0.984 0.008 85);
+  --card-foreground: oklch(0.22 0.014 60);
+  --primary: oklch(0.47 0.16 36);
+  --primary-foreground: oklch(0.985 0.008 85);
+  --secondary: oklch(0.925 0.018 80);
+  --secondary-foreground: oklch(0.24 0.016 60);
+  --muted: oklch(0.935 0.016 82);
+  --muted-foreground: oklch(0.47 0.022 65);
+  --accent: oklch(0.925 0.035 45);
+  --accent-foreground: oklch(0.3 0.08 36);
+  --border: oklch(0.86 0.018 80);
+  --input: oklch(0.55 0.02 65);
+  --ring: oklch(0.47 0.16 36);
+}
+
+:root[data-look='folio'].dark {
+  --background: oklch(0.185 0.01 60);
+  --foreground: oklch(0.925 0.016 85);
+  --card: oklch(0.215 0.011 60);
+  --card-foreground: oklch(0.925 0.016 85);
+  --primary: oklch(0.74 0.135 42);
+  --primary-foreground: oklch(0.18 0.02 40);
+  --secondary: oklch(0.27 0.012 60);
+  --secondary-foreground: oklch(0.925 0.016 85);
+  --muted: oklch(0.255 0.012 60);
+  --muted-foreground: oklch(0.72 0.022 75);
+  --accent: oklch(0.3 0.04 40);
+  --accent-foreground: oklch(0.93 0.02 85);
+  --border: oklch(0.32 0.012 60);
+  --input: oklch(0.58 0.02 65);
+  --ring: oklch(0.72 0.13 42);
+}
+
+/* Paper: a faint fibre on the page in light mode. */
+:root[data-look='folio']:not(.dark) body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .3 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- Type --------------------------------------------------------------------------------- */
+
+:root[data-look='folio']
+  :is(
+    [data-slot='screen-title'],
+    [data-slot='brand'],
+    [data-slot='sheet-title'],
+    [data-slot='dialog-title'],
+    [data-slot='card-title'],
+    [data-slot='popover-title'],
+    [data-slot='lesson-title-input'],
+    [data-slot='welcome-title'],
+    [data-slot='row-title']
+  ) {
+  font-family: 'Fraunces Variable', ui-serif, Georgia, serif;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+}
+
+:root[data-look='folio'] [data-slot='screen-title'] {
+  font-size: 1.5rem;
+  font-style: italic;
+}
+
+:root[data-look='folio'] [data-slot='brand'] {
+  font-size: 2.25rem;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px double var(--foreground);
+}
+
+:root[data-look='folio'] [data-slot='row-title'] {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+:root[data-look='folio'] [data-slot='row-meta'] {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.06em;
+  font-size: 0.9375rem;
+}
+
+:root[data-look='folio'] [data-slot='page-section-header'] {
+  border-bottom: 1px solid var(--foreground);
+  padding-bottom: 0.25rem;
+}
+
+:root[data-look='folio'] [data-slot='page-section-title'] {
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 500;
+  text-transform: none;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Shell -------------------------------------------------------------------------------- */
+
+:root[data-look='folio'] [data-slot='sidebar'] {
+  background: transparent;
+  border-right-color: var(--foreground);
+}
+
+:root[data-look='folio'] [data-slot='sidebar'] a:not([data-slot='brand']),
+:root[data-look='folio'] [data-slot='bottom-nav'] a {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+}
+
+:root[data-look='folio'] [data-slot='sidebar'] a:not([data-slot='brand']) {
+  font-size: 1rem;
+  background: transparent;
+}
+
+:root[data-look='folio'] [data-slot='sidebar'] a:not([data-slot='brand']):hover {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+:root[data-look='folio']
+  :is([data-slot='sidebar'], [data-slot='bottom-nav'])
+  a[aria-current='page']:not([data-slot='brand']) {
+  color: var(--primary);
+}
+
+:root[data-look='folio'] [data-slot='bottom-nav'] {
+  border-top: 3px double var(--foreground);
+}
+
+:root[data-look='folio'] [data-slot='bottom-nav'] a {
+  font-size: 0.875rem;
+}
+
+:root[data-look='folio'] [data-slot='screen-header'] {
+  border-bottom-color: var(--foreground);
+}
+
+/* ---- Lists -------------------------------------------------------------------------------- */
+
+:root[data-look='folio'] [data-slot='row-list'] {
+  border-top: 1px solid var(--foreground);
+}
+
+:root[data-look='folio'] [data-slot='row-list'] a:hover {
+  background: transparent;
+}
+
+:root[data-look='folio'] [data-slot='row-list'] a:hover [data-slot='row-title'] {
+  color: var(--primary);
+}
+
+/* ---- Controls ----------------------------------------------------------------------------- */
+
+:root[data-look='folio'] [data-slot='button'][data-variant='default'] {
+  background: var(--foreground);
+  color: var(--background);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+  font-size: 1rem;
+}
+
+:root[data-look='folio'] [data-slot='button'][data-variant='default']:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+:root[data-look='folio'] [data-slot='button'][data-variant='outline'] {
+  background: transparent;
+  border-color: var(--foreground);
+}
+
+:root[data-look='folio']
+  :is([data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger']) {
+  background: transparent;
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+
+:root[data-look='folio']
+  :is([data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger']):focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 1px 0 0 var(--ring);
+}
+
+:root[data-look='folio'] [data-slot='card'] {
+  background: transparent;
+  box-shadow: none;
+  border-top: 1px solid var(--foreground);
+}
+
+:root[data-look='folio']
+  :is(
+    [data-slot='dialog-content'],
+    [data-slot='sheet-content'],
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='select-content']
+  ) {
+  box-shadow:
+    0 0 0 1px var(--foreground),
+    0 18px 40px -20px oklch(0.2 0.02 60 / 0.45);
+}
+
+/* ---- Notes -------------------------------------------------------------------------------- */
+
+:root[data-look='folio'] [data-slot='verse-chip'] {
+  background: transparent;
+  color: var(--primary);
+  border-bottom: 1px solid currentColor;
+  border-radius: 0;
+  padding-inline: 0;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.05em;
+  font-size: 1em;
+}
+
+:root[data-look='folio'] [data-slot='verse-chip']:hover {
+  background: var(--accent);
+}

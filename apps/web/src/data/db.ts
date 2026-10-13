@@ -93,6 +93,15 @@ export class LampDb extends Dexie {
           settings.autoPreviewVerses ??= false;
         }),
     );
+    // `look` added; Classic, the look every device had before. Not queued, like the above.
+    this.version(3).upgrade((tx) =>
+      tx
+        .table('userSettings')
+        .toCollection()
+        .modify((settings: Partial<UserSettings>) => {
+          settings.look ??= 'classic';
+        }),
+    );
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {

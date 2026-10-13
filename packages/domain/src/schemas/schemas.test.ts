@@ -51,6 +51,7 @@ const ROWS: { [E in EntityName]: unknown } = {
   userSettings: {
     themePreset: 'parchment',
     colorMode: 'system',
+    look: 'classic',
     defaultTranslation: 'WEB',
     reviewWindowDays: 14,
     autoPreviewVerses: false,
@@ -147,6 +148,7 @@ describe('entity schemas', () => {
     ['an ease below 1.3', 'memoryItem', { ease: 1.2 }],
     ['a fractional interval', 'memoryItem', { interval: 1.5 }],
     ['an unknown theme', 'userSettings', { themePreset: 'neon' }],
+    ['an unknown look', 'userSettings', { look: 'neon' }],
     ['a review window of 0 days', 'userSettings', { reviewWindowDays: 0 }],
   ] as [string, EntityName, Record<string, unknown>][])('rejects %s', (_, entity, change) => {
     const row = { ...(ROWS[entity] as object), ...change };

@@ -15,6 +15,7 @@ import { Route as AppSplatRouteImport } from './routes/_app/$'
 import { Route as AppReadRouteImport } from './routes/_app/read'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
+import { Route as DevLooksRouteImport } from './routes/dev.looks'
 import { Route as DevThemesRouteImport } from './routes/dev.themes'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
@@ -50,6 +51,11 @@ const AppSearchRoute = AppSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AppRoute,
 } as any)
+const DevLooksRoute = DevLooksRouteImport.update({
+  id: '/dev/looks',
+  path: '/dev/looks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevThemesRoute = DevThemesRouteImport.update({
   id: '/dev/themes',
   path: '/dev/themes',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/read': typeof AppReadRoute
   '/review': typeof AppReviewRoute
   '/search': typeof AppSearchRoute
+  '/dev/looks': typeof DevLooksRoute
   '/dev/themes': typeof DevThemesRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/read': typeof AppReadRoute
   '/review': typeof AppReviewRoute
   '/search': typeof AppSearchRoute
+  '/dev/looks': typeof DevLooksRoute
   '/dev/themes': typeof DevThemesRoute
   '/': typeof AppIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/_app/read': typeof AppReadRoute
   '/_app/review': typeof AppReviewRoute
   '/_app/search': typeof AppSearchRoute
+  '/dev/looks': typeof DevLooksRoute
   '/dev/themes': typeof DevThemesRoute
   '/_app/': typeof AppIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/read'
     | '/review'
     | '/search'
+    | '/dev/looks'
     | '/dev/themes'
     | '/lessons/$lessonId'
     | '/series/$seriesId'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/read'
     | '/review'
     | '/search'
+    | '/dev/looks'
     | '/dev/themes'
     | '/'
     | '/lessons/$lessonId'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/_app/read'
     | '/_app/review'
     | '/_app/search'
+    | '/dev/looks'
     | '/dev/themes'
     | '/_app/'
     | '/_app/lessons/$lessonId'
@@ -156,6 +168,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  DevLooksRoute: typeof DevLooksRoute
   DevThemesRoute: typeof DevThemesRoute
 }
 
@@ -202,6 +215,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/search'
       preLoaderRoute: typeof AppSearchRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/dev/looks': {
+      id: '/dev/looks'
+      path: '/dev/looks'
+      fullPath: '/dev/looks'
+      preLoaderRoute: typeof DevLooksRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/dev/themes': {
       id: '/dev/themes'
@@ -269,6 +289,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  DevLooksRoute: DevLooksRoute,
   DevThemesRoute: DevThemesRoute,
 }
 export const routeTree = rootRouteImport

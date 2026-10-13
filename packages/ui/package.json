@@ -9,7 +9,8 @@
     "./lib/*": "./src/lib/*.ts",
     "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
-    "./themes/*": "./src/themes/*.ts"
+    "./themes/*": "./src/themes/*.ts",
+    "./looks/*": "./src/looks/*"
   },
   "scripts": {
     "lint": "oxlint -c .oxlintrc.json --deny-warnings src",
@@ -18,6 +19,9 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
+    "@fontsource-variable/fraunces": "catalog:",
+    "@fontsource-variable/inter-tight": "catalog:",
+    "@fontsource-variable/jetbrains-mono": "catalog:",
     "@fontsource-variable/literata": "catalog:",
     "class-variance-authority": "catalog:",
     "cn": "catalog:",

@@ -13,8 +13,11 @@ export function Sidebar() {
   const series = useLiveQuery(() => allSeries(), []);
 
   return (
-    <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col gap-6 border-r bg-card p-4 lg:flex">
-      <Link to="/" className="px-3 text-lg font-semibold">
+    <aside
+      data-slot="sidebar"
+      className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col gap-6 border-r bg-card p-4 lg:flex"
+    >
+      <Link to="/" data-slot="brand" className="px-3 text-lg font-semibold">
         Lamp
       </Link>
       <nav aria-label="Main">

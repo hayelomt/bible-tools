@@ -61,8 +61,14 @@ function pwa() {
     injectManifest: {
       globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
       // The Literata subsets for other scripts load only when such text shows; offline it falls
-      // back to the next font.
-      globIgnores: ['bible/**', '**/literata-{cyrillic,greek,vietnamese}*'],
+      // back to the next font. Downloaded looks (src/lib/looks.ts) and their fonts are stored
+      // only when chosen.
+      globIgnores: [
+        'bible/**',
+        '**/literata-{cyrillic,greek,vietnamese}*',
+        '**/assets/{folio,soft,lamplight}-*.css',
+        '**/{fraunces,inter-tight,jetbrains-mono}-*',
+      ],
     },
     // Already matched by the patterns above.
     includeManifestIcons: false,

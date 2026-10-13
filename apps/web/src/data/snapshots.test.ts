@@ -56,7 +56,7 @@ describe('fillStoredSnapshots', () => {
 
   beforeEach(async () => {
     db = new LampDb('snapshots', { indexedDB, IDBKeyRange });
-    await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system' });
+    await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
     const files: Record<string, unknown> = {
       '/bible/manifest.json': {
         translations: { WEB: { books: { JUD: { file: 'WEB/JUD.1.json' } } } },

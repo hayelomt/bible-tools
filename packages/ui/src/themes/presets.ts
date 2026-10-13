@@ -18,6 +18,34 @@ export const PRESETS = [
 ] as const;
 
 export type PresetId = (typeof PRESETS)[number]['id'];
+
+/**
+ * How the interface is drawn. Classic is built in and coloured by a preset; every other look has
+ * a stylesheet in ../looks with its own colours for light and dark, downloaded when it's chosen
+ * and applied as `<html data-look="<id>">`.
+ */
+export const LOOKS = [
+  { id: 'classic', name: 'Classic', description: 'Clean and familiar, in six colour presets' },
+  {
+    id: 'folio',
+    name: 'Folio',
+    description: 'Like a printed study Bible: serif headings, hairline rules, small capitals',
+  },
+  {
+    id: 'soft',
+    name: 'Soft',
+    description: 'Rounded paper cards on a warm wash, with a floating tab bar',
+  },
+  {
+    id: 'lamplight',
+    name: 'Lamplight',
+    description: 'A study lit by one lamp: glass panels, glowing amber, typewriter references',
+  },
+] as const;
+
+export type LookId = (typeof LOOKS)[number]['id'];
+
+export const DEFAULT_LOOK: LookId = 'classic';
 export type ColorMode = 'light' | 'dark' | 'system';
 
 export const DEFAULT_PRESET: PresetId = 'parchment';
@@ -37,7 +65,13 @@ export function applyTheme(element: HTMLElement, preset: PresetId, mode: 'light'
 export interface ThemeChoice {
   preset: PresetId;
   mode: ColorMode;
+  look: LookId;
+  /** The look's stylesheet, linked by the inline script; absent for Classic. */
+  lookHref?: string;
 }
+
+/** A same-origin path to a stylesheet, safe to write into a `<link>`. Mirrored in index.html. */
+const LOOK_HREF = /^\/[\w\-./@]+\.css(\?[\w=&-]*)?$/;
 
 /**
  * The device's copy of the choice in `UserSettings`. The inline script in apps/web/index.html
@@ -55,7 +89,11 @@ export function readTheme(storage: Pick<Storage, 'getItem'>): ThemeChoice {
   }
   const preset = PRESETS.find((p) => p.id === stored.preset)?.id ?? DEFAULT_PRESET;
   const mode = (['light', 'dark', 'system'] as const).find((m) => m === stored.mode) ?? 'system';
-  return { preset, mode };
+  const look = LOOKS.find((l) => l.id === stored.look)?.id ?? DEFAULT_LOOK;
+  const href = stored.lookHref;
+  return look !== 'classic' && typeof href === 'string' && LOOK_HREF.test(href)
+    ? { preset, mode, look, lookHref: href }
+    : { preset, mode, look };
 }
 
 export function saveTheme(storage: Pick<Storage, 'setItem'>, choice: ThemeChoice): void {

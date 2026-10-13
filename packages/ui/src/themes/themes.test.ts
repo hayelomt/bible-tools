@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /// <reference types="vite/client" />
-import { THEME_PRESETS } from '@lamp/domain';
+import { THEME_LOOKS, THEME_PRESETS } from '@lamp/domain';
 import { describe, expect, it } from 'vitest';
 import globals from '../styles/globals.css?raw';
 import {
@@ -14,12 +14,14 @@ import {
 } from './color.ts';
 import {
   applyTheme,
+  LOOKS,
   PRESETS,
   type PresetId,
   readTheme,
   resolveMode,
   saveTheme,
   THEME_STORAGE_KEY,
+  type ThemeChoice,
 } from './presets.ts';
 
 const files = import.meta.glob<string>('./*.css', {
@@ -27,6 +29,15 @@ const files = import.meta.glob<string>('./*.css', {
   import: 'default',
   eager: true,
 });
+
+const lookFiles = import.meta.glob<string>('../looks/*.css', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+/** The looks with a stylesheet of their own; Classic uses the presets. */
+const DOWNLOADED_LOOKS = LOOKS.filter((l) => l.id !== 'classic').map((l) => l.id);
 
 /** The tokens each preset sets, in both modes. */
 const PRESET_TOKENS = [
@@ -50,7 +61,7 @@ const PRESET_TOKENS = [
 /** The custom properties set by each CSS rule, keyed by selector. */
 function rules(css: string): Map<string, Map<string, string>> {
   const result = new Map<string, Map<string, string>>();
-  const withoutComments = css.replaceAll(/\/\*[^]*?\*\//g, '');
+  const withoutComments = css.replaceAll(/\/\*[^]*?\*\//g, '').replaceAll(/@import[^;]+;/g, '');
   for (const [, selector, body] of withoutComments.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     const declarations = [...body!.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map(
       ([, name, value]) => [name!.slice(2), value!.trim()] as const,
@@ -64,8 +75,21 @@ const shared = rules(globals);
 
 /** Every token of a preset in one mode, with `var()` aliases resolved. */
 function tokens(preset: PresetId, mode: 'light' | 'dark'): Map<string, string> {
-  const own = rules(files[`./${preset}.css`] ?? '');
-  const selector = `[data-theme='${preset}']`;
+  return resolved(rules(files[`./${preset}.css`] ?? ''), `[data-theme='${preset}']`, mode);
+}
+
+/** The same for a downloaded look, whose colours replace the preset's. */
+function lookTokens(look: string, mode: 'light' | 'dark'): Map<string, string> {
+  return resolved(rules(lookFiles[`../looks/${look}.css`] ?? ''), lookSelector(look), mode);
+}
+
+const lookSelector = (look: string) => `:root[data-look='${look}']`;
+
+function resolved(
+  own: Map<string, Map<string, string>>,
+  selector: string,
+  mode: 'light' | 'dark',
+): Map<string, string> {
   const merged = new Map([
     ...shared.get('[data-theme]')!,
     ...(mode === 'dark' ? shared.get('[data-theme].dark')! : []),
@@ -223,24 +247,76 @@ describe('presets', () => {
   });
 
   it.each(CASES)('%s (%s) uses only opaque, displayable oklch colours', (id, mode) => {
-    const outside = [...tokens(id, mode)]
-      .filter(([name]) => name !== 'radius')
-      .filter(([, value]) => !inSrgbGamut(value) || parseOklch(value).alpha !== 1)
-      .map(([name, value]) => `${name}: ${value}`);
-    expect(outside).toEqual([]);
+    expect(outsideGamut(tokens(id, mode))).toEqual([]);
   });
 
   it.each(CASES)('%s (%s) meets WCAG AA contrast', (id, mode) => {
-    const values = tokens(id, mode);
+    expect(contrastFailures(tokens(id, mode), mode)).toEqual([]);
+  });
+});
+
+function outsideGamut(values: Map<string, string>): string[] {
+  return [...values]
+    .filter(([name]) => name !== 'radius')
+    .filter(([, value]) => !inSrgbGamut(value) || parseOklch(value).alpha !== 1)
+    .map(([name, value]) => `${name}: ${value}`);
+}
+
+function contrastFailures(values: Map<string, string>, mode: 'light' | 'dark'): string[] {
+  const color = (token: string) => oklchToRgba(values.get(token)!);
+  return CHECKS.filter((check) => (check.mode ?? mode) === mode)
+    .map((check) => ({ check, ratio: contrast(check.foreground(color), check.background(color)) }))
+    .filter(({ check, ratio }) => ratio < check.minimum)
+    .map(({ check, ratio }) => `${check.label}: ${ratio.toFixed(2)} < ${check.minimum}`);
+}
+
+const LOOK_CASES = DOWNLOADED_LOOKS.flatMap((id) =>
+  (['light', 'dark'] as const).map((mode) => [id, mode] as const),
+);
+
+describe('looks', () => {
+  it('match the looks UserSettings accepts', () => {
+    expect(LOOKS.map((l) => l.id)).toEqual(THEME_LOOKS);
+  });
+
+  it('each have a stylesheet, except Classic', () => {
+    expect(Object.keys(lookFiles).toSorted()).toEqual(
+      DOWNLOADED_LOOKS.map((id) => `../looks/${id}.css`).toSorted(),
+    );
+  });
+
+  it.each(DOWNLOADED_LOOKS)('%s sets every colour token in both modes', (id) => {
+    const own = rules(lookFiles[`../looks/${id}.css`]!);
+    const light = [...(own.get(lookSelector(id))?.keys() ?? [])];
+    const dark = [...(own.get(`${lookSelector(id)}.dark`)?.keys() ?? [])];
+    expect(light.filter((name) => name !== 'radius')).toEqual(PRESET_TOKENS);
+    expect(dark).toEqual(PRESET_TOKENS);
+  });
+
+  it.each(LOOK_CASES)('%s (%s) uses only opaque, displayable oklch colours', (id, mode) => {
+    expect(outsideGamut(lookTokens(id, mode))).toEqual([]);
+  });
+
+  it.each(LOOK_CASES)('%s (%s) meets WCAG AA contrast', (id, mode) => {
+    expect(contrastFailures(lookTokens(id, mode), mode)).toEqual([]);
+  });
+
+  it.each(LOOK_CASES)('%s (%s): its ink button reads, plain and hovered', (id, mode) => {
+    const values = lookTokens(id, mode);
     const color = (token: string) => oklchToRgba(values.get(token)!);
-    const failures = CHECKS.filter((check) => (check.mode ?? mode) === mode)
-      .map((check) => ({
-        check,
-        ratio: contrast(check.foreground(color), check.background(color)),
-      }))
-      .filter(({ check, ratio }) => ratio < check.minimum)
-      .map(({ check, ratio }) => `${check.label}: ${ratio.toFixed(2)} < ${check.minimum}`);
-    expect(failures).toEqual([]);
+    expect(contrast(color('background'), color('foreground'))).toBeGreaterThanOrEqual(TEXT);
+    expect(contrast(color('primary-foreground'), color('primary'))).toBeGreaterThanOrEqual(TEXT);
+  });
+
+  it.each(LOOK_CASES)('%s (%s): verse chips read on their tints', (id, mode) => {
+    const values = lookTokens(id, mode);
+    const color = (token: string) => oklchToRgba(values.get(token)!);
+    // Soft's pill (primary at 12 %, 20 % on hover); Folio's hover (accent).
+    for (const alpha of [0.12, 0.2]) {
+      const tint = over(withAlpha(color('primary'), alpha), color('background'));
+      expect(contrast(color('primary'), tint)).toBeGreaterThanOrEqual(TEXT);
+    }
+    expect(contrast(color('primary'), color('accent'))).toBeGreaterThanOrEqual(TEXT);
   });
 });
 
@@ -298,14 +374,27 @@ describe('theme helpers', () => {
       getItem: (key: string) => storage.get(key) ?? null,
       setItem: (key: string, value: string) => void storage.set(key, value),
     };
-    expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system' });
-    saveTheme(store, { preset: 'cedar', mode: 'dark' });
-    expect(readTheme(store)).toEqual({ preset: 'cedar', mode: 'dark' });
+    expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system', look: 'classic' });
+    saveTheme(store, { preset: 'cedar', mode: 'dark', look: 'classic' });
+    expect(readTheme(store)).toEqual({ preset: 'cedar', mode: 'dark', look: 'classic' });
+    const folio: ThemeChoice = {
+      preset: 'cedar',
+      mode: 'light',
+      look: 'folio',
+      lookHref: '/assets/folio-a1.css',
+    };
+    saveTheme(store, folio);
+    expect(readTheme(store)).toEqual(folio);
     storage.set(THEME_STORAGE_KEY, '{"preset":"neon","mode":"dim"}');
-    expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system' });
+    expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system', look: 'classic' });
+    // A stylesheet address that isn't a same-origin path is dropped, and the look kept.
+    for (const href of ['https://evil.example/x.css', '/x.css"><script>', 42]) {
+      storage.set(THEME_STORAGE_KEY, JSON.stringify({ look: 'folio', lookHref: href }));
+      expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system', look: 'folio' });
+    }
     for (const bad of ['not json', 'null', '[1]']) {
       storage.set(THEME_STORAGE_KEY, bad);
-      expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system' });
+      expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system', look: 'classic' });
     }
   });
 });

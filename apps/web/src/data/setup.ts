@@ -2,7 +2,7 @@ import { DEFAULT_TRANSLATION, newId, SEED_TAGS, type UserSettings } from '@lamp/
 import { action } from './action.ts';
 import { type LampDb, SETTINGS_KEY, SYNC_STATE_KEY } from './db.ts';
 
-export type InitialSettings = Pick<UserSettings, 'themePreset' | 'colorMode'>;
+export type InitialSettings = Pick<UserSettings, 'themePreset' | 'colorMode' | 'look'>;
 
 export const DEFAULT_REVIEW_WINDOW_DAYS = 14;
 

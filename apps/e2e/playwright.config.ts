@@ -22,6 +22,11 @@ export default defineConfig({
     // Requests go straight to the network, where `page.route` sees them; offline.spec.ts turns
     // the service worker on.
     serviceWorkers: 'block',
+    // Past the first-run welcome (look and mode); welcome.spec.ts starts without this.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: WEB_URL, localStorage: [{ name: 'lamp.welcomed', value: 'e2e' }] }],
+    },
   },
   // Chromium only; Safari/iPhone is checked by hand on a real device.
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

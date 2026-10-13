@@ -134,6 +134,7 @@ export const verseChipView: NodeViewRenderer = ({ node: initial, editor }) => {
   dom.setAttribute('role', 'button');
   dom.setAttribute('aria-haspopup', 'dialog');
   dom.className = CHIP_CLASS;
+  dom.dataset['slot'] = 'verse-chip';
   const render = () => {
     const ref = node.attrs as VerseRef;
     dom.textContent = `${ref.display} · ${ref.translation}`;
