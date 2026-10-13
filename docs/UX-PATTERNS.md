@@ -15,9 +15,9 @@ screen needs something new.
 |---|---|---|
 | App shell: bottom bar, sidebar | [shell.md](wireframes/shell.md#app-shell-m2-02) | M2-02 |
 | Settings | [shell.md](wireframes/shell.md#settings-m2-02) | M2-02, M3-03 |
-| Theme picker | [shell.md](wireframes/shell.md#theme-picker-m2-03) | M2-03 |
+| Theme picker: looks, mode, presets | [shell.md](wireframes/shell.md#theme-picker-m2-03-m2-14) | M2-03, M2-14 |
 | Bible download, update prompt | [shell.md](wireframes/shell.md#bible-download-m2-11) | M2-11 |
-| Lessons home and first run | [lessons.md](wireframes/lessons.md#lessons-home-m2-06) | M2-06 |
+| Lessons home, welcome and first run | [lessons.md](wireframes/lessons.md#lessons-home-m2-06) | M2-06, M2-14 |
 | Lesson: capture and edit (phone, laptop) | [lessons.md](wireframes/lessons.md#lesson-capture-and-edit-m2-04-m2-07) | M2-04, M2-07 |
 | Section menu, reorder, delete | [lessons.md](wireframes/lessons.md#section-menu-reorder-and-delete-m2-08) | M2-08 |
 | Series | [lessons.md](wireframes/lessons.md#series-m2-05) | M2-05 |
@@ -40,7 +40,8 @@ screen needs something new.
 | Export menu, print view | [export.md](wireframes/export.md) | M6-05, M6-06 |
 | Empty, loading and error states | [states.md](wireframes/states.md) | all |
 
-The theme demo at `/dev/themes` (M1-13) shows every component in every preset and mode.
+The theme demo at `/dev/themes` (M1-13) shows every component in every preset and mode. The
+explorations behind the looks are at `/dev/looks` (M2-14).
 
 ## Layout
 
@@ -92,8 +93,14 @@ The theme demo at `/dev/themes` (M1-13) shows every component in every preset an
   for decoration or for states that fix themselves (offline is not an error).
 - **Colour is never the only signal.** Highlights have names ("Highlighted yellow"), question
   statuses have symbols and words, the sync status has text.
-- The theme applies before the first paint, from `localStorage` (§8.5). The picker shows each
-  preset in its own colours.
+- **A look restyles, it doesn't rebuild.** Folio, Soft and Lamplight are stylesheets over the
+  same screens (TECH-DESIGN §8.5): they hook onto `data-slot`, `data-variant` and `data-size`, never
+  onto Tailwind classes. A screen that wants a look to reach a new element gives it a `data-slot`.
+  Screens and their wireframes stay the same in every look.
+- **Each look has its own colours** in light and dark, checked by the same contrast test as the
+  presets. The presets apply to Classic only.
+- The theme applies before the first paint, from `localStorage` (§8.5), including a downloaded
+  look. The picker shows each preset in its own colours and each look by a picture of it.
 
 ## Saving and feedback
 

@@ -33,7 +33,35 @@ Low-fi layouts for M2-04 to M2-08 and M4-01 to M4-04. Legend and shared rules:
 └──────────────────────────────────────┘
 ```
 
-First run (empty state, M2-06):
+Welcome (M2-14): the first screen on a new device, before the empty state. The look and mode
+are already set to the defaults (Classic, System), so Continue alone is enough; both can change
+later in Settings → Theme. Shown once per device, and never on a device that already has
+lessons or series.
+
+```text
+┌──────────────────────────────────────┐
+│ Lessons                            ≡ │
+├──────────────────────────────────────┤
+│ Welcome to Lamp                      │
+│ Choose how your notes look. You can  │
+│ change it any time in Settings.      │
+│                                      │
+│ ┌────────────────┐ ┌────────────────┐│
+│ │ Classic      ✓ │ │ Folio          ││  ← the look cards from the theme picker
+│ └────────────────┘ └────────────────┘│     (shell.md)
+│ ┌────────────────┐ ┌────────────────┐│
+│ │ Soft           │ │ Lamplight      ││
+│ └────────────────┘ └────────────────┘│
+│                                      │
+│ Mode       ( Light | Dark | System ) │
+│                                      │
+│ [ Continue →                       ] │
+├──────────────────────────────────────┤
+│ ▤ Lessons  ▢ Read  ⌕ Search  ✓ Review│
+└──────────────────────────────────────┘
+```
+
+First run (empty state, M2-06), after the welcome:
 
 ```text
 ┌──────────────────────────────────────┐

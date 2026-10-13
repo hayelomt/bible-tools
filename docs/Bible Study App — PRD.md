@@ -147,8 +147,8 @@ Each feature is a user story with acceptance criteria. All are phase 1 unless ma
 
 **F16. Themes**
 
-- As a user I can pick the app's look from a set of presets and choose light, dark or system mode.
-- Accepts: six presets (Parchment, Vellum, Olive, Slate, Cedar, Midnight); every preset meets WCAG AA contrast in both modes; the choice syncs across my devices and applies before the first paint.
+- As a user I can pick how the app looks, from a set of looks and, for the classic look, a set of colour presets, and choose light, dark or system mode.
+- Accepts: four looks (Classic, Folio, Soft, Lamplight); six presets for Classic (Parchment, Vellum, Olive, Slate, Cedar, Midnight); every look and preset meets WCAG AA contrast in both modes; a new device offers the choice on first run, with defaults so it can be skipped; a look other than Classic is downloaded only when chosen and then works offline; the choice syncs across my devices and applies before the first paint.
 
 ## Bible text and translation strategy
 
@@ -240,3 +240,4 @@ Phase 2 builds on the accounts and sync from phase 1 to add sharing, community a
 | 1.2 | 2026-10-12 | Named the app **Lamp**. Theme presets settled (F16). Hosting on the existing VPS provider, email through Resend, errors to Sentry, backups by provider snapshots; see TECH-DESIGN §15. |
 | 1.3 | 2026-10-13 | Verse entry (F3) accepts KJV verse numbers that WEB places elsewhere and moves them onto WEB's; parser rules for ambiguous input settled (TECH-DESIGN §4.1, §15). |
 | 1.4 | 2026-10-13 | Build order: milestone C (structure) before B (accounts and sync). Letters and features unchanged. |
+| 1.5 | 2026-10-13 | Themes (F16) gain looks: Classic with the six presets, plus Folio, Soft and Lamplight, downloaded when chosen; a new device picks a look and mode first (TECH-DESIGN §8.5). |

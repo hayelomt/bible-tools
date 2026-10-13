@@ -70,7 +70,7 @@ blocker.
 │ [ Sign up ]  [ Sign in ]             │
 │                                      │
 │ APPEARANCE                           │
-│ Theme                    Parchment › │
+│ Theme                    Parchment › │  ← the look; the preset with Classic
 │ Mode       ( Light | Dark | System ) │
 │                                      │
 │ BIBLE                                │
@@ -103,17 +103,33 @@ Signed in, the account section becomes (M3-03, M3-12):
 │ Delete account…                      │  ← at the very end, in the destructive colour
 ```
 
-## Theme picker (M2-03)
+## Theme picker (M2-03, M2-14)
 
 A bottom sheet over Settings, opened from the Theme row (decided 2026-10-13). On a laptop it's
 the same sheet, centred and no wider than the column. It closes with Esc, a tap outside or ×.
-Each card is drawn in its own preset (`data-theme` on the card) in the current mode, so the choice
-is visible before it's made. A tap applies it at once; there is no Save.
+A tap applies a choice at once; there is no Save.
+
+Two choices, then the mode. The **look** decides how the whole interface is drawn: Classic, Folio,
+Soft or Lamplight (TECH-DESIGN §8.5). Classic's card is drawn live in the chosen preset; the
+others by a picture of the look in the current mode, since their stylesheet isn't downloaded
+until they're chosen. The **presets** colour Classic only, so they show only with Classic; each
+card is drawn in its own preset (`data-theme` on the card) in the current mode, so the choice is
+visible before it's made. With the looks first, the presets are usually below the fold.
 
 ```text
 │ Settings (dimmed)                    │
 ╭──────────────────────────────────────╮
 │ Theme                              × │
+│                                      │
+│ ┌────────────────┐ ┌────────────────┐│
+│ │ [ preview ]    │ │ [ picture ]    ││  ← Classic live; the others a picture
+│ │ Classic      ✓ │ │ Folio          ││
+│ │ Clean and fam… │ │ Like a printed…││
+│ └────────────────┘ └────────────────┘│
+│ ┌────────────────┐ ┌────────────────┐│
+│ │ Soft           │ │ Lamplight      ││
+│ └────────────────┘ └────────────────┘│
+│ Downloading Folio…                   │  ← only while a look downloads, or if it can't
 │                                      │
 │ Mode       ( Light | Dark | System ) │
 │                                      │
@@ -133,7 +149,14 @@ is visible before it's made. A tap applies it at once; there is no Save.
 └──────────────────────────────────────┘  ← scrolls inside the sheet past 85 % of the screen
 ```
 
-The cards are a radio group: arrow keys move, the selected card has `aria-checked`.
+With Folio, Soft or Lamplight chosen, the sheet ends after the mode control: the look brings its
+own colours.
+
+Looks and presets are two radio groups of cards: arrow keys move within each, the selected card
+has `aria-checked`. A look that is still downloading leaves the interface as it was until its
+stylesheet has arrived, so it never shows half-applied. Offline with no stored copy, the line
+under the looks says "Folio couldn't be downloaded. It's applied when you're back online." and
+Classic stays until then.
 
 ## Bible download (M2-11)
 
