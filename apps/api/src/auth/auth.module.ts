@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import type { Request } from 'express';
+import { MailModule } from '../mail/mail.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { EmailTokensService } from './email-tokens.service.js';
 import { LoginLockout } from './login-lockout.js';
 import { OriginGuard } from './origin.guard.js';
 import { SessionGuard } from './session.guard.js';
@@ -13,8 +15,9 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000;
 
 @Module({
   imports: [
-    // Only on the routes that use ThrottlerGuard (sign-up and login; the email endpoints in
-    // M3-02). Counted per IP and per email, in memory. The lockout after failed logins is
+    MailModule,
+    // Only on the routes that use ThrottlerGuard: sign-up, login and the email endpoints.
+    // Counted per IP and per email (when the body has one), in memory. The lockout after failed logins is
     // separate (LoginLockout).
     ThrottlerModule.forRoot({
       throttlers: [
@@ -27,6 +30,7 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000;
   providers: [
     AuthService,
     SessionsService,
+    EmailTokensService,
     LoginLockout,
     // Global guards run in this order: the Origin check, then the session.
     { provide: APP_GUARD, useClass: OriginGuard },

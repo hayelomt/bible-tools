@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 // Value imports, not `import type`: Nest resolves the constructor parameters from their classes.
 import { ConfigService } from '@nestjs/config';
@@ -6,6 +5,7 @@ import type { Request, Response } from 'express';
 import type { Env } from '../config/env.js';
 import type { Session, User } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { hashToken, newToken } from './tokens.js';
 
 export const SESSION_COOKIE = 'lamp_session';
 /** Long enough for a month offline (§7.2). */
@@ -25,10 +25,7 @@ export interface NewSession {
   expiresAt: Date;
 }
 
-/**
- * Opaque session tokens: 32 random bytes in an `HttpOnly` cookie. Only the token's SHA-256 is
- * stored, so a database leak gives no working sessions.
- */
+/** Opaque session tokens in an `HttpOnly` cookie; only their SHA-256 is stored. */
 @Injectable()
 export class SessionsService {
   private readonly secure: boolean;
@@ -37,11 +34,13 @@ export class SessionsService {
     private readonly prisma: PrismaService,
     config: ConfigService<Env, true>,
   ) {
-    this.secure = config.get('COOKIE_SECURE', { infer: true });
+    // Secure except under `pnpm dev`, so a phone on the LAN can sign in over plain HTTP. Tests
+    // keep it: browsers accept Secure cookies on localhost and 127.0.0.1.
+    this.secure = config.get('NODE_ENV', { infer: true }) !== 'development';
   }
 
   async create(userId: string, userAgent: string | undefined): Promise<NewSession> {
-    const token = randomBytes(32).toString('base64url');
+    const token = newToken();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
     await this.prisma.session.create({
@@ -107,10 +106,6 @@ export class SessionsService {
       path: COOKIE_PATH,
     });
   }
-}
-
-export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
 }
 
 /** The session token from the request's cookies, if it sent one. */

@@ -1,9 +1,15 @@
 import {
+  type ForgotPasswordRequest,
   type LoginRequest,
   type MeResponse,
+  type ResetPasswordRequest,
   type SignupRequest,
+  type VerifyEmailRequest,
+  forgotPasswordRequestSchema,
   loginRequestSchema,
+  resetPasswordRequestSchema,
   signupRequestSchema,
+  verifyEmailRequestSchema,
 } from '@lamp/domain';
 import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -57,6 +63,45 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: User): MeResponse {
     return toMe(user);
+  }
+
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Post('verify-email')
+  @HttpCode(204)
+  async verifyEmail(
+    @Body({ schema: verifyEmailRequestSchema }) body: VerifyEmailRequest,
+  ): Promise<void> {
+    await this.auth.verifyEmail(body.token);
+  }
+
+  /** For the signed-in user, so the address comes from the session and the body is empty. */
+  @UseGuards(ThrottlerGuard)
+  @Post('resend-verification')
+  @HttpCode(204)
+  async resendVerification(@CurrentUser() user: User): Promise<void> {
+    await this.auth.resendVerification(user);
+  }
+
+  /** 204 whether or not the account exists. */
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Post('forgot-password')
+  @HttpCode(204)
+  async forgotPassword(
+    @Body({ schema: forgotPasswordRequestSchema }) body: ForgotPasswordRequest,
+  ): Promise<void> {
+    await this.auth.forgotPassword(body.email);
+  }
+
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Post('reset-password')
+  @HttpCode(204)
+  async resetPassword(
+    @Body({ schema: resetPasswordRequestSchema }) body: ResetPasswordRequest,
+  ): Promise<void> {
+    await this.auth.resetPassword(body);
   }
 
   private signIn(res: Response, { me, session }: SignedIn): MeResponse {

@@ -33,6 +33,7 @@
     "pino": "catalog:",
     "pino-http": "catalog:",
     "reflect-metadata": "catalog:",
+    "resend": "catalog:",
     "rxjs": "catalog:",
     "zod": "catalog:"
   },
@@ -43,8 +44,10 @@
     "@swc/cli": "catalog:",
     "@swc/core": "catalog:",
     "@types/express": "catalog:",
+    "@types/mailparser": "catalog:",
     "@types/node": "catalog:",
     "@types/supertest": "catalog:",
+    "mailparser": "catalog:",
     "oxlint": "catalog:",
     "prisma": "catalog:",
     "supertest": "catalog:",

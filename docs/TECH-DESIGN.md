@@ -41,7 +41,7 @@ Principles:
 | Users | Multi-user, email + password, open sign-up with email verification (sign-up can be turned off in `.env`) | Q&A |
 | Name | **Lamp** (Psalm 119:105). Database and server names use `lamp` | Q&A 2026-10-12 |
 | Hosting | One Ubuntu 24.04 VPS from the provider already in use: Node + PostgreSQL + Caddy, no containers. Backups by provider snapshots plus a local nightly dump | Q&A |
-| Email | Resend over plain SMTP (nothing provider-specific in code) | Q&A |
+| Email | Resend through its SDK in production; `.eml` files in development and tests | Q&A; changed 2026-10-13 (decision 50) |
 | Errors | Sentry free tier, content scrubbed, off unless `SENTRY_DSN` is set | Q&A |
 | Theme | Per user: a look (Classic, Folio, Soft, Lamplight), one of six reading-room presets for Classic (§8.5), plus light / dark / system, synced across devices | Q&A; looks 2026-10-13 |
 | Translations | **WEB only** in phase 1 (public domain). ESV and other translations move to phase 2; the data model already supports several | Q&A |
@@ -258,14 +258,22 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 
 *Built in M3-01 (`apps/api/src/auth`):*
 - **Guards:** two global guards, in order. `OriginGuard` refuses any request other than GET, HEAD and OPTIONS unless its `Origin` names the host it was sent to (`403 BAD_ORIGIN`). The app and the API share one origin, and Caddy and Vite's proxy pass `Host` through, so nothing is configured. `SessionGuard` then needs a session on every route not marked `@Public()` (health, sign-up, login, logout) and puts the user on the request for `@CurrentUser()`.
-- **Sessions:** the cookie is `lamp_session` (`Path=/api`, `HttpOnly`, `Secure`, `SameSite=Lax`, 90-day `Expires`). A session last seen over an hour ago gets another 90 days and the cookie is sent again, so renewal writes at most once an hour. An expired session is deleted when it is next used; a disabled user's sessions are refused. `COOKIE_SECURE=false` exists only for signing in over plain HTTP from another machine (browsers accept `Secure` cookies on localhost).
+- **Sessions:** the cookie is `lamp_session` (`Path=/api`, `HttpOnly`, `Secure`, `SameSite=Lax`, 90-day `Expires`). A session last seen over an hour ago gets another 90 days and the cookie is sent again, so renewal writes at most once an hour. An expired session is deleted when it is next used; a disabled user's sessions are refused. The cookie is `Secure` everywhere except under `pnpm dev` (`NODE_ENV=development`), so a phone on the LAN can sign in over plain HTTP; tests keep it, since browsers accept `Secure` cookies on localhost and 127.0.0.1.
 - **Passwords:** argon2id at 19 MiB, 2 passes, 1 lane. The common-password list is `@zxcvbn-ts/language-common` (`400 PASSWORD_TOO_COMMON`). A login for an unknown email still verifies against a dummy hash, and answers exactly like a wrong password (`401 INVALID_CREDENTIALS`).
-- **Lockout and rate limits:** five failed logins for one email within 15 minutes lock that email for 15 minutes (`429 ACCOUNT_LOCKED` with `retryAfterSeconds`), whether or not an account has it. `@nestjs/throttler` allows 30 sign-up and login requests per IP and 10 per email in 15 minutes (`429 TOO_MANY_REQUESTS`). Both are in memory: the API is one process, and a restart only forgets the counts. `trust proxy` is `loopback`, so `req.ip` is the client behind Caddy.
+- **Lockout and rate limits:** five failed logins for one email within 15 minutes lock that email for 15 minutes (`429 ACCOUNT_LOCKED` with `retryAfterSeconds`), whether or not an account has it. `@nestjs/throttler` allows 30 requests per IP and 10 per email in 15 minutes to sign-up, login and the email endpoints (§7.3) (`429 TOO_MANY_REQUESTS`). Both are in memory: the API is one process, and a restart only forgets the counts. `trust proxy` is `loopback`, so `req.ip` is the client behind Caddy.
 - **Validation:** a global `StandardSchemaValidationPipe` answers `400 VALIDATION_FAILED` with `details.issues` (path and message, never the value sent).
-- **Sign-up** creates only the user and its session. The default settings and seeded tags for the account come with the guest data in M3-10, so a guest's own settings and tags aren't overwritten by server defaults.
+- **Sign-up** creates only the user and its session, and sends the verification email (§7.3). The default settings and seeded tags for the account come with the guest data in M3-10, so a guest's own settings and tags aren't overwritten by server defaults.
 
 ### 7.3 Email
-Nodemailer over SMTP, sending through **Resend** in production (the domain verified with SPF and DKIM). In development and tests, emails are written to `apps/api/tmp/emails/*.eml`. The E2E tests read verification and reset links from there. Templates are plain HTML plus a text version.
+The **Resend** SDK sends in production (the domain verified with SPF and DKIM). In development and tests, emails are written to `apps/api/tmp/emails/*.eml`. The E2E tests read verification and reset links from there. Templates are plain HTML plus a text version.
+
+*Built in M3-02 (`apps/api/src/mail`, `src/auth`):*
+- **Client, by convention:** `MailService` calls one `EmailClient` (`emails.send`, the part of the Resend SDK the app uses), chosen by `NODE_ENV` in `createEmailClient`: the real `Resend` with `RESEND_API_KEY` in production, and `MockResend` in development and tests. The mock answers as Resend does (an id, or a `validation_error` for a bad sender, recipient or subject) but writes `apps/api/tmp/emails/<ms>-<seq>-<recipient>-<id>.eml` instead of sending (plain 8-bit UTF-8, so the links read as they are). So the code that runs in development is the code that runs in production, up to the client. The sender is `Lamp <noreply@` the host of `APP_URL`>. `APP_URL` defaults to `http://localhost:5173` (E2E sets its preview server), and production refuses to start without an `https://` `APP_URL` and a Resend key. Links are `APP_URL/verify-email?token=…` and `APP_URL/reset-password?token=…`, the pages M3-05 adds. The folder is kept between runs and shared with development, so the integration tests use addresses unique to the run and find their emails by the recipient in the file name (`test/int/mail.ts`, parsed with `mailparser`).
+- **Tokens** (`EmailToken`): 32 random bytes, only the SHA-256 stored, single use. Verification links last 24 hours (they can sit in an inbox), reset links one hour. Using one marks the user's other unused tokens of that kind used, so an older link stops working. Use is a conditional update inside the transaction that acts on it, so two concurrent requests can't both succeed. An unknown, used, expired or wrong-kind token gets the same `400 TOKEN_INVALID`.
+- **Verification:** sign-up sends the email; if sending fails, the account still stands and is logged. `POST /verify-email` needs no session, since the link may be opened on another device. `POST /resend-verification` needs one, allows one email a minute (`429 RESEND_TOO_SOON` with `retryAfterSeconds`, the "Send it again" wait) and answers `409 ALREADY_VERIFIED` once verified.
+- **Reset:** `POST /forgot-password` answers `204` whether or not the account exists, and sends nothing to a disabled account. `POST /reset-password` checks the common-password list, sets the password, ends **every** session of the account, marks the email verified (the link proves the address) and lifts a login lockout. The user then signs in with the new password.
+- All four endpoints use the auth throttles (§7.2).
+
 
 ## 8. Web app (`apps/web`)
 
@@ -541,6 +549,7 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 47 | The update prompt (2026-10-13) | Hidden while any text field has focus; Later waits for the next start; Reload waits for writes in flight | §8.6 |
 | 48 | Looks (2026-10-13) | A second theme axis beside the presets: Classic (with the presets), Folio, Soft and Lamplight, each with its own colours; plain CSS over `data-slot` hooks, downloaded only when chosen | §8.5, F16 |
 | 49 | First-run welcome (2026-10-13) | A new device picks a look and mode first, with the defaults already set; once per device, skipped where lessons already exist | §8.5, F16 |
+| 50 | Email client and configuration (2026-10-13) | The Resend SDK rather than SMTP through nodemailer, accepting code tied to the provider. Environment variables follow convention over configuration: a variable only for a real deployment choice, the rest derived from `NODE_ENV` (no mail transport, folder, sender or cookie switches) | §2, §7.2, §7.3 |
 
 **Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
 

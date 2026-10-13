@@ -41,6 +41,8 @@ export default defineConfig({
         PORT: String(API_PORT),
         DATABASE_URL: e2eDatabaseUrl(),
         LOG_LEVEL: 'warn',
+        // Links in the emails (written to apps/api/tmp/emails) open the preview server.
+        APP_URL: WEB_URL,
       },
       stdout: 'pipe',
     },
