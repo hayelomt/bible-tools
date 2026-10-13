@@ -85,6 +85,7 @@ export {
   type UpsertInput,
 } from './sync.ts';
 export { passageSchema, verseRefSchema } from './schemas/verse-ref.ts';
+export { compareVersions, isClientSupported, MIN_CLIENT_VERSION } from './client-version.ts';
 export {
   type ApiError,
   apiErrorSchema,
@@ -158,6 +159,7 @@ export {
 export {
   type Change,
   changeSchema,
+  clientVersionSchema,
   CONFLICT_RESOLUTIONS,
   type ConflictResolution,
   MAX_CHANGES_PER_PUSH,

@@ -273,14 +273,25 @@ describe('sync schemas', () => {
   });
 
   it('reads the pull query from strings, with a default limit', () => {
-    expect(pullQuerySchema.parse({ cursor: '120' })).toEqual({ cursor: 120, limit: 500 });
-    expect(pullQuerySchema.parse({ cursor: '0', limit: '50' })).toEqual({ cursor: 0, limit: 50 });
+    const v = { clientVersion: '0.1.0' };
+    expect(pullQuerySchema.parse({ cursor: '120', ...v })).toEqual({
+      cursor: 120,
+      limit: 500,
+      ...v,
+    });
+    expect(pullQuerySchema.parse({ cursor: '0', limit: '50', ...v })).toEqual({
+      cursor: 0,
+      limit: 50,
+      ...v,
+    });
     for (const query of [
       {},
-      { cursor: '-1' },
-      { cursor: 'x' },
-      { cursor: '1.5' },
-      { cursor: '0', limit: '501' },
+      { cursor: '0' },
+      { cursor: '0', clientVersion: 'new' },
+      { cursor: '-1', ...v },
+      { cursor: 'x', ...v },
+      { cursor: '1.5', ...v },
+      { cursor: '0', limit: '501', ...v },
     ]) {
       expect({ query, ok: pullQuerySchema.safeParse(query).success }).toEqual({ query, ok: false });
     }

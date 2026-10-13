@@ -19,9 +19,8 @@ import {
   sameJson,
   type SyncRow,
 } from '@lamp/domain';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { z } from 'zod';
-import { ApiException } from '../common/errors.js';
 import { Prisma, type User } from '../generated/prisma/client.js';
 // A value import, not `import type`: Nest resolves the constructor parameter from its class.
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -33,6 +32,7 @@ import {
   toRow,
   type Tx,
 } from './entity-tables.js';
+import { assertSupportedClient, assertVerified } from './sync-access.js';
 import { SyncErrorCode } from './sync.errors.js';
 
 type RowChange = Exclude<Change, { entity: 'userSettings' }>;
@@ -57,13 +57,8 @@ export class PushService {
 
   /** Applies the changes in order, each in its own transaction, with one result per change (§6.2). */
   async push(user: User, request: PushEnvelope): Promise<PushResponse> {
-    if (!user.emailVerifiedAt) {
-      throw new ApiException(
-        HttpStatus.FORBIDDEN,
-        SyncErrorCode.EMAIL_NOT_VERIFIED,
-        'Verify your email to back up your notes',
-      );
-    }
+    assertSupportedClient(request.clientVersion);
+    assertVerified(user);
     const chains = new Map<string, Chain>();
     const results: PushResult[] = [];
     for (const change of request.changes) {

@@ -18,6 +18,11 @@ export interface StoredRow {
 /** The part of a Prisma model delegate the push uses, the same for every row entity. */
 export interface RowModel {
   findUnique(args: { where: { id: string } }): Promise<StoredRow | null>;
+  findMany(args: {
+    where: { userId: string; rev: { gt: bigint } | bigint };
+    orderBy?: { rev: 'asc' };
+    take?: number;
+  }): Promise<StoredRow[]>;
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
   update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<unknown>;
 }

@@ -203,10 +203,17 @@ Response: one result per change: `applied` (new `rev`), `conflict` (resolution a
 - **Writes:** an upsert writes the whole row with the new `rev`; a delete sets `deletedAt` (kept if already set) and `updatedAt` to the change's `clientTime`. Citations are rebuilt with `citationsFor`. Applied and rejected results are stored in `sync_change` (`error` holds the code and message) and returned as they are on a replay.
 - **Conflicts:** a `baseRev` other than the row's `rev` (0 for a new row) is settled by the §6.4 rules (built in M3-07, below).
 
-### 6.3 Pull — `GET /api/sync/pull?cursor=<rev>&limit=500`
+### 6.3 Pull — `GET /api/sync/pull?cursor=<rev>&limit=500&clientVersion=<version>`
 Returns every row of the user's with `rev > cursor`, tombstones included, ordered by `rev`, plus `{ nextCursor, hasMore, serverTime, minClientVersion }`.
 
 **Why a per-user counter, not a global sequence:** with a global sequence, transaction A can take rev 10 and commit after transaction B commits rev 11. A device that pulled in between moves its cursor to 11 and never sees rev 10. Incrementing `User.syncRev` inside each write transaction locks that user's row, so one user's writes commit in revision order and a cursor can't skip a row. Different users don't block each other.
+
+*Built in M3-08 (`apps/api/src/sync/pull.service.ts`; decided 2026-10-13):*
+- **One snapshot:** a page is read in one `REPEATABLE READ` transaction. The user lock makes one account's revs commit in order, but the pull reads eleven tables, and separate reads would each see a different moment: a push could commit rev 10 in a table already read and rev 11 in one not yet read, and the cursor would pass rev 10. From one snapshot, the page holds every rev up to its newest.
+- **Whole revs:** a conflicted copy and restored parents share their change's rev, so a page never ends partway through a rev. Each table is read up to `limit + 1` rows, the lists are merged by rev; if row `limit + 1` shares a rev with the page's last rows, the page stops before that rev, and a single rev larger than `limit` comes whole. `nextCursor` is the last row's rev (the cursor itself when the page is empty).
+- **Order:** by rev, and within a rev parents first (the order of `ENTITY_NAMES`: settings, series, lesson, section, tag, then links and the rest). Each row is the device's row (`ENTITY_SCHEMAS`, `rev` included), tagged with its entity; settings carry no id.
+- **Access:** a session and a verified email, as for push (`403 EMAIL_NOT_VERIFIED`). The response has no total, so first-sync progress (M3-09) counts pages or rows, not "of 3,000".
+- **Client version (§6.6):** push and pull both carry `clientVersion` (`major.minor.patch`, from the web app's package.json; anything else is a `400`). Older than `MIN_CLIENT_VERSION` gets `426 UPGRADE_REQUIRED` with `details.minClientVersion`, before anything is read or applied. `MIN_CLIENT_VERSION` is a constant in `domain/client-version.ts`, `0.0.0` for now, raised in the release that changes what sync carries.
 
 The device applies a pulled row **only if the outbox has nothing pending for that entity**. Otherwise it skips the row, since the server will send the merged result again after the push. A new device starts at cursor 0 and pages through ("Getting your notes… 1,240 / 3,000").
 
@@ -248,7 +255,7 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 - **Signing in on a device that holds someone else's notes** (`ownerUserId` set and different): before anything syncs, the app asks **"This device has notes from another account"**. The choices are *Remove them from this device* (the default; deletes the local copy, then pulls the new account) and *Add them to this account*. That option copies every local row with **new ids** (references remapped), because the original ids belong to the other account on the server. It then replaces the outbox with the copies. If the outbox held unsynced changes, the dialog warns that those changes go only to the new account, not to the account they came from. Nothing from one account reaches another without that choice.
 - **Settings → "Remove notes from this device"** lets a signed-out user wipe the local copy, e.g. on a shared computer.
 - **Expired session while offline:** local work continues. The outbox waits until the user signs in again.
-- **Client too old:** the server answers `426` when `clientVersion < minClientVersion`, and the app shows "Update required" (§8.6).
+- **Client too old:** the server answers `426` to a push or pull when `clientVersion < minClientVersion`, and the app shows "Update required" (§8.6).
 
 ## 7. API (`apps/api`)
 

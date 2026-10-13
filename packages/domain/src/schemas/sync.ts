@@ -10,6 +10,12 @@ import { ENTITY_SCHEMAS, type EntityName } from './entities.ts';
 export const MAX_CHANGES_PER_PUSH = 100;
 export const MAX_PULL_LIMIT = 500;
 
+/** The web app's version, from its package.json: `major.minor.patch`, perhaps with a suffix. */
+export const clientVersionSchema = z
+  .string()
+  .max(50)
+  .regex(/^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/, 'Expected a version like 1.2.3');
+
 const changeFields = {
   /** Makes the change idempotent: a replay gets the stored result (§6.2). */
   changeId: idSchema,
@@ -87,7 +93,8 @@ export const pushRequestSchema = z.strictObject({
   deviceId: z.uuid(),
   /** Shown in the devices list ("Chrome on Android"). */
   deviceName: lineSchema(100),
-  clientVersion: lineSchema(50),
+  /** Older than `MIN_CLIENT_VERSION` gets `426` before anything is applied (§6.6). */
+  clientVersion: clientVersionSchema,
   changes: z.array(changeSchema).min(1).max(MAX_CHANGES_PER_PUSH),
 });
 export type PushRequest = z.infer<typeof pushRequestSchema>;
@@ -144,9 +151,14 @@ export type PushResult = z.infer<typeof pushResultSchema>;
 export const pushResponseSchema = z.strictObject({ results: z.array(pushResultSchema) });
 export type PushResponse = z.infer<typeof pushResponseSchema>;
 
-/** `GET /api/sync/pull?cursor=<rev>&limit=500` (§6.3). Query values arrive as strings. */
+/**
+ * `GET /api/sync/pull?cursor=<rev>&limit=500&clientVersion=1.2.3` (§6.3). Query values arrive as
+ * strings.
+ */
 export const pullQuerySchema = z.strictObject({
   cursor: z.coerce.number().pipe(revSchema),
+  /** As in a push: older than `MIN_CLIENT_VERSION` gets `426`. */
+  clientVersion: clientVersionSchema,
   limit: z.coerce.number().pipe(z.int().min(1).max(MAX_PULL_LIMIT)).default(MAX_PULL_LIMIT),
 });
 export type PullQuery = z.infer<typeof pullQuerySchema>;
@@ -178,6 +190,6 @@ export const pullResponseSchema = z.strictObject({
   /** For the device's clock offset (§6.5). */
   serverTime: timestampSchema,
   /** Older clients get 426 and "Update required" (§6.6). */
-  minClientVersion: z.string(),
+  minClientVersion: clientVersionSchema,
 });
 export type PullResponse = z.infer<typeof pullResponseSchema>;
