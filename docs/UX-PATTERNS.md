@@ -105,8 +105,9 @@ explorations behind the looks are at `/dev/looks` (M2-14).
 ## Saving and feedback
 
 - **Everything saves as it's typed.** Notes, lesson details, takeaways and settings have no Save
-  button. The lesson header says "Saved" (muted) once the last change is stored, which is within a
-  second. Forms that talk to the server (sign-in, password) are the only forms with a submit button.
+  button. The lesson header shows a tick (muted), named "Saved" for screen readers, once the last
+  change is stored, which is within a second. Forms that talk to the server (sign-in, password) are
+  the only forms with a submit button.
 - **Local actions are instant** and never show a spinner. Only server actions and long background
   work show progress (see [loading](#empty-loading-and-error-states)).
 - **Toasts:** one at a time, at the bottom above the bar (phone) or bottom-right (laptop). They

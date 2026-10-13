@@ -45,7 +45,7 @@ No Docker.
 ```bash
 nvm use                                   # Node 24
 pnpm install
-./scripts/dev-db.sh                       # creates the lamp role and lamp_dev, lamp_test, lamp_e2e
+./scripts/dev-db.sh                       # creates the lamp role and lamp_dev, lamp_test_dev, lamp_e2e_dev
 pnpm db:migrate                           # applies the migrations to lamp_dev
 pnpm --filter @lamp/bible-data download   # fetches the WEB text (about 4 MB) into packages/bible-data/source
 pnpm dev                                  # web on http://localhost:5173, API on :3000
@@ -56,15 +56,15 @@ pnpm dev                                  # web on http://localhost:5173, API on
 
 ### Commands
 
-| Command                                              | What it does                                                      |
-| ---------------------------------------------------- | ----------------------------------------------------------------- |
-| `pnpm dev`                                           | Web app and API with reload                                       |
-| `pnpm lint` · `pnpm typecheck` · `pnpm format:check` | Static checks                                                     |
-| `pnpm test`                                          | Unit tests                                                        |
-| `pnpm test:int`                                      | API integration tests; resets `lamp_test`                         |
-| `pnpm e2e`                                           | Builds the apps and runs Playwright (Chromium); resets `lamp_e2e` |
-| `pnpm build`                                         | Production build of everything                                    |
-| `pnpm db:seed`                                       | A demo user with a few lessons in `lamp_dev`                      |
+| Command                                              | What it does                                                           |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| `pnpm dev`                                           | Web app and API with reload                                            |
+| `pnpm lint` · `pnpm typecheck` · `pnpm format:check` | Static checks                                                          |
+| `pnpm test`                                          | Unit tests                                                             |
+| `pnpm test:int`                                      | API integration tests; resets `lamp_test_dev`                          |
+| `pnpm e2e`                                           | Builds the apps and runs Playwright (Chromium); resets `lamp_e2e_dev` |
+| `pnpm build`                                         | Production build of everything                                         |
+| `pnpm db:seed`                                       | A demo user with a few lessons in `lamp_dev`                           |
 
 Notes live in the browser until sync arrives (M3), so the server seed doesn't show in the app. To
 try the app with data, open <http://localhost:5173/dev/seed> under `pnpm dev`: it clears this

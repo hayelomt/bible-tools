@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 
 /**
  * Places in the shell that a screen can fill from inside its own tree: the `h1` for a title that
- * comes from data (a lesson, a series), the header's actions (Saved, `⋯`) and the side panel
+ * comes from data (a lesson, a series), the header's actions (the saved tick, `⋯`) and the side panel
  * (a lesson's details on a wide laptop). Portals, so the content keeps the screen's state.
  */
 type SlotName = 'title' | 'actions' | 'panel';

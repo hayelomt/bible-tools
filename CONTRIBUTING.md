@@ -50,14 +50,15 @@ milestone with the next free ID; a change of scope also needs an entry in the PR
 
 ## Tests
 
-| Kind        | Command         | Where                            | Needs                                 |
-| ----------- | --------------- | -------------------------------- | ------------------------------------- |
-| Unit        | `pnpm test`     | `*.test.ts` next to the code     | Nothing                               |
-| Integration | `pnpm test:int` | `apps/api/test/**/*.int.test.ts` | Local Postgres (`lamp_test`)          |
-| End to end  | `pnpm e2e`      | `apps/e2e/tests`                 | Local Postgres (`lamp_e2e`), Chromium |
+| Kind        | Command         | Where                            | Needs                                     |
+| ----------- | --------------- | -------------------------------- | ----------------------------------------- |
+| Unit        | `pnpm test`     | `*.test.ts` next to the code     | Nothing                                   |
+| Integration | `pnpm test:int` | `apps/api/test/**/*.int.test.ts` | Local Postgres (`lamp_test_dev`)          |
+| End to end  | `pnpm e2e`      | `apps/e2e/tests`                 | Local Postgres (`lamp_e2e_dev`), Chromium |
 
 - `test:int` and `e2e` **reset their database** (`prisma migrate reset`) before running. They only
-  ever touch `lamp_test` and `lamp_e2e`, never `lamp_dev`.
+  ever touch `lamp_test_dev` and `lamp_e2e_dev`, never `lamp_dev`. Those names include `_dev` so
+  Prisma's agent checkpoint allows the reset on a development database.
 - Add tests with the change. The _Done when_ column of each task says which tests prove it.
 - `packages/domain` runs its tests with coverage, and fails below its thresholds (the parser keeps
   at least 95% branch coverage).

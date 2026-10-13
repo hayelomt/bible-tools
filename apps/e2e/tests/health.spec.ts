@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('the built API answers through the web app proxy and reaches lamp_e2e', async ({
+test('the built API answers through the web app proxy and reaches lamp_e2e_dev', async ({
   request,
 }) => {
   const res = await request.get('/api/health');

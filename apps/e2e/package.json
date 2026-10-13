@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Playwright end-to-end tests: the built web app and API on the local lamp_e2e database",
+  "description": "Playwright end-to-end tests: the built web app and API on the local lamp_e2e_dev database",
   "scripts": {
     "e2e": "playwright test",
     "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings tests *.ts",

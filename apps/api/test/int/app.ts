@@ -6,7 +6,7 @@ import { PrismaService } from '../../src/prisma/prisma.service.js';
 
 export interface TestApp {
   app: INestApplication;
-  /** The app's own Prisma client, connected to lamp_test, for arranging and checking rows. */
+  /** The app's own Prisma client, connected to lamp_test_dev, for arranging and checking rows. */
   prisma: PrismaService;
   /** The HTTP server to hand to supertest's `request()`. */
   server: ReturnType<INestApplication['getHttpServer']>;

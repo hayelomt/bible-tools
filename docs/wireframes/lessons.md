@@ -91,7 +91,7 @@ never in the way of typing. Everything saves as it's typed; there's no Save butt
 
 ```text
 ┌──────────────────────────────────────┐
-│ ←                       Saved      ⋯ │  ← ⋯: Details, Move to series, Export, Delete lesson
+│ ←                          ✓       ⋯ │  ← ✓ means saved; ⋯: Details, Move to series, Export, Delete lesson
 ├──────────────────────────────────────┤
 │ The Good Shepherd▏                   │  ← title, large; Enter moves to the first section
 │ Sun 12 Oct · Sermon · Details ▾      │
@@ -126,7 +126,7 @@ never in the way of typing. Everything saves as it's typed; there's no Save butt
 │ │ Speaker   [ Pastor Ann       ]   │ │
 │ │ Church    [ Grace Chapel     ]   │ │
 │ │ Passages  [John 10:1–18 ×] [+ ]  │ │  ← the reference input (same parser as chips)
-│ │ Series    [ John           ▾ ]   │ │
+│ │ Series    [ John           ▾ ]   │ │  ← No series, the series, Create series…
 │ │ Tags      [#grace ×] [+ Tag ]    │ │  (M4-01)
 │ └──────────────────────────────────┘ │
 ```

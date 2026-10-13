@@ -35,9 +35,9 @@ describe('GET /api/health', () => {
     });
   });
 
-  it('runs against lamp_test, which starts every test empty', async () => {
+  it('runs against lamp_test_dev, which starts every test empty', async () => {
     const rows = await t.prisma.$queryRaw<{ db: string }[]>`SELECT current_database() AS db`;
-    expect(rows[0]?.db).toMatch(/_test$/);
+    expect(rows[0]?.db).toMatch(/_test_dev$/);
     await expect(t.prisma.user.count()).resolves.toBe(0);
   });
 });

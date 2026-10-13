@@ -1,6 +1,6 @@
 import type { Lesson } from '@lamp/domain';
 import { cn } from 'cn';
-import { ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { type SectionRequest, SectionList } from '@/components/sections/section-list.tsx';
 import { ScreenActions, ScreenTitle, SidePanel } from '@/components/shell/slots.tsx';
@@ -96,8 +96,13 @@ export function LessonEditor({ id, lesson, seriesId, reveal }: LessonEditorProps
         <span className="sr-only">{lesson?.title ?? 'New lesson'}</span>
       </ScreenTitle>
       <ScreenActions>
-        <output className="px-2 text-sm text-muted-foreground">
-          {lesson && !saving && !sectionsSaving ? 'Saved' : ''}
+        <output className="grid size-8 place-items-center text-muted-foreground">
+          {lesson && !saving && !sectionsSaving && (
+            <>
+              <Check className="size-4" aria-hidden />
+              <span className="sr-only">Saved</span>
+            </>
+          )}
         </output>
         {lesson && <LessonMenu lesson={lesson} />}
       </ScreenActions>

@@ -5,10 +5,14 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useId, useState } from 'react';
 import { PassageInput } from '@/components/passage-input.tsx';
 import { Segmented } from '@/components/segmented.tsx';
+import { SeriesDialog } from '@/components/series/series-dialog.tsx';
 import { TagInput } from '@/components/tags/tag-input.tsx';
 import { allSeries } from '@/data/queries.ts';
 import { SOURCE_LABELS } from '@/lib/labels.ts';
 import type { LessonSaver } from './use-lesson-saver.ts';
+
+/** Not a series id (those are UUIDs): choosing it opens the new-series dialog. */
+const CREATE_SERIES = 'create';
 
 /** Labels sit above their fields in a narrow space (the phone, the side panel), beside them otherwise. */
 const labelClass = 'text-sm text-muted-foreground not-first:mt-2 @sm:not-first:mt-0';
@@ -29,6 +33,7 @@ interface LessonDetailsProps {
 export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
   const { values, save, flush } = saver;
   const series = useLiveQuery(() => allSeries(), []);
+  const [creatingSeries, setCreatingSeries] = useState(false);
   const [speaker, setSpeaker] = useState(values.speaker ?? '');
   const [church, setChurch] = useState(values.church ?? '');
   const ids = {
@@ -112,7 +117,16 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
         <NativeSelect
           id={ids.series}
           value={values.seriesId ?? ''}
-          onChange={(event) => save({ seriesId: event.target.value || null })}
+          onChange={(event) => {
+            const next = event.target.value;
+            // The value stays the current series; the dialog assigns the one it creates.
+            if (next === CREATE_SERIES) {
+              event.target.value = values.seriesId ?? '';
+              setCreatingSeries(true);
+              return;
+            }
+            save({ seriesId: next || null });
+          }}
         >
           <option value="">No series</option>
           {series?.map((s) => (
@@ -120,6 +134,7 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
               {s.title}
             </option>
           ))}
+          <option value={CREATE_SERIES}>Create series…</option>
         </NativeSelect>
 
         {lessonId && (
@@ -131,6 +146,11 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
           </>
         )}
       </div>
+      <SeriesDialog
+        open={creatingSeries}
+        onOpenChange={setCreatingSeries}
+        onSaved={(created) => save({ seriesId: created.id })}
+      />
     </div>
   );
 }

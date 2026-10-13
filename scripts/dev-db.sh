@@ -2,7 +2,7 @@
 # Local databases without Docker (TECH-DESIGN §10.2). Safe to run again at any time.
 #
 # Creates the role `lamp` (password `lamp`, CREATEDB for Prisma's shadow database) and the
-# databases lamp_dev, lamp_test and lamp_e2e on the local Postgres 18, then writes the
+# databases lamp_dev, lamp_test_dev and lamp_e2e_dev on the local Postgres 18, then writes the
 # connection strings to apps/api/.env.local and apps/api/.env.test (other lines are kept).
 #
 # Creating the role needs an admin connection. The script uses, in order:
@@ -20,7 +20,7 @@ role=lamp
 password=lamp
 host=${DB_HOST:-127.0.0.1}
 port=${DB_PORT:-5432}
-databases="lamp_dev lamp_test lamp_e2e"
+databases="lamp_dev lamp_test_dev lamp_e2e_dev"
 
 # Postgres.app doesn't put its tools on PATH unless you ask it to.
 pgapp=/Applications/Postgres.app/Contents/Versions/latest/bin
@@ -108,7 +108,7 @@ set_var "$api/.env.local" DATABASE_URL "$(url lamp_dev)"
 if [ ! -f "$api/.env.test" ]; then
   echo "# Used by the API tests (src/config/env.ts). Written by scripts/dev-db.sh." >"$api/.env.test"
 fi
-set_var "$api/.env.test" DATABASE_URL "$(url lamp_test)"
-set_var "$api/.env.test" E2E_DATABASE_URL "$(url lamp_e2e)"
+set_var "$api/.env.test" DATABASE_URL "$(url lamp_test_dev)"
+set_var "$api/.env.test" E2E_DATABASE_URL "$(url lamp_e2e_dev)"
 
-echo "Wrote apps/api/.env.local (lamp_dev) and apps/api/.env.test (lamp_test, lamp_e2e)."
+echo "Wrote apps/api/.env.local (lamp_dev) and apps/api/.env.test (lamp_test_dev, lamp_e2e_dev)."
