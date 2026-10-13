@@ -54,6 +54,7 @@ catalog:
   reflect-metadata: 0.2.2
   rxjs: 7.8.2
   shadcn: 4.21.4
+  sonner: 2.0.8
   supertest: 7.3.1
   tailwindcss: 4.3.3
   tsx: 4.23.15

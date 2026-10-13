@@ -305,6 +305,13 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - **Saving:** each section saves 500 ms after typing stops, at once on blur, and when the page is hidden or closed. Writes for all sections of a lesson run one after another, so a reply is never stored before its section. Moves and deletes show at once; a move stays shown until the stored row is as new as its own write, so an older read can't make the section jump back. The lesson's "Saved" waits for its sections too.
 - **Closing the tab mid-typing:** a write started in `pagehide` is asynchronous, and the browser may drop it with the page. So the hide handler also keeps the waiting text in `localStorage` (synchronous), and the next start (`restoreUnsaved`, in the `_app` route's `beforeLoad`) stores it through the same actions. It only applies to the row it was typed on: if that row changed since (the write did land, or a newer change came) or its lesson is gone, the kept text is dropped. Tested end to end: text typed and the tab closed at once is there on reopen.
 
+*Built in M2-08:*
+- **One `⠿` per section** (decided 2026-10-13): tap, click or Enter opens the section menu; press and drag moves the section. One 44 px gutter on a phone instead of a handle and a `⋮`. It's always shown on touch screens, and on hover or focus with a mouse. The empty section at the end has none, as there's nothing to move or delete.
+- **Section menu:** Reply, Move up, Move down, Make a reply or Move out, Delete. Tags join it in M4-01. Move up and down swap with the sibling above or below (a section takes its replies along, a reply stays under its section), and never go below the empty section at the end. Focus comes back to the section's `⠿`, so the keyboard can move it again. In the editor, Alt+Shift+↑ and ↓ do the same.
+- **Drag** (decided 2026-10-13: own pointer code, no library): a mouse drags after 4 px; a finger is held for 250 ms first, so a quick swipe on the handle still scrolls the page. The pointer's height picks the gap between rows, and the right half of the column drops the section as a reply (`dropAt` in `outline.ts`): never for a section with replies, never at the top of the lesson, and only as a reply between two replies. A line shows the landing place, the page scrolls near the top and bottom edges, and Escape cancels. A drop where the section already is writes nothing.
+- **Delete:** a section without replies goes at once with a 10 s "Section deleted. Undo" toast. Undo restores the same rows (the writer's `restore` clears the tombstone and queues an upsert, so it syncs as an edit). A section with replies asks first ("Delete this section and its 2 replies?", focus on Cancel) and deletes them in one action, with their tags. Focus moves to the `⠿` above, so a phone's keyboard stays shut.
+- **Toasts:** shadcn's Sonner (decided 2026-10-13), one at a time, above the bottom bar on a phone and bottom-right on a laptop, coloured by the theme tokens.
+
 ### 8.4 Search and verse index
 - **Free text:** MiniSearch in a Web Worker, built from the plain text of sections, takeaways and questions at startup and updated after each action and pull. Target: 5,000 sections indexed in under 1 s on a mid-range phone.
 - **Verses and tags:** Dexie queries on `citations` (`startOrd`/`endOrd` index) and on the join tables. The search box detects a reference with `parseReference` and a `#tag` prefix.
@@ -459,6 +466,8 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 35 | Tab on a section with replies (2026-10-13) | Does nothing, as in a reply; a third level is never made | §8.3 |
 | 36 | Editing toolbar (2026-10-13) | The full toolbar in M2-07, on the keyboard on a phone | §8.3, UX-PATTERNS |
 | 37 | Theme picker (2026-10-13) | A bottom sheet over Settings, on laptops too (narrow, centred); no `/settings/theme` address | §8.5 |
+| 38 | Section handle (2026-10-13) | One `⠿` that opens the menu on a tap and drags on a press; drag started from it, not by a long press on the text (which selects words) | §8.3 |
+| 39 | Drag and toasts (2026-10-13) | Drag is our own pointer code (two-level drop rules, no dependency); toasts are Sonner | §8.3 |
 
 **Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
 

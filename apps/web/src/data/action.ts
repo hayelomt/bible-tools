@@ -24,6 +24,8 @@ export interface Writer {
   update<E extends RowEntity>(entity: E, id: string, patch: RowPatch<E>): Promise<EntityRow<E>>;
   /** Leaves a tombstone, so the delete syncs. Deleting a deleted row does nothing. */
   remove(entity: RowEntity, id: string): Promise<void>;
+  /** Brings back a row `remove` left as a tombstone (Undo). Restoring a live row does nothing. */
+  restore(entity: RowEntity, id: string): Promise<void>;
   updateSettings(patch: SettingsPatch): Promise<UserSettings>;
 }
 
@@ -92,6 +94,13 @@ class TransactionWriter implements Writer {
       entityId: id,
       op: 'delete',
     } as OutboxChange);
+  }
+
+  async restore(entity: RowEntity, id: string): Promise<void> {
+    const current = await this.db.rows(entity).get(id);
+    if (!current) throw new RowNotFoundError(entity, id);
+    if (current.deletedAt === null) return;
+    await this.write(entity, { ...current, updatedAt: this.now, deletedAt: null });
   }
 
   async updateSettings(patch: SettingsPatch): Promise<UserSettings> {

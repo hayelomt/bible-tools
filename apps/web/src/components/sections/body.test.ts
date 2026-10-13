@@ -65,6 +65,8 @@ function editorWith(content: unknown): Editor {
         enterEmpty: () => {},
         indent: () => {},
         outdent: () => {},
+        moveUp: () => {},
+        moveDown: () => {},
         backspaceEmpty: () => false,
         leave: () => false,
       }),

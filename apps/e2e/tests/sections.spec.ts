@@ -68,7 +68,7 @@ test('the lesson ends with an empty section, stored once it has text', async ({ 
   await page.keyboard.type('B');
   await expect.poll(() => outline(page)).toEqual(['A', 'B']);
   await expect(note(page, 2)).toHaveText('');
-  await expect(page.getByRole('button', { name: 'Section' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Section', exact: true })).toHaveCount(0);
 });
 
 test('Enter, Tab and Shift+Tab shape the sections, two levels at most', async ({ page }) => {
@@ -136,6 +136,113 @@ test('Enter, Tab and Shift+Tab shape the sections, two levels at most', async ({
   await expect(reply(page)).toHaveText('Under second!');
 });
 
+/** Three sections, A, B and C, then out of the editor. */
+async function threeSections(page: Page) {
+  await startLesson(page);
+  for (const text of ['A', 'B']) {
+    await page.keyboard.type(text);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+  }
+  await page.keyboard.type('C');
+  await expect.poll(() => outline(page)).toEqual(['A', 'B', 'C']);
+  await page.keyboard.press('Escape');
+}
+
+const handle = (page: Page, n: number) =>
+  page.getByRole('button', { name: /^(Section|Reply) actions$/ }).nth(n);
+
+test('the section menu reorders and deletes, with Undo, and asks before taking replies', async ({
+  page,
+}) => {
+  await threeSections(page);
+  // Only stored sections have a handle; the empty one at the end has nothing to move.
+  await expect(page.getByRole('button', { name: 'Section actions' })).toHaveCount(3);
+
+  await handle(page, 2).click();
+  await expect(page.getByRole('menuitem', { name: 'Move down' })).toBeDisabled();
+  await page.getByRole('menuitem', { name: 'Move up' }).click();
+  await expect.poll(() => outline(page)).toEqual(['A', 'C', 'B']);
+  // Focus stays on the moved section's handle, so the keyboard can carry on.
+  await expect(handle(page, 1)).toBeFocused();
+  await page.keyboard.press('Enter');
+  await page.getByRole('menuitem', { name: 'Make a reply' }).click();
+  await expect.poll(() => outline(page)).toEqual(['A', '  C', 'B']);
+  await expect(page.getByRole('button', { name: 'Reply actions' })).toBeFocused();
+
+  // In the editor, Alt+Shift+Up and Down do the same as Move up and Move down.
+  await note(page, 1).click();
+  await page.keyboard.press('Alt+Shift+ArrowUp');
+  await expect.poll(() => outline(page)).toEqual(['B', 'A', '  C']);
+  await expect(note(page, 0)).toBeFocused();
+
+  // One section goes at once, and Undo brings it back where it was.
+  await handle(page, 0).click();
+  await page.getByRole('menuitem', { name: 'Delete' }).click();
+  await expect.poll(() => outline(page)).toEqual(['A', '  C']);
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect.poll(() => outline(page)).toEqual(['B', 'A', '  C']);
+  await expect(note(page, 0)).toHaveText('B');
+
+  // A section with replies asks first, and Cancel changes nothing.
+  await handle(page, 1).click();
+  await page.getByRole('menuitem', { name: 'Delete…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete this section and its reply?' });
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  expect(await outline(page)).toEqual(['B', 'A', '  C']);
+  await handle(page, 1).click();
+  await page.getByRole('menuitem', { name: 'Delete…' }).click();
+  await dialog.getByRole('button', { name: 'Delete all 2' }).click();
+  await expect.poll(() => outline(page)).toEqual(['B']);
+
+  await page.reload();
+  await expect(note(page, 0)).toHaveText('B');
+  await expect(page.getByRole('textbox', { name: /^(Note|Reply)$/ })).toHaveCount(2);
+});
+
+test('dragging a section moves it, and the right half makes it a reply', async ({ page }) => {
+  await threeSections(page);
+  const row = (n: number) => page.locator('[data-section]').nth(n);
+
+  /** Presses on the handle of row `from` and lets go at (x, y) in the list. */
+  async function drag(from: number, to: { x: number; y: number }, cancel = false) {
+    await row(from).hover();
+    const box = (await handle(page, from).boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    if (cancel) await page.keyboard.press('Escape');
+    await page.mouse.up();
+  }
+  const list = (await row(0).boundingBox())!;
+  const left = list.x + 20;
+  const right = list.x + list.width * 0.75;
+
+  // C, dropped above A.
+  const a = (await row(0).boundingBox())!;
+  await drag(2, { x: left, y: a.y + 2 });
+  await expect.poll(() => outline(page)).toEqual(['C', 'A', 'B']);
+
+  // B, dropped on the right half just below A, becomes A's reply.
+  const b = (await row(2).boundingBox())!;
+  await drag(2, { x: right, y: b.y - 2 });
+  await expect.poll(() => outline(page)).toEqual(['C', 'A', '  B']);
+
+  // Escape cancels a drag.
+  const c = (await row(0).boundingBox())!;
+  await drag(0, { x: left, y: c.y + 200 }, true);
+  await page.waitForTimeout(100);
+  expect(await outline(page)).toEqual(['C', 'A', '  B']);
+  // A drag doesn't open the menu.
+  await expect(page.getByRole('menu')).toBeHidden();
+
+  await page.reload();
+  await expect(note(page, 0)).toHaveText('C');
+  await expect(reply(page)).toHaveText('B');
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: PHONE });
 
@@ -174,5 +281,56 @@ test.describe('on a phone', () => {
     // The toolbar goes when no section is being typed in.
     await page.getByRole('textbox', { name: 'Title' }).click();
     await expect(toolbar).toBeHidden();
+  });
+  test.describe('by touch', () => {
+    test.use({ hasTouch: true });
+
+    test('a finger held on the handle drags; a quick swipe scrolls instead', async ({ page }) => {
+      await threeSections(page);
+      const box = (await handle(page, 2).boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      const top = (await page.locator('[data-section]').first().boundingBox())!;
+      const cdp = await page.context().newCDPSession(page);
+      const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number, y: number) =>
+        cdp.send('Input.dispatchTouchEvent', {
+          type,
+          touchPoints: type === 'touchEnd' ? [] : [{ x, y }],
+        });
+      const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+      // Moving at once is a swipe: nothing is picked up.
+      await touch('touchStart', from.x, from.y);
+      for (let i = 1; i <= 5; i++) await touch('touchMove', from.x, from.y - i * 20);
+      await touch('touchEnd', 0, 0);
+      await page.waitForTimeout(100);
+      expect(await outline(page)).toEqual(['A', 'B', 'C']);
+      await expect(page.getByRole('menu')).toBeHidden();
+
+      // Held first, it drags: C goes above A.
+      const now = (await handle(page, 2).boundingBox())!;
+      await touch('touchStart', now.x + now.width / 2, now.y + now.height / 2);
+      await page.waitForTimeout(400);
+      for (let i = 1; i <= 8; i++) {
+        const y = now.y + now.height / 2 + ((top.y + 2 - now.y - now.height / 2) * i) / 8;
+        await touch('touchMove', top.x + 20, y);
+      }
+      await touch('touchEnd', 0, 0);
+      await expect.poll(() => outline(page)).toEqual(['C', 'A', 'B']);
+      await expect(page.getByRole('menu')).toBeHidden();
+
+      // A tap opens the menu; the Undo toast sits above the bottom bar.
+      await handle(page, 0).tap();
+      await page.getByRole('menuitem', { name: 'Delete' }).tap();
+      await expect.poll(() => outline(page)).toEqual(['A', 'B']);
+      const bar = (await page.getByRole('navigation', { name: 'Main' }).boundingBox())!;
+      // Polled: the toast slides in.
+      await expect
+        .poll(async () => {
+          const toast = (await page.locator('[data-sonner-toast]').boundingBox())!;
+          return toast.y + toast.height;
+        })
+        .toBeLessThanOrEqual(bar.y);
+    });
   });
 });

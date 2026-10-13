@@ -67,7 +67,7 @@ function lastKey(rows: readonly OutlineRow[]): string | null {
   return rows.at(-1)?.item.orderKey ?? null;
 }
 
-/** A new section at the end of the lesson ("+ Section"). */
+/** A new section at the end of the lesson (the empty one waiting there). */
 export function endPlacement(rows: readonly OutlineRow[]): Placement {
   return { parentId: null, orderKey: keyBetween(lastKey(siblings(rows, null)), null) };
 }
@@ -113,4 +113,93 @@ export function outdentPlacement(rows: readonly OutlineRow[], id: string): Place
   const row = rows.find((r) => r.item.id === id);
   if (!row || row.level === 0 || row.parent === null) return null;
   return afterPlacement(rows, row.parent);
+}
+
+/**
+ * Where a moved section lands: among `parent`'s children (the top level when null), right after
+ * the sibling `after`, or first when `after` is null.
+ */
+export interface Target {
+  parent: string | null;
+  after: string | null;
+}
+
+/** A key for `id` at `target`. Null when the section is already there, so nothing is written. */
+export function targetPlacement(
+  rows: readonly OutlineRow[],
+  id: string,
+  target: Target,
+): Placement | null {
+  const row = rows.find((r) => r.item.id === id);
+  const others = siblings(rows, target.parent).filter((r) => r.item.id !== id);
+  const index = target.after === null ? 0 : others.findIndex((r) => r.item.id === target.after) + 1;
+  if (row?.parent === target.parent && siblings(rows, row.parent).indexOf(row) === index) {
+    return null;
+  }
+  const before = others[index - 1]?.item.orderKey ?? null;
+  const after =
+    others.slice(index).find((r) => before === null || r.item.orderKey > before)?.item.orderKey ??
+    null;
+  return { parentId: target.parent, orderKey: keyBetween(before, after) };
+}
+
+/** Move up (section menu): swaps with the sibling above, taking its replies along. */
+export function moveUpTarget(rows: readonly OutlineRow[], id: string): Target | null {
+  const row = rows.find((r) => r.item.id === id);
+  if (!row) return null;
+  const own = siblings(rows, row.parent);
+  const index = own.indexOf(row);
+  if (index === 0) return null;
+  return { parent: row.parent, after: own[index - 2]?.item.id ?? null };
+}
+
+/** Move down (section menu): swaps with the sibling below. */
+export function moveDownTarget(rows: readonly OutlineRow[], id: string): Target | null {
+  const row = rows.find((r) => r.item.id === id);
+  if (!row) return null;
+  const own = siblings(rows, row.parent);
+  const next = own[own.indexOf(row) + 1];
+  return next ? { parent: row.parent, after: next.item.id } : null;
+}
+
+/** The rows that move with `id` when it's dragged: itself and, for a section, its replies. */
+export function movingRows<T extends OutlineItem>(
+  rows: readonly OutlineRow<T>[],
+  id: string,
+): OutlineRow<T>[] {
+  return rows.filter((r) => r.item.id === id || r.parent === id);
+}
+
+export interface Drop extends Target {
+  level: 0 | 1;
+}
+
+/**
+ * Where a dragged section lands when dropped in `gap`: the space before the `gap`th of the rows
+ * left once it and its replies are lifted out (`movingRows`). It becomes a reply when `reply` is
+ * asked for (the pointer is over the right half) and a reply fits there: not for a section that
+ * has replies, and not at the top of the lesson. Between two replies it can only be a reply.
+ * Null when nothing fits.
+ */
+export function dropAt(
+  rows: readonly OutlineRow[],
+  id: string,
+  gap: number,
+  reply: boolean,
+): Drop | null {
+  const dragged = rows.find((r) => r.item.id === id);
+  if (!dragged) return null;
+  const left = rows.filter((r) => !movingRows(rows, id).includes(r));
+  const above = left[gap - 1];
+  const below = left[gap];
+  const topFits = !below || below.level === 0;
+  const replyFits = above !== undefined && dragged.replies === 0;
+  if (replyFits && (reply || !topFits)) {
+    return above.level === 0
+      ? { parent: above.item.id, after: null, level: 1 }
+      : { parent: above.parent, after: above.item.id, level: 1 };
+  }
+  if (!topFits) return null;
+  const after = above ? (above.level === 0 ? above.item.id : above.parent) : null;
+  return { parent: null, after, level: 0 };
 }

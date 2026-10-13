@@ -1,23 +1,46 @@
 import { emptyBody, newId, type SectionBody } from '@lamp/domain';
+import { toast } from '@lamp/ui/components/sonner';
 import type { Editor } from '@tiptap/core';
+import { cn } from 'cn';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  type PointerEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
-import { removeSection, updateSection } from '@/data/actions/sections.ts';
+import {
+  type RemovedSections,
+  removeSection,
+  restoreSections,
+  updateSection,
+} from '@/data/actions/sections.ts';
 import { lessonSections } from '@/data/queries.ts';
 import { EditingToolbar } from './editing-toolbar.tsx';
 import {
   afterPlacement,
+  type Drop,
   endPlacement,
   indentPlacement,
+  moveDownTarget,
+  moveUpTarget,
+  movingRows,
   outdentPlacement,
   outline,
   type OutlineItem,
   type OutlineRow,
   type Placement,
   replyPlacement,
+  type Target,
+  targetPlacement,
 } from './outline.ts';
 import { type FocusRequest, SectionEditor } from './section-editor.tsx';
+import { useSectionDrag } from './use-section-drag.ts';
 
 export interface SectionItem extends OutlineItem {
   body: SectionBody;
@@ -27,6 +50,14 @@ export interface SectionItem extends OutlineItem {
   updatedAt: string | null;
 }
 export type SectionRow = OutlineRow<SectionItem>;
+
+type MoveFocus = Extract<FocusRequest['at'], 'keep' | 'handle'>;
+
+/** The list's own side of the API: a drop, and a delete the dialog confirmed. */
+interface ListApi extends SectionListApi {
+  drop: (id: string, drop: Drop) => void;
+  confirmRemove: (id: string) => void;
+}
 
 /** A move shown before it's stored; `storedAt` is the row's `updatedAt` once its write is done. */
 interface Move {
@@ -49,8 +80,22 @@ export interface SectionListApi {
   setActive: (id: string, active: boolean) => void;
   endSection: (id: string) => void;
   enterEmpty: (id: string) => void;
-  indent: (id: string) => void;
-  outdent: (id: string) => void;
+  /**
+   * Level and order changes. `at` is where focus goes afterwards: back into the editor (keys and
+   * toolbar) or onto the section's handle (its menu).
+   */
+  indent: (id: string, at?: MoveFocus) => void;
+  outdent: (id: string, at?: MoveFocus) => void;
+  moveUp: (id: string, at?: MoveFocus) => void;
+  moveDown: (id: string, at?: MoveFocus) => void;
+  /** What the section menu can do for `id` right now. */
+  can: (id: string) => { moveUp: boolean; moveDown: boolean; indent: boolean };
+  reply: (id: string) => void;
+  /** Deletes at once with an Undo toast, or asks first when the section has replies. */
+  remove: (id: string) => void;
+  startDrag: (id: string, event: PointerEvent<HTMLElement>) => void;
+  /** Whether the press that just ended was a drag, not a click. */
+  wasDragged: () => boolean;
   backspaceEmpty: (id: string) => boolean;
   leave: (id: string, direction: 'up' | 'down') => boolean;
   /** An empty draft that lost focus goes away, unless it's the only section. */
@@ -79,11 +124,14 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dirty, setDirtyIds] = useState<ReadonlySet<string>>(new Set());
   const [writing, setWriting] = useState(0);
+  // The section with replies whose delete is being asked about.
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const draftsRef = useRef(drafts);
   const created = useRef(new Set<string>());
   const editors = useRef(new Map<string, Editor>());
   const writes = useRef(Promise.resolve());
+  const listRef = useRef<HTMLDivElement>(null);
 
   const storedById = useMemo(() => new Map(stored?.map((s) => [s.id, s])), [stored]);
 
@@ -122,6 +170,20 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
     rowsRef.current = rows;
   });
 
+  // The drag hook and the API need each other; the drop reaches the API through this.
+  const apiRef = useRef<ListApi | null>(null);
+  const onDrop = useCallback((id: string, drop: Drop) => apiRef.current?.drop(id, drop), []);
+  const {
+    drag,
+    start: startDrag,
+    wasDragged,
+  } = useSectionDrag({
+    list: listRef,
+    rows: rowsRef,
+    hasTrailingDraft: (all) => trailingDraft(all) !== undefined,
+    onDrop,
+  });
+
   const updateDrafts = useCallback((change: (drafts: OutlineItem[]) => OutlineItem[]) => {
     draftsRef.current = change(draftsRef.current);
     setDrafts(draftsRef.current);
@@ -156,7 +218,7 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
   const saving = dirty.size > 0 || writing > 0;
   useEffect(() => onSavingChange(saving), [saving, onSavingChange]);
 
-  const api = useMemo<SectionListApi>(() => {
+  const api = useMemo<ListApi>(() => {
     const rowOf = (id: string) => rowsRef.current.find((r) => r.item.id === id);
     const isStored = (id: string) => rowOf(id)?.item.stored === true || created.current.has(id);
     const enqueue = (write: () => Promise<unknown>) => {
@@ -174,8 +236,8 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
         .finally(() => setWriting((n) => n - 1));
     };
     const focusAt = (id: string, at: FocusRequest['at']) => setFocus({ id, at });
-    /** Moves a section, keeping the cursor where it was. */
-    const moveTo = (id: string, placement: Placement) => {
+    /** Moves a section, keeping the cursor where it was (or on the handle). */
+    const moveTo = (id: string, placement: Placement, at: MoveFocus = 'keep') => {
       if (isStored(id)) {
         const move: Move = { placement, storedAt: null };
         setMoves((m) => new Map(m).set(id, move));
@@ -188,11 +250,50 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
       } else {
         updateDrafts((ds) => ds.map((d) => (d.id === id ? { ...d, ...placement } : d)));
       }
-      focusAt(id, 'keep');
+      focusAt(id, at);
     };
-    const outdent = (id: string) => {
+    const moveToTarget = (id: string, target: Target | null, at: MoveFocus = 'keep') => {
+      const placement = target && targetPlacement(rowsRef.current, id, target);
+      if (placement) moveTo(id, placement, at);
+    };
+    const outdent = (id: string, at: MoveFocus = 'keep') => {
       const placement = outdentPlacement(rowsRef.current, id);
-      if (placement) moveTo(id, placement);
+      if (placement) moveTo(id, placement, at);
+    };
+    /** Move down stops above the empty section at the end: nothing goes below it. */
+    const downTarget = (id: string) => {
+      const target = moveDownTarget(rowsRef.current, id);
+      const next = target?.after ? rowOf(target.after) : undefined;
+      return next?.item.stored ? target : null;
+    };
+    /** After a delete, focus goes to the handle above (or below), so the keyboard stays shut. */
+    const focusNear = (gone: readonly string[]) => {
+      const all = rowsRef.current;
+      const index = all.findIndex((r) => gone.includes(r.item.id));
+      const near =
+        all.slice(0, index).findLast((r) => !gone.includes(r.item.id)) ??
+        all.slice(index).find((r) => !gone.includes(r.item.id));
+      if (near) focusAt(near.item.id, near.item.stored ? 'handle' : 'start');
+    };
+    const undo = (deleted: RemovedSections) => {
+      setRemoved((r) => new Set([...r].filter((id) => !deleted.sections.includes(id))));
+      enqueue(() => restoreSections(deleted));
+    };
+    const deleteNow = (id: string, withReplies: boolean) => {
+      const row = rowOf(id);
+      if (!row) return;
+      const gone = movingRows(rowsRef.current, id).map((r) => r.item.id);
+      focusNear(gone);
+      setRemoved((r) => new Set([...r, ...gone]));
+      enqueue(async () => {
+        const deleted = await removeSection(id, { withReplies });
+        // Asked first when there were replies; one section is undone instead (UX-PATTERNS).
+        if (withReplies) return;
+        toast(row.level === 1 ? 'Reply deleted.' : 'Section deleted.', {
+          duration: 10_000,
+          action: { label: 'Undo', onClick: () => undo(deleted) },
+        });
+      });
     };
 
     return {
@@ -239,11 +340,27 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
         // Enter in an empty reply moves it out, as in a list; in an empty section it does nothing.
         if (rowOf(id)?.level === 1) outdent(id);
       },
-      indent: (id) => {
+      indent: (id, at = 'keep') => {
         const placement = indentPlacement(rowsRef.current, id);
-        if (placement) moveTo(id, placement);
+        if (placement) moveTo(id, placement, at);
       },
       outdent,
+      moveUp: (id, at = 'keep') => moveToTarget(id, moveUpTarget(rowsRef.current, id), at),
+      moveDown: (id, at = 'keep') => moveToTarget(id, downTarget(id), at),
+      can: (id) => ({
+        moveUp: moveUpTarget(rowsRef.current, id) !== null,
+        moveDown: downTarget(id) !== null,
+        indent: indentPlacement(rowsRef.current, id) !== null,
+      }),
+      reply: (id) => addDraft(replyPlacement(rowsRef.current, id)),
+      remove: (id) => {
+        if ((rowOf(id)?.replies ?? 0) > 0) setConfirmDelete(id);
+        else deleteNow(id, false);
+      },
+      confirmRemove: (id) => deleteNow(id, true),
+      startDrag,
+      wasDragged,
+      drop: (id, drop) => moveToTarget(id, drop, 'handle'),
       backspaceEmpty: (id) => {
         const all = rowsRef.current;
         const index = all.findIndex((r) => r.item.id === id);
@@ -279,24 +396,51 @@ export function SectionList({ lessonId, focusFirst, onSavingChange }: SectionLis
         updateDrafts((ds) => ds.filter((d) => d.id !== id));
       },
     };
-  }, [lessonId, addDraft, updateDrafts]);
+  }, [lessonId, addDraft, updateDrafts, startDrag, wasDragged]);
+  useLayoutEffect(() => {
+    apiRef.current = api;
+  });
 
   if (!stored) return null;
   const activeRow = rows.find((r) => r.item.id === activeId);
   const activeEditor = activeId ? editors.current.get(activeId) : undefined;
+  const dragging = drag ? movingRows(rows, drag.id).map((r) => r.item.id) : [];
+  const toDelete = rows.find((r) => r.item.id === confirmDelete);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
+      <div ref={listRef} className="relative flex flex-col gap-3">
         {rows.map((row) => (
           <SectionEditor
             key={row.item.id}
             row={row}
             api={api}
             focus={focus?.id === row.item.id ? focus : undefined}
+            dragging={dragging.includes(row.item.id)}
           />
         ))}
+        {drag?.line && (
+          // Where the dragged section will land; indented when it lands as a reply.
+          <div
+            aria-hidden
+            className={cn(
+              'pointer-events-none absolute right-0 h-0.5 -translate-y-1/2 rounded-full bg-primary',
+              drag.line.level === 1 ? 'left-6' : 'left-0',
+            )}
+            style={{ top: drag.line.top }}
+          />
+        )}
       </div>
+      {toDelete && (
+        <ConfirmDialog
+          open
+          onOpenChange={(open) => !open && setConfirmDelete(null)}
+          title={`Delete this section and its ${toDelete.replies === 1 ? 'reply' : `${toDelete.replies} replies`}?`}
+          description="Their text, tags and verse links are deleted."
+          confirmLabel={`Delete all ${toDelete.replies + 1}`}
+          onConfirm={() => api.confirmRemove(toDelete.item.id)}
+        />
+      )}
       {activeRow && activeEditor && (
         // On a phone the toolbar is fixed over the page; this keeps the last lines clear of it.
         <div aria-hidden className="h-12 lg:hidden" />

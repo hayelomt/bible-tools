@@ -8,18 +8,24 @@ import { forgetUnsaved, keepUnsaved } from '@/data/unsaved.ts';
 import { SAVE_DELAY_MS } from '@/components/lesson/use-lesson-saver.ts';
 import { hasText, toBody } from './body.ts';
 import { sectionExtensions } from './extensions.ts';
+import { SectionHandle } from './section-handle.tsx';
 import type { SectionListApi, SectionRow } from './section-list.tsx';
 
-/** Where to put the cursor in a section: its start or end, or where it was (after a move). */
+/**
+ * Where to put the cursor in a section: its start or end, or where it was (after a move). Or
+ * focus its handle, after the section menu was used.
+ */
 export interface FocusRequest {
   id: string;
-  at: 'start' | 'end' | 'keep';
+  at: 'start' | 'end' | 'keep' | 'handle';
 }
 
 interface SectionEditorProps {
   row: SectionRow;
   api: SectionListApi;
   focus: FocusRequest | undefined;
+  /** It's being dragged (or is a reply of the section being dragged). */
+  dragging: boolean;
 }
 
 const LABELS = { 0: 'Note', 1: 'Reply' } as const;
@@ -31,9 +37,10 @@ const PLACEHOLDERS = { 0: 'Write a note…', 1: 'Write a reply…' } as const;
  * when the row goes, so a section never has unsaved text for more than a second. A draft is
  * stored, with its id, once it has text.
  */
-export function SectionEditor({ row, api, focus }: SectionEditorProps) {
+export function SectionEditor({ row, api, focus, dragging }: SectionEditorProps) {
   const { item, level } = row;
   const id = item.id;
+  const handle = useRef<HTMLButtonElement>(null);
   const stored = useRef(item.stored);
   const pending = useRef<SectionBody | undefined>(undefined);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -98,6 +105,8 @@ export function SectionEditor({ row, api, focus }: SectionEditorProps) {
           enterEmpty: () => list.enterEmpty(id),
           indent: () => list.indent(id),
           outdent: () => list.outdent(id),
+          moveUp: () => list.moveUp(id),
+          moveDown: () => list.moveDown(id),
           backspaceEmpty: () => list.backspaceEmpty(id),
           leave: (direction) => list.leave(id, direction),
         };
@@ -145,6 +154,10 @@ export function SectionEditor({ row, api, focus }: SectionEditorProps) {
   // Tab must land in the section the cursor moved to.
   useLayoutEffect(() => {
     if (!focus) return;
+    if (focus.at === 'handle') {
+      handle.current?.focus();
+      return;
+    }
     // After a move the editor still has its selection; it only needs focus back if it lost it.
     if (focus.at === 'keep') {
       if (!editor.view.hasFocus()) editor.view.focus();
@@ -181,11 +194,20 @@ export function SectionEditor({ row, api, focus }: SectionEditorProps) {
     <div
       data-section={id}
       className={cn(
-        'border-l-2 pl-3 transition-colors focus-within:border-primary',
+        'group/section flex items-start gap-1 transition-opacity',
         level === 1 && 'ml-6',
+        dragging && 'opacity-40',
       )}
     >
-      <EditorContent editor={editor} />
+      <div className="min-w-0 flex-1 border-l-2 pl-3 transition-colors focus-within:border-primary">
+        <EditorContent editor={editor} />
+      </div>
+      {item.stored ? (
+        <SectionHandle row={row} api={api} ref={handle} />
+      ) : (
+        // A draft has nothing to move or delete yet; the space keeps the text from shifting.
+        <div aria-hidden className="w-8 shrink-0 pointer-coarse:w-11" />
+      )}
     </div>
   );
 }

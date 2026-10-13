@@ -1,5 +1,7 @@
+import { Toaster } from '@lamp/ui/components/sonner';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { useThemeSync } from '@/lib/theme.ts';
 import { BottomNav } from './bottom-nav.tsx';
 import { ScreenHeader } from './screen-header.tsx';
@@ -30,7 +32,25 @@ export function AppShell() {
         </div>
         <BottomNav />
       </div>
+      <AppToaster />
     </ShellSlots>
+  );
+}
+
+/**
+ * Toasts (UX-PATTERNS "Saving and feedback"): one at a time, above the bottom bar on a phone and
+ * bottom-right on a laptop. Sonner's list is a polite live region.
+ */
+function AppToaster() {
+  const laptop = useMediaQuery('(min-width: 1024px)');
+  const aboveBar = { bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' };
+  return (
+    <Toaster
+      position={laptop ? 'bottom-right' : 'bottom-center'}
+      visibleToasts={1}
+      offset={laptop ? 24 : aboveBar}
+      mobileOffset={{ ...aboveBar, left: 16, right: 16 }}
+    />
   );
 }
 

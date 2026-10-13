@@ -6,7 +6,7 @@ import { LampDb } from '../db.ts';
 import { lessonSections } from '../queries.ts';
 import { ensureDevice } from '../setup.ts';
 import { createLesson } from './lessons.ts';
-import { createSection, removeSection, updateSection } from './sections.ts';
+import { createSection, removeSection, restoreSections, updateSection } from './sections.ts';
 
 const text = (t: string): SectionBody => ({
   type: 'doc',
@@ -80,13 +80,42 @@ describe('sections', () => {
     const { id } = await section();
     const tag = (await db.tag.toArray())[0]!;
     await action(db, (w) => w.create('sectionTag', { tagId: tag.id, sectionId: id }));
-    await removeSection(id, db);
+    await removeSection(id, {}, db);
     expect(await lessonSections(lessonId, db)).toEqual([]);
     expect((await db.sectionTag.toArray()).every((t) => t.deletedAt !== null)).toBe(true);
 
     const parent = await section();
     await section({ parentId: parent.id });
-    await expect(removeSection(parent.id, db)).rejects.toThrow('has replies');
+    await expect(removeSection(parent.id, {}, db)).rejects.toThrow('has replies');
     expect(await lessonSections(lessonId, db)).toHaveLength(2);
+  });
+
+  it('deletes a section with its replies and their tags, and Undo brings back just those', async () => {
+    const tag = (await db.tag.toArray())[0]!;
+    const parent = await section({ body: text('A') });
+    const reply = await section({ parentId: parent.id, body: text('A, reply') });
+    const other = await section({ body: text('B') });
+    for (const s of [parent, reply]) {
+      await action(db, (w) => w.create('sectionTag', { tagId: tag.id, sectionId: s.id }));
+    }
+    // Deleted earlier, and not part of this delete.
+    const old = await section({ parentId: parent.id, body: text('A, old reply') });
+    await removeSection(old.id, {}, db);
+    const before = await db.section.toArray();
+
+    const removed = await removeSection(parent.id, { withReplies: true }, db);
+    expect(removed.sections.toSorted()).toEqual([parent.id, reply.id].toSorted());
+    expect(removed.sectionTags).toHaveLength(2);
+    expect((await lessonSections(lessonId, db)).map((s) => s.id)).toEqual([other.id]);
+
+    await restoreSections(removed, db);
+    const after = await lessonSections(lessonId, db);
+    expect(after.map((s) => s.id).toSorted()).toEqual([parent.id, reply.id, other.id].toSorted());
+    expect(after.find((s) => s.id === reply.id)).toMatchObject({
+      parentId: parent.id,
+      orderKey: before.find((s) => s.id === reply.id)!.orderKey,
+    });
+    expect((await db.sectionTag.toArray()).every((t) => t.deletedAt === null)).toBe(true);
+    expect((await db.section.get(old.id))?.deletedAt).not.toBeNull();
   });
 });

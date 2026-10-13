@@ -70,10 +70,10 @@ never in the way of typing. Everything saves as it's typed; there's no Save butt
 │                                      │
 │ ┃ Jesus is the door ⟦John 10:9 · WEB⟧│  ← section: rich text with verse chips
 │ ┃ salvation and pasture.             │
-│ ┃ #grace                           ⋮ │  ← its tags; ⋮ section menu
+│ ┃ #grace                           ⠿ │  ← its tags; ⠿ menu (tap) and drag (hold)
 │ ┃                                    │
 │ ┃  ┃ Compare ⟦Psalm 23:1 · WEB⟧ — the│  ← reply (second level, indented)
-│ ┃  ┃ same shepherd.                ⋮ │
+│ ┃  ┃ same shepherd.                ⠿ │
 │                                      │
 │ ┃ Write a note…▏                     │  ← always an empty section at the end, ready to type
 │                                      │
@@ -104,18 +104,18 @@ never in the way of typing. Everything saves as it's typed; there's no Save butt
 ```
 
 **Laptop:** notes in the centre column, details, takeaways and questions in a side panel. Sections
-show a drag handle on hover.
+show their `⠿` on hover and focus.
 
 ```text
 ┌──────────┬──────────────────────────────────────────────┬──────────────────────┐
 │ sidebar  │ The Good Shepherd                        ⋯   │ DETAILS              │
 │          │ Sun 12 Oct · Sermon · Pastor Ann             │ Date    12 Oct 2026  │
 │          │                                              │ Source  Sermon       │
-│          │ ⠿ Jesus is the door ⟦John 10:9 · WEB⟧        │ Passages John 10:1–18│
-│          │   salvation and pasture.            #grace ⋮ │ Series  John         │
-│          │     ⠿ Compare ⟦Psalm 23:1 · WEB⟧ — the same  │ Tags    #grace       │
-│          │       shepherd.                            ⋮ │                      │
-│          │ ⠿ Write a note…                              │ TAKEAWAYS     + Add  │
+│          │ Jesus is the door ⟦John 10:9 · WEB⟧        ⠿ │ Passages John 10:1–18│
+│          │ salvation and pasture.              #grace   │ Series  John         │
+│          │   Compare ⟦Psalm 23:1 · WEB⟧ — the same    ⠿ │ Tags    #grace       │
+│          │   shepherd.                                  │                      │
+│          │ Write a note…                                │ TAKEAWAYS     + Add  │
 │          │                                              │ • He knows his sheep │
 │          │                                              │ QUESTIONS     + Add  │
 │          │                                              │ ○ Who are the "other │
@@ -127,15 +127,16 @@ show a drag handle on hover.
 empty reply it moves the reply out. Tab (or ⇥) makes the section a reply to the one above; Shift+Tab
 (⇤) moves it back out. In a list they indent the list item instead. A third level isn't offered: Tab
 does nothing in a reply or in a section that has replies. Backspace in an empty section deletes it.
-The arrows move between sections at the first and last line, and Escape leaves the editor.
+The arrows move between sections at the first and last line, Alt+Shift+↑ and ↓ move the section
+itself, and Escape leaves the editor.
 
 ## Section menu, reorder and delete (M2-08)
 
 ```text
-│ ┃ Jesus is the door …              ⋮ │
+│ ┃ Jesus is the door …              ⠿ │
 │        ┌─────────────────────────┐   │
 │        │ Reply                   │   │
-│        │ Tags                    │   │
+│        │ Tags                    │   │  (M4-01)
 │        │ Move up                 │   │  ← the keyboard and screen-reader way to reorder
 │        │ Move down               │   │
 │        │ Make a reply / Move out │   │
@@ -144,14 +145,17 @@ The arrows move between sections at the first and last line, and Escape leaves t
 │        └─────────────────────────┘   │
 ```
 
-Drag: a long press on the section (phone) or the `⠿` handle (laptop) picks it up. A line shows
-where it will land, and dropping it on the right half of a section makes it a reply.
+Each section has one `⠿` (decided 2026-10-13): a tap or click opens this menu, and pressing and
+dragging it moves the section. A finger is held on it for a moment first, so a quick swipe still
+scrolls. A line shows where the section will land, and dropping it on the right half of the column
+makes it a reply (not for a section that has replies). Escape cancels. Focus returns to the `⠿`
+after Move up or Move down, so the keyboard can keep going. The empty section at the end has no `⠿`.
 
 Deleting a section **without replies** happens at once, with an undo toast:
 
 ```text
 ├──────────────────────────────────────┤
-│ Section deleted.            [ Undo ] │  ← 10 s
+│ Section deleted.            [ Undo ] │  ← 10 s; "Reply deleted." for a reply
 ├──────────────────────────────────────┤
 ```
 

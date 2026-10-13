@@ -18,6 +18,9 @@ export interface SectionKeyHandlers {
   indent: () => void;
   /** Shift+Tab outside a list: move this reply out to the top level. */
   outdent: () => void;
+  /** Alt+Shift+Up and Down: Move up and Move down from the section menu. */
+  moveUp: () => void;
+  moveDown: () => void;
   /** Backspace in a section with nothing in it; true when handled. */
   backspaceEmpty: () => boolean;
   /** Arrow up on the first line, or down on the last; true when focus moved to another section. */
@@ -139,6 +142,14 @@ function sectionKeys(handlers: () => SectionKeyHandlers) {
         Backspace: ({ editor }) => isEmptySection(editor) && handlers().backspaceEmpty(),
         ArrowUp: ({ editor }) => atEdge(editor, 'up') && handlers().leave('up'),
         ArrowDown: ({ editor }) => atEdge(editor, 'down') && handlers().leave('down'),
+        'Alt-Shift-ArrowUp': () => {
+          handlers().moveUp();
+          return true;
+        },
+        'Alt-Shift-ArrowDown': () => {
+          handlers().moveDown();
+          return true;
+        },
         Escape: ({ editor }) => editor.commands.blur(),
       };
     },

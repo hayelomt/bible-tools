@@ -148,6 +148,20 @@ describe('action', () => {
     expect(await db.outbox.count()).toBe(queued);
   });
 
+  it('restores a deleted row with its citations, and queues it as an upsert', async () => {
+    const lesson = await action(db, (w) => w.create('lesson', LESSON));
+    await action(db, (w) => w.remove('lesson', lesson.id));
+    await action(db, (w) => w.restore('lesson', lesson.id));
+    expect((await db.lesson.get(lesson.id))?.deletedAt).toBeNull();
+    expect(await db.citation.where('sourceId').equals(lesson.id).count()).toBe(1);
+    const change = await db.outbox.orderBy('seq').last();
+    expect(change).toMatchObject({ entityId: lesson.id, op: 'upsert', row: { deletedAt: null } });
+
+    const queued = await db.outbox.count();
+    await action(db, (w) => w.restore('lesson', lesson.id));
+    expect(await db.outbox.count()).toBe(queued);
+  });
+
   it('stamps every write with the device time adjusted by the clock offset', async () => {
     await db.syncState.update(SYNC_STATE_KEY, { clockOffsetMs: 60 * 60 * 1000 });
     const before = Date.now();
