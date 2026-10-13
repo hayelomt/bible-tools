@@ -35,6 +35,7 @@
     "dexie": "catalog:",
     "dexie-react-hooks": "catalog:",
     "lucide-react": "catalog:",
+    "minisearch": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "workbox-window": "catalog:"

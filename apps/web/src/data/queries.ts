@@ -21,7 +21,7 @@ const notDeleted = (row: { deletedAt: string | null }) => row.deletedAt === null
  * Lessons by date, oldest first; lessons on the same day in the order they were made (UUIDv7 ids
  * sort by creation time, so they also break a tie within one millisecond).
  */
-const byDate = (a: Lesson, b: Lesson) =>
+export const byDate = (a: Lesson, b: Lesson) =>
   a.date.localeCompare(b.date) ||
   a.createdAt.localeCompare(b.createdAt) ||
   a.id.localeCompare(b.id);
@@ -166,7 +166,7 @@ export async function taggedWith(tagId: string, db: LampDb = appDb): Promise<Tag
  * Sections in the order the lesson shows them: by their top-level section, which comes before
  * its replies. `all` holds the parents of any replies among `sections`.
  */
-function readingOrder(sections: Section[], all: Section[]): Section[] {
+export function readingOrder(sections: Section[], all: Section[]): Section[] {
   const byId = new Map(all.map((s) => [s.id, s]));
   const top = (s: Section) => (s.parentId && byId.get(s.parentId)) || s;
   return sections.toSorted(

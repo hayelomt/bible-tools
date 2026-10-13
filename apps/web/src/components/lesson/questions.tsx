@@ -22,6 +22,7 @@ import {
 } from '@/data/actions/questions.ts';
 import { lessonQuestions } from '@/data/queries.ts';
 import { runWrite } from '@/lib/run-write.ts';
+import { useReveal } from '@/lib/use-reveal.ts';
 import { PanelHeading } from './panel-heading.tsx';
 import type { PanelApi } from './takeaways.tsx';
 
@@ -37,6 +38,8 @@ interface QuestionsProps {
   ref?: Ref<PanelApi>;
   /** On a phone the list shows only once there's a question; the + button adds the first. */
   hideWhenEmpty?: boolean;
+  /** A question to scroll to and highlight (a search result). */
+  reveal?: string;
   /** "Answer in a section": the section list adds it and puts the cursor in it. */
   onAnswer: (questionId: string) => void;
   /** `›` on an answered question: the section list shows its answer. */
@@ -52,6 +55,7 @@ export function Questions({
   lessonId,
   ref,
   hideWhenEmpty = false,
+  reveal,
   onAnswer,
   onShowAnswer,
 }: QuestionsProps) {
@@ -93,6 +97,7 @@ export function Questions({
               <QuestionRow
                 key={question.id}
                 question={question}
+                reveal={question.id === reveal}
                 onAnswer={() => onAnswer(question.id)}
                 onShowAnswer={onShowAnswer}
                 onEdit={() => setEditing(question.id)}
@@ -116,12 +121,14 @@ export function Questions({
 
 interface QuestionRowProps {
   question: Question;
+  reveal: boolean;
   onAnswer: () => void;
   onShowAnswer: (sectionId: string) => void;
   onEdit: () => void;
 }
 
-function QuestionRow({ question, onAnswer, onShowAnswer, onEdit }: QuestionRowProps) {
+function QuestionRow({ question, reveal, onAnswer, onShowAnswer, onEdit }: QuestionRowProps) {
+  const { ref: revealRef, flash } = useReveal<HTMLLIElement>(reveal);
   const { icon: Icon, label } = STATUS[question.status];
   const answer = question.status === 'answered' ? question.answerSectionId : null;
 
@@ -157,9 +164,12 @@ function QuestionRow({ question, onAnswer, onShowAnswer, onEdit }: QuestionRowPr
 
   return (
     <li
+      ref={revealRef}
+      data-flash={flash || undefined}
       className={cn(
-        'flex items-start gap-2 py-1',
+        '-mx-1 flex items-start gap-2 rounded-md px-1 py-1 transition-colors',
         question.status === 'parked' && 'text-muted-foreground',
+        flash && 'bg-primary/10 ring-1 ring-primary',
       )}
     >
       <Icon

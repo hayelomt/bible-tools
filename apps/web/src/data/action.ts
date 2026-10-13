@@ -6,6 +6,7 @@ import {
   newId,
   type UserSettings,
 } from '@lamp/domain';
+import { emitRowsChanged, type RowRef } from './changes.ts';
 import { type LampDb, type RowEntity, SETTINGS_KEY, SYNC_STATE_KEY } from './db.ts';
 
 /** The fields every synced row carries, which the writer fills in. */
@@ -47,11 +48,17 @@ const inFlight = new Set<Promise<unknown>>();
  * `run` must only await Dexie calls: awaiting anything else (fetch, timers) ends the transaction.
  */
 export function action<T>(db: LampDb, run: (writer: Writer) => Promise<T>): Promise<T> {
-  const write = db.transaction('rw', db.tables, async () => {
-    const state = await db.syncState.get(SYNC_STATE_KEY);
-    const now = new Date(Date.now() + (state?.clockOffsetMs ?? 0)).toISOString();
-    return run(new TransactionWriter(db, now));
-  });
+  const changed: RowRef[] = [];
+  const write = db
+    .transaction('rw', db.tables, async () => {
+      const state = await db.syncState.get(SYNC_STATE_KEY);
+      const now = new Date(Date.now() + (state?.clockOffsetMs ?? 0)).toISOString();
+      return run(new TransactionWriter(db, now, changed));
+    })
+    .then((result) => {
+      emitRowsChanged(changed);
+      return result;
+    });
   inFlight.add(write);
   const done = () => inFlight.delete(write);
   void write.then(done, done);
@@ -74,6 +81,8 @@ class TransactionWriter implements Writer {
   constructor(
     readonly db: LampDb,
     readonly now: string,
+    /** Every row written, reported once the transaction commits. */
+    private readonly changed: RowRef[],
   ) {}
 
   async create<E extends RowEntity>(entity: E, fields: NewRow<E>): Promise<EntityRow<E>> {
@@ -104,6 +113,7 @@ class TransactionWriter implements Writer {
     if (current.deletedAt !== null) return;
     const row = { ...current, updatedAt: this.now, deletedAt: this.now };
     await this.db.rows(entity).put(row);
+    this.changed.push({ entity, id });
     await this.reindex(entity, row);
     await this.db.outbox.add({
       changeId: newId(),
@@ -147,6 +157,7 @@ class TransactionWriter implements Writer {
   private async write<E extends RowEntity>(entity: E, input: EntityRow<E>): Promise<EntityRow<E>> {
     const row = ENTITY_SCHEMAS[entity].parse(input) as EntityRow<E>;
     await this.db.rows(entity).put(row);
+    this.changed.push({ entity, id: row.id });
     await this.reindex(entity, row);
     const { rev, ...sent } = row;
     await this.db.outbox.add({

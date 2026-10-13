@@ -101,6 +101,9 @@ export default defineConfig({
     bibleText(),
     pwa(),
   ],
+  // The search worker (src/search/search.worker.ts) imports modules the app shares, so it's built
+  // as an ES module like the app.
+  worker: { format: 'es' },
   resolve: {
     alias: { '@': fileURLToPath(new URL('src', import.meta.url)) },
   },

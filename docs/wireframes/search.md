@@ -40,7 +40,8 @@ search button.
 ```
 
 Results are grouped by lesson, newest lesson first. A result opens the lesson at that section,
-takeaway or question.
+takeaway or question, scrolled to it and highlighted. A lesson whose title matches shows a
+`Title: The Good **Shepherd**` row at the top of its group.
 
 ## Verse query
 
@@ -56,8 +57,9 @@ takeaway or question.
 │ ⟦Romans 7:24–8:2⟧ Who will deliver…› │
 ```
 
-A verse query matches any chip that overlaps the passage, and words like "rom 8" are not also
-searched as text.
+A verse query matches any chip that overlaps the passage, and a lesson whose main passage overlaps
+it (`Main passage: John 10`). Words like "rom 8" are not also searched as text. The verse index
+button comes with the verse index page (M4-07).
 
 ## Tag query
 

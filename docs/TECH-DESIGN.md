@@ -339,6 +339,13 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - **Verses and tags:** Dexie queries on `citations` (`startOrd`/`endOrd` index) and on the join tables. The search box detects a reference with `parseReference` and a `#tag` prefix.
 - The server keeps no search index in phase 1, since every device holds the full data. Postgres full-text search waits for phase 2 groups.
 
+*Built in M4-05 and M4-06:*
+- **Index** (`src/search/`): `search.worker.ts` opens the device database itself, reads every live lesson title, section, takeaway and question once (`allDocs`), and answers searches in order with what it has. `action()` reports the rows each action wrote once its transaction commits (`onRowsChanged` in `data/changes.ts`); the client forwards them, and the worker re-reads just those rows. A pull (M3-09) reports its rows the same way. Every word of a query must match; the last one as a prefix, and words over four letters allow a typo. Text is matched lower case and without accents.
+- **Speed** (the M4-05 target): 5,050 rows (50 lessons, 5,000 sections of about 40 words) are ready about 300 ms after the worker starts, with Chrome's CPU slowed 4× as a mid-range phone stand-in (Ryzen 7 5800H, 2026-10-13). `search.spec.ts` checks it stays under 1 s; the index marks `lamp:search-ready` with the times.
+- **One box** (`/search?q=`): `parseQuery` reads a leading `#` as a tag, a reference `parseReference` accepts as a verse query, and anything else as free text. A one-chapter book's name alone ("Jude") is a verse query. Verse and tag queries read Dexie directly, so they answer before the index is ready.
+- **Results** are grouped by lesson, newest first, three per lesson before "+ N more". In a lesson: the lesson itself (its title matched, a main passage overlaps the verse, or it has the tag), then sections in reading order, then takeaways and questions (decided 2026-10-13: lesson titles and main passages match too). A result opens the lesson at `?section=`, `?takeaway=` or `?question=`, scrolled to and highlighted for 2 s (decided 2026-10-13). The tag page uses the same list.
+- **Recent searches**: the last five that led to a result, kept in this browser only (`lamp.recentSearches`; decided 2026-10-13).
+
 ### 8.5 Theme
 - Presets live in `packages/ui/src/themes/*.css` as CSS variable sets for the shadcn tokens (`--background`, `--foreground`, `--primary`, `--muted`, `--accent`, `--ring`, `--radius`, …), each with light and dark values. They're selected with `<html data-theme="parchment" class="dark">`.
 - Tailwind v4 maps the tokens with `@theme inline`, so components use only semantic classes (`bg-background`, `text-primary`) and never raw colours.

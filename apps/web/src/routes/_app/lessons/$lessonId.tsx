@@ -11,8 +11,10 @@ interface LessonSearch {
   new?: true;
   /** The series a draft starts in. */
   seriesId?: string;
-  /** A section to scroll to and highlight briefly (a tag page result). */
+  /** A section, takeaway or question to scroll to and highlight briefly (a search result). */
   section?: string;
+  takeaway?: string;
+  question?: string;
 }
 
 export const Route = createFileRoute('/_app/lessons/$lessonId')({
@@ -21,6 +23,8 @@ export const Route = createFileRoute('/_app/lessons/$lessonId')({
     new: search.new === true ? true : undefined,
     seriesId: typeof search.seriesId === 'string' ? search.seriesId : undefined,
     section: typeof search.section === 'string' ? search.section : undefined,
+    takeaway: typeof search.takeaway === 'string' ? search.takeaway : undefined,
+    question: typeof search.question === 'string' ? search.question : undefined,
   }),
   component: LessonScreen,
 });
@@ -54,7 +58,7 @@ function LessonScreen() {
       id={lessonId}
       lesson={lesson}
       seriesId={search.seriesId}
-      revealSection={search.section}
+      reveal={search}
     />
   );
 }

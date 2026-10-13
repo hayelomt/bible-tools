@@ -1,6 +1,7 @@
 import { newId, type Takeaway } from '@lamp/domain';
 import { Button } from '@lamp/ui/components/button';
 import { toast } from '@lamp/ui/components/sonner';
+import { cn } from 'cn';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { XIcon } from 'lucide-react';
 import {
@@ -22,6 +23,7 @@ import {
 import { lessonTakeaways } from '@/data/queries.ts';
 import { afterPress } from '@/lib/after-press.ts';
 import { reportWriteError, runWrite } from '@/lib/run-write.ts';
+import { useReveal } from '@/lib/use-reveal.ts';
 import { SAVE_DELAY_MS } from './use-lesson-saver.ts';
 import { PanelHeading } from './panel-heading.tsx';
 
@@ -67,9 +69,11 @@ interface TakeawaysProps {
   ref?: Ref<PanelApi>;
   /** On a phone the list shows only once there's a takeaway; the + button adds the first. */
   hideWhenEmpty?: boolean;
+  /** A takeaway to scroll to and highlight (a search result). */
+  reveal?: string;
 }
 
-export function Takeaways({ lessonId, ref, hideWhenEmpty = false }: TakeawaysProps) {
+export function Takeaways({ lessonId, ref, hideWhenEmpty = false, reveal }: TakeawaysProps) {
   const stored = useLiveQuery(() => lessonTakeaways(lessonId), [lessonId]);
   const [drafts, setDrafts] = useState<string[]>([]);
   const [focus, setFocus] = useState<Focus | null>(null);
@@ -133,6 +137,7 @@ export function Takeaways({ lessonId, ref, hideWhenEmpty = false }: TakeawaysPro
               row={row}
               lessonId={lessonId}
               focus={focus?.id === row.id ? focus : undefined}
+              reveal={row.id === reveal}
               onEnter={add}
               onFocusNear={focusNear}
               onDiscard={discard}
@@ -148,6 +153,7 @@ interface TakeawayRowProps {
   row: Row;
   lessonId: string;
   focus: Focus | undefined;
+  reveal: boolean;
   onEnter: () => void;
   onFocusNear: (id: string) => void;
   onDiscard: (id: string) => void;
@@ -156,7 +162,15 @@ interface TakeawayRowProps {
 /** A takeaway is one line: pasted line breaks become spaces. */
 const oneLine = (text: string) => text.replace(/\s*\n\s*/g, ' ');
 
-function TakeawayRow({ row, lessonId, focus, onEnter, onFocusNear, onDiscard }: TakeawayRowProps) {
+function TakeawayRow({
+  row,
+  lessonId,
+  focus,
+  reveal,
+  onEnter,
+  onFocusNear,
+  onDiscard,
+}: TakeawayRowProps) {
   const [text, setText] = useState(row.text);
   const field = useRef<HTMLTextAreaElement>(null);
   const stored = useRef(row.stored);
@@ -166,6 +180,7 @@ function TakeawayRow({ row, lessonId, focus, onEnter, onFocusNear, onDiscard }: 
   // Set when the row is being removed, so leaving it doesn't also delete or save it.
   const gone = useRef(false);
   const [focused, setFocused] = useState(false);
+  const { ref: revealRef, flash } = useReveal<HTMLLIElement>(reveal);
 
   // A change stored elsewhere (another tab, later a sync) shows, unless this one is being typed
   // in. Leaving it stores what was typed first, so nothing typed is replaced.
@@ -236,7 +251,14 @@ function TakeawayRow({ row, lessonId, focus, onEnter, onFocusNear, onDiscard }: 
   }
 
   return (
-    <li className="group/takeaway flex items-start gap-2">
+    <li
+      ref={revealRef}
+      data-flash={flash || undefined}
+      className={cn(
+        'group/takeaway -mx-1 flex items-start gap-2 rounded-md px-1 transition-colors',
+        flash && 'bg-primary/10 ring-1 ring-primary',
+      )}
+    >
       <span aria-hidden className="pt-1 leading-6 text-muted-foreground pointer-coarse:pt-2.5">
         •
       </span>

@@ -18,6 +18,7 @@ import {
   updateSection,
 } from '@/data/actions/sections.ts';
 import { lessonSections } from '@/data/queries.ts';
+import { FLASH_MS } from '@/lib/use-reveal.ts';
 import { EditingToolbar } from './editing-toolbar.tsx';
 import {
   afterPlacement,
@@ -108,9 +109,6 @@ export interface SectionListApi {
 export type SectionRequest =
   | { kind: 'answer'; questionId: string; seq: number }
   | { kind: 'reveal'; sectionId: string; seq: number };
-
-/** How long a revealed section stays highlighted. */
-const FLASH_MS = 2000;
 
 interface SectionListProps {
   lessonId: string;

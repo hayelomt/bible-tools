@@ -61,4 +61,13 @@ test('in airplane mode after the first load, every screen works and any book ope
   await expect(list).toContainText('For the day of Yahweh is near all the nations!');
   await page.keyboard.press('Enter');
   await expect(note).toHaveText('Obadiah 15 · WEB ');
+  await page.keyboard.type('the day is near');
+
+  // Search, with its worker from the service worker's copy, finds it by word and by verse.
+  await page.getByRole('link', { name: 'Search', exact: true }).first().click();
+  const search = page.getByRole('searchbox', { name: 'Search' });
+  await search.fill('near');
+  await expect(page.getByText('1 result in 1 lesson')).toBeVisible();
+  await search.fill('Obadiah 15');
+  await expect(page.getByText('Obadiah 15 · 1 note')).toBeVisible();
 });

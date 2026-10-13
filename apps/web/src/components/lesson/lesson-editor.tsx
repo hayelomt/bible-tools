@@ -25,8 +25,8 @@ interface LessonEditorProps {
   lesson: Lesson | null;
   /** The series a new lesson starts in ("New lesson in John"). */
   seriesId?: string;
-  /** A section to scroll to and highlight as the lesson opens (a tag page result). */
-  revealSection?: string;
+  /** A section, takeaway or question to scroll to and highlight as the lesson opens. */
+  reveal?: { section?: string; takeaway?: string; question?: string };
 }
 
 /** What a new lesson starts with (wireframes/lessons.md): today, a sermon, no series. */
@@ -47,7 +47,7 @@ function newLesson(seriesId?: string): LessonFields {
  * the title, large, then a line with the date and source that opens the details. On a wide laptop
  * the details sit in the side panel instead. Everything saves as it's typed; there's no Save.
  */
-export function LessonEditor({ id, lesson, seriesId, revealSection }: LessonEditorProps) {
+export function LessonEditor({ id, lesson, seriesId, reveal }: LessonEditorProps) {
   const saver = useLessonSaver(id, lesson, () => newLesson(seriesId));
   const { values, save, flush, saving } = saver;
   const [title, setTitle] = useState(values.title);
@@ -57,7 +57,7 @@ export function LessonEditor({ id, lesson, seriesId, revealSection }: LessonEdit
   const [focusFirst, setFocusFirst] = useState(0);
   // Asks of the section list: show a section, or answer a question in a new one.
   const [request, setRequest] = useState<SectionRequest | undefined>(
-    revealSection ? { kind: 'reveal', sectionId: revealSection, seq: 1 } : undefined,
+    reveal?.section ? { kind: 'reveal', sectionId: reveal.section, seq: 1 } : undefined,
   );
   const requests = useRef(1);
   const takeaways = useRef<PanelApi>(null);
@@ -73,11 +73,12 @@ export function LessonEditor({ id, lesson, seriesId, revealSection }: LessonEdit
   // with the + button and show only once there's one, so an empty lesson stays uncluttered.
   const extras = lesson && (
     <>
-      <Takeaways ref={takeaways} lessonId={id} hideWhenEmpty={!wide} />
+      <Takeaways ref={takeaways} lessonId={id} hideWhenEmpty={!wide} reveal={reveal?.takeaway} />
       <Questions
         ref={questions}
         lessonId={id}
         hideWhenEmpty={!wide}
+        reveal={reveal?.question}
         onAnswer={(questionId) =>
           setRequest({ kind: 'answer', questionId, seq: ++requests.current })
         }
