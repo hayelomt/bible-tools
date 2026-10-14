@@ -6,6 +6,7 @@ import {
   type Grade,
   GRADES,
   isDue,
+  memoryStage,
   MIN_EASE,
   newSrsState,
   nextInterval,
@@ -115,6 +116,21 @@ describe('the first three reviews', () => {
     const states = reviews(['good', 'good', 'again', 'good']);
     expect(states.map((s) => s.interval)).toEqual([1, 6, 0, 1]);
     expect(states.at(-1)!.ease).toBe(2.3);
+  });
+});
+
+describe('progress', () => {
+  it('is new, then learning, then known from 21 days, and learning again after Again', () => {
+    const states = reviews(['good', 'good', 'good', 'good', 'again']);
+    expect(states.map((s) => s.interval)).toEqual([1, 6, 15, 38, 0]);
+    expect([newSrsState(DAY), ...states].map(memoryStage)).toEqual([
+      'new',
+      'learning',
+      'learning',
+      'learning',
+      'known',
+      'learning',
+    ]);
   });
 });
 

@@ -90,6 +90,15 @@ After "Show the verse":
 
 The last card ends with "Done for today. Next verse due tomorrow." and a link back to Review.
 
+*As built in M6-02:* `/review/memory` runs through the verses due when it opens, soonest due first;
+the Review tab's memory block (`MEMORY VERSES · 2 due [ Start › ]` and the references) came now,
+before the rest of the queue. Again puts the verse at the end of the run, so it comes round again,
+and the count grows ("3 of 3"). A verse index row opens the card for that one verse, due or not,
+ending "Reviewed. John 10:27 comes back in 6 days." The keys 1–4 grade once the verse shows. The
+progress line is "New · added Wed 14 Oct", "4 reviews · learning since Wed 3 Sep" or "12 reviews ·
+known · added Wed 3 Sep"; known means it comes back after 21 days or more. The verse index row
+shows the same stage: `MEMORY · due in 6 days · learning · 4 reviews`.
+
 ## Memorise (M6-01)
 
 "Memorise" is in the chip sheet ([verses.md](verses.md#verse-chip-m2-10)) and the reader's

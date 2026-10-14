@@ -1,11 +1,15 @@
 import {
+  dueDate,
+  type Grade,
+  isDue,
   type MemoryItem,
   newSrsState,
   type Passage,
   passageRange,
+  review,
   type VerseRef,
 } from '@lamp/domain';
-import { action } from '../action.ts';
+import { action, RowNotFoundError } from '../action.ts';
 import { db as appDb, type LampDb } from '../db.ts';
 
 /** The live memory item for exactly `passage`, if there is one. */
@@ -37,6 +41,39 @@ export function memorise(
     if (existing) return { item: existing, added: false };
     const item = await w.create('memoryItem', { ref, ...newSrsState(today) });
     return { item, added: true };
+  });
+}
+
+/** Every live memory item, soonest due first, then in the order they were added. */
+export async function memoryItems(db: LampDb = appDb): Promise<MemoryItem[]> {
+  const items = await db.memoryItem.filter((item) => item.deletedAt === null).toArray();
+  return items.toSorted(
+    (a, b) =>
+      dueDate(a).localeCompare(dueDate(b)) ||
+      a.createdAt.localeCompare(b.createdAt) ||
+      a.id.localeCompare(b.id),
+  );
+}
+
+/** The memory items due on or before `today`, in the order they're reviewed. */
+export async function dueMemoryItems(today: string, db: LampDb = appDb): Promise<MemoryItem[]> {
+  return (await memoryItems(db)).filter((item) => isDue(item, today));
+}
+
+/**
+ * A review on the card (M6-02): the grade sets the next review by SM-2 (`domain/srs.ts`). Read
+ * inside the write, so two quick grades build on each other.
+ */
+export function gradeMemoryItem(
+  id: string,
+  grade: Grade,
+  today: string,
+  db: LampDb = appDb,
+): Promise<MemoryItem> {
+  return action(db, async (w) => {
+    const item = await w.db.memoryItem.get(id);
+    if (!item || item.deletedAt !== null) throw new RowNotFoundError('memoryItem', id);
+    return w.update('memoryItem', id, review(item, grade, today));
   });
 }
 

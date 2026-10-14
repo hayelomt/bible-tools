@@ -60,6 +60,21 @@ export function review(state: SrsState, grade: Grade, today: string): SrsState {
   };
 }
 
+/** Days between reviews from which a verse counts as known (as Anki's "mature"). */
+export const KNOWN_INTERVAL = 21;
+
+export const MEMORY_STAGES = ['new', 'learning', 'known'] as const;
+export type MemoryStage = (typeof MEMORY_STAGES)[number];
+
+/**
+ * A verse's progress (decided 2026-10-14): new until its first review, then learning, and known
+ * once it comes back after 21 days or more. Again sends a known verse back to learning.
+ */
+export function memoryStage(state: Pick<SrsState, 'interval' | 'reviewCount'>): MemoryStage {
+  if (state.reviewCount === 0) return 'new';
+  return state.interval >= KNOWN_INTERVAL ? 'known' : 'learning';
+}
+
 /** Due on or before `today`. */
 export function isDue(state: Pick<SrsState, 'nextReviewAt'>, today: string): boolean {
   return dueDate(state) <= today;

@@ -174,3 +174,7 @@ summary. A row is `MEMORY · due in 3 days · 4 reviews` ("due today", "due tomo
 the first review), then the reference and its text; it opens the reader at its first verse until
 the review card (M6-02), and × removes it with Undo. The chip sheet's buttons are
 `[ Read in context › ] [ Memorise ]` under "Every note on …".
+
+*As built in M6-02:* a memory row opens that verse's memory card, and shows its stage: `MEMORY ·
+due in 6 days · learning · 4 reviews` (new, learning, or known once it comes back after 21 days
+or more).

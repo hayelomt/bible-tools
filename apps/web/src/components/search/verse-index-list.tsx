@@ -1,20 +1,20 @@
-import { daysBetween, dueDate, type MemoryItem, passageSlug, type Passage } from '@lamp/domain';
+import { type MemoryItem, passageSlug, type Passage } from '@lamp/domain';
 import { buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { ChevronRight, X } from 'lucide-react';
 import { shortDate, today } from '@/lib/dates.ts';
-import { count } from '@/lib/labels.ts';
 import type { VerseIndexEntry } from '@/search/results.ts';
 import { around } from '@/search/snippet.ts';
 import { forgetVerse } from '../memory/memorise.ts';
+import { dueLabel, stageLabel } from '../memory/progress.ts';
 import { HIGHLIGHT_COLOUR_NAME } from '../reader/colours.ts';
 
 /**
  * The verse index's rows (F7, wireframes/verses.md "Verse index"), newest first: what cites the
  * passage, when, and the text around the citation. A section opens its lesson scrolled to it; a
- * lesson's main passage opens the lesson; a highlight or memory verse opens the reader at its first
- * verse, and a memory verse can be removed there (M6-01).
+ * lesson's main passage opens the lesson; a highlight opens the reader at its first verse; a memory
+ * verse opens its memory card (M6-02) and can be removed there (M6-01).
  */
 export function VerseIndexList({ entries }: { entries: VerseIndexEntry[] }) {
   return (
@@ -82,16 +82,18 @@ function HighlightRow({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'high
   );
 }
 
-/** `MEMORY · due in 3 days · 4 reviews`, the verse, and × to remove it with Undo. */
+/**
+ * `MEMORY · due in 3 days · learning · 4 reviews` and the verse, opening its memory card (M6-02),
+ * and × to remove it with Undo.
+ */
 function MemoryRow({ item }: { item: MemoryItem }) {
   const { ref } = item;
   return (
     <div className="flex items-start gap-1">
-      <Link to="/read/$chapter" params={readerParams(ref)} className={cn(rowClass, 'flex-1')}>
+      <Link to="/review/memory" search={{ item: item.id }} className={cn(rowClass, 'flex-1')}>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Memory · {dueLabel(item)} ·{' '}
-            {item.reviewCount === 0 ? 'new' : count(item.reviewCount, 'review')}
+            Memory · {dueLabel(item)} · {stageLabel(item)}
           </span>
           <span className="line-clamp-3 font-serif break-words">
             {ref.display}
@@ -115,13 +117,6 @@ function MemoryRow({ item }: { item: MemoryItem }) {
       </button>
     </div>
   );
-}
-
-/** "due today" (or overdue), "due tomorrow", "due in 3 days". */
-function dueLabel(item: MemoryItem): string {
-  const days = daysBetween(today(), dueDate(item));
-  if (days <= 0) return 'due today';
-  return days === 1 ? 'due tomorrow' : `due in ${days} days`;
 }
 
 function EntryText({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'lesson' | 'section' }> }) {
