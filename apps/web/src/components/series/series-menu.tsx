@@ -46,6 +46,13 @@ export function SeriesMenu({ series, lessonCount }: { series: Series; lessonCoun
         onOpenChange={close}
         title={series.title}
         load={() => exportSeries(series.id)}
+        onPrint={() =>
+          void navigate({
+            to: '/series/$seriesId/print',
+            params: { seriesId: series.id },
+            search: { print: true },
+          })
+        }
       />
       <ConfirmDialog
         open={dialog === 'delete'}

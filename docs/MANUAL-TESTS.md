@@ -85,3 +85,24 @@ which Playwright can't drive. Use a production build, so the service worker runs
 7. Turn the switch off: `weekly-review` goes from the list. Turn it on after blocking
    notifications for the site (the padlock → Notifications → Block): the switch stays off and says
    "Notifications are blocked for Lamp. Allow them in the browser's site settings."
+
+## Printing and saving as a PDF in Safari (M6-06)
+
+Checks the print view (TECH-DESIGN §8.7) where E2E can't: E2E runs Chromium only, and Playwright's
+WebKit needs a system library this machine lacks. Last run 2026-10-14 in Chromium and Firefox
+(Playwright's builds, print media and Chromium's PDF; the page on screen and printed matched, and a
+series printed a title page then one page per lesson). Use the installed app, or a production
+build, on a Mac in Safari and on an iPhone.
+
+1. With a dark theme, open a lesson that has a verse chip, a reply, takeaways and questions. Turn
+   off the connection.
+2. `⋯` → **Export…** → **Print or save as PDF**. The print view opens on a white page, and the
+   print dialog opens on top.
+   - The preview shows only the page: no Back or Print, no navigation, no dark background. The
+     verse is quoted in full after its paragraph with "(WEB)", the reply is indented, and
+     "Scripture: World English Bible (public domain)." ends it.
+3. Save as PDF (Mac: **PDF** → **Save as PDF**; iPhone: pinch out on the preview, then Share →
+   **Save to Files**). The PDF matches the page shown on screen.
+4. Close the dialog and reload: it doesn't open again. **Print** opens it.
+5. From a series' `⋯` → **Export series…** → **Print or save as PDF**: a title page listing the
+   lessons, then each lesson starting on a new page.

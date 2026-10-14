@@ -86,20 +86,25 @@ function lessonBlocks(data: LessonForExport, level: number): string[] {
   return blocks;
 }
 
+/** The lesson's header lines, in one paragraph with hard breaks. */
+function header(data: LessonForExport): string {
+  return headerLines(data).map(escapeMarkdown).join('\\\n');
+}
+
 /**
- * "Sunday 12 October 2026 · Sermon · Pastor Ann, Grace Chapel", then the passages and tags:
- * "John 10:1–18 · #grace". Lines in one paragraph, with hard breaks.
+ * A lesson's header, as text: "Sunday 12 October 2026 · Sermon · Pastor Ann, Grace Chapel", then
+ * the passages and tags: "John 10:1–18 · #grace". The print view shows the same lines.
  */
-function header({ lesson, tags }: LessonForExport): string {
+export function headerLines({ lesson, tags }: LessonForExport): string[] {
   const who = [lesson.speaker, lesson.church].filter(Boolean).join(', ');
-  const lines = [
+  return [
     [longDate(lesson.date), SOURCE_LABELS[lesson.source], who].filter(Boolean).join(' · '),
     [...lesson.mainPassages.map((p) => p.display), ...tags.map(tagLabel)].join(' · '),
   ].filter(Boolean);
-  return lines.map(escapeMarkdown).join('\\\n');
 }
 
-function tagLabel(name: string): string {
+/** A tag as the exports show it: "#grace". */
+export function tagLabel(name: string): string {
   return `#${name}`;
 }
 
@@ -126,17 +131,26 @@ function paragraphs(text: string): string {
     .join('\n\n');
 }
 
-/** "Scripture: World English Bible (public domain).", after a rule; none without a verse. */
+/** The credit after a rule; none without a verse. */
 function credits(lessons: LessonForExport[]): string[] {
+  const credit = scriptureCredit(lessons);
+  return credit ? ['---', credit] : [];
+}
+
+/**
+ * "Scripture: World English Bible (public domain).", for the translations the lessons quote; null
+ * when they quote none.
+ */
+export function scriptureCredit(lessons: LessonForExport[]): string | null {
   const used = new Set<string>();
   for (const { lesson, sections } of lessons) {
     for (const passage of lesson.mainPassages) used.add(passage.translation);
     for (const section of sections)
       for (const ref of citedRefs(section.body)) used.add(ref.translation);
   }
-  if (used.size === 0) return [];
+  if (used.size === 0) return null;
   const names = [...used].toSorted().map((id) => TRANSLATION_NAMES[id as TranslationId] ?? id);
-  return ['---', `Scripture: ${names.join(', ')} (public domain).`];
+  return `Scripture: ${names.join(', ')} (public domain).`;
 }
 
 /** A file name from a title: "2026-10-12-the-good-shepherd.md" for a lesson, "john.md". */

@@ -1,0 +1,15 @@
+/*
+ * The print view (M6-06): only the white page prints, on white, whatever the theme or look shows
+ * around it on screen.
+ */
+@page {
+  margin: 18mm 16mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color-scheme: light;
+  }
+}

@@ -49,6 +49,13 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
         onOpenChange={close}
         title={lesson.title}
         load={() => exportLesson(lesson.id)}
+        onPrint={() =>
+          void navigate({
+            to: '/lessons/$lessonId/print',
+            params: { lessonId: lesson.id },
+            search: { print: true },
+          })
+        }
       />
       <ConfirmDialog
         open={dialog === 'delete'}

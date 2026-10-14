@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@lamp/ui/components/dialog';
 import { toast } from '@lamp/ui/components/sonner';
-import { Copy, FileDown } from 'lucide-react';
+import { Copy, FileDown, Printer } from 'lucide-react';
 import type { Exported } from '@/export/load.ts';
 
 interface ExportDialogProps {
@@ -17,13 +17,16 @@ interface ExportDialogProps {
   title: string;
   /** Reads the rows as they are now; null when it's gone. */
   load: () => Promise<Exported | null>;
+  /** Opens the print view, which opens the print dialog. */
+  onPrint: () => void;
 }
 
 /**
  * Export (F11, wireframes/export.md "Export menu"), from a lesson's or a series' `⋯`: a Markdown
- * file, downloaded at once and offline, or the same Markdown copied. Print joins it in M6-06.
+ * file, downloaded at once and offline, or the same Markdown copied; or the print view, to print
+ * or save as a PDF (M6-06).
  */
-export function ExportDialog({ open, onOpenChange, title, load }: ExportDialogProps) {
+export function ExportDialog({ open, onOpenChange, title, load, onPrint }: ExportDialogProps) {
   async function run(use: (exported: Exported) => Promise<void> | void) {
     try {
       const exported = await load();
@@ -43,7 +46,7 @@ export function ExportDialog({ open, onOpenChange, title, load }: ExportDialogPr
         <DialogHeader>
           <DialogTitle>Export “{title}”</DialogTitle>
           <DialogDescription>
-            Markdown keeps the notes, verses, tags and questions.
+            Markdown and print keep the notes, verses, tags and questions.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
@@ -67,6 +70,17 @@ export function ExportDialog({ open, onOpenChange, title, load }: ExportDialogPr
           >
             <Copy aria-hidden />
             Copy as Markdown
+          </Button>
+          <Button
+            variant="outline"
+            className="justify-start pointer-coarse:min-h-11"
+            onClick={() => {
+              onOpenChange(false);
+              onPrint();
+            }}
+          >
+            <Printer aria-hidden />
+            Print or save as PDF
           </Button>
         </div>
       </DialogContent>

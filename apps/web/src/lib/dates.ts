@@ -40,6 +40,11 @@ export function shortDate(date: string, now = new Date()): string {
   return withoutCommas(format.format(asUtc(date)));
 }
 
+/** "Sun 12 Oct 2026", always with the year: for a printed page, which outlives the year. */
+export function shortDateWithYear(date: string): string {
+  return withoutCommas(SHORT_WITH_YEAR.format(asUtc(date)));
+}
+
 /** "Sunday 12 October 2026". */
 export function longDate(date: string): string {
   return withoutCommas(LONG.format(asUtc(date)));

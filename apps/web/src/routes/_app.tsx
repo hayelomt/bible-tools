@@ -1,26 +1,9 @@
-import { readTheme } from '@lamp/ui/themes/presets';
 import { createFileRoute } from '@tanstack/react-router';
 import { AppShell } from '@/components/shell/app-shell.tsx';
-import { startBackgroundWork } from '@/data/background.ts';
-import { db } from '@/data/db.ts';
-import { ensureDevice } from '@/data/setup.ts';
-import { restoreUnsaved } from '@/data/unsaved.ts';
-
-let deviceReady: Promise<void> | undefined;
+import { whenDeviceReady } from '@/data/ready.ts';
 
 /** Every screen of the app, inside the shell. The device is set up before the first one shows. */
 export const Route = createFileRoute('/_app')({
-  beforeLoad: () => {
-    deviceReady ??= ensureDevice(db, initialTheme())
-      .then(() => restoreUnsaved(db))
-      .then(startBackgroundWork);
-    return deviceReady;
-  },
+  beforeLoad: whenDeviceReady,
   component: AppShell,
 });
-
-/** A first run keeps the theme the `localStorage` mirror already shows (§8.5). */
-function initialTheme() {
-  const { preset, mode, look } = readTheme(localStorage);
-  return { themePreset: preset, colorMode: mode, look };
-}

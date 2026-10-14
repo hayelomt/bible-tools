@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as PrintRouteImport } from './routes/_print'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppSplatRouteImport } from './routes/_app/$'
 import { Route as AppCheckEmailRouteImport } from './routes/_app/check-email'
@@ -34,9 +35,15 @@ import { Route as AppSettingsDevicesRouteImport } from './routes/_app/settings/d
 import { Route as AppSettingsPasswordRouteImport } from './routes/_app/settings/password'
 import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
 import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
+import { Route as PrintLessonsLessonIdPrintRouteImport } from './routes/_print/lessons/$lessonId.print'
+import { Route as PrintSeriesSeriesIdPrintRouteImport } from './routes/_print/series/$seriesId.print'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrintRoute = PrintRouteImport.update({
+  id: '/_print',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -159,6 +166,18 @@ const AppVersesPassageRoute = AppVersesPassageRouteImport.update({
   path: '/verses/$passage',
   getParentRoute: () => AppRoute,
 } as any)
+const PrintLessonsLessonIdPrintRoute =
+  PrintLessonsLessonIdPrintRouteImport.update({
+    id: '/lessons/$lessonId/print',
+    path: '/lessons/$lessonId/print',
+    getParentRoute: () => PrintRoute,
+  } as any)
+const PrintSeriesSeriesIdPrintRoute =
+  PrintSeriesSeriesIdPrintRouteImport.update({
+    id: '/series/$seriesId/print',
+    path: '/series/$seriesId/print',
+    getParentRoute: () => PrintRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -185,8 +204,11 @@ export interface FileRoutesByFullPath {
   '/read/': typeof AppReadIndexRoute
   '/review/': typeof AppReviewIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
+  '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
+  '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof AppIndexRoute
   '/$': typeof AppSplatRoute
   '/check-email': typeof AppCheckEmailRoute
   '/forgot-password': typeof AppForgotPasswordRoute
@@ -198,7 +220,6 @@ export interface FileRoutesByTo {
   '/dev/looks': typeof DevLooksRoute
   '/dev/seed': typeof DevSeedRoute
   '/dev/themes': typeof DevThemesRoute
-  '/': typeof AppIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
   '/review/memory': typeof AppReviewMemoryRoute
@@ -211,10 +232,13 @@ export interface FileRoutesByTo {
   '/read': typeof AppReadIndexRoute
   '/review': typeof AppReviewIndexRoute
   '/settings': typeof AppSettingsIndexRoute
+  '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
+  '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_print': typeof PrintRouteWithChildren
   '/_app/$': typeof AppSplatRoute
   '/_app/check-email': typeof AppCheckEmailRoute
   '/_app/forgot-password': typeof AppForgotPasswordRoute
@@ -239,6 +263,8 @@ export interface FileRoutesById {
   '/_app/read/': typeof AppReadIndexRoute
   '/_app/review/': typeof AppReviewIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
+  '/_print/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
+  '/_print/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -267,8 +293,11 @@ export interface FileRouteTypes {
     | '/read/'
     | '/review/'
     | '/settings/'
+    | '/lessons/$lessonId/print'
+    | '/series/$seriesId/print'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/$'
     | '/check-email'
     | '/forgot-password'
@@ -280,7 +309,6 @@ export interface FileRouteTypes {
     | '/dev/looks'
     | '/dev/seed'
     | '/dev/themes'
-    | '/'
     | '/lessons/$lessonId'
     | '/read/$chapter'
     | '/review/memory'
@@ -293,9 +321,12 @@ export interface FileRouteTypes {
     | '/read'
     | '/review'
     | '/settings'
+    | '/lessons/$lessonId/print'
+    | '/series/$seriesId/print'
   id:
     | '__root__'
     | '/_app'
+    | '/_print'
     | '/_app/$'
     | '/_app/check-email'
     | '/_app/forgot-password'
@@ -320,10 +351,13 @@ export interface FileRouteTypes {
     | '/_app/read/'
     | '/_app/review/'
     | '/_app/settings/'
+    | '/_print/lessons/$lessonId/print'
+    | '/_print/series/$seriesId/print'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  PrintRoute: typeof PrintRouteWithChildren
   DevLooksRoute: typeof DevLooksRoute
   DevSeedRoute: typeof DevSeedRoute
   DevThemesRoute: typeof DevThemesRoute
@@ -336,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_print': {
+      id: '/_print'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PrintRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -506,6 +547,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVersesPassageRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_print/lessons/$lessonId/print': {
+      id: '/_print/lessons/$lessonId/print'
+      path: '/lessons/$lessonId/print'
+      fullPath: '/lessons/$lessonId/print'
+      preLoaderRoute: typeof PrintLessonsLessonIdPrintRouteImport
+      parentRoute: typeof PrintRoute
+    }
+    '/_print/series/$seriesId/print': {
+      id: '/_print/series/$seriesId/print'
+      path: '/series/$seriesId/print'
+      fullPath: '/series/$seriesId/print'
+      preLoaderRoute: typeof PrintSeriesSeriesIdPrintRouteImport
+      parentRoute: typeof PrintRoute
+    }
   }
 }
 
@@ -559,8 +614,21 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface PrintRouteChildren {
+  PrintLessonsLessonIdPrintRoute: typeof PrintLessonsLessonIdPrintRoute
+  PrintSeriesSeriesIdPrintRoute: typeof PrintSeriesSeriesIdPrintRoute
+}
+
+const PrintRouteChildren: PrintRouteChildren = {
+  PrintLessonsLessonIdPrintRoute: PrintLessonsLessonIdPrintRoute,
+  PrintSeriesSeriesIdPrintRoute: PrintSeriesSeriesIdPrintRoute,
+}
+
+const PrintRouteWithChildren = PrintRoute._addFileChildren(PrintRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  PrintRoute: PrintRouteWithChildren,
   DevLooksRoute: DevLooksRoute,
   DevSeedRoute: DevSeedRoute,
   DevThemesRoute: DevThemesRoute,

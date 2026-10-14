@@ -1,4 +1,4 @@
-import type { Lesson } from '@lamp/domain';
+import type { Lesson, Series } from '@lamp/domain';
 import { db as appDb, type LampDb } from '@/data/db.ts';
 import {
   lessonById,
@@ -42,26 +42,49 @@ async function lessonData(lesson: Lesson, db: LampDb): Promise<LessonForExport> 
   };
 }
 
+/** A series with its lessons' rows, for an export. */
+export interface SeriesForExport {
+  series: Series;
+  /** In date order. */
+  lessons: LessonForExport[];
+}
+
+/** A lesson and its rows, as the exports and the print view read them; null when it's gone. */
+export async function lessonForExport(
+  id: string,
+  db: LampDb = appDb,
+): Promise<LessonForExport | null> {
+  const lesson = await lessonById(id, db);
+  return lesson ? lessonData(lesson, db) : null;
+}
+
+/** A series and its lessons in date order, with their rows; null when it's gone. */
+export async function seriesForExport(
+  id: string,
+  db: LampDb = appDb,
+): Promise<SeriesForExport | null> {
+  const series = await seriesById(id, db);
+  if (!series) return null;
+  const lessons = await seriesLessons(id, db);
+  return { series, lessons: await Promise.all(lessons.map((lesson) => lessonData(lesson, db))) };
+}
+
 /** A lesson as Markdown, read from the device; null when it's gone. */
 export async function exportLesson(id: string, db: LampDb = appDb): Promise<Exported | null> {
-  const lesson = await lessonById(id, db);
-  if (!lesson) return null;
+  const data = await lessonForExport(id, db);
+  if (!data) return null;
   return {
-    fileName: fileName(lesson.title, lesson.date),
-    markdown: lessonMarkdown(await lessonData(lesson, db)),
+    fileName: fileName(data.lesson.title, data.lesson.date),
+    markdown: lessonMarkdown(data),
   };
 }
 
 /** A series and its lessons, in date order, as Markdown; null when it's gone. */
 export async function exportSeries(id: string, db: LampDb = appDb): Promise<Exported | null> {
-  const series = await seriesById(id, db);
-  if (!series) return null;
-  const lessons = await seriesLessons(id, db);
+  const data = await seriesForExport(id, db);
+  if (!data) return null;
   return {
-    fileName: fileName(series.title),
-    markdown: seriesMarkdown(
-      series,
-      await Promise.all(lessons.map((lesson) => lessonData(lesson, db))),
-    ),
+    fileName: fileName(data.series.title),
+    markdown: seriesMarkdown(data.series, data.lessons),
   };
 }
