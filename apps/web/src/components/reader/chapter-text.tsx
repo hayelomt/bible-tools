@@ -1,24 +1,65 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- a verse is a span with a button's role, so verses run on (Verses) */
 import type { BookText } from '@lamp/bible-data';
-import { getBook } from '@lamp/domain';
-import { Fragment, useEffect, useRef } from 'react';
+import { formatPassage, getBook, type Highlight } from '@lamp/domain';
+import { cn } from 'cn';
+import { Fragment, useEffect, useRef, type RefObject } from 'react';
 import { useBook } from '@/data/bible.ts';
 import type { Chapter } from '@/lib/chapters.ts';
+import { highlightForVerse, selectionPassage, type VerseSelection } from '@/lib/highlights.ts';
 import { readingPosition, rememberPosition } from '@/lib/reading-position.ts';
 import { useAfter } from '@/lib/use-after.ts';
 import { useOnline } from '@/lib/use-online.ts';
 import { NUMBER_CLASS } from '../verses/verse-text.tsx';
+import { HIGHLIGHT_COLOUR_CLASS, HIGHLIGHT_COLOUR_NAME } from './colours.ts';
+import { HighlightNote } from './highlight-note.tsx';
 
 /**
  * The chapter's verses in the reading face, once its book is on the device; skeleton lines while
  * it's fetched, and a line saying it isn't here when it can't be (wireframes/states.md).
  */
-export function ChapterText({ at }: { at: Chapter }) {
+export function ChapterText({
+  at,
+  highlights,
+  selection,
+  exact,
+  noting,
+  onSelect,
+  onCloseNote,
+  onSaveNote,
+  flushRef,
+}: {
+  at: Chapter;
+  highlights: readonly Highlight[];
+  selection: VerseSelection | null;
+  /** The highlight of exactly the selected verses, when there is one. */
+  exact: Highlight | null;
+  noting: boolean;
+  onSelect: (verse: number) => void;
+  onCloseNote: () => void;
+  onSaveNote: (text: string) => Promise<void>;
+  flushRef: RefObject<(() => Promise<void>) | null>;
+}) {
   const book = useBook(at.book);
   const online = useOnline();
   const slow = useAfter(300);
   const name = getBook(at.book).name;
 
-  if (book.status === 'ready') return <Verses text={book.text} at={at} />;
+  if (book.status === 'ready') {
+    return (
+      <Verses
+        text={book.text}
+        at={at}
+        highlights={highlights}
+        selection={selection}
+        exact={exact}
+        noting={noting}
+        onSelect={onSelect}
+        onCloseNote={onCloseNote}
+        onSaveNote={onSaveNote}
+        flushRef={flushRef}
+      />
+    );
+  }
   if (book.status === 'missing') {
     return (
       <p className="py-8 text-center text-muted-foreground">
@@ -61,36 +102,118 @@ function blocks(text: BookText, chapter: number): Block[] {
   return result;
 }
 
-function Verses({ text, at }: { text: BookText; at: Chapter }) {
+/**
+ * A block's verses as paragraphs, split after the last selected verse while its note is open, so
+ * the note sits under those verses rather than at the end of the chapter.
+ */
+function runs(block: Block, noting: VerseSelection | null): (Block['verses'] | 'note')[] {
+  const at = noting ? block.verses.findIndex((v) => v.number === noting.end) : -1;
+  if (at === -1) return [block.verses];
+  const after = block.verses.slice(at + 1);
+  return [block.verses.slice(0, at + 1), 'note', ...(after.length > 0 ? [after] : [])];
+}
+
+function Verses({
+  text,
+  at,
+  highlights,
+  selection,
+  exact,
+  noting,
+  onSelect,
+  onCloseNote,
+  onSaveNote,
+  flushRef,
+}: {
+  text: BookText;
+  at: Chapter;
+  highlights: readonly Highlight[];
+  selection: VerseSelection | null;
+  exact: Highlight | null;
+  noting: boolean;
+  onSelect: (verse: number) => void;
+  onCloseNote: () => void;
+  onSaveNote: (text: string) => Promise<void>;
+  flushRef: RefObject<(() => Promise<void>) | null>;
+}) {
   const ref = useReadingPosition(at);
+  const label = selection ? formatPassage(selectionPassage(at, selection)) : '';
   return (
     <div
       ref={ref}
       data-slot="chapter"
-      className="flex flex-col gap-4 font-serif text-[17px] leading-[1.6]"
+      className="flex flex-col gap-4 font-serif text-[17px] leading-[1.6] select-none"
     >
       {blocks(text, at.chapter).map((block, i) => (
         <div key={i} className="flex flex-col gap-2">
           {block.title && (
             <p className="text-[0.9em] text-muted-foreground italic">{block.title}</p>
           )}
-          <p>
-            {block.verses.map((v, j) => (
-              <Fragment key={v.number}>
-                {/* Outside the verse, so the verse starts where its number is. */}
-                {j > 0 && ' '}
-                <span data-verse={v.number}>
-                  <sup aria-hidden className={NUMBER_CLASS}>
-                    {v.number}
-                  </sup>
-                  {/* WEB leaves four verses empty; the footnote says why (TECH-DESIGN §9). */}
-                  {v.text || <span className="text-muted-foreground italic">[{v.note}]</span>}
-                </span>
-              </Fragment>
-            ))}
-          </p>
+          {runs(block, noting ? selection : null).map((run, k) =>
+            run === 'note' ? (
+              <HighlightNote
+                key={`note-${selection?.start}-${selection?.end}`}
+                label={label}
+                initial={exact?.note ?? ''}
+                onSave={onSaveNote}
+                onClose={onCloseNote}
+                flushRef={flushRef}
+              />
+            ) : (
+              <p key={k}>
+                {run.map((v, j) => {
+                  const covering = highlightForVerse(highlights, at, v.number);
+                  const selected =
+                    selection !== null && v.number >= selection.start && v.number <= selection.end;
+                  return (
+                    <Fragment key={v.number}>
+                      {/* Outside the verse, so the verse starts where its number is. */}
+                      {j > 0 && ' '}
+                      {/* A span, not a button: a button is drawn as a block of its own, and the
+                          verses would stop running on as one paragraph. */}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        data-verse={v.number}
+                        aria-pressed={selected}
+                        onClick={() => onSelect(v.number)}
+                        onKeyDown={(event) => {
+                          if (event.key !== 'Enter' && event.key !== ' ') return;
+                          event.preventDefault();
+                          onSelect(v.number);
+                        }}
+                        className={cn(
+                          'cursor-pointer rounded-sm box-decoration-clone outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                          covering && HIGHLIGHT_COLOUR_CLASS[covering.colour],
+                          selected &&
+                            'underline decoration-foreground decoration-2 underline-offset-4',
+                        )}
+                      >
+                        <sup aria-hidden className={NUMBER_CLASS}>
+                          {v.number}
+                        </sup>
+                        {/* WEB leaves four verses empty; the footnote says why (TECH-DESIGN §9). */}
+                        {v.text || <span className="text-muted-foreground italic">[{v.note}]</span>}
+                        {covering && (
+                          <span className="sr-only">
+                            {' '}
+                            Highlighted {HIGHLIGHT_COLOUR_NAME[covering.colour].toLowerCase()}.
+                          </span>
+                        )}
+                        {covering?.note && covering.ref.verseStart === v.number && (
+                          <span className="sr-only"> Note: {covering.note}</span>
+                        )}
+                      </span>
+                    </Fragment>
+                  );
+                })}
+              </p>
+            ),
+          )}
         </div>
       ))}
+      {/* The selection bar covers the last lines; this lets them scroll clear of it. */}
+      {selection && <div className="h-28" />}
     </div>
   );
 }

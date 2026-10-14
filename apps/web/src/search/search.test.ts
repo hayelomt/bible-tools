@@ -7,6 +7,7 @@ import {
 } from '@lamp/domain';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createHighlight, removeHighlight } from '@/data/actions/highlights.ts';
 import { createLesson, deleteLesson, type LessonFields } from '@/data/actions/lessons.ts';
 import { addQuestion } from '@/data/actions/questions.ts';
 import { createSection, removeSection, updateSection } from '@/data/actions/sections.ts';
@@ -235,7 +236,13 @@ describe('verse index', () => {
     const rom8 = parseQuery('Rom 8');
     if (rom8.kind !== 'verse') throw new Error('not a verse query');
     const entries = await verseIndex(rom8.passage, db);
-    expect(entries.map((e) => [e.kind, e.lesson.title, e.passages, e.text])).toEqual([
+    expect(
+      entries.flatMap((entry) =>
+        entry.kind === 'highlight'
+          ? []
+          : [[entry.kind, entry.lesson.title, entry.passages, entry.text]],
+      ),
+    ).toEqual([
       [
         'section',
         'The Good Shepherd',
@@ -261,6 +268,47 @@ describe('verse index', () => {
     const rom8 = parseQuery('Rom 8');
     if (rom8.kind !== 'verse') throw new Error('not a verse query');
     expect((await verseIndex(rom8.passage, db)).map((e) => e.id)).toEqual([ids.psalm]);
+  });
+
+  it('lists a highlight from the citation index, by the day it was stored', async () => {
+    const row = await createHighlight(
+      {
+        ref: {
+          ...ROM_8_28,
+          display: 'Romans 8:28',
+          translation: 'WEB',
+          snapshotText: 'We know that all things work together for good.',
+        },
+        colour: 'yellow',
+        note: 'memorise this',
+        promotedSectionId: null,
+      },
+      db,
+    );
+    // Between the two lessons, so the order doesn't depend on today's date.
+    await db.highlight.update(row.id, { createdAt: '2026-10-03T12:00:00.000Z' });
+    const rom8 = parseQuery('Rom 8');
+    if (rom8.kind !== 'verse') throw new Error('not a verse query');
+    const entries = await verseIndex(rom8.passage, db);
+    expect(entries.map((entry) => entry.kind)).toEqual(['section', 'highlight', 'section']);
+    expect(entries[1]).toMatchObject({
+      id: row.id,
+      colour: 'yellow',
+      note: 'memorise this',
+      passages: ['Romans 8:28'],
+      text: 'We know that all things work together for good.',
+    });
+
+    const john = parseQuery('John 10');
+    if (john.kind !== 'verse') throw new Error('not a verse query');
+    expect((await verseIndex(john.passage, db)).some((entry) => entry.kind === 'highlight')).toBe(
+      false,
+    );
+
+    await removeHighlight(row.id, db);
+    expect((await verseIndex(rom8.passage, db)).some((entry) => entry.kind === 'highlight')).toBe(
+      false,
+    );
   });
 });
 

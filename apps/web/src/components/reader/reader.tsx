@@ -2,7 +2,7 @@ import { DEFAULT_TRANSLATION, TRANSLATION_NAMES } from '@lamp/domain';
 import { buttonVariants } from '@lamp/ui/components/button';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
   type Chapter,
   chapterName,
@@ -10,10 +10,14 @@ import {
   nextChapter,
   previousChapter,
 } from '@/lib/chapters.ts';
+import { extendSelection, type VerseSelection } from '@/lib/highlights.ts';
 import { isTyping } from '@/lib/is-typing.ts';
+import { useSetSelectionBarOpen } from '../shell/selection-bar-open.tsx';
 import { ScreenActions, ScreenTitle } from '../shell/slots.tsx';
 import { ChapterText } from './chapter-text.tsx';
 import { PassagePicker } from './passage-picker.tsx';
+import { SelectionBar } from './selection-bar.tsx';
+import { useHighlights } from './use-highlights.ts';
 
 /**
  * One chapter in the reader (wireframes/reader.md "Chapter view"): its name opens the book and
@@ -22,10 +26,27 @@ import { PassagePicker } from './passage-picker.tsx';
  */
 export function Reader({ at }: { at: Chapter }) {
   const [picking, setPicking] = useState(false);
+  const [selection, setSelection] = useState<VerseSelection | null>(null);
+  const [noting, setNoting] = useState(false);
+  const flushNote = useRef<(() => Promise<void>) | null>(null);
+  const { highlights, exact, paint, saveNote, removeCurrent } = useHighlights(at, selection);
   const previous = previousChapter(at);
   const next = nextChapter(at);
   useChapterKeys(previous, next);
+  useSelectionKeys(
+    selection !== null,
+    noting,
+    flushNote,
+    () => setNoting(false),
+    () => setSelection(null),
+  );
+  useSelectionBar(selection !== null);
   const swipe = useSwipe(previous, next);
+
+  async function closeNote() {
+    await flushNote.current?.();
+    setNoting(false);
+  }
 
   return (
     <>
@@ -41,18 +62,34 @@ export function Reader({ at }: { at: Chapter }) {
         </button>
       </ScreenTitle>
       <ScreenActions>
-        <abbr
-          title={TRANSLATION_NAMES[DEFAULT_TRANSLATION]}
-          className="px-1 text-xs font-medium text-muted-foreground no-underline"
-        >
-          {DEFAULT_TRANSLATION}
-        </abbr>
-        <ChapterArrow to={previous} direction="previous" />
-        <ChapterArrow to={next} direction="next" />
+        {/* A phone's top bar has room only for the chapter's name; it swipes, or uses the links
+            under the text (decided 2026-10-14). */}
+        <div className="hidden items-center gap-1 sm:flex">
+          <abbr
+            title={TRANSLATION_NAMES[DEFAULT_TRANSLATION]}
+            className="px-1 text-xs font-medium text-muted-foreground no-underline"
+          >
+            {DEFAULT_TRANSLATION}
+          </abbr>
+          <ChapterArrow to={previous} direction="previous" />
+          <ChapterArrow to={next} direction="next" />
+        </div>
       </ScreenActions>
 
       <div {...swipe} className="flex flex-col gap-10">
-        <ChapterText at={at} />
+        <ChapterText
+          at={at}
+          highlights={highlights}
+          selection={selection}
+          exact={exact}
+          noting={noting}
+          flushRef={flushNote}
+          onSaveNote={saveNote}
+          onCloseNote={() => setNoting(false)}
+          onSelect={(verse) => {
+            void closeNote().then(() => setSelection((current) => extendSelection(current, verse)));
+          }}
+        />
         <nav aria-label="Chapters" className="flex justify-between gap-4">
           {previous ? <ChapterLink to={previous} direction="previous" /> : <span />}
           {next && <ChapterLink to={next} direction="next" />}
@@ -60,8 +97,61 @@ export function Reader({ at }: { at: Chapter }) {
       </div>
 
       <PassagePicker open={picking} onOpenChange={setPicking} current={at} />
+      {selection && (
+        <SelectionBar
+          at={at}
+          selection={selection}
+          exact={exact}
+          noting={noting}
+          onPaint={(colour) => void paint(colour)}
+          onNote={() => {
+            if (noting) void closeNote();
+            else setNoting(true);
+          }}
+          onRemove={() => {
+            void closeNote().then(() => removeCurrent());
+          }}
+          onClear={() => {
+            void closeNote().then(() => setSelection(null));
+          }}
+        />
+      )}
     </>
   );
+}
+
+/** While verses are selected, the shell hides the bottom navigation under this bar. */
+function useSelectionBar(open: boolean) {
+  const setOpen = useSetSelectionBarOpen();
+  useLayoutEffect(() => {
+    setOpen(open);
+    return () => setOpen(false);
+  }, [open, setOpen]);
+}
+
+/**
+ * Escape closes the note, or the selection when the note is already closed (UX-PATTERNS
+ * "Shortcuts"). A dialog on top, such as the book picker, takes Escape itself.
+ */
+function useSelectionKeys(
+  selected: boolean,
+  noting: boolean,
+  flushNote: RefObject<(() => Promise<void>) | null>,
+  closeNote: () => void,
+  clear: () => void,
+) {
+  useEffect(() => {
+    if (!selected) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      event.preventDefault();
+      if (noting) void flushNote.current?.().then(closeNote);
+      else clear();
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selected, noting, flushNote, closeNote, clear]);
 }
 
 type Direction = 'previous' | 'next';

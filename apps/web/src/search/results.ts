@@ -1,6 +1,7 @@
 import {
   citedRefs,
   formatPassage,
+  type Highlight,
   type Lesson,
   type ParsedPassage,
   type Passage,
@@ -160,22 +161,67 @@ export async function verseResults(passage: Passage, db: LampDb = appDb): Promis
   );
 }
 
-/** A row of the verse index: a section or a lesson's main passage, with its lesson. */
-export type VerseIndexEntry = Extract<ResultItem, { kind: 'lesson' | 'section' }> & {
-  lesson: Lesson;
-};
+/** A row of the verse index: a note, a lesson's main passage, or a highlight. */
+export type VerseIndexEntry =
+  | (Extract<ResultItem, { kind: 'lesson' | 'section' }> & { lesson: Lesson })
+  | {
+      kind: 'highlight';
+      id: string;
+      colour: Highlight['colour'];
+      note: string | null;
+      /** The highlight's own reference, as stored. */
+      passages: string[];
+      /** The verse text frozen when it was highlighted. */
+      text: string;
+      createdAt: string;
+      ref: Highlight['ref'];
+    };
 
 /**
  * The verse index (F7, wireframes/verses.md): everything citing a passage that overlaps
- * `passage`, newest lesson first; in a lesson, its main passage, then sections in reading order.
+ * `passage`, newest first. Notes stay in their lesson's order; a highlight takes its own time,
+ * so one made on a later day sits above an older lesson.
  */
 export async function verseIndex(passage: Passage, db: LampDb = appDb): Promise<VerseIndexEntry[]> {
-  const groups = await verseResults(passage, db);
-  return groups.flatMap(({ lesson, items }) =>
+  const [groups, highlights] = await Promise.all([
+    verseResults(passage, db),
+    highlightEntries(passage, db),
+  ]);
+  const notes = groups.flatMap(({ lesson, items }) =>
     items.flatMap((item) =>
       item.kind === 'lesson' || item.kind === 'section' ? [{ ...item, lesson }] : [],
     ),
   );
+  return [...notes, ...highlights]
+    .map((entry, index) => ({ entry, index }))
+    .toSorted((a, b) => when(b.entry).localeCompare(when(a.entry)) || a.index - b.index)
+    .map(({ entry }) => entry);
+}
+
+/** Highlights whose passage overlaps `passage`, from the citation index. */
+async function highlightEntries(passage: Passage, db: LampDb): Promise<VerseIndexEntry[]> {
+  const [start, end] = passageRange(passage);
+  const citations = await db.citation
+    .where('startOrd')
+    .belowOrEqual(end)
+    .filter((row) => row.endOrd >= start && row.sourceType === 'highlight')
+    .toArray();
+  const rows = (await db.highlight.bulkGet(citations.map((row) => row.sourceId))).filter(live);
+  return rows.map((row) => ({
+    kind: 'highlight',
+    id: row.id,
+    colour: row.colour,
+    note: row.note,
+    passages: [row.ref.display],
+    text: row.ref.snapshotText ?? '',
+    createdAt: row.createdAt,
+    ref: row.ref,
+  }));
+}
+
+/** A lesson is dated at the start of its day; a highlight at the moment it was stored. */
+function when(entry: VerseIndexEntry): string {
+  return entry.kind === 'highlight' ? entry.createdAt : `${entry.lesson.date}T00:00:00.000Z`;
 }
 
 /** A tag with how many sections and lessons carry it, for the suggestions. */

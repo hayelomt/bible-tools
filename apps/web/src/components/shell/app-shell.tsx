@@ -1,11 +1,12 @@
 import { Toaster } from '@lamp/ui/components/sonner';
 import { Outlet, useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { OtherAccountDialog } from '@/components/account/other-account-dialog.tsx';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { useThemeSync } from '@/lib/theme.ts';
 import { BottomNav } from './bottom-nav.tsx';
 import { ScreenHeader } from './screen-header.tsx';
+import { SelectionBarOpenProvider } from './selection-bar-open.tsx';
 import { Sidebar } from './sidebar.tsx';
 import { ShellSlots, useSlotRef } from './slots.tsx';
 import { UpdatePrompt } from './update-prompt.tsx';
@@ -22,25 +23,28 @@ export function AppShell() {
   useShortcuts();
   useThemeSync();
   useSyncAccount();
+  const [selectionBar, setSelectionBar] = useState(false);
   return (
-    <ShellSlots>
-      <div className="min-h-svh lg:flex">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 justify-center gap-8 lg:px-8">
-          <div className="flex w-full min-w-0 flex-1 flex-col lg:max-w-2xl">
-            <ScreenHeader />
-            <main className="flex-1 px-4 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:px-0 lg:pt-0 lg:pb-10">
-              <Outlet />
-            </main>
+    <SelectionBarOpenProvider setOpen={setSelectionBar}>
+      <ShellSlots>
+        <div className="min-h-svh lg:flex">
+          <Sidebar />
+          <div className="flex min-w-0 flex-1 justify-center gap-8 lg:px-8">
+            <div className="flex w-full min-w-0 flex-1 flex-col lg:max-w-2xl">
+              <ScreenHeader />
+              <main className="flex-1 px-4 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:px-0 lg:pt-0 lg:pb-10">
+                <Outlet />
+              </main>
+            </div>
+            <PanelSlot />
           </div>
-          <PanelSlot />
+          <BottomNav hidden={selectionBar} />
         </div>
-        <BottomNav />
-      </div>
-      <AppToaster />
-      <UpdatePrompt />
-      <OtherAccountDialog />
-    </ShellSlots>
+        <AppToaster />
+        <UpdatePrompt />
+        <OtherAccountDialog />
+      </ShellSlots>
+    </SelectionBarOpenProvider>
   );
 }
 
