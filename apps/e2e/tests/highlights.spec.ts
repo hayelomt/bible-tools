@@ -1,8 +1,8 @@
 import { expect, type Page, test } from '@playwright/test';
-import { rows } from './helpers.ts';
+import { newLesson, rows } from './helpers.ts';
 
 // Highlights (F8, M5-02): select verses, colour them, add a note, edit and delete, and find the
-// highlight in the verse index. Promotion into a lesson is M5-03.
+// highlight in the verse index; then add them to a lesson (M5-03).
 
 const verse = (page: Page, n: number) => page.locator(`[data-verse="${n}"]`);
 const bar = (page: Page) => page.getByRole('toolbar', { name: 'Selected verses' });
@@ -83,6 +83,61 @@ test.describe('on a phone', () => {
     await expect(bar(page)).toBeHidden();
     await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
   });
+});
+
+test('adds verses to a new lesson and to an existing one', async ({ page }) => {
+  await page.goto('/');
+  await newLesson(page, 'The Good Shepherd');
+
+  // Plain verses with a note: stored as a yellow highlight, then added to a new lesson.
+  await page.goto('/read/JHN.10');
+  await verse(page, 14).click();
+  await bar(page).getByRole('button', { name: 'Note' }).click();
+  await page.getByRole('textbox', { name: 'Note on John 10:14' }).fill('Known by my own');
+  await page.getByRole('button', { name: 'Done' }).click();
+  await bar(page).getByRole('button', { name: 'Add to lesson' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add John 10:14 to a lesson' });
+  // The most recent lesson is chosen to start with.
+  await expect(dialog.getByRole('radio', { name: /The Good Shepherd/ })).toBeChecked();
+  await dialog.getByRole('radio', { name: 'New lesson “John 10:14”' }).check();
+  await dialog.getByRole('button', { name: 'Add' }).click();
+  await expect(page.getByText('Added to John 10:14.')).toBeVisible();
+  await expect(bar(page)).toBeHidden();
+  await expect(verse(page, 14)).toContainText('Highlighted yellow');
+
+  await page.getByRole('button', { name: 'Open', exact: true }).click();
+  await expect(page).toHaveURL(/\/lessons\/[\w-]+\?section=/);
+  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('John 10:14');
+  await expect(page.getByText('Personal', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Known by my own')).toBeVisible();
+
+  // Already added: the bar opens that section instead.
+  await page.goto('/read/JHN.10');
+  await verse(page, 14).click();
+  await expect(bar(page).getByRole('link', { name: 'Open in lesson' })).toBeVisible();
+  await expect(bar(page).getByRole('button', { name: 'Add to lesson' })).toBeHidden();
+
+  // A highlight into an existing lesson, at its end.
+  await bar(page).getByRole('button', { name: 'Clear selection' }).click();
+  await verse(page, 11).click();
+  await bar(page).getByRole('button', { name: 'Blue' }).click();
+  await bar(page).getByRole('button', { name: 'Add to lesson' }).click();
+  await page.getByRole('radio', { name: /The Good Shepherd/ }).check();
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByText('Added to The Good Shepherd.')).toBeVisible();
+
+  const lessons = await rows<{ id: string; title: string; source: string }>(page, 'lesson');
+  const shepherd = lessons.find((lesson) => lesson.title === 'The Good Shepherd')!;
+  const sections = await rows<{ id: string; lessonId: string }>(page, 'section');
+  const highlights = await rows<{ colour: string; promotedSectionId: string | null }>(
+    page,
+    'highlight',
+  );
+  expect(highlights.map((h) => h.colour).toSorted()).toEqual(['blue', 'yellow']);
+  const blue = highlights.find((h) => h.colour === 'blue')!;
+  expect(sections.find((section) => section.id === blue.promotedSectionId)?.lessonId).toBe(
+    shepherd.id,
+  );
 });
 
 test.describe('on a laptop', () => {

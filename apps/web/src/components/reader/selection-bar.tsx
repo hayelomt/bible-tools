@@ -1,5 +1,6 @@
 import { HIGHLIGHT_COLOURS, formatPassage, type Highlight } from '@lamp/domain';
 import { buttonVariants } from '@lamp/ui/components/button';
+import { Link } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { useKeyboardInset } from '@/lib/use-keyboard.ts';
 import { selectionPassage, type VerseSelection } from '@/lib/highlights.ts';
@@ -8,7 +9,8 @@ import { HIGHLIGHT_COLOUR_CLASS, HIGHLIGHT_COLOUR_NAME } from './colours.ts';
 
 /**
  * The bar that replaces the bottom navigation while verses are selected (wireframes/reader.md
- * "Selected verses"): four colours, a note, and Remove once those verses are a highlight. On a
+ * "Selected verses"): four colours, a note, Add to lesson (or Open in lesson once added), and Remove
+ * once those verses are a highlight. On a
  * laptop it sits at the bottom of the window, to the right of the sidebar.
  */
 export function SelectionBar({
@@ -16,8 +18,10 @@ export function SelectionBar({
   selection,
   exact,
   noting,
+  promoted,
   onPaint,
   onNote,
+  onAddToLesson,
   onRemove,
   onClear,
 }: {
@@ -25,14 +29,18 @@ export function SelectionBar({
   selection: VerseSelection;
   exact: Highlight | null;
   noting: boolean;
+  /** The section the highlight was added to, while it's there. */
+  promoted: { lessonId: string; sectionId: string } | null;
   onPaint: (colour: Highlight['colour']) => void;
   onNote: () => void;
+  onAddToLesson: () => void;
   onRemove: () => void;
   onClear: () => void;
 }) {
   const keyboard = useKeyboardInset();
   if (keyboard > 0) return null;
   const label = formatPassage(selectionPassage(at, selection));
+  const action = buttonVariants({ variant: 'ghost', className: 'pointer-coarse:min-h-11' });
   return (
     <div
       role="toolbar"
@@ -85,6 +93,21 @@ export function SelectionBar({
           >
             Note
           </button>
+          {promoted ? (
+            <Link
+              to="/lessons/$lessonId"
+              params={{ lessonId: promoted.lessonId }}
+              search={{ section: promoted.sectionId }}
+              data-slot="button"
+              className={action}
+            >
+              Open in lesson
+            </Link>
+          ) : (
+            <button type="button" onClick={onAddToLesson} data-slot="button" className={action}>
+              Add to lesson
+            </button>
+          )}
           {exact && (
             <button
               type="button"

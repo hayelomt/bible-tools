@@ -1,10 +1,13 @@
 import { HIGHLIGHT_COLOURS, passagesOverlap, type Highlight } from '@lamp/domain';
 import { toast } from '@lamp/ui/components/sonner';
+import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef } from 'react';
 import { snapshotText, useBook } from '@/data/bible.ts';
 import {
   createHighlight,
+  type PromoteTarget,
+  promoteHighlight,
   removeHighlight,
   restoreHighlight,
   updateHighlight,
@@ -35,6 +38,8 @@ export function useHighlights(at: Chapter, selection: VerseSelection | null) {
   );
   const highlights = stored ?? [];
   const exact = selection ? highlightForSelection(highlights, at, selection) : null;
+  const promoted = usePromotedSection(exact?.promotedSectionId ?? null);
+  const navigate = useNavigate();
 
   const selectionRef = useRef(selection);
   const exactRef = useRef(exact);
@@ -118,6 +123,41 @@ export function useHighlights(at: Chapter, selection: VerseSelection | null) {
     });
   }
 
+  /**
+   * Adds the selected verses to a lesson (M5-03), storing them as a yellow highlight first when
+   * they aren't one yet, like a note does. A toast offers the lesson.
+   */
+  function promote(target: PromoteTarget): Promise<void> {
+    const current = selectionRef.current;
+    if (!current) return Promise.resolve();
+    return enqueue(async () => {
+      let id = idRef.current;
+      if (!id) {
+        const row = await createHighlight({
+          ref: storedRef(current),
+          colour: HIGHLIGHT_COLOURS[0],
+          note: null,
+          promotedSectionId: null,
+        });
+        adopt(current, row.id);
+        id = row.id;
+      }
+      const { lesson, section } = await promoteHighlight(id, target);
+      toast(`Added to ${lesson.title}.`, {
+        duration: 10_000,
+        action: {
+          label: 'Open',
+          onClick: () =>
+            void navigate({
+              to: '/lessons/$lessonId',
+              params: { lessonId: lesson.id },
+              search: { section: section.id },
+            }),
+        },
+      });
+    });
+  }
+
   function removeCurrent(): Promise<void> {
     const id = exactRef.current?.id ?? idRef.current;
     if (!id) return Promise.resolve();
@@ -134,7 +174,7 @@ export function useHighlights(at: Chapter, selection: VerseSelection | null) {
     });
   }
 
-  return { highlights, exact, paint, saveNote, removeCurrent };
+  return { highlights, exact, promoted, paint, saveNote, promote, removeCurrent };
 }
 
 function passageOf(at: Chapter, selection: VerseSelection) {
@@ -144,4 +184,16 @@ function passageOf(at: Chapter, selection: VerseSelection) {
     verseStart: selection.start,
     ...(selection.end === selection.start ? {} : { verseEnd: selection.end }),
   };
+}
+
+/** The section a highlight was added to, while it and its lesson are still there. */
+function usePromotedSection(id: string | null) {
+  return (
+    useLiveQuery(async () => {
+      const section = id ? await db.section.get(id) : undefined;
+      if (!section || section.deletedAt !== null) return null;
+      const lesson = await db.lesson.get(section.lessonId);
+      return lesson?.deletedAt === null ? { lessonId: lesson.id, sectionId: section.id } : null;
+    }, [id]) ?? null
+  );
 }

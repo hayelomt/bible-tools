@@ -1,13 +1,7 @@
-import {
-  compareOrder,
-  keyBetween,
-  type Question,
-  type Section,
-  type SectionBody,
-  toPlainText,
-} from '@lamp/domain';
+import { type Question, type Section, type SectionBody, toPlainText } from '@lamp/domain';
 import { action, RowNotFoundError, type Writer } from '../action.ts';
 import { db as appDb, type LampDb } from '../db.ts';
+import { endOfLesson } from './section-order.ts';
 
 /**
  * Whether an answer section has an answer: text beyond the heading it was given, the question
@@ -112,19 +106,7 @@ export function promoteQuestion(
       if (existing && existing.deletedAt === null) return existing;
     }
 
-    let orderKey = at?.orderKey;
-    if (orderKey === undefined) {
-      const last = (
-        await w.db.section
-          .where('lessonId')
-          .equals(question.lessonId)
-          .filter((s) => s.deletedAt === null && s.parentId === null)
-          .toArray()
-      )
-        .toSorted(compareOrder)
-        .at(-1);
-      orderKey = keyBetween(last?.orderKey ?? null, null);
-    }
+    const orderKey = at?.orderKey ?? (await endOfLesson(w, question.lessonId));
     const section = await w.create('section', {
       id: at?.id,
       lessonId: question.lessonId,

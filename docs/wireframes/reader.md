@@ -104,3 +104,9 @@ field under the verse:
 
 After adding, a toast: "Added to The Good Shepherd. `[ Open ]`". The highlight now links to that
 section.
+
+*As built in M5-03:* the most recent lesson is chosen to start with. "Search lessons…" is a field
+above the list, shown once there are more than five lessons; it narrows them by title. A new
+lesson is titled with the reference, dated today, Personal, with the passage as its main passage.
+The section is the verse chip, then the note. Once added, the bar's "Add to lesson" reads "Open in
+lesson" until that section is deleted.

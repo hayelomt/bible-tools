@@ -1,4 +1,4 @@
-import { DEFAULT_TRANSLATION, TRANSLATION_NAMES } from '@lamp/domain';
+import { DEFAULT_TRANSLATION, formatPassage, TRANSLATION_NAMES } from '@lamp/domain';
 import { buttonVariants } from '@lamp/ui/components/button';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,10 +10,12 @@ import {
   nextChapter,
   previousChapter,
 } from '@/lib/chapters.ts';
-import { extendSelection, type VerseSelection } from '@/lib/highlights.ts';
+import { today } from '@/lib/dates.ts';
+import { extendSelection, selectionPassage, type VerseSelection } from '@/lib/highlights.ts';
 import { isTyping } from '@/lib/is-typing.ts';
 import { useSetSelectionBarOpen } from '../shell/selection-bar-open.tsx';
 import { ScreenActions, ScreenTitle } from '../shell/slots.tsx';
+import { AddToLesson } from './add-to-lesson.tsx';
 import { ChapterText } from './chapter-text.tsx';
 import { PassagePicker } from './passage-picker.tsx';
 import { SelectionBar } from './selection-bar.tsx';
@@ -29,7 +31,11 @@ export function Reader({ at }: { at: Chapter }) {
   const [selection, setSelection] = useState<VerseSelection | null>(null);
   const [noting, setNoting] = useState(false);
   const flushNote = useRef<(() => Promise<void>) | null>(null);
-  const { highlights, exact, paint, saveNote, removeCurrent } = useHighlights(at, selection);
+  const [adding, setAdding] = useState(false);
+  const { highlights, exact, promoted, paint, saveNote, promote, removeCurrent } = useHighlights(
+    at,
+    selection,
+  );
   const previous = previousChapter(at);
   const next = nextChapter(at);
   useChapterKeys(previous, next);
@@ -103,16 +109,34 @@ export function Reader({ at }: { at: Chapter }) {
           selection={selection}
           exact={exact}
           noting={noting}
+          promoted={promoted}
           onPaint={(colour) => void paint(colour)}
           onNote={() => {
             if (noting) void closeNote();
             else setNoting(true);
+          }}
+          onAddToLesson={() => {
+            void closeNote().then(() => setAdding(true));
           }}
           onRemove={() => {
             void closeNote().then(() => removeCurrent());
           }}
           onClear={() => {
             void closeNote().then(() => setSelection(null));
+          }}
+        />
+      )}
+      {selection && (
+        <AddToLesson
+          open={adding}
+          onOpenChange={setAdding}
+          label={formatPassage(selectionPassage(at, selection))}
+          onAdd={(choice) => {
+            setAdding(false);
+            // Cleared once stored: the write needs the selection's highlight.
+            void promote(choice === 'new' ? { newLesson: { date: today() } } : choice).then(() =>
+              setSelection(null),
+            );
           }}
         />
       )}
