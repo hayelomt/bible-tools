@@ -164,6 +164,7 @@ lesson · 1 highlight", and the filter is All / Notes / Highlights (Memory waits
 highlight row is `HIGHLIGHT · Fri 3 Oct · yellow`, then its reference, verse text and note, and
 opens the reader at its first verse. A lesson whose main passage overlaps shows as a row:
 `LESSON · Sun 12 Oct`, its title, `Main passage: Romans 8`. In a note the cited chips are in bold,
-in the text around them. `[ Read › ]` comes with the reader (M5-04). The empty state reads "Nothing
-cites Romans 8 yet. Notes and highlights on it will show here." The address is `/verses/ROM.8`;
+in the text around them. `[ Read › ]` (M5-04) sits beside the summary and opens the reader at the
+passage's first verse. The empty state reads "Nothing cites Romans 8 yet. Notes and highlights on
+it will show here." with `[ Read Romans 8 › ]` under it. The address is `/verses/ROM.8`;
 one that isn't a passage shows "Passage not found".

@@ -1,7 +1,9 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- a verse is a span with a button's role, so verses run on (Verses) */
 import type { BookText } from '@lamp/bible-data';
-import { formatPassage, getBook, type Highlight } from '@lamp/domain';
+import { formatPassage, getBook, type Highlight, passageSlug } from '@lamp/domain';
+import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Fragment, useEffect, useRef, type RefObject } from 'react';
 import { useBook } from '@/data/bible.ts';
 import type { Chapter } from '@/lib/chapters.ts';
@@ -9,6 +11,7 @@ import { highlightForVerse, selectionPassage, type VerseSelection } from '@/lib/
 import { readingPosition, rememberPosition } from '@/lib/reading-position.ts';
 import { useAfter } from '@/lib/use-after.ts';
 import { useOnline } from '@/lib/use-online.ts';
+import { notedVerses } from '@/search/results.ts';
 import { NUMBER_CLASS } from '../verses/verse-text.tsx';
 import { HIGHLIGHT_COLOUR_CLASS, HIGHLIGHT_COLOUR_NAME } from './colours.ts';
 import { HighlightNote } from './highlight-note.tsx';
@@ -137,6 +140,7 @@ function Verses({
   flushRef: RefObject<(() => Promise<void>) | null>;
 }) {
   const ref = useReadingPosition(at);
+  const noted = useLiveQuery(() => notedVerses(at.book, at.chapter), [at.book, at.chapter]);
   const label = selection ? formatPassage(selectionPassage(at, selection)) : '';
   return (
     <div
@@ -204,6 +208,7 @@ function Verses({
                           <span className="sr-only"> Note: {covering.note}</span>
                         )}
                       </span>
+                      {noted?.has(v.number) && <NoteMarker at={at} verse={v.number} />}
                     </Fragment>
                   );
                 })}
@@ -215,6 +220,25 @@ function Verses({
       {/* The selection bar covers the last lines; this lets them scroll clear of it. */}
       {selection && <div className="h-28" />}
     </div>
+  );
+}
+
+/**
+ * `•` after a verse that notes cite (M5-04), opening its verse index. A small dot with a 44 px
+ * touch area around it.
+ */
+function NoteMarker({ at, verse }: { at: Chapter; verse: number }) {
+  const passage = { book: at.book, chapter: at.chapter, verseStart: verse };
+  return (
+    <Link
+      to="/verses/$passage"
+      params={{ passage: passageSlug(passage) }}
+      aria-label={`Notes on ${formatPassage(passage)}`}
+      data-slot="note-marker"
+      className="relative ml-1 inline-flex size-5 items-center justify-center rounded-full align-middle text-primary outline-none before:absolute before:-inset-3 before:content-[''] hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <span aria-hidden className="size-1.5 rounded-full bg-current" />
+    </Link>
   );
 }
 

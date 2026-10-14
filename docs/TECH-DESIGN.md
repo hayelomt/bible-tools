@@ -404,6 +404,7 @@ React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui (in `packages/ui`), **Tan
 *Highlights and Add to lesson, built in M5-02 and M5-03 (`components/reader/`, `lib/highlights.ts`, `data/actions/highlights.ts`):*
 - **Selecting:** a tap on a verse selects it and another tap extends the range; a bar takes the bottom navigation's place with the four colours, Note, Add to lesson and, on a highlight, Remove (with Undo). A verse is a span with a button's role, so verses still run on as one paragraph.
 - **Add to lesson** (`promoteHighlight`, decided 2026-10-14): a dialog lists the five most recent lessons, a search over titles when there are more, and a new lesson titled with the reference, dated today, source Personal, with the passage as its main passage. It adds a top-level section at the end of the lesson: a paragraph with the verse chip, then the note a paragraph a line; the highlight links to it by `promotedSectionId`. Verses not yet highlighted are stored in yellow first. While that section and its lesson exist, the bar offers "Open in lesson" instead, and adding again returns the same section. A toast says "Added to The Good Shepherd." with Open.
+- **Reader and verse index** (M5-04, decided 2026-10-14): a `•` after a verse that a live section's chip covers (`notedVerses`, the same overlap query as the verse index; lessons' main passages and highlights don't mark) opens `/verses/JHN.10.11`. A tap on the verse itself still selects it; the bar's "Verse index" opens the selected verses' index. The verse index's "Read ›" (and "Read John 10:11 ›" when nothing cites it) opens the reader at the passage's first verse.
 
 *Screens* follow [UX-PATTERNS.md](UX-PATTERNS.md) and its wireframes (M1-14): bottom bar under 1024 px and sidebar above, 44 px touch targets on touch screens (enforced in `globals.css`), autosave with no Save buttons, undo for single deletes and a confirmation for anything larger.
 
@@ -461,7 +462,7 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 
 *Built in M4-07:*
 - **Verse index** (`/verses/$passage`): the address is the passage's slug (`passageSlug` in `verse-ref.ts`: `ROM.8`, `ROM.8.28-30`, `ROM.7.24-8.2`), never re-read by the parser, so KJV numbering isn't mapped twice. `verseIndex` runs the same overlap query as a verse search and lists its rows flat, newest lesson first: a lesson whose main passage overlaps, then its sections in reading order, each with the lesson, the date and the text around the chip (`around` in `snippet.ts`). It opens from a chip ("Every note on …") and from a verse search ("Verse index for …").
-- Highlights and memory items, with the All / Notes / Highlights / Memory filter, join the page with M5-02 and M6-01; its "Read ›" button comes with the reader (M5-04) (decided 2026-10-13).
+- Highlights and memory items, with the All / Notes / Highlights / Memory filter, join the page with M5-02 and M6-01; its "Read ›" button came with M5-04 (decided 2026-10-13).
 - **The M4 gate** (`gate-find.spec.ts`) writes a month of lessons straight to the device, checked against the sync schemas and with citations from `citationsFor`, as a pull would leave them, then finds one note by tag, by text and by verse on a phone.
 
 ### 8.5 Theme

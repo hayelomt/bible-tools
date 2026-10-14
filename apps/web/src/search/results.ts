@@ -13,6 +13,7 @@ import {
   tagKey,
   normaliseTagName,
   toPlainText,
+  verseCount,
 } from '@lamp/domain';
 import { db as appDb, type LampDb } from '@/data/db.ts';
 import { byDate, lessonSections, readingOrder, taggedWith } from '@/data/queries.ts';
@@ -222,6 +223,45 @@ async function highlightEntries(passage: Passage, db: LampDb): Promise<VerseInde
 /** A lesson is dated at the start of its day; a highlight at the moment it was stored. */
 function when(entry: VerseIndexEntry): string {
   return entry.kind === 'highlight' ? entry.createdAt : `${entry.lesson.date}T00:00:00.000Z`;
+}
+
+/**
+ * The verses of a chapter that notes cite (F8 reader markers, M5-04): every verse a live section's
+ * chip covers, so a marker shows exactly where the verse index lists a note. Lessons' main
+ * passages and highlights don't mark verses (decided 2026-10-14).
+ */
+export async function notedVerses(
+  book: Passage['book'],
+  chapter: number,
+  db: LampDb = appDb,
+): Promise<Set<number>> {
+  const [start, end] = passageRange({ book, chapter });
+  const citations = await db.citation
+    .where('startOrd')
+    .belowOrEqual(end)
+    .filter((row) => row.endOrd >= start && row.sourceType === 'section')
+    .toArray();
+  const sections = (
+    await db.section.bulkGet([...new Set(citations.map((c) => c.sourceId))])
+  ).filter(live);
+  const lessons = new Set(
+    (
+      await liveLessons(
+        sections.map((s) => s.lessonId),
+        db,
+      )
+    ).map((l) => l.id),
+  );
+  const noted = new Set(sections.filter((s) => lessons.has(s.lessonId)).map((s) => s.id));
+  const verses = new Set<number>();
+  const last = verseCount(book, chapter);
+  for (const citation of citations) {
+    if (!noted.has(citation.sourceId)) continue;
+    const from = Math.max(citation.startOrd, start) - start;
+    const to = Math.min(citation.endOrd, end) - start;
+    for (let verse = Math.max(from, 1); verse <= Math.min(to, last); verse++) verses.add(verse);
+  }
+  return verses;
 }
 
 /** A tag with how many sections and lessons carry it, for the suggestions. */

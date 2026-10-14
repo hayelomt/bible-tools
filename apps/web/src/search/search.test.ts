@@ -24,6 +24,7 @@ import {
   tagResults,
   tagSuggestions,
   textResults,
+  notedVerses,
   verseIndex,
   verseResults,
 } from './results.ts';
@@ -261,6 +262,26 @@ describe('verse index', () => {
     expect((await verseIndex(john.passage, db)).map((e) => [e.kind, e.passages])).toEqual([
       ['lesson', ['John 10']],
     ]);
+  });
+
+  it('marks the verses where the verse index lists a note, and no others', async () => {
+    const markedRom8 = async () => {
+      const noted = await notedVerses('ROM', 8, db);
+      for (let n = 1; n <= 39; n++) {
+        const entries = await verseIndex({ book: 'ROM', chapter: 8, verseStart: n }, db);
+        expect(noted.has(n), `Romans 8:${n}`).toBe(
+          entries.some((entry) => entry.kind === 'section'),
+        );
+      }
+      return [...noted].toSorted((a, b) => a - b);
+    };
+    // Romans 7:24–8:2 reaches verses 1 and 2; Romans 8:28 is one verse.
+    expect(await markedRom8()).toEqual([1, 2, 28]);
+    // A lesson's main passage (John 10) marks nothing.
+    expect(await notedVerses('JHN', 10, db)).toEqual(new Set());
+
+    await removeSection(ids.deliver!, {}, db);
+    expect(await markedRom8()).toEqual([28]);
   });
 
   it('follows deleted sections', async () => {

@@ -35,6 +35,10 @@ same. The reader reopens where it was left.
 Tapping a verse selects it; tapping more extends the selection. A marker `•` opens the verse index
 for that verse.
 
+*As built in M5-04:* the marker sits after the verse's text and shows where a note's chip cites the
+verse; a lesson's main passage and a highlight don't add one. The selection bar has "Verse index"
+for the selected verses, in place of the `⋯` menu's "Every note on …" until that menu is built.
+
 ## Book and chapter picker (M5-01)
 
 ```text

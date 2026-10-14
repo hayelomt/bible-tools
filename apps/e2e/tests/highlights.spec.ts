@@ -138,6 +138,31 @@ test('adds verses to a new lesson and to an existing one', async ({ page }) => {
   expect(sections.find((section) => section.id === blue.promotedSectionId)?.lessonId).toBe(
     shepherd.id,
   );
+
+  // Verses that notes cite carry a marker (M5-04): only 11 and 14, the sections' chips.
+  const markers = page.getByRole('link', { name: /^Notes on / });
+  await expect(markers).toHaveText(['', '']);
+  await expect(markers.nth(0)).toHaveAccessibleName('Notes on John 10:11');
+  await expect(markers.nth(1)).toHaveAccessibleName('Notes on John 10:14');
+
+  // A marker opens the verse's index, and Read comes back to the verse.
+  await markers.nth(1).click();
+  await expect(page).toHaveURL(/\/verses\/JHN\.10\.14$/);
+  await expect(page.getByText('1 note · main passage of 1 lesson · 1 highlight')).toBeVisible();
+  await page.getByRole('link', { name: 'Read John 10:14' }).click();
+  await expect(page).toHaveURL(/\/read\/JHN\.10$/);
+  await expect
+    .poll(() => verse(page, 14).evaluate((el) => el.getBoundingClientRect().top))
+    .toBeLessThan(100);
+
+  // The selected verses' index, from the bar, even with nothing on them.
+  await verse(page, 3).click();
+  await verse(page, 4).click();
+  await bar(page).getByRole('link', { name: 'Verse index' }).click();
+  await expect(page).toHaveURL(/\/verses\/JHN\.10\.3-4$/);
+  await expect(page.getByText('Nothing cites John 10:3–4 yet.', { exact: false })).toBeVisible();
+  await page.getByRole('link', { name: 'Read John 10:3–4' }).click();
+  await expect(page).toHaveURL(/\/read\/JHN\.10$/);
 });
 
 test.describe('on a laptop', () => {

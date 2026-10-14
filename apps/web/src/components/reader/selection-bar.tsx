@@ -1,4 +1,4 @@
-import { HIGHLIGHT_COLOURS, formatPassage, type Highlight } from '@lamp/domain';
+import { HIGHLIGHT_COLOURS, formatPassage, type Highlight, passageSlug } from '@lamp/domain';
 import { buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
 import { X } from 'lucide-react';
@@ -9,8 +9,8 @@ import { HIGHLIGHT_COLOUR_CLASS, HIGHLIGHT_COLOUR_NAME } from './colours.ts';
 
 /**
  * The bar that replaces the bottom navigation while verses are selected (wireframes/reader.md
- * "Selected verses"): four colours, a note, Add to lesson (or Open in lesson once added), and Remove
- * once those verses are a highlight. On a
+ * "Selected verses"): four colours, a note, Add to lesson (or Open in lesson once added), the verse
+ * index for the verses, and Remove once those verses are a highlight. On a
  * laptop it sits at the bottom of the window, to the right of the sidebar.
  */
 export function SelectionBar({
@@ -108,6 +108,14 @@ export function SelectionBar({
               Add to lesson
             </button>
           )}
+          <Link
+            to="/verses/$passage"
+            params={{ passage: passageSlug(selectionPassage(at, selection)) }}
+            data-slot="button"
+            className={action}
+          >
+            Verse index
+          </Link>
           {exact && (
             <button
               type="button"
