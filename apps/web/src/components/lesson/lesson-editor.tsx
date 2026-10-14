@@ -27,6 +27,8 @@ interface LessonEditorProps {
   seriesId?: string;
   /** A section, takeaway or question to scroll to and highlight as the lesson opens. */
   reveal?: { section?: string; takeaway?: string; question?: string };
+  /** A question to answer in a new section as the lesson opens (the review queue's Answer). */
+  answer?: string;
 }
 
 /** What a new lesson starts with (wireframes/lessons.md): today, a sermon, no series. */
@@ -47,7 +49,7 @@ function newLesson(seriesId?: string): LessonFields {
  * the title, large, then a line with the date and source that opens the details. On a wide laptop
  * the details sit in the side panel instead. Everything saves as it's typed; there's no Save.
  */
-export function LessonEditor({ id, lesson, seriesId, reveal }: LessonEditorProps) {
+export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEditorProps) {
   const saver = useLessonSaver(id, lesson, () => newLesson(seriesId));
   const { values, save, flush, saving } = saver;
   const [title, setTitle] = useState(values.title);
@@ -56,9 +58,10 @@ export function LessonEditor({ id, lesson, seriesId, reveal }: LessonEditorProps
   // Enter in the title asks for the cursor in the first section; a count, so each Enter asks again.
   const [focusFirst, setFocusFirst] = useState(0);
   // Asks of the section list: show a section, or answer a question in a new one.
-  const [request, setRequest] = useState<SectionRequest | undefined>(
-    reveal?.section ? { kind: 'reveal', sectionId: reveal.section, seq: 1 } : undefined,
-  );
+  const [request, setRequest] = useState<SectionRequest | undefined>(() => {
+    if (answer) return { kind: 'answer', questionId: answer, seq: 1 };
+    return reveal?.section ? { kind: 'reveal', sectionId: reveal.section, seq: 1 } : undefined;
+  });
   const requests = useRef(1);
   const takeaways = useRef<PanelApi>(null);
   const questions = useRef<PanelApi>(null);

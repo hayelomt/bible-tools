@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Settings } from 'lucide-react';
 import { allSeries } from '@/data/queries.ts';
+import { NavCount } from './nav-count.tsx';
 import { NAV_ITEMS } from './nav-items.ts';
 import { SyncStatus } from './sync-status.tsx';
 
@@ -27,6 +28,7 @@ export function Sidebar() {
               <Link to={to} activeOptions={{ exact: to === '/' }} className={itemClass}>
                 <Icon className="size-4" aria-hidden />
                 {label}
+                <NavCount to={to} className="ml-auto" />
               </Link>
             </li>
           ))}

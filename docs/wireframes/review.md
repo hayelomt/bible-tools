@@ -53,6 +53,14 @@ All done:
 │                                      │
 ```
 
+*As built in M6-03:* the memory block stays first, then `OPEN QUESTIONS · 6` with the first five
+and `[ Show all 6 ]`, then the takeaways (`TAKEAWAYS · last 14 days`), each row opening its lesson
+at the takeaway. A section with nothing in it isn't shown, and "All caught up." replaces the lot
+when all three are empty, adding when the next verse is due ("Next verse due tomorrow."). Answer is
+the filled button. The window is Settings → Review → "Takeaways from the last" `( 7 days | 14 days |
+30 days | 90 days )`, synced. The tab's count is a small filled number on the Review icon (and at
+the end of the sidebar's Review row), hidden at zero.
+
 ## Memory card (M6-02)
 
 ```text

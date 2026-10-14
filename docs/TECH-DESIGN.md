@@ -516,6 +516,8 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 ### 8.8 Review queue and notifications (F9, F10)
 The queue is a local query: open questions, takeaways from the last `reviewWindowDays` (default 14), and memory items with `nextReviewAt ≤ today`. The weekly reminder is best effort. Phase 1 has no server push, and Periodic Background Sync only works in Chromium for installed apps. Elsewhere the app shows a badge count on the Review tab.
 
+*Built in M6-03 (decided 2026-10-14):* `data/review.ts` reads the queue. Open questions are the `open` ones of live lessons, newest lesson first; parked and answered ones stay on their lesson. A takeaway is recent when the day it was written (`createdAt` on the device's calendar) is within the last `reviewWindowDays`, today included. The Review tab always shows the number of open questions plus verses due ("Review 3 waiting" to a screen reader), read again when the app comes back into view. Answer opens `/lessons/$id?answer=<question>`, which asks the section list for the answer section as the lesson opens (as "Answer in a section" does) and drops `answer` from the address, so a reload doesn't ask again.
+
 ## 9. Bible text (`packages/bible-data`)
 
 - **Phase 1 ships WEB only** (public domain). The pipeline, manifest and `translation` field on every reference already handle several translations, so adding open ones later (BSB, KJV) is a data change, not a code change.

@@ -4,6 +4,7 @@ import { ApiStatus } from '@/components/api-status.tsx';
 import { BibleStatus } from '@/components/bible-status.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
+import { ReviewWindowSetting } from '@/components/review/review-window-setting.tsx';
 import { RemoveNotes } from '@/components/remove-notes.tsx';
 import { StorageStatus } from '@/components/storage-status.tsx';
 import { ThemeSheet } from '@/components/theme-sheet.tsx';
@@ -34,6 +35,11 @@ function Settings() {
         <BibleStatus />
         {settings && <VersePreviewSetting value={settings.autoPreviewVerses} />}
       </PageSection>
+      {settings && (
+        <PageSection title="Review">
+          <ReviewWindowSetting value={settings.reviewWindowDays} />
+        </PageSection>
+      )}
       <PageSection title="Storage">
         <StorageStatus />
         <RemoveNotes />

@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useKeyboardInset } from '@/lib/use-keyboard.ts';
+import { NavCount } from './nav-count.tsx';
 import { NAV_ITEMS } from './nav-items.ts';
 
 /**
@@ -21,10 +22,11 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
             <Link
               to={to}
               activeOptions={{ exact: to === '/' }}
-              className="flex h-full flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-[current=page]:font-medium aria-[current=page]:text-foreground"
+              className="relative flex h-full flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-[current=page]:font-medium aria-[current=page]:text-foreground"
             >
               <Icon className="size-5" aria-hidden />
               {label}
+              <NavCount to={to} className="absolute top-1.5 left-[calc(50%+0.5rem)]" />
             </Link>
           </li>
         ))}

@@ -110,14 +110,14 @@ test('reviews the verses due on the card; Again brings one back, grades set the 
   page,
 }) => {
   await page.goto('/review');
-  await expect(page.getByText('None yet. Choose Memorise on a verse')).toBeVisible();
+  await expect(page.getByText('All caught up.')).toBeVisible();
 
   await page.goto('/read/JHN.10');
   await memoriseInReader(page, 27);
   await memoriseInReader(page, 28);
   await expect.poll(async () => (await rows(page, 'memoryItem')).length).toBe(2);
 
-  await page.getByRole('link', { name: 'Review', exact: true }).click();
+  await page.getByRole('link', { name: 'Review 2 waiting' }).click();
   await expect(page.getByRole('heading', { name: 'Memory verses · 2 due' })).toBeVisible();
   await expect(page.getByText('John 10:27 · John 10:28')).toBeVisible();
   await page.getByRole('link', { name: 'Start' }).click();
@@ -170,7 +170,8 @@ test('reviews the verses due on the card; Again brings one back, grades set the 
 
   // Nothing due: the Review tab says when, and the card says so.
   await page.goto('/review');
-  await expect(page.getByText('None due today. Next verse due tomorrow.')).toBeVisible();
+  await expect(page.getByText('All caught up.')).toBeVisible();
+  await expect(page.getByText('Next verse due tomorrow.')).toBeVisible();
   await page.goto('/review/memory');
   await expect(page.getByText('No verses due today.')).toBeVisible();
 });

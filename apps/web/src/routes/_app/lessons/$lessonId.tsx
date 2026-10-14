@@ -15,6 +15,8 @@ interface LessonSearch {
   section?: string;
   takeaway?: string;
   question?: string;
+  /** A question to answer in a new section as the lesson opens (the review queue's Answer). */
+  answer?: string;
 }
 
 export const Route = createFileRoute('/_app/lessons/$lessonId')({
@@ -25,6 +27,7 @@ export const Route = createFileRoute('/_app/lessons/$lessonId')({
     section: typeof search.section === 'string' ? search.section : undefined,
     takeaway: typeof search.takeaway === 'string' ? search.takeaway : undefined,
     question: typeof search.question === 'string' ? search.question : undefined,
+    answer: typeof search.answer === 'string' ? search.answer : undefined,
   }),
   component: LessonScreen,
 });
@@ -39,6 +42,14 @@ function LessonScreen() {
   useEffect(() => {
     if (lesson && search.new) void navigate({ search: {}, replace: true });
   }, [lesson, search.new, navigate]);
+
+  // An answer is asked for once (the editor reads it as it opens); reloading or going back shows
+  // the lesson as it is.
+  useEffect(() => {
+    if (lesson && search.answer) {
+      void navigate({ search: (prev) => ({ ...prev, answer: undefined }), replace: true });
+    }
+  }, [lesson, search.answer, navigate]);
 
   if (lesson === undefined) return null;
   if (lesson === null && !search.new) {
@@ -59,6 +70,7 @@ function LessonScreen() {
       lesson={lesson}
       seriesId={search.seriesId}
       reveal={search}
+      answer={search.answer}
     />
   );
 }
