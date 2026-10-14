@@ -188,44 +188,52 @@ export function citedRefs(body: SectionBody): VerseRef[] {
 
 /**
  * Markdown for export (F11). A verse chip becomes "Romans 8:28 (WEB)" in the sentence, and its
- * snapshot follows the paragraph as a quote: "> **Romans 8:28 (WEB)** And we know…".
+ * snapshot follows the paragraph as a quote: "> **Romans 8:28 (WEB)** And we know…". Headings are
+ * `###` unless `headingLevel` says otherwise (a lesson export puts them under its own).
  */
-export function toMarkdown(body: SectionBody): string {
-  return blocksToMarkdown(body.content).join('\n') + '\n';
+export function toMarkdown(body: SectionBody, { headingLevel = 3 } = {}): string {
+  return blocksToMarkdown(body.content, '#'.repeat(headingLevel)).join('\n') + '\n';
+}
+
+/** One line of the user's text (a title, a takeaway) as Markdown that shows it as typed. */
+export function escapeMarkdown(text: string): string {
+  return escapeLineStart(escapeText(text));
 }
 
 /** Blocks as lines, with a blank line between blocks. */
-function blocksToMarkdown(blocks: readonly Block[]): string[] {
-  const parts = blocks.flatMap(blockToMarkdown).filter((part) => part.length > 0);
+function blocksToMarkdown(blocks: readonly Block[], heading: string): string[] {
+  const parts = blocks
+    .flatMap((block) => blockToMarkdown(block, heading))
+    .filter((part) => part.length > 0);
   return parts.flatMap((part, i) => (i === 0 ? part : ['', ...part]));
 }
 
 /** One block as one or more parts (a text block's verse quotes are parts of their own). */
-function blockToMarkdown(block: Block): string[][] {
+function blockToMarkdown(block: Block, heading: string): string[][] {
   switch (block.type) {
     case 'paragraph':
     case 'heading': {
       const text = inlineToMarkdown(block.content ?? []);
-      const line = block.type === 'heading' ? `### ${text}` : escapeLineStart(text);
+      const line = block.type === 'heading' ? `${heading} ${text}` : escapeLineStart(text);
       const quotes = (block.content ?? []).flatMap((node) =>
         node.type === 'verse' && node.attrs.snapshotText ? [verseQuote(node.attrs)] : [],
       );
       return [text ? [line] : [], ...quotes];
     }
     case 'blockquote':
-      return [blocksToMarkdown(block.content).map((line) => (line ? `> ${line}` : '>'))];
+      return [blocksToMarkdown(block.content, heading).map((line) => (line ? `> ${line}` : '>'))];
     case 'bulletList':
-      return [block.content.flatMap((item) => listItem('- ', item))];
+      return [block.content.flatMap((item) => listItem('- ', item, heading))];
     case 'orderedList': {
       const start = block.attrs?.start ?? 1;
-      return [block.content.flatMap((item, i) => listItem(`${start + i}. `, item))];
+      return [block.content.flatMap((item, i) => listItem(`${start + i}. `, item, heading))];
     }
   }
 }
 
-function listItem(marker: string, item: ListItem): string[] {
+function listItem(marker: string, item: ListItem, heading: string): string[] {
   const indent = ' '.repeat(marker.length);
-  const [first, ...rest] = blocksToMarkdown(item.content);
+  const [first, ...rest] = blocksToMarkdown(item.content, heading);
   return [`${marker}${first ?? ''}`.trimEnd(), ...rest.map((line) => (line ? indent + line : ''))];
 }
 

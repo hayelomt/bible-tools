@@ -19,6 +19,12 @@ From a lesson's `⋯` or a series' `⋯`:
 
 "Copy as Markdown" confirms with a toast: "Copied." Phase 2 adds share links here.
 
+*As built in M6-05:* the lesson's `⋯` has "Export…" and the series' "Export series…", opening a
+dialog titled `Export "The Good Shepherd"` with "Markdown keeps the notes, verses, tags and
+questions." and the two Markdown buttons; Print joins them in M6-06. The file is named
+`2026-10-12-the-good-shepherd.md` for a lesson and `john.md` for a series. The Markdown is in
+TECH-DESIGN §8.7, and `apps/web/src/export/golden/` holds an example of each.
+
 ## Print view (M6-06)
 
 The lesson as a document: no navigation, no menus, the reading face throughout, and verse text

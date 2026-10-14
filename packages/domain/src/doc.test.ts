@@ -8,6 +8,7 @@ import {
   MAX_BODY_DEPTH,
   type Paragraph,
   type SectionBody,
+  escapeMarkdown,
   toMarkdown,
   toPlainText,
 } from './doc.ts';
@@ -208,6 +209,11 @@ Paul says Romans 8:28 (WEB) — ***all*** things.
     expect(toMarkdown(emptyBody())).toBe('\n');
   });
 
+  it('puts headings at the level asked for, under an export’s own', () => {
+    expect(toMarkdown(RICH, { headingLevel: 2 })).toMatch(/^## Called according to his purpose\n/);
+    expect(toMarkdown(RICH, { headingLevel: 4 })).toMatch(/^#### Called/);
+  });
+
   it.each([
     [[text('a', 'bold'), text('b', 'bold')], '**ab**'],
     [[text('a', 'bold'), text('b', 'bold', 'italic'), text('c')], '**a*b***c'],
@@ -247,5 +253,13 @@ Paul says Romans 8:28 (WEB) — ***all*** things.
       content: [item('one'), { type: 'listItem', content: [p(text('two')), p(text('more'))] }],
     } as Block);
     expect(toMarkdown(body)).toBe('1. one\n2. two\n\n   more\n');
+  });
+});
+
+describe('escapeMarkdown', () => {
+  it('shows one line of text as typed', () => {
+    expect(escapeMarkdown('# Not a *heading*')).toBe('\\# Not a \\*heading\\*');
+    expect(escapeMarkdown('1. not a list')).toBe('1\\. not a list');
+    expect(escapeMarkdown('Who are the "other sheep"?')).toBe('Who are the "other sheep"?');
   });
 });

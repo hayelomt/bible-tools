@@ -87,6 +87,7 @@ export {
   type SectionBody,
   type TextBlock,
   type TextNode,
+  escapeMarkdown,
   toMarkdown,
   toPlainText,
   type VerseNode,

@@ -10,8 +10,9 @@ const CHOICES = [7, 14, 30, 90];
  */
 export function ReviewWindowSetting({ value }: { value: number }) {
   const name = useId();
-  const options = (CHOICES.includes(value) ? CHOICES : [...CHOICES, value].toSorted((a, b) => a - b))
-    .map(String);
+  const options = (
+    CHOICES.includes(value) ? CHOICES : [...CHOICES, value].toSorted((a, b) => a - b)
+  ).map(String);
   const labels = Object.fromEntries(options.map((days) => [days, `${days} days`]));
   return (
     <fieldset className="flex flex-col gap-2">

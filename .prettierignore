@@ -8,3 +8,5 @@ test-results/
 playwright-report/
 blob-report/
 **/src/routeTree.gen.ts
+# Exact exporter output (export/markdown.test.ts)
+apps/web/src/export/golden/
