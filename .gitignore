@@ -12,3 +12,6 @@ playwright-report/
 blob-report/
 packages/bible-data/source/
 .claude/launch.json
+
+# Deploy scripts for the AclaHostinger server (local only)
+scripts/deploy-*.sh
