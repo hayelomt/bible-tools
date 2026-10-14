@@ -1,23 +1,33 @@
-import { passageSlug } from '@lamp/domain';
+import { daysBetween, dueDate, type MemoryItem, passageSlug, type Passage } from '@lamp/domain';
+import { buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { shortDate, today } from '@/lib/dates.ts';
+import { count } from '@/lib/labels.ts';
 import type { VerseIndexEntry } from '@/search/results.ts';
 import { around } from '@/search/snippet.ts';
+import { forgetVerse } from '../memory/memorise.ts';
 import { HIGHLIGHT_COLOUR_NAME } from '../reader/colours.ts';
 
 /**
  * The verse index's rows (F7, wireframes/verses.md "Verse index"), newest first: what cites the
  * passage, when, and the text around the citation. A section opens its lesson scrolled to it; a
- * lesson's main passage opens the lesson; a highlight opens the reader at its first verse.
+ * lesson's main passage opens the lesson; a highlight or memory verse opens the reader at its first
+ * verse, and a memory verse can be removed there (M6-01).
  */
 export function VerseIndexList({ entries }: { entries: VerseIndexEntry[] }) {
   return (
     <ul className="flex flex-col divide-y">
       {entries.map((entry) => (
         <li key={entry.id} className="py-1 first:pt-0">
-          {entry.kind === 'highlight' ? <HighlightRow entry={entry} /> : <NoteRow entry={entry} />}
+          {entry.kind === 'highlight' ? (
+            <HighlightRow entry={entry} />
+          ) : entry.kind === 'memory' ? (
+            <MemoryRow item={entry.item} />
+          ) : (
+            <NoteRow entry={entry} />
+          )}
         </li>
       ))}
     </ul>
@@ -44,20 +54,16 @@ function NoteRow({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'lesson' |
   );
 }
 
+/** The reader's address for a passage's first verse. */
+function readerParams({ book, chapter, verseStart }: Passage) {
+  return {
+    chapter: passageSlug({ book, chapter, ...(verseStart != null ? { verseStart } : {}) }),
+  };
+}
+
 function HighlightRow({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'highlight' }> }) {
-  const ref = entry.ref;
   return (
-    <Link
-      to="/read/$chapter"
-      params={{
-        chapter: passageSlug({
-          book: ref.book,
-          chapter: ref.chapter,
-          ...(ref.verseStart != null ? { verseStart: ref.verseStart } : {}),
-        }),
-      }}
-      className={rowClass}
-    >
+    <Link to="/read/$chapter" params={readerParams(entry.ref)} className={rowClass}>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Highlight · {shortDate(today(new Date(entry.createdAt)))} ·{' '}
@@ -74,6 +80,48 @@ function HighlightRow({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'high
       <ChevronRight aria-hidden className="mt-1 size-4 shrink-0 text-muted-foreground" />
     </Link>
   );
+}
+
+/** `MEMORY · due in 3 days · 4 reviews`, the verse, and × to remove it with Undo. */
+function MemoryRow({ item }: { item: MemoryItem }) {
+  const { ref } = item;
+  return (
+    <div className="flex items-start gap-1">
+      <Link to="/read/$chapter" params={readerParams(ref)} className={cn(rowClass, 'flex-1')}>
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Memory · {dueLabel(item)} ·{' '}
+            {item.reviewCount === 0 ? 'new' : count(item.reviewCount, 'review')}
+          </span>
+          <span className="line-clamp-3 font-serif break-words">
+            {ref.display}
+            {ref.snapshotText && ` — ${ref.snapshotText}`}
+          </span>
+        </span>
+        <ChevronRight aria-hidden className="mt-1 size-4 shrink-0 text-muted-foreground" />
+      </Link>
+      <button
+        type="button"
+        aria-label={`Remove ${ref.display} from memory verses`}
+        onClick={() => forgetVerse(item)}
+        data-slot="button"
+        className={buttonVariants({
+          variant: 'ghost',
+          size: 'icon',
+          className: 'mt-1 shrink-0 text-muted-foreground pointer-coarse:size-11',
+        })}
+      >
+        <X />
+      </button>
+    </div>
+  );
+}
+
+/** "due today" (or overdue), "due tomorrow", "due in 3 days". */
+function dueLabel(item: MemoryItem): string {
+  const days = daysBetween(today(), dueDate(item));
+  if (days <= 0) return 'due today';
+  return days === 1 ? 'due tomorrow' : `due in ${days} days`;
 }
 
 function EntryText({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'lesson' | 'section' }> }) {

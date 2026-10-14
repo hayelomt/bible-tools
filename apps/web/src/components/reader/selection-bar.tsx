@@ -1,7 +1,13 @@
 import { HIGHLIGHT_COLOURS, formatPassage, type Highlight, passageSlug } from '@lamp/domain';
-import { buttonVariants } from '@lamp/ui/components/button';
-import { Link } from '@tanstack/react-router';
-import { X } from 'lucide-react';
+import { Button, buttonVariants } from '@lamp/ui/components/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@lamp/ui/components/dropdown-menu';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Check, Ellipsis, X } from 'lucide-react';
 import { useKeyboardInset } from '@/lib/use-keyboard.ts';
 import { selectionPassage, type VerseSelection } from '@/lib/highlights.ts';
 import type { Chapter } from '@/lib/chapters.ts';
@@ -9,8 +15,8 @@ import { HIGHLIGHT_COLOUR_CLASS, HIGHLIGHT_COLOUR_NAME } from './colours.ts';
 
 /**
  * The bar that replaces the bottom navigation while verses are selected (wireframes/reader.md
- * "Selected verses"): four colours, a note, Add to lesson (or Open in lesson once added), the verse
- * index for the verses, and Remove once those verses are a highlight. On a
+ * "Selected verses"): four colours, a note, Add to lesson (or Open in lesson once added), Remove
+ * once those verses are a highlight, and `⋯` with Memorise and the verse index. On a
  * laptop it sits at the bottom of the window, to the right of the sidebar.
  */
 export function SelectionBar({
@@ -19,6 +25,8 @@ export function SelectionBar({
   exact,
   noting,
   promoted,
+  memorised,
+  onMemorise,
   onPaint,
   onNote,
   onAddToLesson,
@@ -31,6 +39,9 @@ export function SelectionBar({
   noting: boolean;
   /** The section the highlight was added to, while it's there. */
   promoted: { lessonId: string; sectionId: string } | null;
+  /** The verses are a memory verse already. */
+  memorised: boolean;
+  onMemorise: () => void;
   onPaint: (colour: Highlight['colour']) => void;
   onNote: () => void;
   onAddToLesson: () => void;
@@ -38,8 +49,16 @@ export function SelectionBar({
   onClear: () => void;
 }) {
   const keyboard = useKeyboardInset();
+  const navigate = useNavigate();
   if (keyboard > 0) return null;
-  const label = formatPassage(selectionPassage(at, selection));
+  const passage = selectionPassage(at, selection);
+  const label = formatPassage(passage);
+  const index = (show?: 'memory') =>
+    void navigate({
+      to: '/verses/$passage',
+      params: { passage: passageSlug(passage) },
+      search: show ? { show } : {},
+    });
   const action = buttonVariants({ variant: 'ghost', className: 'pointer-coarse:min-h-11' });
   return (
     <div
@@ -108,14 +127,6 @@ export function SelectionBar({
               Add to lesson
             </button>
           )}
-          <Link
-            to="/verses/$passage"
-            params={{ passage: passageSlug(selectionPassage(at, selection)) }}
-            data-slot="button"
-            className={action}
-          >
-            Verse index
-          </Link>
           {exact && (
             <button
               type="button"
@@ -129,6 +140,31 @@ export function SelectionBar({
               Remove highlight
             </button>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="More for the selected verses"
+                  className="pointer-coarse:size-11"
+                />
+              }
+            >
+              <Ellipsis />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="w-52">
+              {memorised ? (
+                <DropdownMenuItem onClick={() => index('memory')}>
+                  In memory verses
+                  <Check aria-hidden className="ml-auto" />
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={onMemorise}>Memorise</DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => index()}>Verse index</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

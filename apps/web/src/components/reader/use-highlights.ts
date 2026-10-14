@@ -174,7 +174,10 @@ export function useHighlights(at: Chapter, selection: VerseSelection | null) {
     });
   }
 
-  return { highlights, exact, promoted, paint, saveNote, promote, removeCurrent };
+  /** The selected verses as a memory verse or chip takes them, with their text when it's here. */
+  const selectedRef = selection ? storedRef(selection) : null;
+
+  return { highlights, exact, promoted, selectedRef, paint, saveNote, promote, removeCurrent };
 }
 
 function passageOf(at: Chapter, selection: VerseSelection) {

@@ -10,13 +10,21 @@ import { ScreenTitle } from '@/components/shell/slots.tsx';
 import { count } from '@/lib/labels.ts';
 import { verseIndex, type VerseIndexEntry } from '@/search/results.ts';
 
-const FILTERS = ['all', 'notes', 'highlights'] as const;
+const FILTERS = ['all', 'notes', 'highlights', 'memory'] as const;
 type Filter = (typeof FILTERS)[number];
 const FILTER_LABELS: Record<Filter, string> = {
   all: 'All',
   notes: 'Notes',
   highlights: 'Highlights',
+  memory: 'Memory',
 };
+const EMPTY_FILTER: Record<Exclude<Filter, 'all'>, string> = {
+  notes: 'notes',
+  highlights: 'highlights',
+  memory: 'memory verses',
+};
+const isFilter = (value: unknown): value is Exclude<Filter, 'all'> =>
+  typeof value === 'string' && value !== 'all' && (FILTERS as readonly string[]).includes(value);
 
 interface VerseSearch {
   /** Which rows to list. Absent means all of them. */
@@ -26,13 +34,13 @@ interface VerseSearch {
 export const Route = createFileRoute('/_app/verses/$passage')({
   staticData: { back: '/search' },
   validateSearch: (search: Record<string, unknown>): VerseSearch => ({
-    show: search.show === 'notes' || search.show === 'highlights' ? search.show : undefined,
+    show: isFilter(search.show) ? search.show : undefined,
   }),
   component: VerseIndexScreen,
 });
 
 /**
- * The verse index (F7, wireframes/verses.md "Verse index"): every note and highlight citing a
+ * The verse index (F7, wireframes/verses.md "Verse index"): every note, highlight and memory verse citing a
  * passage that overlaps this one, newest first, so `ROM.8` lists Romans 7:24–8:2 too. Opened from
  * a chip and from a verse search; the address is the passage's slug.
  */
@@ -62,7 +70,7 @@ function VerseIndexScreen() {
       {entries.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-8">
           <p className="text-center text-muted-foreground">
-            Nothing cites {display} yet. Notes and highlights on it will show here.
+            Nothing cites {display} yet. Notes, highlights and memory verses on it will show here.
           </p>
           <ReadLink passage={passage}>Read {display}</ReadLink>
         </div>
@@ -91,7 +99,7 @@ function VerseIndexScreen() {
           </fieldset>
           {shown.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
-              No {filter === 'highlights' ? 'highlights' : 'notes'} on {display}.
+              No {filter === 'all' ? 'notes' : EMPTY_FILTER[filter]} on {display}.
             </p>
           ) : (
             <VerseIndexList entries={shown} />
@@ -131,19 +139,25 @@ function ReadLink({
 
 function matches(entry: VerseIndexEntry, filter: Filter): boolean {
   if (filter === 'highlights') return entry.kind === 'highlight';
+  if (filter === 'memory') return entry.kind === 'memory';
   if (filter === 'notes') return entry.kind === 'lesson' || entry.kind === 'section';
   return true;
 }
 
-/** "2 notes · main passage of 1 lesson · 1 highlight", leaving out what there's none of. */
+/**
+ * "2 notes · main passage of 1 lesson · 1 highlight · 1 memory verse", leaving out what there's
+ * none of.
+ */
 function summary(entries: VerseIndexEntry[]): string {
   const notes = entries.filter((entry) => entry.kind === 'section').length;
   const lessons = entries.filter((entry) => entry.kind === 'lesson').length;
   const highlights = entries.filter((entry) => entry.kind === 'highlight').length;
+  const memory = entries.filter((entry) => entry.kind === 'memory').length;
   return [
     notes > 0 && count(notes, 'note'),
     lessons > 0 && `main passage of ${count(lessons, 'lesson')}`,
     highlights > 0 && count(highlights, 'highlight'),
+    memory > 0 && count(memory, 'memory verse'),
   ]
     .filter(Boolean)
     .join(' · ');

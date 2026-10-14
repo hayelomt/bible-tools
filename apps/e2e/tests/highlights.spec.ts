@@ -158,7 +158,8 @@ test('adds verses to a new lesson and to an existing one', async ({ page }) => {
   // The selected verses' index, from the bar, even with nothing on them.
   await verse(page, 3).click();
   await verse(page, 4).click();
-  await bar(page).getByRole('link', { name: 'Verse index' }).click();
+  await bar(page).getByRole('button', { name: 'More for the selected verses' }).click();
+  await page.getByRole('menuitem', { name: 'Verse index' }).click();
   await expect(page).toHaveURL(/\/verses\/JHN\.10\.3-4$/);
   await expect(page.getByText('Nothing cites John 10:3–4 yet.', { exact: false })).toBeVisible();
   await page.getByRole('link', { name: 'Read John 10:3–4' }).click();

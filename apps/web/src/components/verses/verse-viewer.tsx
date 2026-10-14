@@ -7,10 +7,12 @@ import {
   PopoverTitle,
 } from '@lamp/ui/components/popover';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@lamp/ui/components/sheet';
+import { buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
-import { ChevronRight } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
+import { memoriseVerse, storedRef, useMemoryItem } from '../memory/memorise.ts';
 import {
   chipAt,
   closeChip,
@@ -57,6 +59,7 @@ export function VerseViewer() {
             </PopoverHeader>
             <ChipText chip={shown} />
             <IndexLink chip={shown} />
+            <ChipActions chip={shown} />
           </PopoverContent>
         )}
       </Popover>
@@ -77,6 +80,7 @@ export function VerseViewer() {
           <div className="flex flex-col gap-3 px-4 pb-6">
             <ChipText chip={shown} />
             <IndexLink chip={shown} />
+            <ChipActions chip={shown} />
           </div>
         </SheetContent>
       )}
@@ -120,5 +124,58 @@ function IndexLink({ chip: { ref } }: { chip: OpenChip }) {
       Every note on {ref.display}
       <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
     </Link>
+  );
+}
+
+/**
+ * "Read in context" opens the reader at the chip's first verse (M5-04); "Memorise" adds the passage
+ * to the memory verses, or shows that it's there already (M6-01).
+ */
+function ChipActions({ chip }: { chip: OpenChip }) {
+  const ref = storedRef(chip.ref);
+  const memory = useMemoryItem(ref);
+  const button = buttonVariants({ variant: 'outline', className: 'pointer-coarse:min-h-11' });
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Link
+        to="/read/$chapter"
+        params={{
+          chapter: passageSlug({
+            book: ref.book,
+            chapter: ref.chapter,
+            verseStart: ref.verseStart,
+          }),
+        }}
+        onClick={leaveChip}
+        data-slot="button"
+        className={button}
+      >
+        Read in context
+        <ChevronRight aria-hidden />
+      </Link>
+      {memory ? (
+        <Link
+          to="/verses/$passage"
+          params={{ passage: passageSlug(ref) }}
+          search={{ show: 'memory' }}
+          onClick={leaveChip}
+          data-slot="button"
+          className={button}
+        >
+          In memory verses
+          <Check aria-hidden />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled={memory === undefined}
+          onClick={() => void memoriseVerse(ref)}
+          data-slot="button"
+          className={button}
+        >
+          Memorise
+        </button>
+      )}
+    </div>
   );
 }

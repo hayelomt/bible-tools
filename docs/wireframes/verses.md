@@ -168,3 +168,9 @@ in the text around them. `[ Read › ]` (M5-04) sits beside the summary and open
 passage's first verse. The empty state reads "Nothing cites Romans 8 yet. Notes and highlights on
 it will show here." with `[ Read Romans 8 › ]` under it. The address is `/verses/ROM.8`;
 one that isn't a passage shows "Passage not found".
+
+*As built in M6-01:* memory verses join, with the Memory filter and "1 memory verse" in the
+summary. A row is `MEMORY · due in 3 days · 4 reviews` ("due today", "due tomorrow"; "new" before
+the first review), then the reference and its text; it opens the reader at its first verse until
+the review card (M6-02), and × removes it with Undo. The chip sheet's buttons are
+`[ Read in context › ] [ Memorise ]` under "Every note on …".

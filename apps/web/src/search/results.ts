@@ -3,6 +3,7 @@ import {
   formatPassage,
   type Highlight,
   type Lesson,
+  type MemoryItem,
   type ParsedPassage,
   type Passage,
   parseReference,
@@ -162,7 +163,7 @@ export async function verseResults(passage: Passage, db: LampDb = appDb): Promis
   );
 }
 
-/** A row of the verse index: a note, a lesson's main passage, or a highlight. */
+/** A row of the verse index: a note, a lesson's main passage, a highlight or a memory verse. */
 export type VerseIndexEntry =
   | (Extract<ResultItem, { kind: 'lesson' | 'section' }> & { lesson: Lesson })
   | {
@@ -176,38 +177,44 @@ export type VerseIndexEntry =
       text: string;
       createdAt: string;
       ref: Highlight['ref'];
-    };
+    }
+  | { kind: 'memory'; id: string; item: MemoryItem; createdAt: string };
 
 /**
  * The verse index (F7, wireframes/verses.md): everything citing a passage that overlaps
- * `passage`, newest first. Notes stay in their lesson's order; a highlight takes its own time,
- * so one made on a later day sits above an older lesson.
+ * `passage`, newest first. Notes stay in their lesson's order; a highlight or memory verse takes
+ * the time it was added, so one added on a later day sits above an older lesson.
  */
 export async function verseIndex(passage: Passage, db: LampDb = appDb): Promise<VerseIndexEntry[]> {
-  const [groups, highlights] = await Promise.all([
+  const [groups, highlights, memory] = await Promise.all([
     verseResults(passage, db),
     highlightEntries(passage, db),
+    memoryEntries(passage, db),
   ]);
   const notes = groups.flatMap(({ lesson, items }) =>
     items.flatMap((item) =>
       item.kind === 'lesson' || item.kind === 'section' ? [{ ...item, lesson }] : [],
     ),
   );
-  return [...notes, ...highlights]
+  return [...notes, ...highlights, ...memory]
     .map((entry, index) => ({ entry, index }))
     .toSorted((a, b) => when(b.entry).localeCompare(when(a.entry)) || a.index - b.index)
     .map(({ entry }) => entry);
 }
 
-/** Highlights whose passage overlaps `passage`, from the citation index. */
-async function highlightEntries(passage: Passage, db: LampDb): Promise<VerseIndexEntry[]> {
+/** The ids of rows of `sourceType` whose passage overlaps `passage`, from the citation index. */
+async function citing(passage: Passage, sourceType: string, db: LampDb): Promise<string[]> {
   const [start, end] = passageRange(passage);
   const citations = await db.citation
     .where('startOrd')
     .belowOrEqual(end)
-    .filter((row) => row.endOrd >= start && row.sourceType === 'highlight')
+    .filter((row) => row.endOrd >= start && row.sourceType === sourceType)
     .toArray();
-  const rows = (await db.highlight.bulkGet(citations.map((row) => row.sourceId))).filter(live);
+  return citations.map((row) => row.sourceId);
+}
+
+async function highlightEntries(passage: Passage, db: LampDb): Promise<VerseIndexEntry[]> {
+  const rows = (await db.highlight.bulkGet(await citing(passage, 'highlight', db))).filter(live);
   return rows.map((row) => ({
     kind: 'highlight',
     id: row.id,
@@ -220,9 +227,19 @@ async function highlightEntries(passage: Passage, db: LampDb): Promise<VerseInde
   }));
 }
 
-/** A lesson is dated at the start of its day; a highlight at the moment it was stored. */
+async function memoryEntries(passage: Passage, db: LampDb): Promise<VerseIndexEntry[]> {
+  const rows = (await db.memoryItem.bulkGet(await citing(passage, 'memory_item', db))).filter(live);
+  return rows.map((item) => ({ kind: 'memory', id: item.id, item, createdAt: item.createdAt }));
+}
+
+/**
+ * A lesson is dated at the start of its day; a highlight or memory verse at the moment it was
+ * stored.
+ */
 function when(entry: VerseIndexEntry): string {
-  return entry.kind === 'highlight' ? entry.createdAt : `${entry.lesson.date}T00:00:00.000Z`;
+  return entry.kind === 'lesson' || entry.kind === 'section'
+    ? `${entry.lesson.date}T00:00:00.000Z`
+    : entry.createdAt;
 }
 
 /**

@@ -132,7 +132,7 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
-| ☐ | M6-01 | F10 Memory items: "Memorise" from the reader and from a chip; SM-2 in `domain/srs.ts`. Adds memory rows and the Memory filter to the verse index (left out of M4-07) | M | §4.3, F10 | Unit tests cover every grade and the first three reviews |
+| ☑ | M6-01 | F10 Memory items: "Memorise" from the reader and from a chip; SM-2 in `domain/srs.ts`. Adds memory rows and the Memory filter to the verse index (left out of M4-07) | M | §4.3, F10 | Unit tests cover every grade and the first three reviews (`srs.test.ts`, `memory.test.ts`, `memory.spec.ts`). Decided 2026-10-14: SM-2 with four grades and the wireframe's days (TECH-DESIGN §4.3); Memorise and Verse index in the reader bar's `⋯`; the chip sheet gets "Read in context" too; a memory row opens the reader until M6-02, and × removes it with Undo |
 | ☐ | M6-02 | F10 Review card: hide and reveal, grade buttons, progress per verse | M | F10 | Grading updates `nextReviewAt`; progress shows on the verse index page |
 | ☐ | M6-03 | F9 **Review queue**: open questions, takeaways from the last `reviewWindowDays` (default 14, set in settings), memory verses due today; park or answer a question from the queue | M | §8.8, F9 | An empty queue shows a done state; actions update the lesson; the window setting syncs |
 | ☐ | M6-04 | F9 Weekly reminder: Periodic Background Sync where supported (Chromium, installed app), otherwise a badge count on the Review tab | S | §8.8, F9 | Behaviour per browser is recorded in the README; unsupported browsers degrade silently |

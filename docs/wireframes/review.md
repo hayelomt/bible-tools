@@ -97,6 +97,11 @@ selection bar ([reader.md](reader.md#selected-verses-m5-02-m5-03-m6-01)). It add
 with a toast: "John 10:27 added to memory verses. `[ Undo ]`". A verse already in the list shows
 "In memory verses ✓" instead.
 
+*As built in M6-01:* in the reader it's in the selection bar's `⋯`, with Verse index. "In memory
+verses ✓" opens the passage's verse index on Memory, where × on the row removes it with Undo
+("John 10:27 removed from memory verses."). A verse is the passage exactly as selected or cited:
+John 10:27–28 is another memory verse than John 10:27.
+
 ## Weekly reminder (M6-04)
 
 Settings → Review → Weekly reminder. Where the browser can't do it (anything but an installed

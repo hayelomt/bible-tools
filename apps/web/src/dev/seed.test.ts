@@ -41,9 +41,9 @@ describe('seedDemo', () => {
     expect(await db.outbox.count()).toBeGreaterThan(100);
     // Romans 8 reaches the range that starts in chapter 7, and two lessons' main passages.
     const rom8 = await verseIndex({ book: 'ROM', chapter: 8 }, db);
-    expect(
-      rom8.flatMap((entry) => (entry.kind === 'highlight' ? [] : [entry.lesson.title])),
-    ).toContain('The wretched man');
+    expect(rom8.flatMap((entry) => ('lesson' in entry ? [entry.lesson.title] : []))).toContain(
+      'The wretched man',
+    );
     expect(rom8.filter((e) => e.kind === 'lesson')).toHaveLength(2);
   });
 });

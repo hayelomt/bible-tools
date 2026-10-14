@@ -39,6 +39,9 @@ for that verse.
 verse; a lesson's main passage and a highlight don't add one. The selection bar has "Verse index"
 for the selected verses, in place of the `⋯` menu's "Every note on …" until that menu is built.
 
+*As built in M6-01:* the `⋯` menu holds Memorise (or "In memory verses ✓") and Verse index; Copy is
+left out.
+
 ## Book and chapter picker (M5-01)
 
 ```text

@@ -31,6 +31,21 @@ export {
 } from './citations.ts';
 export { newId } from './ids.ts';
 export { SEED_TAGS } from './seed-tags.ts';
+export {
+  addDays,
+  daysBetween,
+  dueDate,
+  type Grade,
+  GRADES,
+  isDue,
+  MAX_EASE,
+  MIN_EASE,
+  newSrsState,
+  nextInterval,
+  review,
+  type SrsState,
+  START_EASE,
+} from './srs.ts';
 export { MAX_TAG_NAME_LENGTH, normaliseTagName, tagKey } from './tag-names.ts';
 export {
   DEFAULT_TRANSLATION,

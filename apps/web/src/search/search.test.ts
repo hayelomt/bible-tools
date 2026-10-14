@@ -239,9 +239,7 @@ describe('verse index', () => {
     const entries = await verseIndex(rom8.passage, db);
     expect(
       entries.flatMap((entry) =>
-        entry.kind === 'highlight'
-          ? []
-          : [[entry.kind, entry.lesson.title, entry.passages, entry.text]],
+        'lesson' in entry ? [[entry.kind, entry.lesson.title, entry.passages, entry.text]] : [],
       ),
     ).toEqual([
       [
@@ -259,9 +257,9 @@ describe('verse index', () => {
     ]);
     const john = parseQuery('John 10');
     if (john.kind !== 'verse') throw new Error('not a verse query');
-    expect((await verseIndex(john.passage, db)).map((e) => [e.kind, e.passages])).toEqual([
-      ['lesson', ['John 10']],
-    ]);
+    expect(
+      (await verseIndex(john.passage, db)).map((e) => [e.kind, 'passages' in e && e.passages]),
+    ).toEqual([['lesson', ['John 10']]]);
   });
 
   it('marks the verses where the verse index lists a note, and no others', async () => {

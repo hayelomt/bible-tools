@@ -15,6 +15,7 @@ import { extendSelection, selectionPassage, type VerseSelection } from '@/lib/hi
 import { isTyping } from '@/lib/is-typing.ts';
 import { useSetSelectionBarOpen } from '../shell/selection-bar-open.tsx';
 import { ScreenActions, ScreenTitle } from '../shell/slots.tsx';
+import { memoriseVerse, useMemoryItem } from '../memory/memorise.ts';
 import { AddToLesson } from './add-to-lesson.tsx';
 import { ChapterText } from './chapter-text.tsx';
 import { PassagePicker } from './passage-picker.tsx';
@@ -32,10 +33,9 @@ export function Reader({ at }: { at: Chapter }) {
   const [noting, setNoting] = useState(false);
   const flushNote = useRef<(() => Promise<void>) | null>(null);
   const [adding, setAdding] = useState(false);
-  const { highlights, exact, promoted, paint, saveNote, promote, removeCurrent } = useHighlights(
-    at,
-    selection,
-  );
+  const { highlights, exact, promoted, selectedRef, paint, saveNote, promote, removeCurrent } =
+    useHighlights(at, selection);
+  const memory = useMemoryItem(selectedRef);
   const previous = previousChapter(at);
   const next = nextChapter(at);
   useChapterKeys(previous, next);
@@ -110,6 +110,10 @@ export function Reader({ at }: { at: Chapter }) {
           exact={exact}
           noting={noting}
           promoted={promoted}
+          memorised={!!memory}
+          onMemorise={() => {
+            if (selectedRef) void memoriseVerse(selectedRef);
+          }}
           onPaint={(colour) => void paint(colour)}
           onNote={() => {
             if (noting) void closeNote();
@@ -155,7 +159,7 @@ function useSelectionBar(open: boolean) {
 
 /**
  * Escape closes the note, or the selection when the note is already closed (UX-PATTERNS
- * "Shortcuts"). A dialog on top, such as the book picker, takes Escape itself.
+ * "Shortcuts"). A dialog or menu on top, such as the book picker, takes Escape itself.
  */
 function useSelectionKeys(
   selected: boolean,
@@ -168,7 +172,7 @@ function useSelectionKeys(
     if (!selected) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
       event.preventDefault();
       if (noting) void flushNote.current?.().then(closeNote);
       else clear();
@@ -228,8 +232,8 @@ function useChapterKeys(previous: Chapter | null, next: Chapter | null) {
     function onKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.shiftKey || isTyping(event.target)) return;
-      // The picker, or another layer, is open over the reader.
-      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      // The picker, a menu or another layer is open over the reader.
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
       const to = event.key === 'ArrowLeft' ? previous : event.key === 'ArrowRight' ? next : null;
       if (!to) return;
       event.preventDefault();
