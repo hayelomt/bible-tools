@@ -1,6 +1,7 @@
-import { daysBetween, isDue, type Lesson, type Question, type Takeaway } from '@lamp/domain';
+import { daysBetween, type Lesson, type Question, type Takeaway } from '@lamp/domain';
 import { today as todayOn } from '@/lib/dates.ts';
 import { db as appDb, type LampDb } from './db.ts';
+import { countWaiting, type ReviewCount } from './review-count.ts';
 
 /**
  * The review queue's reads (F9, TECH-DESIGN §8.8): open questions, recent takeaways, and the count
@@ -80,19 +81,15 @@ export async function recentTakeaways(
     );
 }
 
-export interface ReviewCount {
-  questions: number;
-  verses: number;
-}
-
-/** What waits in the queue: open questions and the verses due `today`. The Review tab's count. */
+/** What waits in the queue on `today`: the Review tab's count (`countWaiting`). */
 export async function reviewCount(today: string, db: LampDb = appDb): Promise<ReviewCount> {
   const [questions, items] = await Promise.all([
-    openQuestions(db),
-    db.memoryItem.filter((item) => item.deletedAt === null).toArray(),
+    db.question.where('status').equals('open').toArray(),
+    db.memoryItem.toArray(),
   ]);
-  return {
-    questions: questions.length,
-    verses: items.filter((item) => isDue(item, today)).length,
-  };
+  const lessons = await liveLessons(
+    questions.map((q) => q.lessonId),
+    db,
+  );
+  return countWaiting({ questions, lessons: [...lessons.values()], items }, today);
 }

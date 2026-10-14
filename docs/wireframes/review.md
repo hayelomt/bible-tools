@@ -124,3 +124,9 @@ John 10:27–28 is another memory verse than John 10:27.
 Settings → Review → Weekly reminder. Where the browser can't do it (anything but an installed
 Chromium app), the switch is replaced by a line: "This browser can't send reminders. The Review tab
 shows a count instead."
+
+*As built in M6-04:* the switch reads "Weekly reminder", with "About once a week, when questions
+or verses are waiting. On this device only." under it. Turning it on asks for notifications; if
+they're blocked, it stays off and says "Notifications are blocked for Lamp. Allow them in the
+browser's site settings." The notification is "Time to review" / "3 open questions and 2 verses
+due." and opens Review; with nothing waiting there's none.

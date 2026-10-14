@@ -2,6 +2,7 @@ import { Toaster } from '@lamp/ui/components/sonner';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { OtherAccountDialog } from '@/components/account/other-account-dialog.tsx';
+import { useAppBadge } from '@/components/review/use-review-count.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { useThemeSync } from '@/lib/theme.ts';
 import { BottomNav } from './bottom-nav.tsx';
@@ -23,6 +24,7 @@ export function AppShell() {
   useShortcuts();
   useThemeSync();
   useSyncAccount();
+  useAppBadge();
   const [selectionBar, setSelectionBar] = useState(false);
   return (
     <SelectionBarOpenProvider setOpen={setSelectionBar}>

@@ -4,6 +4,7 @@ import { ApiStatus } from '@/components/api-status.tsx';
 import { BibleStatus } from '@/components/bible-status.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
+import { ReminderSetting } from '@/components/review/reminder-setting.tsx';
 import { ReviewWindowSetting } from '@/components/review/review-window-setting.tsx';
 import { RemoveNotes } from '@/components/remove-notes.tsx';
 import { StorageStatus } from '@/components/storage-status.tsx';
@@ -38,6 +39,7 @@ function Settings() {
       {settings && (
         <PageSection title="Review">
           <ReviewWindowSetting value={settings.reviewWindowDays} />
+          <ReminderSetting />
         </PageSection>
       )}
       <PageSection title="Storage">

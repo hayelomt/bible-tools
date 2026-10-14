@@ -62,3 +62,26 @@ same gesture. Use the installed app on an iPhone and on an Android phone.
    doesn't change.
 5. Scroll to the middle of a chapter, wait a second, close the app and open it again on Read: the
    same verse is at the top.
+
+## The weekly reminder on an installed app (M6-04)
+
+Checks Periodic Background Sync (TECH-DESIGN §8.8), which only an installed Chromium app gets and
+which Playwright can't drive. Use a production build, so the service worker runs.
+
+1. `pnpm --filter @lamp/web build && pnpm --filter @lamp/web preview`, open
+   <http://localhost:4173> in Chrome or Edge, and install it (the install icon in the address
+   bar). Use the installed app's window from here on.
+2. Settings → Review shows **Weekly reminder** with a switch (in a plain tab, or in Firefox or
+   Safari, it shows "This browser can't send reminders. The Review tab shows a count instead.").
+3. Turn it on. The browser asks to allow notifications; allow. The switch stays on, and after
+   closing and reopening the app it's still on. DevTools → Application → Service workers →
+   **Periodic Sync** lists `weekly-review`.
+4. With no open questions and no verses due, enter `weekly-review` in **Periodic Sync** and click
+   it: **no notification**.
+5. Add a question to a lesson. Fire `weekly-review` again: a notification "Time to review",
+   "1 open question.", and the app's icon shows **1** (taskbar or dock, where the system shows
+   badges).
+6. Click the notification: the app comes forward on Review.
+7. Turn the switch off: `weekly-review` goes from the list. Turn it on after blocking
+   notifications for the site (the padlock → Notifications → Block): the switch stays off and says
+   "Notifications are blocked for Lamp. Allow them in the browser's site settings."

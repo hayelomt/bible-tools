@@ -23,6 +23,25 @@ used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
   and sync them between devices.
 - **Export** a lesson or series as Markdown, or print it to PDF.
 
+### The weekly reminder, by browser
+
+Turned on in Settings → Review, the reminder is a notification about once a week, "3 open questions
+and 2 verses due.", and nothing when nothing waits. It needs Periodic Background Sync, which only
+Chromium gives, and only to an installed app; the browser picks the moment and may wait longer for
+an app that's rarely used. Everywhere else the switch is replaced by a line saying so, and the
+Review tab's count is the reminder.
+
+| Browser                                   | Weekly reminder | Review tab count | App icon badge |
+| ----------------------------------------- | --------------- | ---------------- | -------------- |
+| Chrome, Edge: installed app (desktop)     | Yes             | Yes              | Yes            |
+| Chrome, Edge: installed app (Android)     | Yes             | Yes              | System's dot   |
+| Chrome, Edge: in a tab                    | No              | Yes              | No             |
+| Firefox                                   | No              | Yes              | No             |
+| Safari (macOS, iOS), Home Screen apps too | No              | Yes              | No             |
+
+The switch is per device: the browser keeps the permission and the registration, so it isn't
+synced. Checked by hand with [MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
+
 The full product description is the [PRD](<docs/Bible Study App — PRD.md>); the technical
 design is [TECH-DESIGN.md](docs/TECH-DESIGN.md).
 

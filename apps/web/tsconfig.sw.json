@@ -2,7 +2,8 @@
   "extends": "@lamp/config/tsconfig.base.json",
   "compilerOptions": {
     "lib": ["es2024", "webworker"],
-    "types": []
+    "types": [],
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src/sw.ts"]
 }
