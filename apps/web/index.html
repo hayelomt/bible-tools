@@ -42,7 +42,26 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- The shell's frame (AppShell), with its classes, drawn before the app's script has run so
+           the start is never a blank page. React replaces it with its first render. -->
+      <div class="min-h-svh lg:flex" aria-hidden="true">
+        <aside
+          data-slot="sidebar"
+          class="sticky top-0 hidden h-svh w-60 shrink-0 flex-col gap-6 border-r bg-card p-4 lg:flex"
+        ></aside>
+        <header
+          data-slot="screen-header"
+          class="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background px-4 lg:hidden"
+        ></header>
+        <nav
+          data-slot="bottom-nav"
+          class="fixed inset-x-0 bottom-0 z-10 border-t bg-background pb-[env(safe-area-inset-bottom)] lg:hidden"
+        >
+          <ul class="grid h-14 grid-cols-4"></ul>
+        </nav>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
