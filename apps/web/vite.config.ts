@@ -3,10 +3,26 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import packageJson from './package.json' with { type: 'json' };
+
+/**
+ * Source maps for Sentry (TECH-DESIGN §11.3), made only when a deploy sets `SENTRY_AUTH_TOKEN`
+ * (with `SENTRY_ORG` and `SENTRY_PROJECT`): uploaded for this release, then deleted, so they're
+ * never served. Errors then show the source's files and lines.
+ */
+function sentrySourceMaps(): Plugin[] {
+  if (!process.env.SENTRY_AUTH_TOKEN) return [];
+  return sentryVitePlugin({
+    release: { name: `lamp-web@${packageJson.version}` },
+    sourcemaps: { filesToDeleteAfterUpload: ['dist/**/*.map'] },
+    telemetry: false,
+  });
+}
 
 /** Routes drawn on the first load, never split from the entry. */
 const FIRST_SCREEN = new Set<string>(['/_app', '/_app/']);
@@ -62,6 +78,9 @@ function pwa() {
     // Registered by `UpdatePrompt`.
     injectRegister: false,
     injectManifest: {
+      // Built after the app, so a map made here would outlive the Sentry upload's clean-up; the
+      // worker doesn't report to Sentry, so it needs none.
+      sourcemap: false,
       globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
       // The Literata subsets for other scripts load only when such text shows; offline it falls
       // back to the next font. Downloaded looks (src/lib/looks.ts) and their fonts are stored
@@ -111,7 +130,11 @@ export default defineConfig({
     tailwindcss(),
     bibleText(),
     pwa(),
+    // Last, so it sees the files as they're written.
+    ...sentrySourceMaps(),
   ],
+  // Hidden: the files don't point at them, and they're deleted once uploaded.
+  build: { sourcemap: process.env.SENTRY_AUTH_TOKEN ? 'hidden' : false },
   // The search worker (src/search/search.worker.ts) imports modules the app shares, so it's built
   // as an ES module like the app.
   worker: { format: 'es' },

@@ -7,9 +7,13 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import * as Sentry from '@sentry/nestjs';
 import { ApiException, type ApiErrorBody, ErrorCode, errorCodeForStatus } from './errors.js';
 
-/** Turns every thrown error into an `ApiErrorBody`. Unexpected errors are logged and never leak their message. */
+/**
+ * Turns every thrown error into an `ApiErrorBody`. Unexpected errors are logged and reported to
+ * Sentry, and never leak their message.
+ */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -36,6 +40,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const bodyError = bodyParserError(exception);
     if (bodyError) return bodyError;
     this.logger.error(exception);
+    // Only the unexpected: a client error is the client's (no-op unless Sentry was started).
+    Sentry.captureException(exception);
     return {
       statusCode: 500,
       errorCode: ErrorCode.INTERNAL_ERROR,

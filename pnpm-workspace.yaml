@@ -23,6 +23,9 @@ catalog:
   '@playwright/test': 1.64.0
   '@prisma/adapter-pg': 7.10.0
   '@prisma/client': 7.10.0
+  '@sentry/nestjs': 11.1.0
+  '@sentry/react': 11.1.0
+  '@sentry/vite-plugin': 5.4.0
   '@swc/cli': 0.8.1
   '@swc/core': 1.16.18
   '@tailwindcss/vite': 4.3.3
@@ -97,3 +100,8 @@ onlyBuiltDependencies:
   - '@swc/core'
   - esbuild
   - prisma
+
+# Its binary comes from the platform package (@sentry/cli-linux-x64 and the like); the install
+# script would only download it again.
+ignoredBuiltDependencies:
+  - '@sentry/cli'

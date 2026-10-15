@@ -37,3 +37,7 @@ createRoot(root).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+// Errors and traces, only in a build given a DSN; loaded after the first render (lib/sentry.ts).
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+if (sentryDsn) void import('./lib/sentry.ts').then((m) => m.startSentry(sentryDsn, router));

@@ -1,3 +1,5 @@
+// First: Sentry hooks into the modules the app loads after it.
+import './instrument.js';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';

@@ -2,14 +2,17 @@ import { Alert, AlertDescription, AlertTitle } from '@lamp/ui/components/alert';
 import { Button, buttonVariants } from '@lamp/ui/components/button';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { reportError } from '@/lib/report-error.ts';
 
 /**
  * The error boundary of every screen (wireframes/states.md "Errors"). It replaces the screen only,
- * so the navigation stays usable.
+ * so the navigation stays usable, and the error goes to Sentry where it's on.
  */
 export function ErrorScreen({ error }: ErrorComponentProps) {
   const [copied, setCopied] = useState(false);
+  // Caught here, so the browser's error handler never sees it.
+  useEffect(() => reportError(error), [error]);
 
   async function copyDetails() {
     const details = [

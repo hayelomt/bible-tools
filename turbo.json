@@ -7,7 +7,8 @@
     },
     "build": {
       "dependsOn": ["^build", "db:generate"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"]
     },
     "dev": {
       "dependsOn": ["db:generate"],

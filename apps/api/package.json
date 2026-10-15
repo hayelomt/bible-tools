@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
-    "start": "node dist/main.js",
+    "start": "node --import ./dist/instrument.js dist/main.js",
     "cli": "nest build && node dist/cli.js",
     "lint": "oxlint -c .oxlintrc.json --deny-warnings src test prisma",
     "typecheck": "tsc -p tsconfig.json",
@@ -29,6 +29,7 @@
     "@node-rs/argon2": "catalog:",
     "@prisma/adapter-pg": "catalog:",
     "@prisma/client": "catalog:",
+    "@sentry/nestjs": "catalog:",
     "@zxcvbn-ts/language-common": "catalog:",
     "nest-commander": "catalog:",
     "nestjs-pino": "catalog:",

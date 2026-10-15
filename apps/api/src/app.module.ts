@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SentryModule } from '@sentry/nestjs/setup';
 import { LoggerModule } from 'nestjs-pino';
 import { AccountModule } from './account/account.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -11,6 +12,8 @@ import { SyncModule } from './sync/sync.module.js';
 
 @Module({
   imports: [
+    // Names each trace after its route; does nothing unless Sentry was started (instrument.ts).
+    SentryModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: envFilePaths(),

@@ -23,6 +23,7 @@
     "@lamp/bible-data": "workspace:*",
     "@lamp/domain": "workspace:*",
     "@lamp/ui": "workspace:*",
+    "@sentry/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@tiptap/core": "catalog:",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@lamp/config": "workspace:*",
+    "@sentry/vite-plugin": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@testing-library/dom": "catalog:",

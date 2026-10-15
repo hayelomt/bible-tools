@@ -26,7 +26,12 @@ the sending domain wasn't verified in Resend; every automated test passed. Use
    with its verse chip and its text.
 6. Add a sentence on the phone. Reload on the laptop (or wait for it to sync): the sentence is
    there. Settings → **Devices** on either lists both, with the version just deployed.
-7. Sign out on the phone, then **Forgot your password?** with the same address: "Reset your Lamp
+7. Where Sentry is on: in the laptop's DevTools console, run
+   `setTimeout(() => { throw new Error('Sentry check') })`. Within a minute the error shows in the
+   web project with the release `lamp-web@<version>` and no query string in its URL. An API error
+   (any 500 in `pm2 logs lamp-api`) shows in the API project the same way, without its request
+   body.
+8. Sign out on the phone, then **Forgot your password?** with the same address: "Reset your Lamp
    password" arrives. Its link sets a new password, and signing in with it brings the lesson back.
 
 ## The Bible on a phone, offline and in both translations

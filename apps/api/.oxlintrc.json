@@ -5,6 +5,17 @@
     "node": true
   },
   "rules": {
-    "typescript/no-extraneous-class": ["warn", { "allowWithDecorator": true }]
+    "typescript/no-extraneous-class": [
+      "warn",
+      {
+        "allowWithDecorator": true
+      }
+    ],
+    "import/no-unassigned-import": [
+      "warn",
+      {
+        "allow": ["**/instrument.js"]
+      }
+    ]
   }
 }

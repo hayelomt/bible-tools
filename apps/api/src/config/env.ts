@@ -29,6 +29,9 @@ export const envSchema = z
       .optional(),
     // Production sends through Resend; development and tests write .eml files instead.
     RESEND_API_KEY: z.string().startsWith('re_', 'must be a Resend API key (re_…)').optional(),
+    // Errors and a fifth of requests' traces go to Sentry; unset, nothing is sent
+    // (src/instrument.ts reads it before the app starts).
+    SENTRY_DSN: z.url({ protocol: /^https?$/ }).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
