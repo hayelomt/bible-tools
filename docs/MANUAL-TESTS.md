@@ -1,7 +1,66 @@
 # Manual tests
 
 Checks that need a real device, a real deployment or a second build, so they can't run in CI. Run
-each one before a release that touches the area, and note the date and device in the PR.
+the first one after every deploy, and the others before a release that touches their area. Note the
+date, version and device in a "Last run" line under the test's heading.
+
+## After every deploy: accounts, email and sync on the live site
+
+Checks what only the deployed site has: Resend sending real email, the nginx `/api` proxy, the
+production database and HTTPS cookies. Sign-up emails failed in production on 2026-10-15 because
+the sending domain wasn't verified in Resend; every automated test passed. Use
+<https://lamp.equipministry.et> on a laptop and a phone, and an email address you can read.
+
+1. `https://lamp.equipministry.et/api/health` answers `{"status":"ok","version":…}` with the
+   version just deployed.
+2. On the laptop, in a fresh browser profile: Continue on the welcome, then Settings → **Sign up**
+   with a new address (`you+lamp-<date>@gmail.com` works). "Check your email" shows.
+3. Within a minute, "Confirm your email for Lamp" arrives from `noreply@lamp.equipministry.et`, in
+   the inbox (not spam). Open its link: the app shows the account verified, and the status at the
+   top says **Synced**.
+   - No email: look in Resend → Emails for the send and its error, and at the API's log
+     (`pm2 logs lamp-api` on the server).
+4. Start a lesson with a title, a sentence and a verse (`Rom 8:28`, Enter). The status goes back to
+   **Synced** within a few seconds.
+5. On the phone, open the site, Settings → **Sign in** with the same account: the lesson is there,
+   with its verse chip and its text.
+6. Add a sentence on the phone. Reload on the laptop (or wait for it to sync): the sentence is
+   there. Settings → **Devices** on either lists both, with the version just deployed.
+7. Sign out on the phone, then **Forgot your password?** with the same address: "Reset your Lamp
+   password" arrives. Its link sets a new password, and signing in with it brings the lesson back.
+
+## The Bible on a phone, offline and in both translations
+
+Checks the Bible download (TECH-DESIGN §9) where E2E can't: a phone's real storage, which Safari
+may clear, and a real loss of connection. Use the installed app on an iPhone and an Android phone.
+
+1. On a fresh install, open Settings within a minute: under Bible, the **Berean Standard Bible**
+   counts up to 66 books, then shows **3.9 MB ✓**. The **King James Version** shows **Download**.
+2. Turn on airplane mode. Open Read, then a book never opened before (Obadiah, Revelation 22): the
+   text shows. In a lesson, type `Ps 23:1` and Enter: the chip shows, with the verse text under
+   the paragraph.
+3. Still offline, Download the KJV: it says the download is paused. Turn airplane mode off: it
+   continues, and ends at **4.2 MB ✓**.
+4. Pick **KJV**: Read → John 3:16 says "For God so loved the world, that he gave his only begotten
+   Son". A new `Jn 3:16` chip says **KJV**; the Psalm chip from step 2 still says **BSB**.
+5. Pick **BSB** again: John 3:16 says "that He gave His one and only Son". The KJV row now has
+   **Remove**; Remove it, and it shows **Download** again.
+6. Leave the app closed for two days, then open it in airplane mode: any book still opens.
+
+## Taking notes on a phone keyboard
+
+Checks verse entry with a real on-screen keyboard, which E2E only imitates (the backlog's M2-13
+real-use check builds on this). Use the installed app on an iPhone and an Android phone.
+
+1. Start a lesson and type in the first note: `Paul says in Rom 8:28`. The suggestions show above
+   the keyboard and the editing toolbar, never behind them.
+2. Tap the first suggestion: the chip "Romans 8:28 · BSB" goes in, the keyboard stays open, and
+   the typing goes on after the chip. The verse text shows under the paragraph.
+3. Type `jn 3:16` and tap the suggestion: John 3:16. Tap the chip: its text opens, and closing it
+   brings the cursor back to the note.
+4. With the cursor right after a chip (no space between), one Backspace deletes it whole.
+5. Type quickly for a minute, with autocorrect on. Nothing typed is lost or doubled, and the
+   cursor never jumps.
 
 ## An update mid-edit loses nothing (M2-11)
 
@@ -69,8 +128,8 @@ Checks Periodic Background Sync (TECH-DESIGN §8.8), which only an installed Chr
 which Playwright can't drive. Use a production build, so the service worker runs.
 
 1. `pnpm --filter @lamp/web build && pnpm --filter @lamp/web preview`, open
-   <http://localhost:4573> in Chrome or Edge, and install it (Install on the toast, or the install icon in
-   the address bar). Use the installed app's window from here on.
+   <http://localhost:4573> in Chrome or Edge, and install it (Install on the toast, or the install
+   icon in the address bar). Use the installed app's window from here on.
 2. Settings → Review shows **Weekly reminder** with a switch (in a plain tab, or in Firefox or
    Safari, it shows "This browser can't send reminders. The Review tab shows a count instead.").
 3. Turn it on. The browser asks to allow notifications; allow. The switch stays on, and after
@@ -92,8 +151,8 @@ Checks the install offer (wireframes/shell.md "Install prompt"), which needs a r
 
 1. `pnpm --filter @lamp/web build && pnpm --filter @lamp/web preview`, and open
    <http://localhost:4573> in a new Chrome profile and click Continue on the welcome. Within a few
-   seconds, a toast says
-   "Install Lamp to open it from your home screen and use it offline." with Not now and Install.
+   seconds, a toast says "Install Lamp to open it from your home screen and use it offline." with
+   Not now and Install.
 2. Click Not now, and reload: no toast. In DevTools → Application → Local storage, delete
    `lamp.installLater` and reload: the toast is back.
 3. Click Install: Chrome's own dialog opens; install. The app's window shows no toast, and neither
