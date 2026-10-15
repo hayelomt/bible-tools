@@ -60,7 +60,7 @@ function ThemePicker() {
 
   return (
     <div className="flex flex-col gap-6">
-      <LookPicker />
+      <LookPicker settings={settings} />
       <ModeControl value={settings.colorMode} />
       {settings.look === 'classic' && <PresetPicker mode={mode} />}
     </div>

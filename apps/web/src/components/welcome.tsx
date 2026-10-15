@@ -25,7 +25,7 @@ export function Welcome() {
           Choose how your notes look. You can change it any time in Settings.
         </p>
       </div>
-      <LookPicker />
+      <LookPicker settings={settings} />
       <ModeControl value={settings.colorMode} />
       <div className="flex flex-col *:w-full">
         <Button size="lg" onClick={finishWelcome}>

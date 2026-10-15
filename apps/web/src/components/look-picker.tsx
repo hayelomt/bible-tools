@@ -1,20 +1,19 @@
+import type { UserSettings } from '@lamp/domain';
 import { LOOKS, resolveMode } from '@lamp/ui/themes/presets';
 import { Check } from 'lucide-react';
 import { updateSettings } from '@/data/actions/settings.ts';
-import { useSettings } from '@/data/use-settings.ts';
 import { useLookState } from '@/lib/looks.ts';
 import { usePrefersDark } from '@/lib/theme.ts';
 
 /**
  * The looks as a radio group of cards, in the theme sheet and the first-run welcome. Classic is
  * drawn live in the chosen preset; a downloaded look by a picture of it, since its stylesheet
- * isn't here until it's chosen. A choice applies at once, once its stylesheet has arrived.
+ * isn't here until it's chosen. A choice applies at once, once its stylesheet has arrived. Given
+ * the settings its screen has read, so it draws with the rest of the screen, not a moment later.
  */
-export function LookPicker() {
-  const settings = useSettings();
+export function LookPicker({ settings }: { settings: UserSettings }) {
   const prefersDark = usePrefersDark();
   const lookState = useLookState();
-  if (!settings) return null;
   const mode = resolveMode(settings.colorMode, prefersDark);
   const chosen = LOOKS.find((l) => l.id === settings.look);
 

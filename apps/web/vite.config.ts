@@ -8,6 +8,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+/** Routes drawn on the first load, never split from the entry. */
+const FIRST_SCREEN = new Set<string>(['/_app', '/_app/']);
+
 // `/api` goes to the API (`pnpm dev`: :3000). The E2E run points it at its own API instance.
 const apiUrl = process.env.LAMP_API_URL ?? 'http://127.0.0.1:3000';
 
@@ -95,7 +98,15 @@ function pwa() {
 export default defineConfig({
   // The router plugin generates src/routeTree.gen.ts and must run before the React plugin.
   plugins: [
-    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    tanstackRouter({
+      target: 'react',
+      autoCodeSplitting: true,
+      codeSplittingOptions: {
+        // The shell and the lessons home are on the first screen: kept in the entry, so they load
+        // with it instead of in a second round of requests after it runs (slow on a phone).
+        splitBehavior: ({ routeId }) => (FIRST_SCREEN.has(routeId) ? [] : undefined),
+      },
+    }),
     react(),
     tailwindcss(),
     bibleText(),
