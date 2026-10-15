@@ -1,0 +1,48 @@
+import { createGlossary, type Glossary, type PageVerse, passageVerses } from '@lamp/bible-data';
+import type { BookCode, VerseRef } from '@lamp/domain';
+import { whenBook } from '@/data/bible.ts';
+
+let glossary: Promise<Glossary> | undefined;
+
+/** The KJV glossary, fetched the first time the dictionary opens (its own chunk). */
+export function loadGlossary(): Promise<Glossary> {
+  glossary ??= import('@lamp/bible-data/kjv-glossary').then((m) => createGlossary(m.KJV_GLOSSARY));
+  return glossary;
+}
+
+/** A chapter's KJV verses, or none when its book can't be had. */
+export async function chapterVerses(book: BookCode, chapter: number): Promise<PageVerse[]> {
+  const text = await whenBook('KJV', book);
+  return (text?.c[chapter - 1] ?? []).map((t, i) => ({ book, chapter, verse: i + 1, text: t }));
+}
+
+/**
+ * The verses of the KJV passages a lesson cites, in order and each once. A passage's verses come
+ * from its book; without the book, its snapshot stands in as the passage's first verse.
+ */
+export async function passagesVerses(refs: readonly VerseRef[]): Promise<PageVerse[]> {
+  const kjv = refs.filter((ref) => ref.translation === 'KJV');
+  const texts = await Promise.all(kjv.map((ref) => whenBook('KJV', ref.book)));
+  const seen = new Set<string>();
+  const verses: PageVerse[] = [];
+  kjv.forEach((ref, i) => {
+    const text = texts[i];
+    const found = text
+      ? passageVerses(text, ref).map((v) => ({ book: ref.book, ...v }))
+      : [
+          {
+            book: ref.book,
+            chapter: ref.chapter,
+            verse: ref.verseStart ?? 1,
+            text: ref.snapshotText ?? '',
+          },
+        ];
+    for (const verse of found) {
+      const key = `${verse.book}.${verse.chapter}.${verse.verse}`;
+      if (!verse.text || seen.has(key)) continue;
+      seen.add(key);
+      verses.push(verse);
+    }
+  });
+  return verses;
+}

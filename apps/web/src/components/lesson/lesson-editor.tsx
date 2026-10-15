@@ -10,6 +10,7 @@ import { SOURCE_LABELS } from '@/lib/labels.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { AddButton } from './add-button.tsx';
 import { LessonDetails } from './lesson-details.tsx';
+import { LessonDictionary } from './lesson-dictionary.tsx';
 import { LessonMenu } from './lesson-menu.tsx';
 import { PanelHeading } from './panel-heading.tsx';
 import { Questions } from './questions.tsx';
@@ -99,6 +100,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
         <span className="sr-only">{lesson?.title ?? 'New lesson'}</span>
       </ScreenTitle>
       <ScreenActions>
+        {lesson && <LessonDictionary lesson={lesson} />}
         <output className="grid size-8 place-items-center text-muted-foreground">
           {lesson && !saving && !sectionsSaving && (
             <>

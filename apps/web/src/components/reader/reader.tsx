@@ -11,6 +11,8 @@ import {
   previousChapter,
 } from '@/lib/chapters.ts';
 import { useActiveTranslation } from '@/data/translation.ts';
+import { DictionaryButton } from '../dictionary/dictionary.tsx';
+import { chapterVerses } from '../dictionary/page-verses.ts';
 import { today } from '@/lib/dates.ts';
 import { extendSelection, selectionPassage, type VerseSelection } from '@/lib/highlights.ts';
 import { isTyping } from '@/lib/is-typing.ts';
@@ -70,8 +72,13 @@ export function Reader({ at }: { at: Chapter }) {
         </button>
       </ScreenTitle>
       <ScreenActions>
-        {/* A phone's top bar has room only for the chapter's name; it swipes, or uses the links
-            under the text (decided 2026-10-14). */}
+        {/* The dictionary explains the KJV's old words, so it's there only with the KJV, and on a
+            phone too: it's one icon beside the chapter's name (decided 2026-10-15). */}
+        {translation === 'KJV' && (
+          <DictionaryButton scope="chapter" load={() => chapterVerses(at.book, at.chapter)} />
+        )}
+        {/* A phone's top bar otherwise has room only for the chapter's name; it swipes, or uses
+            the links under the text (decided 2026-10-14). */}
         <div className="hidden items-center gap-1 sm:flex">
           <abbr
             title={TRANSLATION_NAMES[translation]}
