@@ -9,7 +9,7 @@ In the text, a chip shows the display reference and the translation label. It is
 cursor moves over it, and Backspace deletes it whole.
 
 ```text
-│ ┃ Jesus is the door ⟦John 10:9 · WEB⟧│
+│ ┃ Jesus is the door ⟦John 10:9 · BSB⟧│
 │ ┃ salvation and pasture.             │
 ```
 
@@ -22,11 +22,12 @@ chip and the popover, unless the chip was clicked. Each verse starts with its nu
 ```text
 ┌──────────────────────────────────────┐
 │ John 10:9                            │
-│ World English Bible                  │
+│ Berean Standard Bible                │
 │                                      │
-│ I am the door. If anyone enters in   │  ← font-serif
-│ by me, he will be saved, and will go │
-│ in and go out, and will find pasture.│
+│ I am the gate. If anyone enters      │  ← font-serif
+│ through Me, he will be saved. He     │
+│ will come in and go out and find     │
+│ pasture.                             │
 │                                      │
 │ [ Every note on John 10:9 › ]        │  ← the verse index (M4-07)
 │ [ Read in context › ] [ Memorise ]   │  ← reader (M5-04) · memory item (M6-01)
@@ -35,7 +36,7 @@ chip and the popover, unless the chip was clicked. Each verse starts with its nu
 
 Phase 2 adds "View in …" here for other downloaded translations, without changing the note.
 
-Screen readers hear the chip as a button: "John 10:9, World English Bible, verse. Show text."
+Screen readers hear the chip as a button: "John 10:9, Berean Standard Bible, verse. Show text."
 From the keyboard, ← or → selects the chip (a ring shows it), and Enter or Space opens it. Esc, a
 tap outside or × closes it, and the cursor is back where it was.
 
@@ -50,12 +51,12 @@ edited, and isn't saved, copied or exported with it. It's set apart from what wa
 card with an accent edge, the reference in small capitals, the text smaller and in italics.
 
 ```text
-│ ┃ Paul says in ⟦Romans 8:38–39 · WEB⟧│
-│ ┃ and ⟦Psalm 23:1 · WEB⟧.            │
-│ ┃ ▏ROMANS 8:38–39 · WEB              │  ← small caps, accent colour
+│ ┃ Paul says in ⟦Romans 8:38–39 · BSB⟧│
+│ ┃ and ⟦Psalm 23:1 · BSB⟧.            │
+│ ┃ ▏ROMANS 8:38–39 · BSB              │  ← small caps, accent colour
 │ ┃ ▏³⁸ For I am persuaded that neither│  ← font-serif italic, on bg-muted
 │ ┃ ▏death… ³⁹ nor height, nor depth…  │
-│ ┃ ▏PSALM 23:1 · WEB                  │
+│ ┃ ▏PSALM 23:1 · BSB                  │
 │ ┃ ▏¹ Yahweh is my shepherd…          │
 ```
 
@@ -63,15 +64,16 @@ card with an accent edge, the reference in small capitals, the text smaller and 
 
 The list opens when the text just before the cursor parses as a reference with a number ("rom 8",
 "Jude 3"; a book name alone doesn't open it), and closes as soon as it doesn't, or a space follows.
-The selected suggestion shows its WEB text, so the user never leaves the note.
+The selected suggestion shows its text in the translation picked in Settings (the BSB unless
+changed), so the user never leaves the note.
 
 ```text
 │ ┃ Paul says in rom 8:28▏             │
 │ ┌──────────────────────────────────┐ │
-│ │ Romans 8:28                  WEB │ │  ← selected
-│ │ We know that all things work     │ │
-│ │ together for good for those who  │ │
-│ │ love God…                        │ │
+│ │ Romans 8:28                  BSB │ │  ← selected
+│ │ And we know that God works all   │ │
+│ │ things together for the good of  │ │
+│ │ those who love Him…              │ │
 │ ├──────────────────────────────────┤ │
 │ └──────────────────────────────────┘ │
 │ ↑↓ choose · Enter insert · Esc keep  │  ← hint, laptop only
@@ -87,23 +89,12 @@ A name that matches several books lists them all (decision 15):
 ```text
 │ ┃ see jo 3▏                          │
 │ ┌──────────────────────────────────┐ │
-│ │ Joshua 3                     WEB │ │  ← shortest name first (M1-09)
+│ │ Joshua 3                     BSB │ │  ← shortest name first (M1-09)
 │ │ …                                │ │
 │ │ Job 3                            │ │
 │ │ Joel 3                           │ │
 │ │ Jonah 3                          │ │
 │ │ John 3                           │ │
-│ └──────────────────────────────────┘ │
-```
-
-A reference with KJV numbering is moved onto WEB's and says so (decision 16):
-
-```text
-│ ┌──────────────────────────────────┐ │
-│ │ Romans 14:24–26              WEB │ │
-│ │ Typed as Romans 16:25–27 (KJV    │ │
-│ │ numbering)                       │ │
-│ │ Now to him who is able to…       │ │
 │ └──────────────────────────────────┘ │
 ```
 
@@ -115,10 +106,10 @@ A reference that can't exist explains why, with nothing to insert:
 │ └──────────────────────────────────┘ │
 ```
 
-A verse WEB leaves out (Acts 8:37) shows its footnote, and the chip keeps it: "[Not in WEB: TR adds
-Philip said, …]".
+Both translations number verses the KJV's way. A verse the BSB leaves out (Acts 8:37) shows its
+note, and the chip keeps it: "[Not in BSB: Some later manuscripts include this verse.]".
 
-If the WEB text isn't downloaded yet (first minutes after install), suggestions still appear and
+If the book isn't downloaded yet (first minutes after install), suggestions still appear and
 insert a chip; the preview reads "Text not downloaded yet", and the chip's snapshot is filled in
 when the book arrives (M2-11).
 
@@ -132,7 +123,7 @@ ranges that start in chapter 7 or run into chapter 9.
 ┌──────────────────────────────────────┐
 │ ← Romans 8                           │
 ├──────────────────────────────────────┤
-│ Romans 8 · WEB          [ Read › ]   │
+│ Romans 8 · BSB          [ Read › ]   │
 │ 5 notes · 2 highlights · 1 memory    │
 │ ( All | Notes | Highlights | Memory )│
 │                                      │

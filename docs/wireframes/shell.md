@@ -5,7 +5,7 @@ and exact spacing come from the components and the presets. Rules that apply eve
 [UX-PATTERNS.md](../UX-PATTERNS.md).
 
 Legend: `[ Button ]` · `[ field____ ]` · `( A | B )` segmented control · `[○ ]` / `[● ]` switch off / on ·
-`›` opens a screen · `⋯` / `⋮` menu · `◌` sync status · `≡` settings · `⟦John 10:9 · WEB⟧` verse chip ·
+`›` opens a screen · `⋯` / `⋮` menu · `◌` sync status · `≡` settings · `⟦John 10:9 · BSB⟧` verse chip ·
 `▏` cursor.
 
 ## App shell (M2-02)
@@ -89,7 +89,8 @@ blocker.
 │                                      │
 │ ABOUT                                │
 │ Lamp 1.0.0 · MIT licence · Source ›  │
-│ WEB text: public domain, eBible.org ›│
+│ Bible text: the BSB › and the KJV,   │
+│ both public domain                   │
 └──────────────────────────────────────┘
 ```
 
@@ -162,20 +163,34 @@ Classic stays until then.
 
 ## Bible download (M2-11)
 
-WEB downloads in the background after the first load. Settings shows the progress; nothing else
-waits for it, except opening a chapter that isn't stored yet.
+The active translation downloads in the background after the first load, and another one when
+it's asked for in Settings. Nothing waits for it, except opening a chapter that isn't stored yet.
+
+While a translation downloads, a ring that fills as books arrive shows beside the sync status:
+with "45/66" in the phone's top bar (the ring alone under 380 px, so the screen's title stays
+whole), and with "Bible 45/66" above it at the foot of the laptop's sidebar. Like any
+loading state it shows only after 300 ms, so a check that finds every book stored never flashes
+it. It opens Settings, and it's gone once the download is done or paused (Settings says why).
+
+```text
+├──────────────────────────────────────┤
+│ Lessons           ◔ 45/66  ◌ Synced ⚙│
+├──────────────────────────────────────┤
+```
+
+Settings shows the same progress for each translation:
 
 ```text
 │ BIBLE                                │
-│ World English Bible                  │
+│ Berean Standard Bible                │
 │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░  45 of 66 books │
 ```
 
 ```text
 │ BIBLE                                │
-│ World English Bible                  │
-│ ! Download paused: no connection.    │
-│ It continues when you're online.     │
+│ Berean Standard Bible                │
+│ Download paused: no connection. It   │
+│ continues when you're online.        │
 ```
 
 Once every book is stored, the row shows its size and ✓, as in Settings above. A browser that

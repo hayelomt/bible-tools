@@ -81,7 +81,7 @@ When the same section's text was changed on two devices, the newer text stays an
 beside it as a copy. The copy is a normal section with a label and two actions.
 
 ```text
-│ ┃ Jesus is the door ⟦John 10:9 · WEB⟧│  ← the newer text, unchanged
+│ ┃ Jesus is the door ⟦John 10:9 · BSB⟧│  ← the newer text, unchanged
 │ ┃ salvation and pasture.             │
 │ ┃                                    │
 │ ┌──────────────────────────────────┐ │

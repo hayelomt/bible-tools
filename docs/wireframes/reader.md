@@ -11,18 +11,18 @@ same. The reader reopens where it was left.
 
 ```text
 ┌──────────────────────────────────────┐
-│ ‹      John 10 ▾      WEB          › │  ← ‹ › chapters · "John 10 ▾" opens the picker
+│ ‹      John 10 ▾      BSB          › │  ← ‹ › chapters · "John 10 ▾" opens the picker
 ├──────────────────────────────────────┤
-│ ¹ "Most certainly, I tell you, one   │  ← verse numbers small and muted
-│ who doesn't enter by the door into   │
-│ the sheep fold, but climbs up some   │
-│ other way, is a thief and a robber.  │
+│ ¹ "Truly, truly, I tell you, whoever │  ← verse numbers small and muted
+│ does not enter the sheepfold by the  │
+│ gate, but climbs in some other way,  │
+│ is a thief and a robber.             │
 │ …                                    │
-│ ⁹ I am the door. If anyone enters  • │  ← • this verse has notes (M5-04)
-│ in by me, he will be saved…          │
-│ ¹⁰ The thief only comes to steal…    │
+│ ⁹ I am the gate. If anyone enters  • │  ← • this verse has notes (M5-04)
+│ through Me, he will be saved…        │
+│ ¹⁰ The thief comes only to steal…    │
 │ ¹¹ ░I am the good shepherd. The good │  ← highlighted (yellow)
-│ ░shepherd lays down his life for the │
+│ ░shepherd lays down His life for the │
 │ ░sheep.░                           • │
 │ …                                    │
 │                                      │

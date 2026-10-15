@@ -68,7 +68,7 @@ the end of the sidebar's Review row), hidden at zero.
 │ ← Memory verses             1 of 2   │
 ├──────────────────────────────────────┤
 │                                      │
-│ John 10:27 · WEB                     │
+│ John 10:27 · BSB                     │
 │ ┌──────────────────────────────────┐ │
 │ │                                  │ │
 │ │  Say it from memory, then show   │ │
@@ -83,7 +83,7 @@ the end of the sidebar's Review row), hidden at zero.
 After "Show the verse":
 
 ```text
-│ John 10:27 · WEB                     │
+│ John 10:27 · BSB                     │
 │ ┌──────────────────────────────────┐ │
 │ │ My sheep hear my voice, and I    │ │  ← font-serif
 │ │ know them, and they follow me.   │ │

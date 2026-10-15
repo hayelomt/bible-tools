@@ -4,6 +4,7 @@ import { Settings } from 'lucide-react';
 import { allSeries } from '@/data/queries.ts';
 import { NavCount } from './nav-count.tsx';
 import { NAV_ITEMS } from './nav-items.ts';
+import { BibleDownloadIndicator } from './bible-download-indicator.tsx';
 import { SyncStatus } from './sync-status.tsx';
 
 const itemClass =
@@ -51,6 +52,7 @@ export function Sidebar() {
         </section>
       )}
       <div className="mt-auto flex flex-col gap-1">
+        <BibleDownloadIndicator className="px-3 py-1.5" />
         <SyncStatus className="px-3 py-1.5" />
         <Link to="/settings" className={itemClass}>
           <Settings className="size-4" aria-hidden />

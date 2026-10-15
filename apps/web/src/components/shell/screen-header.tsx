@@ -1,14 +1,16 @@
 import { buttonVariants } from '@lamp/ui/components/button';
 import { Link, useMatches } from '@tanstack/react-router';
 import { ArrowLeft, Settings } from 'lucide-react';
+import { BibleDownloadIndicator } from './bible-download-indicator.tsx';
 import { useSlotRef } from './slots.tsx';
 import { SyncStatus } from './sync-status.tsx';
 
 /**
  * The screen's title, its one `h1`, from the deepest route's `staticData`, or from the screen
- * itself through `ScreenTitle` when it comes from data. On a phone it's the top
- * bar, with the sync status and settings on the four destinations and `←` on the screens below
- * them; on a laptop the sidebar has those, and the title heads the content column.
+ * itself through `ScreenTitle` when it comes from data. On a phone it's the top bar, with the
+ * Bible download (while it runs), the sync status and settings on the four destinations and `←`
+ * on the screens below them; on a laptop the sidebar has those, and the title heads the content
+ * column.
  */
 export function ScreenHeader() {
   const { title, back } = useMatches().at(-1)?.staticData ?? {};
@@ -39,7 +41,8 @@ export function ScreenHeader() {
       </h1>
       <div ref={actionsSlot} className="flex items-center gap-1 empty:hidden" />
       {!back && (
-        <div className="flex items-center gap-1 lg:hidden">
+        <div className="flex min-w-0 items-center gap-1 lg:hidden">
+          <BibleDownloadIndicator />
           <SyncStatus />
           <Link
             to="/settings"

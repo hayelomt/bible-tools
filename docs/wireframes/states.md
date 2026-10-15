@@ -62,7 +62,7 @@ same size: `[ Signing in… ]`, disabled.
 A chapter whose book hasn't downloaded yet, offline:
 
 ```text
-│ ‹      Obadiah 1 ▾     WEB         › │
+│ ‹      Obadiah 1 ▾     BSB         › │
 ├──────────────────────────────────────┤
 │                                      │
 │  Obadiah hasn't downloaded yet.      │

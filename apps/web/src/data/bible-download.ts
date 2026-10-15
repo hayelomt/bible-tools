@@ -25,12 +25,13 @@ export type DownloadState =
 export const RETRY_MS = 30_000;
 
 const NONE: DownloadState = { status: 'none' };
-const states = new Map<TranslationId, DownloadState>();
+/** Replaced on every change, so it can be a store's snapshot. */
+let states: ReadonlyMap<TranslationId, DownloadState> = new Map();
 const running = new Map<TranslationId, Promise<void>>();
 const listeners = new Set<() => void>();
 
 function set(translation: TranslationId, next: DownloadState) {
-  states.set(translation, next);
+  states = new Map(states).set(translation, next);
   for (const listener of listeners) listener();
 }
 
@@ -152,6 +153,17 @@ export function useBibleDownload(translation: TranslationId): DownloadState {
       return () => listeners.delete(listener);
     },
     () => stateOf(translation),
+  );
+}
+
+/** Every translation's download, re-rendering when any of them changes. */
+export function useBibleDownloads(): ReadonlyMap<TranslationId, DownloadState> {
+  return useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    () => states,
   );
 }
 

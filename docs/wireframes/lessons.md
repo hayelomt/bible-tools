@@ -96,11 +96,11 @@ never in the way of typing. Everything saves as it's typed; there's no Save butt
 │ The Good Shepherd▏                   │  ← title, large; Enter moves to the first section
 │ Sun 12 Oct · Sermon · Details ▾      │
 │                                      │
-│ ┃ Jesus is the door ⟦John 10:9 · WEB⟧│  ← section: rich text with verse chips
+│ ┃ Jesus is the door ⟦John 10:9 · BSB⟧│  ← section: rich text with verse chips
 │ ┃ salvation and pasture.             │
 │ ┃ #grace                           ⠿ │  ← its tags; ⠿ menu (tap) and drag (hold)
 │ ┃                                    │
-│ ┃  ┃ Compare ⟦Psalm 23:1 · WEB⟧ — the│  ← reply (second level, indented)
+│ ┃  ┃ Compare ⟦Psalm 23:1 · BSB⟧ — the│  ← reply (second level, indented)
 │ ┃  ┃ same shepherd.                ⠿ │
 │                                      │
 │ ┃ Write a note…▏                     │  ← always an empty section at the end, ready to type
@@ -139,9 +139,9 @@ show their `⠿` on hover and focus.
 │ sidebar  │ The Good Shepherd                        ⋯   │ DETAILS              │
 │          │ Sun 12 Oct · Sermon · Pastor Ann             │ Date    12 Oct 2026  │
 │          │                                              │ Source  Sermon       │
-│          │ Jesus is the door ⟦John 10:9 · WEB⟧        ⠿ │ Passages John 10:1–18│
+│          │ Jesus is the door ⟦John 10:9 · BSB⟧        ⠿ │ Passages John 10:1–18│
 │          │ salvation and pasture.              #grace   │ Series  John         │
-│          │   Compare ⟦Psalm 23:1 · WEB⟧ — the same    ⠿ │ Tags    #grace       │
+│          │   Compare ⟦Psalm 23:1 · BSB⟧ — the same    ⠿ │ Tags    #grace       │
 │          │   shepherd.                                  │                      │
 │          │ Write a note…                                │ TAKEAWAYS     + Add  │
 │          │                                              │ • He knows his sheep │

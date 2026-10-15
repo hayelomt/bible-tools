@@ -41,12 +41,12 @@ dialog opens on top; "Save as PDF" there makes the file.
 │ Pastor Ann, Grace Chapel             │
 │ John 10:1–18 · #grace                │
 │                                      │
-│ Jesus is the door (John 10:9, WEB):  │
+│ Jesus is the gate (John 10:9, BSB):  │
 │ salvation and pasture.               │
-│   > John 10:9 (WEB) I am the door.   │
-│   > If anyone enters in by me…       │
+│   > John 10:9 (BSB) I am the gate.   │
+│   > If anyone enters through Me…     │
 │                                      │
-│     Compare Psalm 23:1 (WEB): the    │
+│     Compare Psalm 23:1 (BSB): the    │
 │     same shepherd.                   │
 │                                      │
 │ Takeaways                            │
@@ -56,7 +56,7 @@ dialog opens on top; "Save as PDF" there makes the file.
 │ ○ Who are the "other sheep"?         │
 │                                      │
 │ ──────────────────────────────────── │
-│ Scripture: World English Bible       │
+│ Scripture: Berean Standard Bible     │
 │ (public domain).                     │
 └──────────────────────────────────────┘
 ```
