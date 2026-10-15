@@ -55,6 +55,14 @@ export type SectionRow = OutlineRow<SectionItem>;
 
 type MoveFocus = Extract<FocusRequest['at'], 'keep' | 'handle'>;
 
+/**
+ * Each section is a TipTap editor, slow to make on a phone: mounting a long lesson's all at once
+ * left the screen empty for seconds. The first ones (a screenful) come with the list and the rest
+ * a few at a time after it shows.
+ */
+const FIRST_SECTIONS = 8;
+const MORE_SECTIONS = 4;
+
 /** The list's own side of the API: a drop, a delete the dialog confirmed, and an answer. */
 interface ListApi extends SectionListApi {
   drop: (id: string, drop: Drop) => void;
@@ -142,6 +150,8 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
   // The section with replies whose delete is being asked about.
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  // How many sections are mounted so far (`FIRST_SECTIONS`); all of them once the rest have come.
+  const [mounted, setMounted] = useState(FIRST_SECTIONS);
 
   const draftsRef = useRef(drafts);
   const created = useRef(new Set<string>());
@@ -252,6 +262,28 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
     flashTimer.current = setTimeout(() => setFlash(null), FLASH_MS);
   }, [request, stored]);
   useEffect(() => () => clearTimeout(flashTimer.current), []);
+
+  // A section the cursor goes to, or one asked to be shown, is mounted at once, with those above.
+  const upTo = (id: string | undefined) => (id ? rows.findIndex((r) => r.item.id === id) + 1 : 0);
+  const shownCount = Math.max(
+    mounted,
+    upTo(focus?.id),
+    upTo(request?.kind === 'reveal' ? request.sectionId : undefined),
+  );
+  const allShown = shownCount >= rows.length;
+  useEffect(() => {
+    if (!stored || mounted === Infinity) return;
+    if (allShown) {
+      // From now on, sections added are mounted as they come.
+      setMounted(Infinity);
+      return;
+    }
+    // After the list has painted, a few at a time, so typing and scrolling get a turn between.
+    // Not in a transition: an interrupted render would make its editors again.
+    const timer = setTimeout(() => setMounted((n) => Math.max(n, shownCount) + MORE_SECTIONS));
+    return () => clearTimeout(timer);
+  }, [stored, mounted, allShown, shownCount]);
+  const shownRows = allShown ? rows : rows.slice(0, shownCount);
 
   const saving = dirty.size > 0 || writing > 0;
   useEffect(() => onSavingChange(saving), [saving, onSavingChange]);
@@ -489,7 +521,7 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
       <DndContext {...dndContext}>
         <SortableContext items={sortable} strategy={verticalListSortingStrategy}>
           <div ref={listRef} className="flex flex-col gap-3">
-            {rows.map((row) => (
+            {shownRows.map((row) => (
               <SectionEditor
                 key={row.item.id}
                 row={row}

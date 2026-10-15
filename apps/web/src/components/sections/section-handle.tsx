@@ -8,7 +8,7 @@ import {
 import type { DraggableSyntheticListeners } from '@dnd-kit/core';
 import { cn } from 'cn';
 import { GripVertical } from 'lucide-react';
-import { type RefObject, useState } from 'react';
+import { memo, type RefObject, useState } from 'react';
 import type { SectionListApi, SectionRow } from './section-list.tsx';
 
 interface SectionHandleProps {
@@ -27,8 +27,16 @@ interface SectionHandleProps {
  * A section's `⠿` (wireframes/lessons.md, decided 2026-10-13): one control for both, so a phone
  * gives up a single 44 px gutter. A tap, a click or Enter opens the section menu; pressing and
  * dragging moves the section (`useSectionDrag`). The menu is the keyboard's way to reorder.
+ * Memoized: its section renders whenever the drag context changes, as when sections are added.
  */
-export function SectionHandle({ row, api, ref, drag, hidden, onEditTags }: SectionHandleProps) {
+export const SectionHandle = memo(function SectionHandle({
+  row,
+  api,
+  ref,
+  drag,
+  hidden,
+  onEditTags,
+}: SectionHandleProps) {
   const [open, setOpen] = useState(false);
   const id = row.item.id;
   const can = open ? api.can(id) : undefined;
@@ -96,4 +104,4 @@ export function SectionHandle({ row, api, ref, drag, hidden, onEditTags }: Secti
       </DropdownMenu>
     </>
   );
-}
+});

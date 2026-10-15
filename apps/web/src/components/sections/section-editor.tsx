@@ -5,7 +5,7 @@ import type { SectionBody } from '@lamp/domain';
 import { resolveFocusPosition } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { cn } from 'cn';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SectionTags } from '@/components/tags/section-tags.tsx';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { forgetUnsaved, keepUnsaved } from '@/data/unsaved.ts';
@@ -47,9 +47,10 @@ const PLACEHOLDERS = { 0: 'Write a note…', 1: 'Write a reply…' } as const;
  * One section or reply: a TipTap editor that saves as it's typed (TECH-DESIGN §8.3). Changes are
  * stored 500 ms after typing stops, and at once on blur, when the page is hidden or closed and
  * when the row goes, so a section never has unsaved text for more than a second. A draft is
- * stored, with its id, once it has text.
+ * stored, with its id, once it has text. Memoized: the list mounts a long lesson's sections a few
+ * at a time, and the ones already there needn't render again each time.
  */
-export function SectionEditor({
+export const SectionEditor = memo(function SectionEditor({
   row,
   api,
   focus,
@@ -65,6 +66,12 @@ export function SectionEditor({
   });
   const handle = useRef<HTMLButtonElement>(null);
   const [editingTags, setEditingTags] = useState(false);
+  // Kept the same across renders, so the handle (and its menu) only renders when they change.
+  const dragHold = useMemo(
+    () => ({ ref: setActivatorNodeRef, listeners }),
+    [setActivatorNodeRef, listeners],
+  );
+  const editTags = useCallback(() => setEditingTags(true), []);
   const stored = useRef(item.stored);
   const pending = useRef<SectionBody | undefined>(undefined);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -119,8 +126,10 @@ export function SectionEditor({
     [id],
   );
 
-  const editor = useEditor({
-    extensions: sectionExtensions({
+  // The same options each render: TipTap compares them after every render and redraws the editor
+  // when they differ (a new extensions array always does), and the list renders often.
+  const [extensions] = useState(() =>
+    sectionExtensions({
       // The level is on the editor's element (`data-level`), so the placeholder follows Tab.
       placeholder: (e) => PLACEHOLDERS[e.view.dom.dataset.level === '1' ? 1 : 0],
       handlers: () => {
@@ -137,13 +146,21 @@ export function SectionEditor({
         };
       },
     }),
-    content: item.body,
-    editorProps: {
+  );
+  // The name and placeholder follow the level when Tab or Shift+Tab changes it.
+  const editorProps = useMemo(
+    () => ({
       attributes: editorAttributes(level),
       // Keep the cursor clear of the toolbar on a phone.
       scrollMargin: { top: 16, bottom: 80, left: 0, right: 0 },
       scrollThreshold: { top: 16, bottom: 80, left: 0, right: 0 },
-    },
+    }),
+    [level],
+  );
+  const editor = useEditor({
+    extensions,
+    content: item.body,
+    editorProps,
     onUpdate: ({ editor: e }) => {
       pending.current = toBody(e.getJSON());
       apiRef.current.setDirty(id, true);
@@ -167,11 +184,8 @@ export function SectionEditor({
     return () => api.register(id, null);
   }, [api, id, editor]);
 
-  // The name and placeholder follow the level when Tab or Shift+Tab changes it.
+  // `useEditor` has set the new level's attributes by now; this redraws the placeholder.
   useEffect(() => {
-    editor.setOptions({
-      editorProps: { ...editor.options.editorProps, attributes: editorAttributes(level) },
-    });
     editor.view.dispatch(editor.state.tr.setMeta('levelChanged', level));
   }, [editor, level]);
 
@@ -291,9 +305,9 @@ export function SectionEditor({
           row={row}
           api={api}
           ref={handle}
-          drag={{ ref: setActivatorNodeRef, listeners }}
+          drag={dragHold}
           hidden={slot !== undefined}
-          onEditTags={() => setEditingTags(true)}
+          onEditTags={editTags}
         />
       ) : (
         // A draft has nothing to move or delete yet; the space keeps the text from shifting.
@@ -301,7 +315,7 @@ export function SectionEditor({
       )}
     </div>
   );
-}
+});
 
 function editorAttributes(level: 0 | 1): Record<string, string> {
   return {
