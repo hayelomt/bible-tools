@@ -74,8 +74,10 @@ blocker.
 │ Mode       ( Light | Dark | System ) │
 │                                      │
 │ BIBLE                                │
-│ World English Bible       4.1 MB  ✓  │
-│ Show verse text in notes      [○ ]   │  ← wireframes/verses.md
+│ Translation            ( BSB | KJV ) │
+│ Berean Standard Bible     3.9 MB  ✓  │
+│ King James Version      [ Download ] │
+│ Show verse text in notes      [● ]   │  ← wireframes/verses.md
 │                                      │
 │ REVIEW                               │
 │ Keep takeaways in review  [ 14 ] days│
@@ -200,3 +202,21 @@ dismissed, and it never appears while an editor has focus or a push is running.
 
 "Update required" (the server refuses this version, §6.6) is a sync state, shown in
 [sync.md](sync.md).
+
+## Install prompt
+
+When the app loads in a browser that can install it, a toast offers to. It stays until it's used,
+and it's put away while something is being typed. On a new device it waits until the welcome is
+done, so it doesn't cover Continue. In Chrome, Edge and Android, Install opens the
+browser's own dialog. On an iPhone or iPad, which have no install dialog, it says how to add Lamp
+from the Share menu. "Not now" (or OK, or declining the browser's dialog) puts it off for 14 days
+on this device. The installed app never shows it.
+
+```text
+├──────────────────────────────────────┤
+│ Install Lamp to open it from your    │
+│ home screen and use it offline.      │
+│              [ Not now ] [ Install ] │
+├──────────────────────────────────────┤
+│ ▤ Lessons  ▢ Read  ⌕ Search  ✓ Review│
+```

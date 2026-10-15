@@ -69,8 +69,8 @@ Checks Periodic Background Sync (TECH-DESIGN §8.8), which only an installed Chr
 which Playwright can't drive. Use a production build, so the service worker runs.
 
 1. `pnpm --filter @lamp/web build && pnpm --filter @lamp/web preview`, open
-   <http://localhost:4573> in Chrome or Edge, and install it (the install icon in the address
-   bar). Use the installed app's window from here on.
+   <http://localhost:4573> in Chrome or Edge, and install it (Install on the toast, or the install icon in
+   the address bar). Use the installed app's window from here on.
 2. Settings → Review shows **Weekly reminder** with a switch (in a plain tab, or in Firefox or
    Safari, it shows "This browser can't send reminders. The Review tab shows a count instead.").
 3. Turn it on. The browser asks to allow notifications; allow. The switch stays on, and after
@@ -85,6 +85,21 @@ which Playwright can't drive. Use a production build, so the service worker runs
 7. Turn the switch off: `weekly-review` goes from the list. Turn it on after blocking
    notifications for the site (the padlock → Notifications → Block): the switch stays off and says
    "Notifications are blocked for Lamp. Allow them in the browser's site settings."
+
+## The install prompt (Chrome and an iPhone)
+
+Checks the install offer (wireframes/shell.md "Install prompt"), which needs a real install.
+
+1. `pnpm --filter @lamp/web build && pnpm --filter @lamp/web preview`, and open
+   <http://localhost:4573> in a new Chrome profile and click Continue on the welcome. Within a few
+   seconds, a toast says
+   "Install Lamp to open it from your home screen and use it offline." with Not now and Install.
+2. Click Not now, and reload: no toast. In DevTools → Application → Local storage, delete
+   `lamp.installLater` and reload: the toast is back.
+3. Click Install: Chrome's own dialog opens; install. The app's window shows no toast, and neither
+   does the tab after a reload.
+4. On an iPhone, open the deployed app in Safari: the toast says "Install Lamp: tap Share, then Add
+   to Home Screen." OK puts it away. Added to the home screen, the app shows no toast.
 
 ## Printing and saving as a PDF in Safari (M6-06)
 

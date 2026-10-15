@@ -6,6 +6,7 @@ import { useAppBadge } from '@/components/review/use-review-count.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { useThemeSync } from '@/lib/theme.ts';
 import { BottomNav } from './bottom-nav.tsx';
+import { InstallPrompt } from './install-prompt.tsx';
 import { ScreenHeader } from './screen-header.tsx';
 import { SelectionBarOpenProvider } from './selection-bar-open.tsx';
 import { Sidebar } from './sidebar.tsx';
@@ -44,6 +45,7 @@ export function AppShell() {
         </div>
         <AppToaster />
         <UpdatePrompt />
+        <InstallPrompt />
         <OtherAccountDialog />
       </ShellSlots>
     </SelectionBarOpenProvider>
