@@ -1,7 +1,10 @@
 import { expect, type Page, test } from '@playwright/test';
 import { newLesson } from './helpers.ts';
 
-/** Tags the lesson's first section from its menu. */
+/**
+ * Tags the lesson's first section from its menu, and waits for the tag to show under it: the write
+ * is still going for a moment, and leaving the page then would drop it.
+ */
 async function tagSection(page: Page, name: string, n = 0) {
   await page.getByRole('button', { name: 'Section actions' }).nth(n).click();
   await page.getByRole('menuitem', { name: 'Tags' }).click();
@@ -9,6 +12,12 @@ async function tagSection(page: Page, name: string, n = 0) {
   await input.fill(name);
   await input.press('Enter');
   await input.press('Escape');
+  await expect(
+    page
+      .locator('[data-section]')
+      .nth(n)
+      .getByRole('link', { name: new RegExp(`^#${name}$`, 'i') }),
+  ).toBeVisible();
 }
 
 /** A lesson with one section, typed after the title. */
