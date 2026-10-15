@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Bible text pipeline: builds per-book JSON and a manifest from the source JSON in data/; passage lookup",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./kjv-glossary": "./src/kjv-glossary.ts"
   },
   "scripts": {
     "build": "node scripts/build.ts",
