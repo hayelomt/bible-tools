@@ -44,7 +44,7 @@ downloaded yet. It's added when the Bible is downloaded."
 
 ### Verse text in notes
 
-With Settings → Bible → "Show verse text in notes" on (off by default, synced), each paragraph's
+With Settings → Bible → "Show verse text in notes" on (on by default, synced), each paragraph's
 chips show their text under it, numbered, as a quote that isn't part of the note: it can't be
 edited, and isn't saved, copied or exported with it. It's set apart from what was typed: a tinted
 card with an accent edge, the reference in small capitals, the text smaller and in italics.

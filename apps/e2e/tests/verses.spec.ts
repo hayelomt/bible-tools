@@ -21,6 +21,8 @@ async function chips(page: Page): Promise<Chip['attrs'][]> {
 }
 
 const note = (page: Page) => page.getByRole('textbox', { name: 'Note', exact: true }).first();
+/** What was typed in the note, without the verse text shown under a paragraph. */
+const typed = (page: Page) => note(page).locator('p');
 const list = (page: Page) => page.getByRole('listbox', { name: 'Verse suggestions' });
 const option = (page: Page, name: string | RegExp) => list(page).getByRole('option', { name });
 
@@ -52,12 +54,12 @@ test('references complete into chips with their text, offline too', async ({ pag
   await expect(note(page)).toHaveAttribute('aria-activedescendant', /.+/);
   await page.keyboard.press('Enter');
   await expect(list(page)).toBeHidden();
-  await expect(note(page)).toHaveText('Paul says in Romans 8:28–30 · BSB ');
+  await expect(typed(page)).toHaveText('Paul says in Romans 8:28–30 · BSB ');
   await expect(note(page)).toBeFocused();
 
   // Typing goes on after the chip.
   await page.keyboard.type('and');
-  await expect(note(page)).toHaveText('Paul says in Romans 8:28–30 · BSB and');
+  await expect(typed(page)).toHaveText('Paul says in Romans 8:28–30 · BSB and');
 
   // Offline, references still complete; a book fetched before has its text.
   await context.setOffline(true);
@@ -130,7 +132,7 @@ test('a short name lists every book it could be; arrows or a click choose', asyn
   await page.keyboard.type('and jo 3');
   await option(page, /^John 3/).click();
   await expect(note(page)).toBeFocused();
-  await expect(note(page)).toHaveText('see Job 3 · BSB and John 3 · BSB ');
+  await expect(typed(page)).toHaveText('see Job 3 · BSB and John 3 · BSB ');
 });
 
 test('a reference that can’t exist says why, and Enter stays Enter', async ({ page }) => {
@@ -187,7 +189,7 @@ test('a chip opens the text it captured, which never changes', async ({ page }) 
   // The cursor is where it was.
   await expect(note(page)).toBeFocused();
   await page.keyboard.type('and more');
-  await expect(note(page)).toHaveText('Romans 8:28 · BSB and more');
+  await expect(typed(page)).toHaveText('Romans 8:28 · BSB and more');
   await expect.poll(() => chips(page)).toHaveLength(1);
 
   // The BSB text changes (a corrected edition, say: a new file for the book in the manifest): the
@@ -250,7 +252,7 @@ test('resting the mouse on a chip opens it; focus stays in the note', async ({ p
   await page.mouse.move(0, 0);
   await expect(viewer(page)).toBeHidden();
   await page.keyboard.type('and');
-  await expect(note(page)).toHaveText('Romans 8:28–29 · BSB and');
+  await expect(typed(page)).toHaveText('Romans 8:28–29 · BSB and');
 
   // A click keeps it open after the mouse leaves.
   await chip(page, 'Romans 8:28–29').hover();
@@ -263,7 +265,7 @@ test('resting the mouse on a chip opens it; focus stays in the note', async ({ p
   await expect(viewer(page)).toBeHidden();
 });
 
-test('with "Show verse text in notes" on, a paragraph’s chips show their text under it', async ({
+test('with "Show verse text in notes" on (the default), a paragraph’s chips show their text under it', async ({
   page,
 }) => {
   await startLesson(page);
@@ -272,14 +274,8 @@ test('with "Show verse text in notes" on, a paragraph’s chips show their text 
   await page.keyboard.type('and Ps 23:1');
   await page.keyboard.press('Enter');
   const preview = note(page).locator('[data-verse-preview]');
-  await expect(preview).toHaveCount(0);
-
   const lesson = page.url();
-  await page.goto('/settings');
   const setting = page.getByRole('switch', { name: /Show verse text in notes/ });
-  await setting.click();
-  await expect(setting).toBeChecked();
-  await page.goto(lesson);
 
   // One quote under the paragraph, numbered, a new chapter with its number; not part of the note.
   await expect(preview).toHaveCount(1);
@@ -294,7 +290,7 @@ test('with "Show verse text in notes" on, a paragraph’s chips show their text 
       expect.objectContaining({ display: 'Psalm 23:1' }),
     ]);
 
-  // Off again: gone.
+  // Turned off: gone.
   await page.goto('/settings');
   await setting.click();
   await expect(setting).not.toBeChecked();
@@ -321,12 +317,12 @@ test('from the keyboard: arrow onto a chip, Enter opens it, Backspace deletes it
   await page.keyboard.press('Space');
   await expect(viewer(page)).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(note(page)).toHaveText('see Psalm 23:1 · BSB');
+  await expect(typed(page)).toHaveText('see Psalm 23:1 · BSB');
 
   // → leaves it; Backspace then deletes it whole.
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Backspace');
-  await expect(note(page)).toHaveText('see ');
+  await expect(typed(page)).toHaveText('see ');
   await expect.poll(() => chips(page)).toEqual([]);
 });
 
@@ -383,7 +379,7 @@ test.describe('on a phone', () => {
 
     await option(page, /^Romans 8:28/).tap();
     await expect(note(page)).toBeFocused();
-    await expect(note(page)).toHaveText('Romans 8:28 · BSB ');
+    await expect(typed(page)).toHaveText('Romans 8:28 · BSB ');
   });
 
   test('a tapped chip opens in a sheet without bringing up the keyboard', async ({ page }) => {

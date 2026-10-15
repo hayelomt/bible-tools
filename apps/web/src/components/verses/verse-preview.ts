@@ -22,7 +22,7 @@ export function setAutoPreview(on: boolean) {
 
 /** Keeps the previews in step with the user's setting, while the page has notes. */
 export function useAutoPreview() {
-  const on = useSettings()?.autoPreviewVerses ?? false;
+  const on = useSettings()?.autoPreviewVerses ?? true;
   useEffect(() => setAutoPreview(on), [on]);
 }
 

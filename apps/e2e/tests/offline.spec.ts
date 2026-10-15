@@ -71,7 +71,7 @@ test('in airplane mode after the first load, every screen works and any book ope
   const list = page.getByRole('listbox', { name: 'Verse suggestions' });
   await expect(list).toContainText('For the Day of the LORD is near for all the nations.');
   await page.keyboard.press('Enter');
-  await expect(note).toHaveText('Obadiah 15 · BSB ');
+  await expect(note.locator('p')).toHaveText('Obadiah 15 · BSB ');
   await page.keyboard.type('the day is near');
 
   // Search, with its worker from the service worker's copy, finds it by word and by verse.

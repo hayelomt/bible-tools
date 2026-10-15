@@ -446,7 +446,7 @@ Screens read with `useLiveQuery`, so any local write, including one applied from
 - **The viewer**, one for the page: a popover under the chip on a laptop, a bottom sheet on a phone (Base UI, with a `Popover` added to `@lamp/ui`). It shows the reference, the translation's full name (`TRANSLATION_NAMES`) and the snapshot, never the current text, so a corrected edition doesn't change a note (tested by serving a changed book after a reload). Esc, a tap outside or × closes it, and focus goes back to the note with the selection it had, only if the note had focus.
 - **Hover** (decided 2026-10-13): on a laptop with a mouse, resting on a chip for 400 ms opens the popover without taking focus from the note; it closes 250 ms after the pointer leaves the chip and the popover. A click pins it open (a click on the open chip isn't a press outside).
 - **Verse numbers** (decided 2026-10-13): the stored snapshot stays one string. The viewer, the autocomplete and the previews split it into numbered verses from the book's verse texts (`numberedVerses`), only where those join up to exactly the snapshot; otherwise (a corrected edition, a footnote, a book not downloaded) the text shows without numbers.
-- **Verse text in notes** (`verse-preview.ts`, decided 2026-10-13): with `UserSettings.autoPreviewVerses` on, each text block's chips get a widget decoration after the block holding their snapshots, numbered. Not part of the document, so never saved, copied or exported; redrawn when the setting changes or a book arrives.
+- **Verse text in notes** (`verse-preview.ts`, decided 2026-10-13): with `UserSettings.autoPreviewVerses` on (the default), each text block's chips get a widget decoration after the block holding their snapshots, numbered. Not part of the document, so never saved, copied or exported; redrawn when the setting changes or a book arrives.
 - **A chip without its text** (decided 2026-10-13), inserted offline before its book arrived, says "Text not downloaded yet. It's added when the Bible is downloaded." M2-11 fills it in. A chip inserted while its book is still being fetched gets its text when the book arrives (not a step of its own for Undo), and an open viewer shows it.
 
 ### 8.4 Search and verse index
@@ -651,7 +651,7 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 44 | Opening a chip from the keyboard (2026-10-13) | ← or → selects it, Enter or Space opens it; chips are not Tab stops | §8.3 |
 | 45 | Hovering a chip (2026-10-13) | On a laptop, opens the popover without taking focus; a click pins it | §8.3 |
 | 46 | Verse numbers (2026-10-13) | Added when shown, from the book's verse texts, never stored; none when the snapshot doesn't match | §8.3 |
-| 47 | Verse text in notes (2026-10-13) | A synced setting, off by default; the text shows as a quote under the paragraph, not part of the note | §8.3 |
+| 47 | Verse text in notes (2026-10-13) | A synced setting, on by default (off until 2026-10-15); the text shows as a quote under the paragraph, not part of the note | §8.3 |
 | 45 | App icon (2026-10-13) | A clay oil lamp in Parchment's red on cream; an SVG that can be replaced later | §8.6 |
 | 46 | Where the Bible text is kept (2026-10-13) | A Cache Storage cache the page fills (books cache-first, manifest network-first), not a service-worker route | §8.6, §9 |
 | 47 | The update prompt (2026-10-13) | Hidden while any text field has focus; Later waits for the next start; Reload waits for writes in flight | §8.6 |

@@ -76,11 +76,12 @@ const chip = (page: Page, name: string) =>
 /** The lesson as it reads on screen: its sections and reply, with their chips. */
 async function expectCapturedLesson(page: Page) {
   await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Life in the Spirit');
-  await expect(note(page, 0)).toHaveText(
+  // The paragraph alone, without the verse text shown under it.
+  await expect(note(page, 0).locator('p')).toHaveText(
     'No condemnation for those in Christ, Romans 8:1 · BSB right at the start',
   );
   await expect(note(page, 1)).toHaveText('All things work together for good');
-  await expect(reply(page)).toHaveText('Even suffering, Romans 8:28 · BSB said it');
+  await expect(reply(page).locator('p')).toHaveText('Even suffering, Romans 8:28 · BSB said it');
   await expect(note(page, 2)).toHaveText('Nothing can separate us from his love');
   // The empty section at the end, ready for more.
   await expect(note(page, 3)).toHaveText('');
@@ -118,7 +119,8 @@ test('a sermon captured offline reopens whole, with every change in the outbox',
   await page.keyboard.type('No condemnation for those in Christ, Rom 8:1');
   await page.keyboard.press('Enter');
   await page.keyboard.type('right at the start');
-  await expect(note(page)).toHaveText(
+  // The paragraph alone, without the verse text shown under it.
+  await expect(note(page).locator('p')).toHaveText(
     'No condemnation for those in Christ, Romans 8:1 · BSB right at the start',
   );
   await page.keyboard.press('Enter');

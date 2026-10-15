@@ -69,7 +69,7 @@ describe('first run', () => {
       colorMode: 'system',
       look: 'classic',
       reviewWindowDays: 14,
-      autoPreviewVerses: false,
+      autoPreviewVerses: true,
       rev: 0,
     });
     const tags = await db.tag.toArray();
