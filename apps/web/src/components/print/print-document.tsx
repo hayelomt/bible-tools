@@ -193,7 +193,7 @@ export function SeriesDocument({ data: { series, lessons } }: { data: SeriesForE
   );
 }
 
-/** "Scripture: World English Bible (public domain).", after a rule, when a verse is quoted. */
+/** "Scripture: Berean Standard Bible (public domain).", after a rule, when a verse is quoted. */
 export function Credit({ lessons }: { lessons: LessonForExport[] }) {
   const credit = scriptureCredit(lessons);
   if (!credit) return null;

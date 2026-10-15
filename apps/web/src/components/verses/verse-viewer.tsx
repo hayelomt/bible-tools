@@ -109,7 +109,14 @@ function ChipText({ chip: { ref } }: { chip: OpenChip }) {
       </p>
     );
   }
-  return <VerseText passage={ref} text={ref.snapshotText} className="text-[17px] leading-[1.6]" />;
+  return (
+    <VerseText
+      passage={ref}
+      translation={ref.translation}
+      text={ref.snapshotText}
+      className="text-[17px] leading-[1.6]"
+    />
+  );
 }
 
 /** To the verse index for the chip's passage (M4-07). */

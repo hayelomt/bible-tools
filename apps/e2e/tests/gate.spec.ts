@@ -71,16 +71,16 @@ const note = (page: Page, n = 0) => page.getByRole('textbox', { name: 'Note', ex
 const reply = (page: Page, n = 0) =>
   page.getByRole('textbox', { name: 'Reply', exact: true }).nth(n);
 const chip = (page: Page, name: string) =>
-  page.getByRole('button', { name: `${name}, World English Bible, verse. Show text.` });
+  page.getByRole('button', { name: `${name}, Berean Standard Bible, verse. Show text.` });
 
 /** The lesson as it reads on screen: its sections and reply, with their chips. */
 async function expectCapturedLesson(page: Page) {
   await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Life in the Spirit');
   await expect(note(page, 0)).toHaveText(
-    'No condemnation for those in Christ, Romans 8:1 · WEB right at the start',
+    'No condemnation for those in Christ, Romans 8:1 · BSB right at the start',
   );
   await expect(note(page, 1)).toHaveText('All things work together for good');
-  await expect(reply(page)).toHaveText('Even suffering, Romans 8:28 · WEB said it');
+  await expect(reply(page)).toHaveText('Even suffering, Romans 8:28 · BSB said it');
   await expect(note(page, 2)).toHaveText('Nothing can separate us from his love');
   // The empty section at the end, ready for more.
   await expect(note(page, 3)).toHaveText('');
@@ -88,7 +88,7 @@ async function expectCapturedLesson(page: Page) {
 
   await chip(page, 'Romans 8:28').click();
   await expect(page.getByRole('dialog')).toContainText(
-    'We know that all things work together for good',
+    'And we know that God works all things together for the good',
   );
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -119,7 +119,7 @@ test('a sermon captured offline reopens whole, with every change in the outbox',
   await page.keyboard.press('Enter');
   await page.keyboard.type('right at the start');
   await expect(note(page)).toHaveText(
-    'No condemnation for those in Christ, Romans 8:1 · WEB right at the start',
+    'No condemnation for those in Christ, Romans 8:1 · BSB right at the start',
   );
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');

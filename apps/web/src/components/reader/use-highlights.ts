@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef } from 'react';
 import { snapshotText, useBook } from '@/data/bible.ts';
+import { useActiveTranslation } from '@/data/translation.ts';
 import {
   createHighlight,
   type PromoteTarget,
@@ -23,7 +24,8 @@ import { reportWriteError } from '@/lib/run-write.ts';
  * verses aren't highlighted yet.
  */
 export function useHighlights(at: Chapter, selection: VerseSelection | null) {
-  const book = useBook(at.book);
+  const translation = useActiveTranslation();
+  const book = useBook(translation, at.book);
   const stored = useLiveQuery(
     () =>
       db.highlight
@@ -80,7 +82,8 @@ export function useHighlights(at: Chapter, selection: VerseSelection | null) {
 
   function storedRef(current: VerseSelection) {
     const text = book.status === 'ready' ? book.text : null;
-    return highlightRef(at, current, text ? snapshotText(text, passageOf(at, current)) : '');
+    const snapshot = text ? snapshotText(text, passageOf(at, current), translation) : '';
+    return highlightRef(at, current, translation, snapshot);
   }
 
   function paint(colour: Highlight['colour']): Promise<void> {

@@ -108,7 +108,7 @@ describe('both sides changed a row: last write wins by updatedAt', () => {
       themePreset: 'parchment',
       colorMode: 'system',
       look: 'classic',
-      defaultTranslation: 'WEB',
+      defaultTranslation: 'BSB',
       reviewWindowDays: 14,
       autoPreviewVerses: false,
       updatedAt: NOW,

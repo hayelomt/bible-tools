@@ -3,13 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "WEB text pipeline: downloads the USFM, builds per-book JSON and a manifest; passage lookup",
+  "description": "Bible text pipeline: builds per-book JSON and a manifest from the source JSON in data/; passage lookup",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
     "build": "node scripts/build.ts",
-    "download": "node scripts/download.ts",
     "lint": "oxlint -c node_modules/@lamp/config/oxlint.json --deny-warnings src scripts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"

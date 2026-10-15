@@ -212,7 +212,7 @@ describe('POST /api/sync/push', () => {
       themePreset: 'midnight',
       colorMode: 'dark',
       look: 'folio',
-      defaultTranslation: 'WEB',
+      defaultTranslation: 'BSB',
       reviewWindowDays: 7,
       autoPreviewVerses: true,
       updatedAt: NOW,

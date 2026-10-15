@@ -19,10 +19,10 @@ const ROM_8_28: VerseRef = {
   chapter: 8,
   verseStart: 28,
   display: 'Romans 8:28',
-  translation: 'WEB',
+  translation: 'BSB',
   snapshotText: 'We know that all things work together for good for those who love God.',
 };
-const JHN_3: VerseRef = { book: 'JHN', chapter: 3, display: 'John 3', translation: 'WEB' };
+const JHN_3: VerseRef = { book: 'JHN', chapter: 3, display: 'John 3', translation: 'BSB' };
 const ROM_8_38: VerseRef = {
   book: 'ROM',
   chapter: 8,
@@ -30,7 +30,7 @@ const ROM_8_38: VerseRef = {
   chapterEnd: 9,
   verseEnd: 5,
   display: 'Romans 8:38–9:5',
-  translation: 'WEB',
+  translation: 'BSB',
   snapshotText: 'For I am persuaded…\n…who is over all, God, blessed forever. Amen.',
 };
 
@@ -188,18 +188,18 @@ describe('toMarkdown', () => {
     expect(toMarkdown(RICH)).toBe(
       `### Called according to his purpose
 
-Paul says Romans 8:28 (WEB) — ***all*** things.
+Paul says Romans 8:28 (BSB) — ***all*** things.
 
-> **Romans 8:28 (WEB)** We know that all things work together for good for those who love God.
+> **Romans 8:28 (BSB)** We know that all things work together for good for those who love God.
 
-- Context: John 3 (WEB)
+- Context: John 3 (BSB)
 - Read the [notes](https://example.org/notes)
 
   3. nested
 
-> Nothing can separate us. Romans 8:38–9:5 (WEB)
+> Nothing can separate us. Romans 8:38–9:5 (BSB)
 >
-> > **Romans 8:38–9:5 (WEB)** For I am persuaded…
+> > **Romans 8:38–9:5 (BSB)** For I am persuaded…
 > > …who is over all, God, blessed forever. Amen.
 `,
     );
@@ -223,7 +223,7 @@ Paul says Romans 8:28 (WEB) — ***all*** things.
       [text('see '), text('this', 'italic', 'https://a.example/x_(y)')],
       'see [*this*](https://a.example/x_%28y%29)',
     ],
-    [[text('x', 'bold'), verse(JHN_3)], '**x**John 3 (WEB)'],
+    [[text('x', 'bold'), verse(JHN_3)], '**x**John 3 (BSB)'],
     [[text('2*3 = [6] <b> a_b \\ `c`')], '2\\*3 = \\[6\\] \\<b\\> a\\_b \\\\ \\`c\\`'],
     [[text('# not a heading')], '\\# not a heading'],
     [[text('- not a list')], '\\- not a list'],

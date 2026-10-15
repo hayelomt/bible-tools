@@ -12,14 +12,14 @@ export const EARLIER = '2026-10-13T09:00:00.000Z';
 export const NOW = '2026-10-13T10:00:00.000Z';
 export const LATER = '2026-10-13T11:00:00.000Z';
 
-export const ROMANS_8 = { book: 'ROM', chapter: 8, display: 'Romans 8', translation: 'WEB' };
+export const ROMANS_8 = { book: 'ROM', chapter: 8, display: 'Romans 8', translation: 'BSB' };
 export const ROMANS_8_28 = { ...ROMANS_8, verseStart: 28, display: 'Romans 8:28' };
 export const JOHN_3_16 = {
   book: 'JHN',
   chapter: 3,
   verseStart: 16,
   display: 'John 3:16',
-  translation: 'WEB',
+  translation: 'BSB',
 };
 
 export type Row = { id: string } & Record<string, unknown>;

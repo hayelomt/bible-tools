@@ -1,10 +1,10 @@
-import { DEFAULT_TRANSLATION } from '@lamp/domain';
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import { ReactRenderer } from '@tiptap/react';
 import { Suggestion, type SuggestionProps } from '@tiptap/suggestion';
 import { shift } from '@floating-ui/dom';
 import { bookState, snapshotText } from '@/data/bible.ts';
+import { activeTranslation } from '@/data/translation.ts';
 import { findReference, type ReferenceEntry, referenceEntries } from './find-reference.ts';
 import { LAPTOP_QUERY, type KeyHandler, VerseSuggestions } from './verse-suggestions.tsx';
 
@@ -17,8 +17,8 @@ const LEAF = '￼';
 
 /**
  * The verse autocomplete (F3, TECH-DESIGN §8.3, wireframes/verses.md): when the text just before
- * the cursor is a reference, a list offers the passages it could be, with the WEB text of the
- * selected one. Enter or a tap replaces the typed text with a `verse` chip holding the passage and
+ * the cursor is a reference, a list offers the passages it could be, with the text of the selected
+ * one in the active translation. Enter or a tap replaces the typed text with a `verse` chip holding the passage and
  * its snapshot; Escape closes the list and keeps the text. The list never takes focus.
  *
  * It runs before the section keys (priority), so Enter, Escape and the arrows go to the list
@@ -43,11 +43,14 @@ export const VerseSuggestion = Extension.create({
         },
         items: ({ query }) => referenceEntries(query),
         command: ({ editor, range, props: { ref } }) => {
-          const book = bookState(ref.book);
+          const translation = activeTranslation();
+          const book = bookState(translation, ref.book);
           const attrs = {
             ...ref,
-            translation: DEFAULT_TRANSLATION,
-            ...(book.status === 'ready' && { snapshotText: snapshotText(book.text, ref) }),
+            translation,
+            ...(book.status === 'ready' && {
+              snapshotText: snapshotText(book.text, ref, translation),
+            }),
           };
           // Still on its way, or not downloaded (offline): the chip goes in without its text,
           // which `VerseSnapshots` adds when the book arrives.

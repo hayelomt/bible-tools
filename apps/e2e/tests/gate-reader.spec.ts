@@ -37,7 +37,7 @@ test('a verse read offline is highlighted, added to a new lesson and found by ve
     .getByRole('link', { name: '8', exact: true })
     .click();
   await expect(page).toHaveURL(/\/read\/ROM\.8$/);
-  await expect(verse(page, 28)).toContainText('all things work together for good');
+  await expect(verse(page, 28)).toContainText('God works all things together for the good');
 
   // Two verses highlighted: 1 in green, 28 in yellow with a note.
   await verse(page, 1).click();
@@ -89,7 +89,7 @@ test('a verse read offline is highlighted, added to a new lesson and found by ve
   await page.goto('/verses/ROM.8.28?show=notes');
   await entries.filter({ hasText: 'Even this season' }).getByRole('link').first().click();
   await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Romans 8:28');
-  await expect(page.getByText('Romans 8:28 · WEB').first()).toBeVisible();
+  await expect(page.getByText('Romans 8:28 · BSB').first()).toBeVisible();
   await expect(page.getByText('Even this season')).toBeVisible();
 
   const [section] = await rows<{ id: string; lessonId: string }>(page, 'section');

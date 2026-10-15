@@ -12,7 +12,7 @@ const meta = (id: string) => ({ id, createdAt: NOW, updatedAt: NOW, rev: 0, dele
 const ref = (r: Omit<VerseRef, 'display' | 'translation'>): VerseRef => ({
   ...r,
   display: '',
-  translation: 'WEB',
+  translation: 'BSB',
 });
 const ROM_8_28 = ref({ book: 'ROM', chapter: 8, verseStart: 28, verseEnd: 30 });
 const JHN_3 = ref({ book: 'JHN', chapter: 3 });

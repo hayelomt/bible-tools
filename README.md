@@ -4,7 +4,7 @@
 sermons and personal study as threaded notes, referencing verses inline as you type, and finding
 everything you've ever written about a passage.
 
-> "Your word is a lamp to my feet, and a light for my path." — Psalm 119:105 (WEB)
+> "Your word is a lamp to my feet and a light to my path." — Psalm 119:105 (BSB)
 
 **Status:** early development. The foundations (milestone M1) are being built; the app can't be
 used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
@@ -16,7 +16,8 @@ used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
   holds the text, labelled with its translation.
 - **Find anything by verse:** the verse index shows every note, highlight and memory verse on a
   passage, across all lessons. Search covers text and tags too.
-- **Read the World English Bible** offline, highlight verses and turn a highlight into a note.
+- **Read the Berean Standard Bible** (or the King James Version) offline, highlight verses and
+  turn a highlight into a note.
 - **Keep questions and takeaways visible** in a review queue, and memorise verses on a spaced
   schedule.
 - **Optional account:** use it as a guest with no sign-up, or create an account to back up notes
@@ -47,13 +48,13 @@ design is [TECH-DESIGN.md](docs/TECH-DESIGN.md).
 
 ## How it's built
 
-| Part                 | Stack                                                                                                                                      |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Monorepo             | Turborepo, pnpm workspaces, TypeScript (ESM), Node 24                                                                                      |
-| Web app (`apps/web`) | React 19, Vite, Tailwind CSS v4, shadcn/ui on Base UI, TanStack Router, Dexie, TipTap                                                      |
-| API (`apps/api`)     | NestJS 12, Prisma 7, PostgreSQL 18                                                                                                         |
-| Shared (`packages/`) | `domain` (verse references, parser, document model, Zod schemas), `ui` (components and themes), `bible-data` (WEB text pipeline), `config` |
-| Tests                | Vitest, Playwright, against a local PostgreSQL (no Docker)                                                                                 |
+| Part                 | Stack                                                                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monorepo             | Turborepo, pnpm workspaces, TypeScript (ESM), Node 24                                                                                        |
+| Web app (`apps/web`) | React 19, Vite, Tailwind CSS v4, shadcn/ui on Base UI, TanStack Router, Dexie, TipTap                                                        |
+| API (`apps/api`)     | NestJS 12, Prisma 7, PostgreSQL 18                                                                                                           |
+| Shared (`packages/`) | `domain` (verse references, parser, document model, Zod schemas), `ui` (components and themes), `bible-data` (Bible text pipeline), `config` |
+| Tests                | Vitest, Playwright, against a local PostgreSQL (no Docker)                                                                                   |
 
 ## Running it locally
 
@@ -66,7 +67,7 @@ nvm use                                   # Node 24
 pnpm install
 ./scripts/dev-db.sh                       # creates the lamp role and lamp_dev, lamp_test_dev, lamp_e2e_dev
 pnpm db:migrate                           # applies the migrations to lamp_dev
-pnpm --filter @lamp/bible-data download   # fetches the WEB text (about 4 MB) into packages/bible-data/source
+pnpm --filter @lamp/bible-data build      # builds the BSB and KJV text (about 4 MB each) into packages/bible-data/dist
 pnpm dev                                  # web on http://localhost:5173, API on :3000
 ```
 
@@ -122,6 +123,6 @@ To report a security problem, see [SECURITY.md](SECURITY.md).
 
 Lamp is [MIT licensed](LICENSE).
 
-The Bible text is the [World English Bible](https://ebible.org/web/), which is in the public
-domain. "World English Bible" is a trademark of eBible.org; Lamp ships the text unchanged so it can
-use the name. The licence notice is kept with the data (`packages/bible-data`).
+The Bible text is the [Berean Standard Bible](https://berean.bible/), which was dedicated to the
+public domain in 2023, and the King James Version, which is in the public domain outside the United
+Kingdom. The source files are kept with the data (`packages/bible-data`).

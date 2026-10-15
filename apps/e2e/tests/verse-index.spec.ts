@@ -24,7 +24,7 @@ test('the verse index lists every note citing a passage, from a chip and from se
 
   // From the chip: every note on Romans 8:28, which the range ending at 8:2 doesn't reach.
   await page
-    .getByRole('button', { name: 'Romans 8:28, World English Bible, verse. Show text.' })
+    .getByRole('button', { name: 'Romans 8:28, Berean Standard Bible, verse. Show text.' })
     .click();
   await page.getByRole('link', { name: 'Every note on Romans 8:28' }).click();
   await expect(page).toHaveURL(/\/verses\/ROM\.8\.28$/);

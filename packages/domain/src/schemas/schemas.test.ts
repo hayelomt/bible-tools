@@ -44,7 +44,7 @@ const ROM_8_28: VerseRef = {
   chapter: 8,
   verseStart: 28,
   display: 'Romans 8:28',
-  translation: 'WEB',
+  translation: 'BSB',
 };
 
 /** One valid row per synced entity. */
@@ -53,7 +53,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     themePreset: 'parchment',
     colorMode: 'system',
     look: 'classic',
-    defaultTranslation: 'WEB',
+    defaultTranslation: 'BSB',
     reviewWindowDays: 14,
     autoPreviewVerses: false,
     rev: 1,

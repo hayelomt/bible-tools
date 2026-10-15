@@ -8,7 +8,7 @@ each one before a release that touches the area, and note the date and device in
 Checks the update prompt (TECH-DESIGN §8.6). Use a production build, so the service worker runs.
 
 1. `pnpm --filter @lamp/web build && pnpm --filter @lamp/web preview`, and open
-   <http://localhost:4173> in Chrome (or the installed app). Wait a few seconds for the service
+   <http://localhost:4573> in Chrome (or the installed app). Wait a few seconds for the service
    worker to install (DevTools → Application → Service workers shows it activated).
 2. Start a lesson, give it a title, and type a sentence in the first note. Keep the cursor in the
    note.
@@ -69,7 +69,7 @@ Checks Periodic Background Sync (TECH-DESIGN §8.8), which only an installed Chr
 which Playwright can't drive. Use a production build, so the service worker runs.
 
 1. `pnpm --filter @lamp/web build && pnpm --filter @lamp/web preview`, open
-   <http://localhost:4173> in Chrome or Edge, and install it (the install icon in the address
+   <http://localhost:4573> in Chrome or Edge, and install it (the install icon in the address
    bar). Use the installed app's window from here on.
 2. Settings → Review shows **Weekly reminder** with a switch (in a plain tab, or in Firefox or
    Safari, it shows "This browser can't send reminders. The Review tab shows a count instead.").
@@ -99,8 +99,8 @@ build, on a Mac in Safari and on an iPhone.
 2. `⋯` → **Export…** → **Print or save as PDF**. The print view opens on a white page, and the
    print dialog opens on top.
    - The preview shows only the page: no Back or Print, no navigation, no dark background. The
-     verse is quoted in full after its paragraph with "(WEB)", the reply is indented, and
-     "Scripture: World English Bible (public domain)." ends it.
+     verse is quoted in full after its paragraph with "(BSB)", the reply is indented, and
+     "Scripture: Berean Standard Bible (public domain)." ends it.
 3. Save as PDF (Mac: **PDF** → **Save as PDF**; iPhone: pinch out on the preview, then Share →
    **Save to Files**). The PDF matches the page shown on screen.
 4. Close the dialog and reload: it doesn't open again. **Print** opens it.

@@ -1,4 +1,4 @@
-import { DEFAULT_TRANSLATION, formatPassage, TRANSLATION_NAMES } from '@lamp/domain';
+import { formatPassage, TRANSLATION_NAMES } from '@lamp/domain';
 import { buttonVariants } from '@lamp/ui/components/button';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,6 +10,7 @@ import {
   nextChapter,
   previousChapter,
 } from '@/lib/chapters.ts';
+import { useActiveTranslation } from '@/data/translation.ts';
 import { today } from '@/lib/dates.ts';
 import { extendSelection, selectionPassage, type VerseSelection } from '@/lib/highlights.ts';
 import { isTyping } from '@/lib/is-typing.ts';
@@ -28,6 +29,7 @@ import { useHighlights } from './use-highlights.ts';
  * (laptop) go to the chapter before and after, across books.
  */
 export function Reader({ at }: { at: Chapter }) {
+  const translation = useActiveTranslation();
   const [picking, setPicking] = useState(false);
   const [selection, setSelection] = useState<VerseSelection | null>(null);
   const [noting, setNoting] = useState(false);
@@ -72,10 +74,10 @@ export function Reader({ at }: { at: Chapter }) {
             under the text (decided 2026-10-14). */}
         <div className="hidden items-center gap-1 sm:flex">
           <abbr
-            title={TRANSLATION_NAMES[DEFAULT_TRANSLATION]}
+            title={TRANSLATION_NAMES[translation]}
             className="px-1 text-xs font-medium text-muted-foreground no-underline"
           >
-            {DEFAULT_TRANSLATION}
+            {translation}
           </abbr>
           <ChapterArrow to={previous} direction="previous" />
           <ChapterArrow to={next} direction="next" />

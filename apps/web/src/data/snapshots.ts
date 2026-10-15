@@ -1,5 +1,5 @@
 import type { BookText } from '@lamp/bible-data';
-import { type BookCode, DEFAULT_TRANSLATION, type SectionBody, type VerseRef } from '@lamp/domain';
+import type { BookCode, SectionBody, TranslationId, VerseRef } from '@lamp/domain';
 import { action } from './action.ts';
 import { snapshotText, whenBook } from './bible.ts';
 import { db as appDb, type LampDb } from './db.ts';
@@ -22,30 +22,33 @@ function eachVerse(nodes: readonly Node[], visit: (ref: VerseRef) => void) {
   }
 }
 
-function waiting(ref: VerseRef): boolean {
-  return !ref.snapshotText && ref.translation === DEFAULT_TRANSLATION;
+/** A translation's book, as `booksWaiting` names it and `withSnapshots` looks it up: "BSB:ROM". */
+export type BookKey = `${TranslationId}:${BookCode}`;
+
+function bookKey(ref: VerseRef): BookKey {
+  return `${ref.translation}:${ref.book}`;
 }
 
-/** The books of the body's chips that are waiting for their text. */
-export function booksWaiting(body: SectionBody): Set<BookCode> {
-  const codes = new Set<BookCode>();
+/** The books, in the chips' own translations, of the body's chips that are waiting for their text. */
+export function booksWaiting(body: SectionBody): Set<BookKey> {
+  const keys = new Set<BookKey>();
   eachVerse(body.content, (ref) => {
-    if (waiting(ref)) codes.add(ref.book);
+    if (!ref.snapshotText) keys.add(bookKey(ref));
   });
-  return codes;
+  return keys;
 }
 
 /** The body with its waiting chips filled from the books given, or null when none of them is. */
 export function withSnapshots(
   body: SectionBody,
-  books: ReadonlyMap<BookCode, BookText>,
+  books: ReadonlyMap<BookKey, BookText>,
 ): SectionBody | null {
   const copy = structuredClone(body);
   let changed = false;
   eachVerse(copy.content, (ref) => {
-    const book = books.get(ref.book);
-    if (!book || !waiting(ref)) return;
-    const text = snapshotText(book, ref);
+    const book = books.get(bookKey(ref));
+    if (!book || ref.snapshotText) return;
+    const text = snapshotText(book, ref, ref.translation);
     if (!text) return;
     ref.snapshotText = text;
     changed = true;
@@ -61,14 +64,15 @@ export async function fillStoredSnapshots(db: LampDb = appDb): Promise<void> {
   const sections = await db.section.filter((s) => s.deletedAt === null).toArray();
   const wanted = new Set(sections.flatMap((s) => [...booksWaiting(s.body)]));
   if (wanted.size === 0) return;
-  const books = new Map<BookCode, BookText>();
-  for (const code of wanted) {
-    const text = await whenBook(code);
-    if (text) books.set(code, text);
+  const books = new Map<BookKey, BookText>();
+  for (const key of wanted) {
+    const [translation, code] = key.split(':') as [TranslationId, BookCode];
+    const text = await whenBook(translation, code);
+    if (text) books.set(key, text);
   }
   if (books.size === 0) return;
   for (const { id, body } of sections) {
-    if (![...booksWaiting(body)].some((code) => books.has(code))) continue;
+    if (![...booksWaiting(body)].some((key) => books.has(key))) continue;
     await action(db, async (w) => {
       const row = await w.db.section.get(id);
       if (!row || row.deletedAt !== null) return;

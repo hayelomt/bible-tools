@@ -3,15 +3,15 @@
 Monday 12 October 2026 · Sermon · Pastor Ann, Grace Chapel\
 John 10:1–18 · #grace
 
-Jesus is the door John 10:9 (WEB): **salvation** and pasture.
+Jesus is the door John 10:9 (BSB): **salvation** and pasture.
 
-> **John 10:9 (WEB)** I am the door. If anyone enters in by me, he will be saved, and will go in and go out, and will find pasture.
+> **John 10:9 (BSB)** I am the door. If anyone enters in by me, he will be saved, and will go in and go out, and will find pasture.
 
 *#hope · #Holy Spirit*
 
-> Compare Psalm 23:1 (WEB): the same shepherd.
+> Compare Psalm 23:1 (BSB): the same shepherd.
 >
-> > **Psalm 23:1 (WEB)** Yahweh is my shepherd: I shall lack nothing.
+> > **Psalm 23:1 (BSB)** Yahweh is my shepherd: I shall lack nothing.
 >
 > - He leads
 
@@ -32,4 +32,4 @@ Other flocks, \*one\* shepherd.
 
 ---
 
-Scripture: World English Bible (public domain).
+Scripture: Berean Standard Bible (public domain).

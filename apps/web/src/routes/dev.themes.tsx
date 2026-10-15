@@ -65,7 +65,7 @@ export const Route = createFileRoute('/dev/themes')({
 
 const MODES: ColorMode[] = ['light', 'dark', 'system'];
 const TRANSLATIONS = [
-  { value: 'web', label: 'World English Bible' },
+  { value: 'bsb', label: 'Berean Standard Bible' },
   { value: 'kjv', label: 'King James Version' },
 ];
 
@@ -224,13 +224,13 @@ function Showcase() {
       </Tabs>
       <Separator />
       <div className="flex flex-wrap items-center gap-2">
-        <Select defaultValue="web" items={TRANSLATIONS}>
+        <Select defaultValue="bsb" items={TRANSLATIONS}>
           <SelectTrigger aria-label="Translation">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {TRANSLATIONS.map((t) => (
-              <SelectItem key={t.value} value={t.value} disabled={t.value === 'kjv'}>
+              <SelectItem key={t.value} value={t.value}>
                 {t.label}
               </SelectItem>
             ))}
@@ -277,9 +277,9 @@ function Reading() {
       <p>
         I am the good shepherd.{' '}
         <span className="rounded-md bg-secondary px-1.5 py-0.5 font-sans text-sm text-secondary-foreground">
-          John 10:11 · WEB
+          John 10:11 · BSB
         </span>{' '}
-        <em>The good shepherd lays down his life for the sheep.</em>
+        <em>The good shepherd lays down His life for the sheep.</em>
       </p>
       <p className="text-sm">
         <mark className="bg-highlight-yellow text-foreground">yellow</mark>{' '}

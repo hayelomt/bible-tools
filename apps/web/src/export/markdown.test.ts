@@ -29,7 +29,7 @@ const JOHN_10_9: VerseRef = {
   chapter: 10,
   verseStart: 9,
   display: 'John 10:9',
-  translation: 'WEB',
+  translation: 'BSB',
   snapshotText:
     'I am the door. If anyone enters in by me, he will be saved, and will go in and go out, and will find pasture.',
 };
@@ -38,7 +38,7 @@ const PSALM_23_1: VerseRef = {
   chapter: 23,
   verseStart: 1,
   display: 'Psalm 23:1',
-  translation: 'WEB',
+  translation: 'BSB',
   snapshotText: 'Yahweh is my shepherd: I shall lack nothing.',
 };
 
@@ -67,7 +67,7 @@ async function goodShepherd(seriesId: string | null) {
           verseStart: 1,
           verseEnd: 18,
           display: 'John 10:1–18',
-          translation: 'WEB',
+          translation: 'BSB',
         },
       ],
     },

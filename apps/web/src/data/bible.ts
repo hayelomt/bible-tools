@@ -1,13 +1,14 @@
 import { type BookText, type Manifest, passageText, passageVerses } from '@lamp/bible-data';
-import { type BookCode, DEFAULT_TRANSLATION, type Passage } from '@lamp/domain';
+import type { BookCode, Passage, TranslationId } from '@lamp/domain';
 import { useSyncExternalStore } from 'react';
 
 /**
- * The WEB text, as the book files `@lamp/bible-data` builds (TECH-DESIGN §9), served under
+ * The Bible text, as the book files `@lamp/bible-data` builds (TECH-DESIGN §9), served under
  * `/bible/` (see vite.config.ts). Files are kept in Cache Storage, so they're there offline: a
  * book is read from it first (its file is named by content hash, so a stored copy is never stale),
  * and the manifest from the network first, so a corrected edition is picked up. `bible-download.ts`
- * fills the cache in the background (M2-11); a book needed before then is fetched on its own.
+ * fills the cache in the background (M2-11); a book needed before then is fetched on its own. Each
+ * translation's books are kept apart: a chip reads the one it was captured from.
  */
 export type BookState =
   | { status: 'loading' }
@@ -21,9 +22,14 @@ export const BIBLE_CACHE = 'lamp-bible';
 const RETRY_MS = 10_000;
 
 let manifest: Promise<Manifest> | undefined;
-const books = new Map<BookCode, BookState & { at?: number }>();
+/** By `key`: one translation's book. */
+const books = new Map<string, BookState & { at?: number }>();
 const listeners = new Set<() => void>();
-const arrivals = new Set<(code: BookCode) => void>();
+const arrivals = new Set<(translation: TranslationId, code: BookCode) => void>();
+
+function key(translation: TranslationId, code: BookCode): string {
+  return `${translation}:${code}`;
+}
 
 function notify() {
   for (const listener of listeners) listener();
@@ -35,22 +41,30 @@ function subscribe(listener: () => void) {
 }
 
 /** Calls `listener` each time a book's text arrives on this device (fetched or downloaded). */
-export function onBookArrived(listener: (code: BookCode) => void): () => void {
+export function onBookArrived(
+  listener: (translation: TranslationId, code: BookCode) => void,
+): () => void {
   arrivals.add(listener);
   return () => arrivals.delete(listener);
 }
 
 /** A book is stored: one that couldn't be fetched is read again, and listeners hear of it. */
-export function bookArrived(code: BookCode) {
-  if (books.get(code)?.status === 'missing') books.delete(code);
+export function bookArrived(translation: TranslationId, code: BookCode) {
+  if (books.get(key(translation, code))?.status === 'missing') books.delete(key(translation, code));
   notify();
-  for (const listener of arrivals) listener(code);
+  for (const listener of arrivals) listener(translation, code);
+}
+
+/** A translation's books were removed from the device: they're read again when next wanted. */
+export function forgetTranslation(translation: TranslationId) {
+  for (const k of books.keys()) if (k.startsWith(`${translation}:`)) books.delete(k);
+  notify();
 }
 
 if (typeof window !== 'undefined') {
   // Coming back online, try the books that failed straight away.
   window.addEventListener('online', () => {
-    for (const [code, state] of books) if (state.status === 'missing') books.delete(code);
+    for (const [k, state] of books) if (state.status === 'missing') books.delete(k);
     notify();
   });
 }
@@ -103,25 +117,29 @@ export async function storedBook(file: string): Promise<{ text: BookText; fetche
   return { text: (await response.json()) as BookText, fetched: true };
 }
 
-async function fetchBook(code: BookCode): Promise<BookText> {
-  const entry = (await loadManifest()).translations[DEFAULT_TRANSLATION]?.books[code];
-  if (!entry) throw new Error(`${code} is not in the manifest`);
+async function fetchBook(translation: TranslationId, code: BookCode): Promise<BookText> {
+  const entry = (await loadManifest()).translations[translation]?.books[code];
+  if (!entry) throw new Error(`${translation} ${code} is not in the manifest`);
   return (await storedBook(entry.file)).text;
 }
 
 /** The book's text if it's here; otherwise starts fetching it. */
-export function bookState(code: BookCode): BookState {
-  const known = books.get(code);
+export function bookState(translation: TranslationId, code: BookCode): BookState {
+  const k = key(translation, code);
+  const known = books.get(k);
   if (known && !(known.status === 'missing' && Date.now() - known.at! > RETRY_MS)) return known;
   const loading: BookState = { status: 'loading' };
-  books.set(code, loading);
-  fetchBook(code).then(
+  books.set(k, loading);
+  fetchBook(translation, code).then(
     (text) => {
-      books.set(code, { status: 'ready', text });
-      bookArrived(code);
+      // Removed while it was on its way: it's fetched again when next wanted.
+      if (books.get(k) !== loading) return;
+      books.set(k, { status: 'ready', text });
+      bookArrived(translation, code);
     },
     () => {
-      books.set(code, { status: 'missing', at: Date.now() });
+      if (books.get(k) !== loading) return;
+      books.set(k, { status: 'missing', at: Date.now() });
       notify();
     },
   );
@@ -129,11 +147,11 @@ export function bookState(code: BookCode): BookState {
 }
 
 /** The book's text once it's fetched (at once if it's here), or null if it can't be. */
-export function whenBook(code: BookCode): Promise<BookText | null> {
+export function whenBook(translation: TranslationId, code: BookCode): Promise<BookText | null> {
   return new Promise((resolve) => {
     /** True once the book is here or missing. */
     const settled = () => {
-      const state = bookState(code);
+      const state = bookState(translation, code);
       if (state.status === 'loading') return false;
       resolve(state.status === 'ready' ? state.text : null);
       return true;
@@ -146,22 +164,22 @@ export function whenBook(code: BookCode): Promise<BookText | null> {
 }
 
 /** The book's text, re-rendering when it arrives. */
-export function useBook(code: BookCode): BookState {
-  return useSyncExternalStore(subscribe, () => bookState(code));
+export function useBook(translation: TranslationId, code: BookCode): BookState {
+  return useSyncExternalStore(subscribe, () => bookState(translation, code));
 }
 
 /**
- * A chip's snapshot (F3): the passage's verse texts. WEB leaves four verses empty (Luke 17:36, Acts
- * 8:37, 15:34, 24:7) with a footnote; on its own, such a verse snapshots as that footnote, marked
- * (decided 2026-10-13), so a chip never holds nothing. In a range they're skipped.
+ * A chip's snapshot (F3): the passage's verse texts. The BSB leaves 16 verses empty (Acts 8:37 and
+ * others) with a note; on its own, such a verse snapshots as that note, marked (decided
+ * 2026-10-13), so a chip never holds nothing. In a range they're skipped.
  */
-export function snapshotText(book: BookText, passage: Passage): string {
+export function snapshotText(book: BookText, passage: Passage, translation: TranslationId): string {
   const text = passageText(book, passage);
   if (text) return text;
   const notes = passageVerses(book, passage)
     .map((v) => book.n?.[`${v.chapter}:${v.verse}`])
     .filter(Boolean);
-  return notes.length > 0 ? `[Not in ${DEFAULT_TRANSLATION}: ${notes.join(' ')}]` : '';
+  return notes.length > 0 ? `[Not in ${translation}: ${[...new Set(notes)].join(' ')}]` : '';
 }
 
 /** A verse of a snapshot, with its number: "28", or "9:1" where a new chapter starts. */

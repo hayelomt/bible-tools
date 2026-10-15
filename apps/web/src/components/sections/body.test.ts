@@ -9,7 +9,7 @@ const ROM_8_28 = {
   chapter: 8,
   verseStart: 28,
   display: 'Romans 8:28',
-  translation: 'WEB',
+  translation: 'BSB',
   snapshotText: 'We know that all things work together for good…',
 } as const;
 

@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-// The reader (F8, M5-01): a chapter of WEB, the book and chapter picker, the chapter before and
+// The reader (F8, M5-01): a chapter of the BSB, the book and chapter picker, the chapter before and
 // after, and the place it was left. Opening any chapter offline is in offline.spec.ts.
 
 const title = (page: Page) => page.getByRole('heading', { level: 1 });
@@ -17,7 +17,7 @@ test('opens at John 1 and steps through chapters, across books', async ({ page }
   await expect(verse(page, 1)).toHaveText(
     '1In the beginning was the Word, and the Word was with God, and the Word was God.',
   );
-  await expect(page.getByTitle('World English Bible')).toHaveText('WEB');
+  await expect(page.getByTitle('Berean Standard Bible')).toHaveText('BSB');
 
   await page.getByRole('link', { name: 'Next chapter: John 2' }).click();
   await expect(title(page)).toHaveText('John 2');
@@ -89,11 +89,11 @@ test('the picker opens a book and chapter; a book of one chapter opens at once',
     .click();
   await expect(page).toHaveURL(/\/read\/OBA\.1$/);
   await expect(title(page)).toHaveText('Obadiah');
-  await expect(verse(page, 1)).toContainText('The vision of Obadiah.');
+  await expect(verse(page, 1)).toContainText('This is the vision of Obadiah');
 
-  // A Psalm's title sits before its first verse, outside the numbering.
+  // A Psalm's title is part of its first verse in the BSB.
   await page.goto('/read/PSA.23');
-  await expect(page.getByText('A Psalm by David.', { exact: true })).toBeVisible();
+  await expect(verse(page, 1)).toContainText('A Psalm of David. The LORD is my shepherd');
 });
 
 test('reopens where it was left, after a reload and from the navigation', async ({ page }) => {

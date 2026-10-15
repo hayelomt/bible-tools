@@ -19,13 +19,13 @@ describe('book table', () => {
     expect(BOOKS.at(39)?.code).toBe('MAT');
   });
 
-  // The per-chapter counts are compared with the WEB USFM itself in @lamp/bible-data
-  // (verse-counts.test.ts); these totals and spot checks keep the table honest without it.
-  it('matches the WEB totals: 1,189 chapters and 31,103 verses', () => {
+  // The per-chapter counts are checked against both translations' text by the @lamp/bible-data
+  // build; these totals and spot checks keep the table honest without it.
+  it('matches the KJV totals: 1,189 chapters and 31,102 verses', () => {
     const chapters = BOOKS.reduce((n, b) => n + b.verses.length, 0);
     const verses = BOOKS.reduce((n, b) => n + b.verses.reduce((x, y) => x + y, 0), 0);
     expect(chapters).toBe(1189);
-    expect(verses).toBe(31_103);
+    expect(verses).toBe(31_102);
   });
 
   it.each([
@@ -35,8 +35,8 @@ describe('book table', () => {
     ['JOL', 3, 2, 32],
     ['MAL', 4, 4, 6],
     ['ROM', 16, 8, 39],
-    ['ROM', 16, 14, 26], // the doxology is 14:24–26 in WEB
-    ['ROM', 16, 16, 25],
+    ['ROM', 16, 14, 23],
+    ['ROM', 16, 16, 27], // the doxology is 16:25–27
     ['3JN', 1, 1, 14],
     ['JUD', 1, 1, 25],
     ['REV', 22, 12, 17],

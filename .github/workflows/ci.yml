@@ -33,7 +33,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
-      - uses: ./.github/actions/bible-source
       - run: pnpm test
 
   integration:
@@ -72,5 +71,4 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
-      - uses: ./.github/actions/bible-source
       - run: pnpm build

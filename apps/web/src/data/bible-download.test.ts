@@ -20,13 +20,17 @@ class FakeCache {
 
 const MANIFEST = {
   translations: {
-    WEB: {
-      bytes: 4_093_745,
+    BSB: {
+      bytes: 3_940_000,
       books: {
-        GEN: { file: 'WEB/GEN.2.json' },
-        EXO: { file: 'WEB/EXO.1.json' },
-        LEV: { file: 'WEB/LEV.1.json' },
+        GEN: { file: 'BSB/GEN.2.json' },
+        EXO: { file: 'BSB/EXO.1.json' },
+        LEV: { file: 'BSB/LEV.1.json' },
       },
+    },
+    KJV: {
+      bytes: 4_210_000,
+      books: { GEN: { file: 'KJV/GEN.1.json' }, EXO: { file: 'KJV/EXO.1.json' } },
     },
   },
 };
@@ -53,49 +57,73 @@ afterEach(() => {
 });
 
 describe('downloadBible', () => {
-  it('stores the books not stored yet, and drops an older edition', async () => {
-    await cache.put('/bible/WEB/EXO.1.json', Response.json({ c: [] }));
+  it('stores the books not stored yet, and drops an older edition and a dropped translation', async () => {
+    await cache.put('/bible/BSB/EXO.1.json', Response.json({ c: [] }));
+    await cache.put('/bible/BSB/GEN.1.json', Response.json({ c: [] }));
     await cache.put('/bible/WEB/GEN.1.json', Response.json({ c: [] }));
+    await cache.put('/bible/KJV/GEN.1.json', Response.json({ c: [] }));
     const { downloadBible } = await import('./bible-download.ts');
     const { onBookArrived } = await import('./bible.ts');
     const arrived: string[] = [];
-    onBookArrived((code) => arrived.push(code));
+    onBookArrived((translation, code) => arrived.push(`${translation} ${code}`));
 
-    await downloadBible();
+    await downloadBible('BSB');
     expect(fetched).toEqual([
       '/bible/manifest.json',
-      '/bible/WEB/GEN.2.json',
-      '/bible/WEB/LEV.1.json',
+      '/bible/BSB/GEN.2.json',
+      '/bible/BSB/LEV.1.json',
     ]);
-    expect(arrived).toEqual(['GEN', 'LEV']);
+    expect(arrived).toEqual(['BSB GEN', 'BSB LEV']);
+    // The other translation's book stays.
     expect([...cache.files.keys()].toSorted()).toEqual([
-      '/bible/WEB/EXO.1.json',
-      '/bible/WEB/GEN.2.json',
-      '/bible/WEB/LEV.1.json',
+      '/bible/BSB/EXO.1.json',
+      '/bible/BSB/GEN.2.json',
+      '/bible/BSB/LEV.1.json',
+      '/bible/KJV/GEN.1.json',
       '/bible/manifest.json',
     ]);
-    expect(await state()).toEqual({ status: 'complete', total: 3, bytes: 4_093_745 });
+    expect(await state('BSB')).toEqual({ status: 'complete', total: 3, bytes: 3_940_000 });
+    expect(await state('KJV')).toEqual({ status: 'none' });
   });
 
   it('pauses without a connection and goes on once online', async () => {
     // Offline, with the manifest and one book stored the last time.
     await cache.put('/bible/manifest.json', Response.json(MANIFEST));
-    await cache.put('/bible/WEB/EXO.1.json', Response.json({ c: [] }));
+    await cache.put('/bible/BSB/EXO.1.json', Response.json({ c: [] }));
     online = false;
     const { downloadBible } = await import('./bible-download.ts');
-    await downloadBible();
-    expect(await state()).toEqual({ status: 'paused', done: 1, total: 3 });
+    await downloadBible('BSB');
+    expect(await state('BSB')).toEqual({ status: 'paused', done: 1, total: 3 });
 
     online = true;
     window.dispatchEvent(new Event('online'));
-    await vi.waitFor(async () => expect((await state()).status).toBe('complete'));
-    expect(fetched).toContain('/bible/WEB/LEV.1.json');
+    await vi.waitFor(async () => expect((await state('BSB')).status).toBe('complete'));
+    expect(fetched).toContain('/bible/BSB/LEV.1.json');
   });
 });
 
-/** The download's state, as `useBibleDownload` reads it. */
-async function state() {
+describe('checkBible and removeBible', () => {
+  it('finds a translation already stored, and removes only its books', async () => {
+    await cache.put('/bible/KJV/GEN.1.json', Response.json({ c: [] }));
+    await cache.put('/bible/BSB/GEN.2.json', Response.json({ c: [] }));
+    const { checkBible, removeBible } = await import('./bible-download.ts');
+
+    await checkBible('KJV');
+    expect(await state('KJV')).toEqual({ status: 'none' });
+    await cache.put('/bible/KJV/EXO.1.json', Response.json({ c: [] }));
+    await checkBible('KJV');
+    expect(await state('KJV')).toEqual({ status: 'complete', total: 2, bytes: 4_210_000 });
+
+    await removeBible('KJV');
+    expect(await state('KJV')).toEqual({ status: 'none' });
+    expect([...cache.files.keys()].filter((p) => p.includes('/KJV/'))).toEqual([]);
+    expect(cache.files.has('/bible/BSB/GEN.2.json')).toBe(true);
+  });
+});
+
+/** A translation's download state, as `useBibleDownload` reads it. */
+async function state(translation: 'BSB' | 'KJV') {
   const { useBibleDownload } = await import('./bible-download.ts');
   const { renderHook } = await import('@testing-library/react');
-  return renderHook(() => useBibleDownload()).result.current;
+  return renderHook(() => useBibleDownload(translation)).result.current;
 }

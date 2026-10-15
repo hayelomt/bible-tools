@@ -106,7 +106,7 @@ describe('a first pull from 0', () => {
       themePreset: 'olive',
       colorMode: 'dark',
       look: 'classic',
-      defaultTranslation: 'WEB',
+      defaultTranslation: 'BSB',
       reviewWindowDays: 14,
       autoPreviewVerses: false,
       updatedAt: NOW,

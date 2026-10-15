@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { BOOKS } from '@lamp/domain';
-import { type BookText, parseUsfm } from './usfm.ts';
+import { readSource, type SourceBook } from './source.ts';
 
 /** `dist/manifest.json`: what the app downloads and caches (TECH-DESIGN §8.6, §9). */
 export interface Manifest {
@@ -13,9 +12,6 @@ export interface Manifest {
 export interface TranslationManifest {
   name: string;
   licence: string;
-  source: { url: string; sha256: string };
-  /** The publisher's licence notice, copied unchanged from the source. */
-  notice: string;
   /** Total size of the book files in bytes. */
   bytes: number;
   books: Record<string, BookManifest>;
@@ -34,45 +30,42 @@ export interface TranslationSource {
   id: string;
   name: string;
   licence: string;
-  url: string;
-  sha256: string;
-  /** The unzipped USFM files. */
-  dir: string;
-  /** The licence notice in `dir`, shipped next to the books. */
-  notice: string;
+  /** The source JSON (see `readSource`). */
+  file: string;
+  /** Verses the translation leaves out, as "MAT 17:21". */
+  omitted?: readonly string[];
 }
 
 export interface BuiltTranslation {
   manifest: TranslationManifest;
-  /** File contents by path relative to `dist/`: the books and the licence notice. */
+  /** File contents by path relative to `dist/`: one per book. */
   files: Map<string, string>;
 }
 
 /**
- * Turns a translation's USFM into one JSON file per book, checking that every book is there and
- * that its chapter and verse counts match the domain book table.
+ * Turns a translation's source into one JSON file per book, checking that every verse has text
+ * (or is one it leaves out) and that its chapter and verse counts match the domain book table.
  */
-export function buildTranslation(source: TranslationSource): BuiltTranslation {
-  const usfm = new Map<string, BookText>();
-  for (const name of readdirSync(source.dir).filter((n) => n.endsWith('.usfm'))) {
-    const { code, ...text } = parseUsfm(readFileSync(join(source.dir, name), 'utf8'));
-    usfm.set(code, text);
-  }
-
+export function buildTranslation(
+  source: TranslationSource,
+  data: readonly SourceBook[] = JSON.parse(readFileSync(source.file, 'utf8')) as SourceBook[],
+): BuiltTranslation {
+  const texts = readSource(source.id, data, source.omitted);
   const files = new Map<string, string>();
   const books: Record<string, BookManifest> = {};
   let bytes = 0;
   for (const book of BOOKS) {
-    const text = usfm.get(book.code);
-    if (!text) throw new Error(`${source.id}: no USFM for ${book.code}`);
+    const text = texts.get(book.code)!;
     const verses = text.c.map((chapter) => chapter.length);
-    const holes = text.c.flatMap((chapter, c) =>
-      Array.from(chapter, (verse, v) => (verse === undefined ? `${c + 1}:${v + 1}` : [])).flat(),
-    );
-    if (holes.length > 0) throw new Error(`${source.id} ${book.code}: missing ${holes.join(', ')}`);
     if (JSON.stringify(verses) !== JSON.stringify(book.verses)) {
       throw new Error(`${source.id} ${book.code}: verse counts differ from the domain book table`);
     }
+    const empty = text.c.flatMap((chapter, c) =>
+      chapter.flatMap((verse, v) =>
+        verse || text.n?.[`${c + 1}:${v + 1}`] ? [] : `${c + 1}:${v + 1}`,
+      ),
+    );
+    if (empty.length > 0) throw new Error(`${source.id} ${book.code}: empty ${empty.join(', ')}`);
 
     const json = JSON.stringify(text);
     const sha256 = createHash('sha256').update(json).digest('hex');
@@ -83,16 +76,5 @@ export function buildTranslation(source: TranslationSource): BuiltTranslation {
     bytes += size;
   }
 
-  const notice = `${source.id}/${source.notice}`;
-  files.set(notice, readFileSync(join(source.dir, source.notice), 'utf8'));
-
-  const manifest: TranslationManifest = {
-    name: source.name,
-    licence: source.licence,
-    source: { url: source.url, sha256: source.sha256 },
-    notice,
-    bytes,
-    books,
-  };
-  return { manifest, files };
+  return { manifest: { name: source.name, licence: source.licence, bytes, books }, files };
 }

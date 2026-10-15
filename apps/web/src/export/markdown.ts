@@ -20,7 +20,7 @@ import { count, SERIES_KIND_LABELS, SOURCE_LABELS } from '@/lib/labels.ts';
  * the rows.
  *
  * - Sections in the lesson's order; a reply is quoted under its section (`> `), so it shows
- *   indented. Verse chips read "John 10:9 (WEB)", with their text quoted after the paragraph.
+ *   indented. Verse chips read "John 10:9 (BSB)", with their text quoted after the paragraph.
  * - A section's tags follow it in italics; the lesson's are in its header with its passages.
  * - Takeaways as a list, questions as a task list: `[x]` answered, `[ ]` open or parked.
  * - The translations quoted are credited at the end (decided 2026-10-14).
@@ -138,7 +138,7 @@ function credits(lessons: LessonForExport[]): string[] {
 }
 
 /**
- * "Scripture: World English Bible (public domain).", for the translations the lessons quote; null
+ * "Scripture: Berean Standard Bible (public domain).", for the translations the lessons quote; null
  * when they quote none.
  */
 export function scriptureCredit(lessons: LessonForExport[]): string | null {

@@ -120,7 +120,7 @@ const settings = (themePreset: string) => ({
     themePreset,
     colorMode: 'dark',
     look: 'classic',
-    defaultTranslation: 'WEB',
+    defaultTranslation: 'BSB',
     reviewWindowDays: 14,
     autoPreviewVerses: false,
     updatedAt: NOW,

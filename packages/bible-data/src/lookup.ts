@@ -1,10 +1,10 @@
 import type { Passage } from '@lamp/domain';
-import type { BookText } from './usfm.ts';
+import type { BookText } from './book-text.ts';
 
 export interface VerseText {
   chapter: number;
   verse: number;
-  /** Empty for a verse the translation leaves out (WEB Acts 8:37); see `BookText.n`. */
+  /** Empty for a verse the translation leaves out (BSB Acts 8:37); see `BookText.n`. */
   text: string;
 }
 

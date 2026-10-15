@@ -156,15 +156,14 @@ count ("Delete all 3"). Focus starts on Cancel.
 
 - **Display format:** full book names and an en dash for ranges: "Romans 8:28–30", "1 John 3",
   "Romans 7:24–8:2". Abbreviations are for typing, not for display.
-- **Scripture text always carries its translation**: the chip (`John 10:9 · WEB`), the expanded
-  chip ("World English Bible"), the reader header, the autocomplete preview, the verse index and
-  the export. Phase 2 adds more translations, so this must hold from the start.
+- **Scripture text always carries its translation**: the chip (`John 10:9 · BSB`), the expanded
+  chip ("Berean Standard Bible"), the reader header, the autocomplete preview, the verse index and
+  the export. The app has two translations (BSB and KJV), and a chip keeps the one it was captured
+  from.
 - **A chip shows its snapshot**, the text captured when it was inserted. It never changes, even if
   the source text is corrected later.
-- **KJV numbering** moved onto WEB's is always explained ("Typed as Romans 16:25–27 (KJV
-  numbering)"), never silent.
 - A chip is one unit for the cursor and for Backspace, and screen readers hear it as a button:
-  "John 10:9, World English Bible, verse. Show text."
+  "John 10:9, Berean Standard Bible, verse. Show text."
 
 ## Empty, loading and error states
 

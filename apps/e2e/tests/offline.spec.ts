@@ -34,9 +34,9 @@ test('in airplane mode after the first load, every screen works and any book ope
   // The Bible downloads in the background, with its progress in settings.
   await page.goto('/settings');
   const bible = page.getByRole('region', { name: 'Bible' });
-  await expect(bible).toContainText('World English Bible');
+  await expect(bible).toContainText('Berean Standard Bible');
   await expect(bible.getByLabel('Downloaded')).toBeVisible({ timeout: 30_000 });
-  await expect(bible).toContainText('4.1 MB');
+  await expect(bible).toContainText('3.9 MB');
   await expect(page.getByRole('region', { name: 'Storage' })).toContainText(/MB used/);
 
   await context.setOffline(true);
@@ -54,7 +54,9 @@ test('in airplane mode after the first load, every screen works and any book ope
 
   // Any chapter in the reader, as from a bookmark.
   await page.goto('/read/2KI.5');
-  await expect(page.locator('[data-verse="14"]')).toContainText('dipped himself seven times');
+  await expect(page.locator('[data-verse="14"]')).toContainText(
+    'dipped himself in the Jordan seven times',
+  );
 
   // Straight to an address, as from a bookmark: the same page, from the service worker.
   await page.goto('/review');
@@ -67,9 +69,9 @@ test('in airplane mode after the first load, every screen works and any book ope
   // A book never opened before is here.
   await page.keyboard.type('Obad 1:15');
   const list = page.getByRole('listbox', { name: 'Verse suggestions' });
-  await expect(list).toContainText('For the day of Yahweh is near all the nations!');
+  await expect(list).toContainText('For the Day of the LORD is near for all the nations.');
   await page.keyboard.press('Enter');
-  await expect(note).toHaveText('Obadiah 15 · WEB ');
+  await expect(note).toHaveText('Obadiah 15 · BSB ');
   await page.keyboard.type('the day is near');
 
   // Search, with its worker from the service worker's copy, finds it by word and by verse.

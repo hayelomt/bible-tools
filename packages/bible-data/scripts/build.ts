@@ -1,19 +1,11 @@
 // Builds dist/: one JSON file per book and translation, named by content hash, and manifest.json.
-// Downloads the sources first if they are missing.
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildTranslation, type Manifest } from '../src/build.ts';
 import { SOURCES } from '../src/sources.ts';
 
 const dist = fileURLToPath(new URL('../dist/', import.meta.url));
-
-if (SOURCES.some((source) => !existsSync(join(source.dir, '.sha256')))) {
-  execFileSync(process.execPath, [fileURLToPath(new URL('download.ts', import.meta.url))], {
-    stdio: 'inherit',
-  });
-}
 
 rmSync(dist, { recursive: true, force: true });
 const manifest: Manifest = { version: 1, translations: {} };

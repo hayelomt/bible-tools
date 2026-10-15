@@ -74,9 +74,9 @@ test.describe('on a phone', () => {
           verseStart: 1,
           verseEnd: 11,
           display: 'John 15:1–11',
-          translation: 'WEB',
+          translation: 'BSB',
         },
-        { book: '1JN', chapter: 3, display: '1 John 3', translation: 'WEB' },
+        { book: '1JN', chapter: 3, display: '1 John 3', translation: 'BSB' },
       ],
     });
     // The passages are in the verse index.

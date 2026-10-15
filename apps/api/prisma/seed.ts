@@ -35,7 +35,7 @@ const ord = (book: number, chapter: number, verse: number): number =>
 type Node = Prisma.InputJsonObject;
 const verse = (attrs: Node): Node => ({
   type: 'verse',
-  attrs: { translation: 'WEB', ...attrs },
+  attrs: { translation: 'BSB', ...attrs },
 });
 const text = (value: string): Node => ({ type: 'text', text: value });
 const doc = (...content: Node[]): Node => ({
@@ -78,7 +78,7 @@ async function main(): Promise<void> {
     verseStart: 28,
     verseEnd: 30,
     display: 'Romans 8:28–30',
-    translation: 'WEB',
+    translation: 'BSB',
   };
   const lesson = await prisma.lesson.create({
     data: {
@@ -182,7 +182,7 @@ async function main(): Promise<void> {
           verseStart: 1,
           verseEnd: 4,
           display: 'Romans 8:1–4',
-          translation: 'WEB',
+          translation: 'BSB',
         },
       ],
       rev: next(),
@@ -199,7 +199,7 @@ async function main(): Promise<void> {
         chapterEnd: 9,
         verseEnd: 5,
         display: 'Romans 8:38–9:5',
-        translation: 'WEB',
+        translation: 'BSB',
       },
       colour: 'yellow',
       note: 'Nothing can separate us.',

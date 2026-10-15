@@ -111,7 +111,7 @@ describe('resolveUpsert', () => {
         themePreset: 'parchment',
         colorMode: 'system',
         look: 'classic',
-        defaultTranslation: 'WEB',
+        defaultTranslation: 'BSB',
         reviewWindowDays: 14,
         autoPreviewVerses: false,
         updatedAt: BASE,

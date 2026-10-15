@@ -68,21 +68,21 @@ export const STATS = { lessons: 23, verses: 41, questions: 6, streak: 5 } as con
 /** Lessons per week, oldest first, for the small activity charts. */
 export const ACTIVITY = [1, 2, 1, 0, 2, 3, 1, 2, 2, 4, 2, 3] as const;
 
-/** John 10:11–14, World English Bible (public domain). */
+/** John 10:11–14, Berean Standard Bible (public domain). */
 export const PASSAGE = {
   reference: 'John 10:11–14',
-  translation: 'WEB',
+  translation: 'BSB',
   verses: [
-    { n: 11, text: 'I am the good shepherd. The good shepherd lays down his life for the sheep.' },
+    { n: 11, text: 'I am the good shepherd. The good shepherd lays down His life for the sheep.' },
     {
       n: 12,
-      text: 'He who is a hired hand, and not a shepherd, who doesn’t own the sheep, sees the wolf coming, leaves the sheep, and flees. The wolf snatches the sheep, and scatters them.',
+      text: 'The hired hand is not the shepherd, and the sheep are not his own. When he sees the wolf coming, he abandons the sheep and runs away. Then the wolf pounces on them and scatters the flock.',
     },
     {
       n: 13,
-      text: 'The hired hand flees because he is a hired hand, and doesn’t care for the sheep.',
+      text: 'The man runs away because he is a hired servant and is unconcerned for the sheep.',
     },
-    { n: 14, text: 'I am the good shepherd. I know my own, and I’m known by my own;' },
+    { n: 14, text: 'I am the good shepherd. I know My sheep and My sheep know Me,' },
   ],
   highlight: 14,
 } as const;

@@ -113,5 +113,6 @@ export default defineConfig({
     strictPort: true,
     proxy: { '/api': { target: apiUrl } },
   },
-  preview: { port: 4173, strictPort: true },
+  // Not Vite's default (4173), which other projects on the machine use.
+  preview: { port: 4573, strictPort: true },
 });

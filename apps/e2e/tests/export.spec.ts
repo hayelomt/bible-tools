@@ -65,10 +65,10 @@ test('a lesson downloads as a Markdown file offline, and copies as Markdown', as
   expect(download.suggestedFilename()).toMatch(/^\d{4}-\d{2}-\d{2}-the-good-shepherd\.md$/);
   const markdown = await text(download);
   expect(markdown).toMatch(/^# The Good Shepherd\n\n\w+day \d+ \w+ \d{4} · Sermon\n\n/);
-  expect(markdown).toContain('Jesus is the door John 10:9 (WEB) salvation and pasture.');
-  expect(markdown).toContain('> **John 10:9 (WEB)** I am the door.');
+  expect(markdown).toContain('Jesus is the door John 10:9 (BSB) salvation and pasture.');
+  expect(markdown).toContain('> **John 10:9 (BSB)** I am the gate.');
   expect(markdown).toContain('## Takeaways\n\n- He knows his sheep by name.');
-  expect(markdown).toMatch(/---\n\nScripture: World English Bible \(public domain\)\.\n$/);
+  expect(markdown).toMatch(/---\n\nScripture: Berean Standard Bible \(public domain\)\.\n$/);
 
   await page.getByRole('button', { name: 'Lesson actions' }).click();
   await page.getByRole('menuitem', { name: 'Export…' }).click();
@@ -136,10 +136,10 @@ test.describe('with the service worker', () => {
     await expect(page).toHaveTitle('The Good Shepherd');
     const main = page.getByRole('main');
     await expect(main.getByRole('heading', { level: 1 })).toHaveText('The Good Shepherd');
-    await expect(main).toContainText('Jesus is the door John 10:9 (WEB) salvation and pasture.');
-    await expect(main.locator('blockquote')).toContainText('John 10:9 (WEB) I am the door.');
+    await expect(main).toContainText('Jesus is the door John 10:9 (BSB) salvation and pasture.');
+    await expect(main.locator('blockquote')).toContainText('John 10:9 (BSB) I am the gate.');
     await expect(main.getByRole('heading', { name: 'Takeaways' })).toBeVisible();
-    await expect(main).toContainText('Scripture: World English Bible (public domain).');
+    await expect(main).toContainText('Scripture: Berean Standard Bible (public domain).');
 
     // Printed, Back and Print are left out, and the page is white whatever the theme.
     await page.emulateMedia({ media: 'print', colorScheme: 'dark' });

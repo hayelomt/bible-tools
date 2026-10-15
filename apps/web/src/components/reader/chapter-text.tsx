@@ -6,6 +6,7 @@ import { cn } from 'cn';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Fragment, useEffect, useRef, type RefObject } from 'react';
 import { useBook } from '@/data/bible.ts';
+import { useActiveTranslation } from '@/data/translation.ts';
 import type { Chapter } from '@/lib/chapters.ts';
 import { highlightForVerse, selectionPassage, type VerseSelection } from '@/lib/highlights.ts';
 import { readingPosition, rememberPosition } from '@/lib/reading-position.ts';
@@ -42,7 +43,7 @@ export function ChapterText({
   onSaveNote: (text: string) => Promise<void>;
   flushRef: RefObject<(() => Promise<void>) | null>;
 }) {
-  const book = useBook(at.book);
+  const book = useBook(useActiveTranslation(), at.book);
   const online = useOnline();
   const slow = useAfter(300);
   const name = getBook(at.book).name;
@@ -88,21 +89,18 @@ export function ChapterText({
   );
 }
 
-/** A run of verses, after a title outside the numbering (a Psalm's) or none. */
+/** A chapter's verses. (A Psalm's title is part of its first verse in both translations.) */
 interface Block {
-  title?: string;
   verses: { number: number; text: string; note?: string }[];
 }
 
 function blocks(text: BookText, chapter: number): Block[] {
-  const result: Block[] = [];
-  (text.c[chapter - 1] ?? []).forEach((verse, i) => {
-    const key = `${chapter}:${i + 1}`;
-    const title = text.d?.[key];
-    if (title !== undefined || result.length === 0) result.push({ title, verses: [] });
-    result.at(-1)!.verses.push({ number: i + 1, text: verse, note: text.n?.[key] });
-  });
-  return result;
+  const verses = (text.c[chapter - 1] ?? []).map((verse, i) => ({
+    number: i + 1,
+    text: verse,
+    note: text.n?.[`${chapter}:${i + 1}`],
+  }));
+  return [{ verses }];
 }
 
 /**
@@ -150,9 +148,6 @@ function Verses({
     >
       {blocks(text, at.chapter).map((block, i) => (
         <div key={i} className="flex flex-col gap-2">
-          {block.title && (
-            <p className="text-[0.9em] text-muted-foreground italic">{block.title}</p>
-          )}
           {runs(block, noting ? selection : null).map((run, k) =>
             run === 'note' ? (
               <HighlightNote
@@ -196,7 +191,7 @@ function Verses({
                         <sup aria-hidden className={NUMBER_CLASS}>
                           {v.number}
                         </sup>
-                        {/* WEB leaves four verses empty; the footnote says why (TECH-DESIGN §9). */}
+                        {/* The BSB leaves 16 verses empty; the note says why (TECH-DESIGN §9). */}
                         {v.text || <span className="text-muted-foreground italic">[{v.note}]</span>}
                         {covering && (
                           <span className="sr-only">

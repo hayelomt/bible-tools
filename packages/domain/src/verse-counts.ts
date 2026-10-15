@@ -1,9 +1,9 @@
-// Verses per chapter (index 0 = chapter 1) in the World English Bible, taken from the eBible.org
-// USFM (eng-web_usfm.zip, 2026-10-13): the highest \v number in each chapter. Checked against the
-// source by @lamp/bible-data (verse-counts.test.ts) once the USFM is in place.
+// Verses per chapter (index 0 = chapter 1), in the numbering the app's translations share: the
+// KJV's, which the BSB follows once the verses it leaves out are counted (bible-data/data). Checked
+// against both sources by the @lamp/bible-data build.
 import type { BookCode } from './books.ts';
 
-export const WEB_VERSE_COUNTS: Readonly<Record<BookCode, readonly number[]>> = {
+export const VERSE_COUNTS: Readonly<Record<BookCode, readonly number[]>> = {
   GEN: [
     31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67,
     34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22,
@@ -112,7 +112,7 @@ export const WEB_VERSE_COUNTS: Readonly<Record<BookCode, readonly number[]>> = {
     26, 47, 26, 37, 42, 15, 60, 40, 43, 48, 30, 25, 52, 28, 41, 40, 34, 28, 41, 38, 40, 30, 35, 27,
     27, 32, 44, 31,
   ],
-  ROM: [32, 29, 31, 25, 21, 23, 25, 39, 33, 21, 36, 21, 14, 26, 33, 25],
+  ROM: [32, 29, 31, 25, 21, 23, 25, 39, 33, 21, 36, 21, 14, 23, 33, 27],
   '1CO': [31, 16, 23, 21, 13, 20, 40, 13, 27, 33, 34, 31, 13, 40, 58, 24],
   '2CO': [24, 17, 18, 18, 21, 18, 16, 24, 15, 18, 33, 21, 14],
   GAL: [24, 21, 29, 31, 26, 18],

@@ -104,7 +104,7 @@ describe('checkPassage', () => {
   it.each<[Passage, ReturnType<typeof checkPassage>]>([
     [rom({ chapter: 8 }), undefined],
     [rom({ chapter: 16, verseStart: 25 }), undefined],
-    [rom({ chapter: 16, verseStart: 27 }), { code: 'verse-out-of-range', book: 'ROM', chapter: 16, verse: 27, max: 25 }],
+    [rom({ chapter: 16, verseStart: 28 }), { code: 'verse-out-of-range', book: 'ROM', chapter: 16, verse: 28, max: 27 }],
     [rom({ chapter: 8, chapterEnd: 9 }), undefined],
     [rom({ chapter: 8, verseStart: 38, chapterEnd: 9, verseEnd: 5 }), undefined],
     [rom({ chapter: 17 }), { code: 'chapter-out-of-range', book: 'ROM', chapter: 17, max: 16 }],

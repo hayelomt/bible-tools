@@ -1,4 +1,4 @@
-import type { Passage } from '@lamp/domain';
+import type { Passage, TranslationId } from '@lamp/domain';
 import { cn } from 'cn';
 import { type BookState, type NumberedVerse, numberedVerses, useBook } from '@/data/bible.ts';
 
@@ -16,14 +16,17 @@ function verses(book: BookState, passage: Passage, text: string): NumberedVerse[
  */
 export function VerseText({
   passage,
+  translation,
   text,
   className,
 }: {
   passage: Passage;
+  /** The translation the text is from; its book gives the numbers. */
+  translation: TranslationId;
   text: string;
   className?: string;
 }) {
-  const book = useBook(passage.book);
+  const book = useBook(translation, passage.book);
   const numbered = verses(book, passage, text);
   return (
     <p className={cn('font-serif', className)}>

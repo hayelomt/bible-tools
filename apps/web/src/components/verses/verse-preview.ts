@@ -82,7 +82,10 @@ function previews(doc: PmNode): DecorationSet {
         Decoration.widget(pos + node.nodeSize, () => previewDom(refs), {
           // Kept while the chips and their books are the same, so typing doesn't redraw it.
           key: refs
-            .map((r) => `${r.display}|${r.snapshotText ?? ''}|${bookState(r.book).status}`)
+            .map(
+              (r) =>
+                `${r.display}|${r.snapshotText ?? ''}|${bookState(r.translation, r.book).status}`,
+            )
             .join('\n'),
           side: -1,
           ignoreSelection: true,
@@ -110,7 +113,7 @@ function previewDom(refs: VerseRef[]): HTMLElement {
     const text = document.createElement('div');
     if (ref.snapshotText) {
       text.className = 'font-serif text-foreground/80 italic';
-      text.append(...verseTextNodes(bookState(ref.book), ref, ref.snapshotText));
+      text.append(...verseTextNodes(bookState(ref.translation, ref.book), ref, ref.snapshotText));
     } else {
       text.className = 'font-sans text-sm text-muted-foreground';
       text.textContent = 'Text not downloaded yet.';

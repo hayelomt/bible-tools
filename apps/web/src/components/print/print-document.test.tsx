@@ -19,7 +19,7 @@ const JOHN_10_9: VerseRef = {
   chapter: 10,
   verseStart: 9,
   display: 'John 10:9',
-  translation: 'WEB',
+  translation: 'BSB',
   snapshotText: 'I am the door. If anyone enters in by me, he will be saved.',
 };
 
@@ -109,11 +109,11 @@ describe('LessonDocument', () => {
 
     const [door, reply, sheep] = container.querySelectorAll('section');
     expect(door!.querySelector('p')!.textContent).toBe(
-      'Jesus is the door John 10:9 (WEB): salvation',
+      'Jesus is the door John 10:9 (BSB): salvation',
     );
     expect(door!.querySelector('strong')?.textContent).toBe('salvation');
     expect(door!.querySelector('blockquote')!.textContent).toBe(
-      'John 10:9 (WEB) I am the door. If anyone enters in by me, he will be saved.',
+      'John 10:9 (BSB) I am the door. If anyone enters in by me, he will be saved.',
     );
     expect(door!.textContent).toContain('#hope · #Holy Spirit');
     // A reply is indented under its section; its list keeps its bullets.
@@ -176,7 +176,7 @@ describe('SeriesDocument', () => {
 describe('Credit', () => {
   it('names the translations quoted, and is left out when none is', () => {
     const { container, rerender } = render(<Credit lessons={[goodShepherd()]} />);
-    expect(container.textContent).toBe('Scripture: World English Bible (public domain).');
+    expect(container.textContent).toBe('Scripture: Berean Standard Bible (public domain).');
     const data = goodShepherd({ mainPassages: [] });
     rerender(<Credit lessons={[{ ...data, sections: [] }]} />);
     expect(container.textContent).toBe('');

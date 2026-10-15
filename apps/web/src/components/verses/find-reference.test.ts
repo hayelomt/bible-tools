@@ -75,12 +75,9 @@ describe('findReference', () => {
     expect(findReference('8:28')).toBeNull();
   });
 
-  it('notes KJV numbering moved onto WEB’s', () => {
+  it('takes KJV numbering as typed: both translations number verses that way', () => {
     expect(findReference('Rom 16:25-27')?.entries).toEqual([
-      expect.objectContaining({
-        ref: expect.objectContaining({ display: 'Romans 14:24–26' }),
-        mappedFrom: 'Romans 16:25–27',
-      }),
+      { kind: 'passage', ref: expect.objectContaining({ display: 'Romans 16:25–27' }) },
     ]);
   });
 

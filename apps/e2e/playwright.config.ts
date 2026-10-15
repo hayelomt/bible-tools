@@ -5,7 +5,8 @@ import { e2eDatabaseUrl } from './env.ts';
 // its own port so a running `pnpm dev` (on :3000, lamp_dev) is never reused by mistake.
 const API_PORT = 3100;
 const API_URL = `http://127.0.0.1:${API_PORT}`;
-const WEB_URL = 'http://127.0.0.1:4173';
+// Matches `preview.port` in apps/web/vite.config.ts.
+const WEB_URL = 'http://127.0.0.1:4573';
 
 export default defineConfig({
   testDir: 'tests',

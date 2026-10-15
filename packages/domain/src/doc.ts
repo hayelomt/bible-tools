@@ -157,7 +157,7 @@ function eachTextBlock(blocks: readonly Block[], visit: (block: TextBlock) => vo
   }
 }
 
-/** The text a verse chip stands for in plain text and Markdown: "Romans 8:28 (WEB)". */
+/** The text a verse chip stands for in plain text and Markdown: "Romans 8:28 (BSB)". */
 function verseLabel(ref: VerseRef): string {
   return `${ref.display} (${ref.translation})`;
 }
@@ -187,8 +187,8 @@ export function citedRefs(body: SectionBody): VerseRef[] {
 }
 
 /**
- * Markdown for export (F11). A verse chip becomes "Romans 8:28 (WEB)" in the sentence, and its
- * snapshot follows the paragraph as a quote: "> **Romans 8:28 (WEB)** And we know…". Headings are
+ * Markdown for export (F11). A verse chip becomes "Romans 8:28 (BSB)" in the sentence, and its
+ * snapshot follows the paragraph as a quote: "> **Romans 8:28 (BSB)** And we know…". Headings are
  * `###` unless `headingLevel` says otherwise (a lesson export puts them under its own).
  */
 export function toMarkdown(body: SectionBody, { headingLevel = 3 } = {}): string {

@@ -9,7 +9,7 @@ import {
 
 /** One row of the verse suggestions: a passage to insert, or why the typed one can't exist. */
 export type ReferenceEntry =
-  { kind: 'passage'; ref: ParsedPassage; mappedFrom?: string } | { kind: 'error'; message: string };
+  { kind: 'passage'; ref: ParsedPassage } | { kind: 'error'; message: string };
 
 export interface ReferenceMatch {
   /** Where the reference starts in the text given. */
@@ -79,11 +79,7 @@ function candidate(typed: string): { entries: ReferenceEntry[]; rank: number } |
   if (suggestions.length > 0) {
     return {
       rank: KIND_ORDER[suggestions[0]!.match],
-      entries: suggestions.map(({ ref, mappedFrom }) => ({
-        kind: 'passage',
-        ref,
-        ...(mappedFrom && { mappedFrom }),
-      })),
+      entries: suggestions.map(({ ref }) => ({ kind: 'passage', ref })),
     };
   }
   // Only explain numbers that don't exist in a book that was clearly meant.

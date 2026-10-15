@@ -39,11 +39,8 @@ const VALID: [string, string][] = [
   ['Rom 8-8', 'Romans 8'],
   ['Rom 8:28a', 'Romans 8:28'],
   ['Rom 8:28b-30a', 'Romans 8:28–30'],
-  // WEB puts the doxology at 14:24–26; KJV numbers (16:25–27) are moved there.
-  ['Rom 14:26', 'Romans 14:26'],
   ['Rom 16:24', 'Romans 16:24'],
-  ['Rom 16:25', 'Romans 14:24'],
-  ['Rom 16:27', 'Romans 14:26'],
+  ['Rom 16:25-27', 'Romans 16:25–27'],
   ['Ro 8', 'Romans 8'],
   ['Rm 8', 'Romans 8'],
   ['Roma 8', 'Romans 8'],
@@ -308,30 +305,6 @@ describe('parseReference', () => {
       expect(result.ok && result.ref).toMatchObject(ref);
     },
   );
-});
-
-describe('KJV numbering', () => {
-  it.each([
-    ['Rom 16:27', 'Romans 14:26', 'Romans 16:27'],
-    ['Rom 16:25-27', 'Romans 14:24–26', 'Romans 16:25–27'],
-    ['Rom 16:20-27', 'Romans 16:20–25', 'Romans 16:20–27'],
-    ['Rom 1:1-16:27', 'Romans 1:1–16:25', 'Romans 1:1–16:27'],
-  ])('%j becomes %s, noting %s', (input, display, mappedFrom) => {
-    expect(parseReference(input)).toMatchObject({ ok: true, ref: { display }, mappedFrom });
-  });
-
-  it('notes nothing when WEB numbers it the same', () => {
-    expect(parseReference('Rom 16:24')).not.toHaveProperty('mappedFrom');
-  });
-
-  it('passes the note through suggestions', () => {
-    expect(suggest('Rom 16:27')).toEqual([
-      expect.objectContaining({
-        ref: expect.objectContaining({ display: 'Romans 14:26' }),
-        mappedFrom: 'Romans 16:27',
-      }),
-    ]);
-  });
 });
 
 describe('suggest', () => {

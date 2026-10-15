@@ -34,7 +34,7 @@ test('memorises verses from the reader, lists them in the verse index, and remov
   expect(item).toMatchObject({
     ref: expect.objectContaining({
       display: 'John 10:27',
-      snapshotText: expect.stringContaining('My sheep hear my voice'),
+      snapshotText: expect.stringContaining('My sheep listen to My voice'),
     }),
     ease: 2.5,
     interval: 0,
@@ -48,7 +48,7 @@ test('memorises verses from the reader, lists them in the verse index, and remov
   await expect(page.getByText('1 memory verse', { exact: true })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Memory' })).toBeChecked();
   const row = page.getByRole('link', { name: /Memory · due today · new/ });
-  await expect(row).toContainText('John 10:27 — My sheep hear my voice');
+  await expect(row).toContainText('John 10:27 — My sheep listen to My voice');
 
   // The chapter's index lists it too; the Highlights filter hides it.
   await page.goto('/verses/JHN.10');
@@ -67,7 +67,7 @@ test('memorises verses from the reader, lists them in the verse index, and remov
   // The row opens the verse's memory card.
   await row.click();
   await expect(page).toHaveURL(/\/review\/memory\?item=/);
-  await expect(page.getByText('John 10:27 · WEB')).toBeVisible();
+  await expect(page.getByText('John 10:27 · BSB')).toBeVisible();
 });
 
 test('memorises a verse from its chip, and reads it in context', async ({ page }) => {
@@ -77,7 +77,7 @@ test('memorises a verse from its chip, and reads it in context', async ({ page }
   await page.keyboard.type('Ps 23:1');
   await page.keyboard.press('Enter');
   await page
-    .getByRole('button', { name: 'Psalm 23:1, World English Bible, verse. Show text.' })
+    .getByRole('button', { name: 'Psalm 23:1, Berean Standard Bible, verse. Show text.' })
     .click();
   const viewer = page.getByRole('dialog');
   await viewer.getByRole('button', { name: 'Memorise' }).click();
@@ -89,7 +89,7 @@ test('memorises a verse from its chip, and reads it in context', async ({ page }
 
   await viewer.getByRole('link', { name: 'Read in context' }).click();
   await expect(page).toHaveURL(/\/read\/PSA\.23$/);
-  await expect(verse(page, 1)).toContainText('Yahweh is my shepherd');
+  await expect(verse(page, 1)).toContainText('The LORD is my shepherd');
 
   // From the reader, the same verse is in the list already.
   await verse(page, 1).click();
@@ -126,23 +126,23 @@ test('reviews the verses due on the card; Again brings one back, grades set the 
   const header = page.locator('[data-slot="screen-header"]');
   await expect(header).toContainText('Memory verses');
   await expect(header).toContainText('1 of 2');
-  await expect(page.getByText('John 10:27 · WEB')).toBeVisible();
+  await expect(page.getByText('John 10:27 · BSB')).toBeVisible();
   await expect(page.getByText('Say it from memory, then show the verse.')).toBeVisible();
-  await expect(page.getByText('My sheep hear my voice')).toBeHidden();
+  await expect(page.getByText('My sheep listen to My voice')).toBeHidden();
   await expect(page.getByText('New · added')).toBeVisible();
   await page.getByRole('button', { name: 'Show the verse' }).click();
-  await expect(page.getByText('My sheep hear my voice')).toBeVisible();
+  await expect(page.getByText('My sheep listen to My voice')).toBeVisible();
   const grades = page.getByRole('group', { name: 'How well did you know it?' }).getByRole('button');
   await expect(grades).toHaveText(['Againtoday', 'Hardtomorrow', 'Goodtomorrow', 'Easy4 days']);
 
   // Again: it comes round again at the end.
   await page.getByRole('button', { name: 'Again, due today' }).click();
   await expect(header).toContainText('2 of 3');
-  await expect(page.getByText('John 10:28 · WEB')).toBeVisible();
+  await expect(page.getByText('John 10:28 · BSB')).toBeVisible();
   await page.getByRole('button', { name: 'Show the verse' }).click();
   await page.keyboard.press('3'); // Good
   await expect(header).toContainText('3 of 3');
-  await expect(page.getByText('John 10:27 · WEB')).toBeVisible();
+  await expect(page.getByText('John 10:27 · BSB')).toBeVisible();
   await expect(page.getByText('1 review · learning since')).toBeVisible();
   await page.getByRole('button', { name: 'Show the verse' }).click();
   await page.getByRole('button', { name: 'Easy, due in 4 days' }).click();

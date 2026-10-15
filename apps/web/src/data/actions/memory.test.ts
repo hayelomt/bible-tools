@@ -22,7 +22,7 @@ const ref = {
   chapter: 10,
   verseStart: 27,
   display: 'John 10:27',
-  translation: 'WEB' as const,
+  translation: 'BSB' as const,
   snapshotText: 'My sheep hear my voice, and I know them, and they follow me.',
 };
 

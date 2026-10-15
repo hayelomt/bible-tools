@@ -23,7 +23,7 @@ export const Route = createFileRoute('/_app/read/$chapter')({
   component: ReaderScreen,
 });
 
-/** The reader (F8, wireframes/reader.md "Chapter view"): one chapter of WEB, at `JHN.10`. */
+/** The reader (F8, wireframes/reader.md "Chapter view"): one chapter of the active translation, at `JHN.10`. */
 function ReaderScreen() {
   const { chapter: slug } = Route.useParams();
   const passage = parsePassageSlug(slug);

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 /**
  * A section body as a printed page shows it (F11, wireframes/export.md "Print view"), the way the
- * Markdown export writes it (decision 19): a verse chip reads "John 10:9 (WEB)" in the sentence,
+ * Markdown export writes it (decision 19): a verse chip reads "John 10:9 (BSB)" in the sentence,
  * and its text is quoted in full after the paragraph. Headings sit at `headingLevel`, one under
  * the lesson's title.
  */
@@ -71,7 +71,7 @@ function TextBlockView({ block, headingLevel }: { block: TextBlock; headingLevel
   );
 }
 
-/** "**John 10:9 (WEB)** I am the door…", quoted. */
+/** "**John 10:9 (BSB)** I am the door…", quoted. */
 function VerseQuote({ verse }: { verse: VerseRef }) {
   return (
     <blockquote className="border-l-2 border-neutral-300 pl-4 whitespace-pre-line text-neutral-700 break-inside-avoid">

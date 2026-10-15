@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { passageText, passageVerses } from './lookup.ts';
-import type { BookText } from './usfm.ts';
+import type { BookText } from './book-text.ts';
 
 // A made-up book: chapter 1 has 3 verses (the second empty), chapter 2 has 2, chapter 3 has 1.
 const BOOK: BookText = { c: [['a1', '', 'a3'], ['b1', 'b2'], ['c1']], n: { '1:2': 'Some add…' } };

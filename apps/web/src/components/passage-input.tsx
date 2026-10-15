@@ -1,6 +1,5 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/click-events-have-key-events */
 import {
-  DEFAULT_TRANSLATION,
   describeParseError,
   type ParsedPassage,
   parseReference,
@@ -12,6 +11,7 @@ import { Input } from '@lamp/ui/components/input';
 import { cn } from 'cn';
 import { XIcon } from 'lucide-react';
 import { useId, useState } from 'react';
+import { useActiveTranslation } from '@/data/translation.ts';
 
 /** `lessonSchema` allows 20 main passages. */
 const MAX_PASSAGES = 20;
@@ -29,8 +29,8 @@ interface PassageInputProps {
  * completion; a reference that can't be read says why under the field and keeps the text.
  *
  * It's the ARIA combobox pattern (an input owning a listbox through `aria-activedescendant`), which
- * the lint's prefer-a-native-element rules (disabled at the top) don't know: `<datalist>` can't show
- * the KJV note or be styled, and the keyboard is handled on the input.
+ * the lint's prefer-a-native-element rules (disabled at the top) don't know: `<datalist>` can't be
+ * styled, and the keyboard is handled on the input.
  */
 export function PassageInput({ id, value, onChange }: PassageInputProps) {
   const [text, setText] = useState('');
@@ -39,13 +39,14 @@ export function PassageInput({ id, value, onChange }: PassageInputProps) {
   const [error, setError] = useState<string | null>(null);
   const listId = useId();
   const errorId = useId();
+  const translation = useActiveTranslation();
 
   const suggestions = open && text.trim() ? suggest(text) : [];
   const showList = suggestions.length > 0;
   const full = value.length >= MAX_PASSAGES;
 
   function add(passage: ParsedPassage) {
-    const ref: VerseRef = { ...passage, translation: DEFAULT_TRANSLATION };
+    const ref: VerseRef = { ...passage, translation };
     if (!value.some((v) => v.display === ref.display)) onChange([...value, ref]);
     setText('');
     setOpen(false);
@@ -149,7 +150,7 @@ export function PassageInput({ id, value, onChange }: PassageInputProps) {
             showList ? 'flex' : 'hidden',
           )}
         >
-          {suggestions.map(({ ref, mappedFrom }, i) => (
+          {suggestions.map(({ ref }, i) => (
             <li
               key={ref.display}
               id={`${listId}-${i}`}
@@ -161,11 +162,6 @@ export function PassageInput({ id, value, onChange }: PassageInputProps) {
               className="flex cursor-default flex-col rounded-md px-2 py-1.5 aria-selected:bg-accent aria-selected:text-accent-foreground pointer-coarse:min-h-11 pointer-coarse:justify-center"
             >
               {ref.display}
-              {mappedFrom && (
-                <span className="text-xs text-muted-foreground">
-                  Typed as {mappedFrom} (KJV numbering)
-                </span>
-              )}
             </li>
           ))}
         </ul>

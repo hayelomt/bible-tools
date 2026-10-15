@@ -48,7 +48,7 @@ CREATE TABLE "user_settings" (
     "user_id" UUID NOT NULL,
     "theme_preset" TEXT NOT NULL DEFAULT 'parchment',
     "color_mode" TEXT NOT NULL DEFAULT 'system',
-    "default_translation" TEXT NOT NULL DEFAULT 'WEB',
+    "default_translation" TEXT NOT NULL DEFAULT 'BSB',
     "review_window_days" INTEGER NOT NULL DEFAULT 14,
     "rev" BIGINT NOT NULL DEFAULT 0,
     "updated_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

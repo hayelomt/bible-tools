@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { AccountSection } from '@/components/account/account-section.tsx';
 import { ApiStatus } from '@/components/api-status.tsx';
-import { BibleStatus } from '@/components/bible-status.tsx';
+import { BibleSettings } from '@/components/bible-status.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
 import { ReminderSetting } from '@/components/review/reminder-setting.tsx';
@@ -33,7 +33,7 @@ function Settings() {
         </PageSection>
       )}
       <PageSection title="Bible">
-        <BibleStatus />
+        {settings && <BibleSettings value={settings.defaultTranslation} />}
         {settings && <VersePreviewSetting value={settings.autoPreviewVerses} />}
       </PageSection>
       {settings && (
@@ -54,13 +54,14 @@ function Settings() {
           </a>
         </p>
         <p className="text-sm">
-          Bible text: the World English Bible, public domain, from{' '}
+          Bible text: the{' '}
           <a
             className="text-primary underline-offset-4 hover:underline"
-            href="https://ebible.org/web/"
+            href="https://berean.bible/"
           >
-            eBible.org
-          </a>
+            Berean Standard Bible
+          </a>{' '}
+          and the King James Version, both public domain
         </p>
         <ApiStatus />
       </PageSection>

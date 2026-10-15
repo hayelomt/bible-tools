@@ -1,4 +1,4 @@
-import { WEB_VERSE_COUNTS } from './verse-counts.ts';
+import { VERSE_COUNTS } from './verse-counts.ts';
 
 /** The 66 canonical books as USFM ids, in canonical order (TECH-DESIGN §4.1). */
 export const BOOK_CODES = [
@@ -25,7 +25,7 @@ export interface Book {
   number?: 1 | 2 | 3;
   /** Every accepted spelling, normalised by `bookKey`: "1john", "1jn", "1jo", … */
   aliases: readonly string[];
-  /** Verses per chapter (index 0 = chapter 1), from the default translation (WEB). */
+  /** Verses per chapter (index 0 = chapter 1), in the numbering the translations share (KJV). */
   verses: readonly number[];
 }
 
@@ -158,7 +158,7 @@ export const BOOKS: readonly Book[] = BOOK_CODES.map((code, i) => {
     refName: spec.refName ?? spec.name,
     ...(number ? { number } : {}),
     aliases: [...aliases],
-    verses: WEB_VERSE_COUNTS[code],
+    verses: VERSE_COUNTS[code],
   };
 });
 

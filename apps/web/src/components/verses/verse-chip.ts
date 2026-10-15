@@ -1,11 +1,5 @@
 import type { BookText } from '@lamp/bible-data';
-import {
-  type BookCode,
-  DEFAULT_TRANSLATION,
-  TRANSLATION_NAMES,
-  type TranslationId,
-  type VerseRef,
-} from '@lamp/domain';
+import { type BookCode, TRANSLATION_NAMES, type TranslationId, type VerseRef } from '@lamp/domain';
 import { type Editor, Extension, type NodeViewRenderer } from '@tiptap/core';
 import { NodeSelection, Selection } from '@tiptap/pm/state';
 import { useSyncExternalStore } from 'react';
@@ -117,7 +111,7 @@ export function useOpenChip(): OpenChip | null {
   );
 }
 
-/** "John 10:9, World English Bible, verse. Show text." (UX-PATTERNS "Verse references"). */
+/** "John 10:9, Berean Standard Bible, verse. Show text." (UX-PATTERNS "Verse references"). */
 export function chipLabel(ref: Pick<VerseRef, 'display' | 'translation'>): string {
   const name = TRANSLATION_NAMES[ref.translation as TranslationId] ?? ref.translation;
   return `${ref.display}, ${name}, verse. Show text.`;
@@ -206,9 +200,11 @@ export const VerseSnapshots = Extension.create<unknown, { stop?: () => void }>({
 
   onCreate() {
     const { editor } = this;
-    this.storage.stop = onBookArrived((code) => {
-      if (!waitingFor(editor, code)) return;
-      void whenBook(code).then((text) => text && fillSnapshots(editor, code, text));
+    this.storage.stop = onBookArrived((translation, code) => {
+      if (!waitingFor(editor, translation, code)) return;
+      void whenBook(translation, code).then(
+        (text) => text && fillSnapshots(editor, translation, code, text),
+      );
     });
   },
 
@@ -217,28 +213,30 @@ export const VerseSnapshots = Extension.create<unknown, { stop?: () => void }>({
   },
 });
 
-function isWaiting(ref: VerseRef, code: BookCode): boolean {
-  return ref.book === code && !ref.snapshotText && ref.translation === DEFAULT_TRANSLATION;
+function isWaiting(ref: VerseRef, translation: TranslationId, code: BookCode): boolean {
+  return ref.book === code && !ref.snapshotText && ref.translation === translation;
 }
 
-function waitingFor(editor: Editor, code: BookCode): boolean {
+function waitingFor(editor: Editor, translation: TranslationId, code: BookCode): boolean {
   let found = false;
   editor.state.doc.descendants((node) => {
-    if (node.type.name === 'verse' && isWaiting(node.attrs as VerseRef, code)) found = true;
+    if (node.type.name === 'verse' && isWaiting(node.attrs as VerseRef, translation, code)) {
+      found = true;
+    }
     return !found;
   });
   return found;
 }
 
-function fillSnapshots(editor: Editor, code: BookCode, text: BookText) {
+function fillSnapshots(editor: Editor, translation: TranslationId, code: BookCode, text: BookText) {
   if (editor.isDestroyed) return;
   const { tr } = editor.state;
   editor.state.doc.descendants((node, pos) => {
     const ref = node.attrs as VerseRef;
-    if (node.type.name !== 'verse' || !isWaiting(ref, code)) return;
+    if (node.type.name !== 'verse' || !isWaiting(ref, translation, code)) return;
     // The node has every attribute, unset ones as null; a passage leaves them out.
     const passage = Object.fromEntries(Object.entries(ref).filter(([, v]) => v !== null));
-    const snapshot = snapshotText(text, passage as VerseRef);
+    const snapshot = snapshotText(text, passage as VerseRef, translation);
     if (snapshot) tr.setNodeAttribute(pos, 'snapshotText', snapshot);
   });
   // Not a step of its own for Undo: it completes the insert.

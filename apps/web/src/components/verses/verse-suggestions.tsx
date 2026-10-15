@@ -1,8 +1,9 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus */
-import { DEFAULT_TRANSLATION, type ParsedPassage } from '@lamp/domain';
+import type { ParsedPassage, TranslationId } from '@lamp/domain';
 import { cn } from 'cn';
 import { useEffect, useId, useLayoutEffect, useState } from 'react';
 import { snapshotText, useBook } from '@/data/bible.ts';
+import { useActiveTranslation } from '@/data/translation.ts';
 import { useKeyboardInset } from '@/lib/use-keyboard.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import type { PassageEntry, VerseSuggestionProps } from './verse-suggestion.ts';
@@ -21,7 +22,7 @@ interface VerseSuggestionsProps extends VerseSuggestionProps {
 
 /**
  * The verse suggestions (wireframes/verses.md "Verse autocomplete"): each passage the typed
- * reference could be, the selected one with its WEB text, or why the reference can't exist. The
+ * reference could be, the selected one with its text, or why the reference can't exist. The
  * editor keeps focus throughout: ↑ and ↓ choose, Enter inserts, a tap inserts.
  *
  * As in `PassageInput`, it's the ARIA combobox pattern (the editor points at the selected option
@@ -124,6 +125,7 @@ interface OptionProps {
 }
 
 function Option({ id, entry, selected, onChoose }: OptionProps) {
+  const translation = useActiveTranslation();
   return (
     <li
       id={id}
@@ -134,26 +136,22 @@ function Option({ id, entry, selected, onChoose }: OptionProps) {
     >
       <div className="flex items-baseline justify-between gap-2">
         <span>{entry.ref.display}</span>
-        {selected && <span className="text-xs text-muted-foreground">{DEFAULT_TRANSLATION}</span>}
+        {selected && <span className="text-xs text-muted-foreground">{translation}</span>}
       </div>
-      {entry.mappedFrom && (
-        <span className="text-xs text-muted-foreground">
-          Typed as {entry.mappedFrom} (KJV numbering)
-        </span>
-      )}
-      {selected && <Preview passage={entry.ref} />}
+      {selected && <Preview passage={entry.ref} translation={translation} />}
     </li>
   );
 }
 
-/** The selected passage's WEB text, numbered, a few lines of it. */
-function Preview({ passage }: { passage: ParsedPassage }) {
-  const book = useBook(passage.book);
+/** The selected passage's text in the active translation, numbered, a few lines of it. */
+function Preview({ passage, translation }: { passage: ParsedPassage; translation: TranslationId }) {
+  const book = useBook(translation, passage.book);
   if (book.status === 'ready') {
     return (
       <VerseText
         passage={passage}
-        text={snapshotText(book.text, passage)}
+        translation={translation}
+        text={snapshotText(book.text, passage, translation)}
         className="line-clamp-3"
       />
     );

@@ -137,7 +137,12 @@ function MemoryCard({ item, onGrade }: { item: MemoryItem; onGrade: (grade: Grad
         {!shown ? (
           <p className="text-muted-foreground">Say it from memory, then show the verse.</p>
         ) : ref.snapshotText ? (
-          <VerseText passage={ref} text={ref.snapshotText} className="text-[19px] leading-[1.6]" />
+          <VerseText
+            passage={ref}
+            translation={ref.translation}
+            text={ref.snapshotText}
+            className="text-[19px] leading-[1.6]"
+          />
         ) : (
           <p className="text-muted-foreground">
             Text not downloaded yet. It’s added when the Bible is downloaded.

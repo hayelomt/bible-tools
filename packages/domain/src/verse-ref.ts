@@ -1,11 +1,15 @@
 import { type BookCode, chapterCount, getBook, isBookCode, verseCount } from './books.ts';
 
-/** Translations with text in the app. Phase 1 ships WEB only (TECH-DESIGN §9). */
-export const TRANSLATIONS = ['WEB'] as const;
+/** Translations with text in the app (TECH-DESIGN §9). Both number verses the KJV's way. */
+export const TRANSLATIONS = ['BSB', 'KJV'] as const;
 export type TranslationId = (typeof TRANSLATIONS)[number];
-export const DEFAULT_TRANSLATION: TranslationId = 'WEB';
+/** A new device reads this one until the user picks another in settings. */
+export const DEFAULT_TRANSLATION: TranslationId = 'BSB';
 /** Each translation's full name, as an expanded chip and the reader show it. */
-export const TRANSLATION_NAMES: Record<TranslationId, string> = { WEB: 'World English Bible' };
+export const TRANSLATION_NAMES: Record<TranslationId, string> = {
+  BSB: 'Berean Standard Bible',
+  KJV: 'King James Version',
+};
 
 /**
  * A passage, without the text: one verse, a verse range, a whole chapter, a chapter range or a
@@ -78,8 +82,7 @@ export function formatPassage(p: Passage): string {
 
 /**
  * A passage as a short, exact address segment (the verse index URL): `ROM.8`, `ROM.8-9`,
- * `ROM.8.28`, `ROM.8.28-30`, `ROM.7.24-8.2`. Unlike the display text it is never re-read by the
- * parser, so no KJV numbering is mapped twice.
+ * `ROM.8.28`, `ROM.8.28-30`, `ROM.7.24-8.2`.
  */
 export function passageSlug(p: Passage): string {
   // `!= null`: a chip's attributes in the editor hold null for a missing field.

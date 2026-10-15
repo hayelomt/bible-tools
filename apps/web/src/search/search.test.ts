@@ -38,7 +38,7 @@ const ids: Record<string, string> = {};
 
 const verse = (p: Passage) => ({
   type: 'verse' as const,
-  attrs: { ...p, display: formatPassage(p), translation: 'WEB' as const },
+  attrs: { ...p, display: formatPassage(p), translation: 'BSB' as const },
 });
 const body = (...content: Array<string | ReturnType<typeof verse>>): SectionBody => ({
   type: 'doc',
@@ -295,7 +295,7 @@ describe('verse index', () => {
         ref: {
           ...ROM_8_28,
           display: 'Romans 8:28',
-          translation: 'WEB',
+          translation: 'BSB',
           snapshotText: 'We know that all things work together for good.',
         },
         colour: 'yellow',

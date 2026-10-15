@@ -14,7 +14,7 @@ const JHN_10: VerseRef = {
   verseStart: 1,
   verseEnd: 18,
   display: 'John 10:1–18',
-  translation: 'WEB',
+  translation: 'BSB',
 };
 
 const lesson = (fields: Partial<LessonFields> = {}): LessonFields => ({

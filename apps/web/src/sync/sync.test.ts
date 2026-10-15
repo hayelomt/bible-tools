@@ -409,7 +409,7 @@ const remoteLesson = (fields: Partial<Record<string, unknown>> = {}) => ({
   deletedAt: null,
   rev: 3,
   mainPassages: [
-    { book: 'JHN', chapter: 10, verseStart: 9, display: 'John 10:9', translation: 'WEB' },
+    { book: 'JHN', chapter: 10, verseStart: 9, display: 'John 10:9', translation: 'BSB' },
   ],
   ...fields,
 });

@@ -13,7 +13,7 @@ const JUDE: BookText = { c: [['Jude, a servant of Jesus Christ.', 'Mercy to you.
 
 const chip = (ref: Partial<VerseRef>) => ({
   type: 'verse' as const,
-  attrs: { translation: 'WEB' as const, ...ref } as VerseRef,
+  attrs: { translation: 'BSB' as const, ...ref } as VerseRef,
 });
 const jude2 = chip({ book: 'JUD', chapter: 1, verseStart: 2, display: 'Jude 2' });
 const john = chip({
@@ -36,18 +36,35 @@ const body = (...chips: ReturnType<typeof chip>[]): SectionBody => ({
 describe('withSnapshots', () => {
   it('fills the chips waiting for a book that is here, at any depth', () => {
     const waiting = body(jude2, john, jude2);
-    expect(booksWaiting(waiting)).toEqual(new Set(['JUD']));
-    const filled = withSnapshots(waiting, new Map([['JUD', JUDE]]))!;
+    expect(booksWaiting(waiting)).toEqual(new Set(['BSB:JUD']));
+    const filled = withSnapshots(waiting, new Map([['BSB:JUD', JUDE]]))!;
     expect(booksWaiting(filled)).toEqual(new Set());
     expect(JSON.stringify(filled).match(/Mercy to you\./g)).toHaveLength(2);
     // A chip with its text keeps it, and the body given is left as it was.
     expect(JSON.stringify(filled)).toContain('For God so loved the world.');
-    expect(booksWaiting(waiting)).toEqual(new Set(['JUD']));
+    expect(booksWaiting(waiting)).toEqual(new Set(['BSB:JUD']));
+  });
+
+  it('fills a chip from the book of its own translation', () => {
+    const kjv = chip({
+      book: 'JUD',
+      chapter: 1,
+      verseStart: 2,
+      display: 'Jude 2',
+      translation: 'KJV',
+    });
+    const waiting = body(kjv, jude2);
+    expect(booksWaiting(waiting)).toEqual(new Set(['KJV:JUD', 'BSB:JUD']));
+    const kjvJude: BookText = { c: [['Jude, the servant of Jesus Christ.', 'Mercy unto you.']] };
+    const filled = withSnapshots(waiting, new Map([['KJV:JUD', kjvJude]]))!;
+    expect(booksWaiting(filled)).toEqual(new Set(['BSB:JUD']));
+    expect(JSON.stringify(filled)).toContain('Mercy unto you.');
+    expect(JSON.stringify(filled)).not.toContain('Mercy to you.');
   });
 
   it('gives null when no waiting chip has its book', () => {
     expect(withSnapshots(body(jude2, john), new Map())).toBeNull();
-    expect(withSnapshots(body(john), new Map([['JUD', JUDE]]))).toBeNull();
+    expect(withSnapshots(body(john), new Map([['BSB:JUD', JUDE]]))).toBeNull();
   });
 });
 
@@ -59,9 +76,9 @@ describe('fillStoredSnapshots', () => {
     await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
     const files: Record<string, unknown> = {
       '/bible/manifest.json': {
-        translations: { WEB: { books: { JUD: { file: 'WEB/JUD.1.json' } } } },
+        translations: { BSB: { books: { JUD: { file: 'BSB/JUD.1.json' } } } },
       },
-      '/bible/WEB/JUD.1.json': JUDE,
+      '/bible/BSB/JUD.1.json': JUDE,
     };
     vi.stubGlobal('fetch', (url: string) => Promise.resolve(Response.json(files[url])));
   });

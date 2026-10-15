@@ -2,28 +2,28 @@ import type { BookText } from '@lamp/bible-data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bookState, numberedVerses, snapshotText, whenBook } from './bible.ts';
 
-// Acts 8 in miniature: verse 3 is one WEB leaves out.
+// Acts 8 in miniature: verse 3 is one the BSB leaves out.
 const BOOK: BookText = {
   c: [[], [], [], [], [], [], [], ['One.', 'Two.', '', 'Four.']],
-  n: { '8:3': 'TR adds a verse.' },
+  n: { '8:3': 'Some later manuscripts include this verse.' },
 };
 
 describe('snapshotText', () => {
   it('joins the verses of the passage', () => {
-    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 1, verseEnd: 2 })).toBe(
+    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 1, verseEnd: 2 }, 'BSB')).toBe(
       'One. Two.',
     );
   });
 
   it('skips a verse left out in a range', () => {
-    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 2, verseEnd: 4 })).toBe(
+    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 2, verseEnd: 4 }, 'BSB')).toBe(
       'Two. Four.',
     );
   });
 
-  it('gives the footnote, marked, for a verse left out on its own', () => {
-    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 3 })).toBe(
-      '[Not in WEB: TR adds a verse.]',
+  it('gives the note, marked, for a verse left out on its own', () => {
+    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 3 }, 'BSB')).toBe(
+      '[Not in BSB: Some later manuscripts include this verse.]',
     );
   });
 });
@@ -51,32 +51,48 @@ describe('numberedVerses', () => {
     const passage = { book: 'ACT', chapter: 8, verseStart: 1, verseEnd: 2 } as const;
     expect(numberedVerses(BOOK, passage, 'One. Two, as first published.')).toBeNull();
     const leftOut = { book: 'ACT', chapter: 8, verseStart: 3 } as const;
-    expect(numberedVerses(BOOK, leftOut, '[Not in WEB: TR adds a verse.]')).toBeNull();
+    expect(
+      numberedVerses(BOOK, leftOut, '[Not in BSB: Some later manuscripts include this verse.]'),
+    ).toBeNull();
   });
 });
 
 describe('whenBook', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('waits for the book, then gives it at once', async () => {
-    const files: Record<string, unknown> = {
-      '/bible/manifest.json': {
-        translations: { WEB: { books: { ACT: { file: 'WEB/ACT.1.json' } } } },
+  // The manifest is read once per page, so every test here shares one.
+  const KJV_3JN: BookText = { c: [['The elder unto the wellbeloved Gaius.']] };
+  const files: Record<string, unknown> = {
+    '/bible/manifest.json': {
+      translations: {
+        BSB: { books: { ACT: { file: 'BSB/ACT.1.json' }, '3JN': { file: 'BSB/3JN.1.json' } } },
+        KJV: { books: { '3JN': { file: 'KJV/3JN.1.json' } } },
       },
-      '/bible/WEB/ACT.1.json': BOOK,
-    };
+    },
+    '/bible/BSB/ACT.1.json': BOOK,
+    '/bible/BSB/3JN.1.json': BOOK,
+    '/bible/KJV/3JN.1.json': KJV_3JN,
+  };
+
+  it('waits for the book, then gives it at once', async () => {
     const fetch = vi.fn<(url: string) => Promise<Response>>((url) =>
       Promise.resolve(Response.json(files[url])),
     );
     vi.stubGlobal('fetch', fetch);
-    expect(await whenBook('ACT')).toEqual(BOOK);
-    expect(bookState('ACT')).toEqual({ status: 'ready', text: BOOK });
-    expect(await whenBook('ACT')).toEqual(BOOK);
+    expect(await whenBook('BSB', 'ACT')).toEqual(BOOK);
+    expect(bookState('BSB', 'ACT')).toEqual({ status: 'ready', text: BOOK });
+    expect(await whenBook('BSB', 'ACT')).toEqual(BOOK);
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps each translation’s book apart', async () => {
+    vi.stubGlobal('fetch', (url: string) => Promise.resolve(Response.json(files[url])));
+    expect(await whenBook('KJV', '3JN')).toEqual(KJV_3JN);
+    expect(await whenBook('BSB', '3JN')).toEqual(BOOK);
   });
 
   it('gives null when the book can’t be fetched', async () => {
     vi.stubGlobal('fetch', () => Promise.reject(new TypeError('offline')));
-    expect(await whenBook('JUD')).toBeNull();
+    expect(await whenBook('BSB', 'JUD')).toBeNull();
   });
 });

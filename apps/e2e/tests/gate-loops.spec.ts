@@ -55,7 +55,7 @@ test('a question is answered and a verse reviewed from the queue, then the lesso
 
   // The verse memorised from its chip.
   await page
-    .getByRole('button', { name: 'John 10:9, World English Bible, verse. Show text.' })
+    .getByRole('button', { name: 'John 10:9, Berean Standard Bible, verse. Show text.' })
     .click();
   await page.getByRole('dialog').getByRole('button', { name: 'Memorise' }).click();
   await expect(toast(page, 'John 10:9 added to memory verses.')).toBeVisible();
@@ -83,9 +83,9 @@ test('a question is answered and a verse reviewed from the queue, then the lesso
   await tab(page, /^Review/).click();
   await expect(page.getByRole('heading', { name: /^Open questions/ })).toBeHidden();
   await page.getByRole('link', { name: 'Start' }).click();
-  await expect(page.getByText('John 10:9 · WEB')).toBeVisible();
+  await expect(page.getByText('John 10:9 · BSB')).toBeVisible();
   await page.getByRole('button', { name: 'Show the verse' }).click();
-  await expect(page.getByText('I am the door.')).toBeVisible();
+  await expect(page.getByText('I am the gate.')).toBeVisible();
   await page.getByRole('button', { name: 'Good, due tomorrow' }).click();
   await expect(page.getByText('Done for today.')).toBeVisible();
   const [item] = await rows<{ interval: number; reviewCount: number }>(page, 'memoryItem');
@@ -103,7 +103,7 @@ test('a question is answered and a verse reviewed from the queue, then the lesso
   await dialog.getByRole('button', { name: 'Markdown file (.md)' }).click();
   const markdown = await readFile((await (await downloading).path())!, 'utf8');
   expect(markdown).toMatch(/^# The Good Shepherd\n/);
-  expect(markdown).toContain('> **John 10:9 (WEB)** I am the door.');
+  expect(markdown).toContain('> **John 10:9 (BSB)** I am the gate.');
   expect(markdown).toContain('## Who are the other sheep?\n\nOther flocks, one shepherd.');
   expect(markdown).toContain('## Questions\n\n- [x] Who are the other sheep?');
 
@@ -117,7 +117,7 @@ test('a question is answered and a verse reviewed from the queue, then the lesso
     .toBe(1);
   const main = page.getByRole('main');
   await expect(main.getByRole('heading', { level: 1 })).toHaveText('The Good Shepherd');
-  await expect(main.locator('blockquote')).toContainText('John 10:9 (WEB) I am the door.');
+  await expect(main.locator('blockquote')).toContainText('John 10:9 (BSB) I am the gate.');
   await expect(
     main.getByRole('heading', { level: 2, name: 'Who are the other sheep?' }),
   ).toBeVisible();
