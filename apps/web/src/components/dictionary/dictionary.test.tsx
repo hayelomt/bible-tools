@@ -17,7 +17,7 @@ const v = (verse: number, text: string, book: PageVerse['book'] = 'JHN'): PageVe
 const terms = (list: HTMLElement) =>
   within(list)
     .getAllByRole('listitem')
-    .map((item) => item.querySelector('.font-serif')?.textContent);
+    .map((item) => item.querySelector('dfn')?.textContent);
 
 describe('DictionaryPanel', () => {
   it('lists the page’s old words with their verses, then the grammar notes', () => {
