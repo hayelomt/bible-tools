@@ -34,11 +34,18 @@ precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
 // The chosen look's stylesheet and fonts, from the copy the page stores (src/lib/looks.ts), so
-// the inline script's <link> works offline. Anything not stored goes to the network.
+// the inline script's <link> works offline. Anything not stored goes to the network, except that
+// <link> (`?stored`): it blocks the first paint, so on a slow connection the page would show
+// nothing until the request gave up. It fails at once instead; the page starts in Classic and
+// links the look itself.
 registerRoute(
   ({ url }) => url.origin === self.location.origin && LOOK_FILE.test(url.pathname),
-  async ({ request }) =>
-    (await caches.match(request, { cacheName: LOOKS_CACHE })) ?? fetch(request),
+  async ({ request, url }) => {
+    if (url.searchParams.has('stored')) {
+      return (await caches.match(url.pathname, { cacheName: LOOKS_CACHE })) ?? Response.error();
+    }
+    return (await caches.match(request, { cacheName: LOOKS_CACHE })) ?? fetch(request);
+  },
 );
 
 // Every address in the app is the same page; the router shows the screen.

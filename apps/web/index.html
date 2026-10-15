@@ -28,6 +28,8 @@
         root.style.colorScheme = dark ? 'dark' : 'light';
         // A downloaded look: its stylesheet, from the offline copy, written in so it blocks the
         // first paint like any stylesheet in <head>. Mirrors readTheme's LOOK_HREF check.
+        // `stored` has the service worker answer from that copy only (src/sw.ts), so a slow
+        // connection never holds up the first paint; without one the page starts in Classic.
         var looks = ['folio', 'soft', 'lamplight'];
         var href = choice.lookHref;
         if (
@@ -36,7 +38,8 @@
           /^\/[\w\-./@]+\.css(\?[\w=&-]*)?$/.test(href)
         ) {
           root.dataset.look = choice.look;
-          document.write('<link id="lamp-look" rel="stylesheet" href="' + href + '">');
+          var stored = href + (href.indexOf('?') < 0 ? '?' : '&') + 'stored';
+          document.write('<link id="lamp-look" rel="stylesheet" href="' + stored + '">');
         }
       })();
     </script>

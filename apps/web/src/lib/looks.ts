@@ -70,12 +70,15 @@ export async function showLook(look: LookId): Promise<void> {
 }
 
 /**
- * Resolves once the stylesheet applies. The one the inline script linked counts if it's the same
- * file; an older one (from before an update) stays if the new one can't be fetched.
+ * Resolves once the stylesheet applies. The one the inline script linked (`?stored`) counts if
+ * it's the same file; an older one (from before an update) stays if the new one can't be fetched.
  */
 function linkStylesheet(href: string): Promise<void> {
   const existing = document.getElementById(LINK_ID) as HTMLLinkElement | null;
-  if (existing?.getAttribute('href') === href && existing.sheet) return Promise.resolve();
+  const linked = existing && new URL(existing.href).pathname;
+  if (linked === new URL(href, location.href).pathname && applies(existing)) {
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -87,11 +90,23 @@ function linkStylesheet(href: string): Promise<void> {
     });
     link.addEventListener('error', () => {
       link.remove();
-      if (existing?.sheet) resolve();
+      if (applies(existing)) resolve();
       else reject(new Error(`Couldn't load ${href}`));
     });
     document.head.append(link);
   });
+}
+
+/**
+ * Whether a linked stylesheet loaded. One that failed can still have a `sheet`, as the inline
+ * script's does when the service worker has no stored copy, and reading its rules throws.
+ */
+function applies(link: HTMLLinkElement | null): boolean {
+  try {
+    return (link?.sheet?.cssRules.length ?? 0) > 0;
+  } catch {
+    return false;
+  }
 }
 
 /**
