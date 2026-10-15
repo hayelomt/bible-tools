@@ -1,6 +1,6 @@
 {
   "name": "@lamp/web",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "Lamp web app: React 19 + Vite PWA",
