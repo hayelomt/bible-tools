@@ -45,8 +45,10 @@ const TONES: Record<Tone, { icon: typeof CircleCheck; className: string }> = {
 /**
  * The sync status (wireframes/sync.md, UX-PATTERNS "Offline and sync"): one line in the phone's
  * header and at the foot of the laptop's sidebar. Quiet while all is well; the destructive colour
- * only when the user has to act. A tap opens the sync panel, a sheet on a phone and a popover on
- * a laptop. Changes are announced politely (`role="status"`).
+ * only when the user has to act. On a phone a quiet state is its icon alone, so the screen's
+ * title has the room; its words are still read out (decided 2026-10-15). A tap opens the sync
+ * panel, a sheet on a phone and a popover on a laptop. Changes are announced politely
+ * (`role="status"`).
  */
 export function SyncStatus({ className }: { className?: string }) {
   const sync = useSync();
@@ -57,7 +59,7 @@ export function SyncStatus({ className }: { className?: string }) {
   const trigger = (
     <>
       <Icon aria-hidden className="size-4 shrink-0" />
-      <output className="truncate">{text}</output>
+      <output className={cn('truncate', tone !== 'act' && 'max-sm:sr-only')}>{text}</output>
     </>
   );
   const triggerClass = cn(
@@ -82,7 +84,14 @@ export function SyncStatus({ className }: { className?: string }) {
   }
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger className={cn(triggerClass, 'px-2')} aria-label={`Sync: ${text}`}>
+      <SheetTrigger
+        className={cn(
+          triggerClass,
+          'px-2',
+          tone !== 'act' && 'justify-center max-sm:pointer-coarse:min-w-11',
+        )}
+        aria-label={`Sync: ${text}`}
+      >
         {trigger}
       </SheetTrigger>
       <SheetContent

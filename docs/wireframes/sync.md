@@ -9,16 +9,19 @@ Always in the same place: the header on a phone, the foot of the sidebar on a la
 when all is well, and it only uses the destructive colour when the user has to act. A tap opens the
 sync panel. Changes are announced to screen readers politely (`role="status"`).
 
-| State | Indicator | Meaning |
-|---|---|---|
-| Guest | `◌ On this device` | No account. Nothing is backed up. |
-| Synced | `✓ Synced` | Nothing waiting; last sync under a minute ago. |
-| Syncing | `◌ Syncing…` | A push or pull is running. Shown only after 1 s, so quick syncs don't flicker. |
-| Offline | `◌ Offline · 3 waiting` | No connection; "3 waiting" only when the outbox isn't empty. |
-| Verify email | `! Verify your email` | Signed up, not verified; nothing syncs yet. |
-| Signed out | `! Sign in to sync` | Session expired or ended; changes wait in the outbox. |
-| Update required | `! Update Lamp` | The server needs a newer version (`426`). |
-| Problem | `! Sync problem` | Changes rejected, or retries failing for over 10 minutes. |
+On a phone the quiet states (`◌` and `✓`) show their icon alone, so the screen's title keeps its
+room; the words are still read out. The states where the user has to act (`!`) keep their words.
+
+| State           | Indicator               | Meaning                                                                        |
+| --------------- | ----------------------- | ------------------------------------------------------------------------------ |
+| Guest           | `◌ On this device`      | No account. Nothing is backed up.                                              |
+| Synced          | `✓ Synced`              | Nothing waiting; last sync under a minute ago.                                 |
+| Syncing         | `◌ Syncing…`            | A push or pull is running. Shown only after 1 s, so quick syncs don't flicker. |
+| Offline         | `◌ Offline · 3 waiting` | No connection; "3 waiting" only when the outbox isn't empty.                   |
+| Verify email    | `! Verify your email`   | Signed up, not verified; nothing syncs yet.                                    |
+| Signed out      | `! Sign in to sync`     | Session expired or ended; changes wait in the outbox.                          |
+| Update required | `! Update Lamp`         | The server needs a newer version (`426`).                                      |
+| Problem         | `! Sync problem`        | Changes rejected, or retries failing for over 10 minutes.                      |
 
 ## Sync panel (M3-11)
 
