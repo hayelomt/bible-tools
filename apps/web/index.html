@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="parchment">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,40 +7,21 @@
     <meta name="description" content="Sermon and Bible study notes, on your device and offline." />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#f9f2e2" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1d140e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8f3e9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#110c09" media="(prefers-color-scheme: dark)" />
     <script>
-      // Applies the saved theme and look before the first paint (TECH-DESIGN §8.5). Mirrors
-      // readTheme, resolveMode and applyTheme in @lamp/ui/themes/presets, and showLook in
-      // src/lib/looks.ts; keep them in step.
+      // Applies the saved colour mode before the first paint (TECH-DESIGN §8.5). Mirrors
+      // readMode, resolveMode and applyMode in @lamp/ui/themes/theme; keep them in step.
       (function () {
-        var presets = ['parchment', 'vellum', 'olive', 'slate', 'cedar', 'midnight'];
-        var root = document.documentElement;
-        var choice = {};
+        var mode;
         try {
-          choice = JSON.parse(localStorage.getItem('lamp.theme') || '{}') || {};
+          mode = (JSON.parse(localStorage.getItem('lamp.theme') || '{}') || {}).mode;
         } catch (e) {}
-        if (presets.indexOf(choice.preset) >= 0) root.dataset.theme = choice.preset;
         var dark =
-          choice.mode === 'dark' ||
-          (choice.mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+          mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        var root = document.documentElement;
         root.classList.toggle('dark', dark);
         root.style.colorScheme = dark ? 'dark' : 'light';
-        // A downloaded look: its stylesheet, from the offline copy, written in so it blocks the
-        // first paint like any stylesheet in <head>. Mirrors readTheme's LOOK_HREF check.
-        // `stored` has the service worker answer from that copy only (src/sw.ts), so a slow
-        // connection never holds up the first paint; without one the page starts in Classic.
-        var looks = ['folio', 'soft', 'lamplight'];
-        var href = choice.lookHref;
-        if (
-          looks.indexOf(choice.look) >= 0 &&
-          typeof href === 'string' &&
-          /^\/[\w\-./@]+\.css(\?[\w=&-]*)?$/.test(href)
-        ) {
-          root.dataset.look = choice.look;
-          var stored = href + (href.indexOf('?') < 0 ? '?' : '&') + 'stored';
-          document.write('<link id="lamp-look" rel="stylesheet" href="' + stored + '">');
-        }
       })();
     </script>
   </head>

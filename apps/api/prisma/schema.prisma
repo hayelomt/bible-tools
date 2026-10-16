@@ -87,13 +87,10 @@ model EmailToken {
   @@map("email_token")
 }
 
-// themePreset: parchment | vellum | olive | slate | cedar | midnight
 // colorMode: light | dark | system
 model UserSettings {
   userId             String   @id @map("user_id") @db.Uuid
-  themePreset        String   @default("parchment") @map("theme_preset")
   colorMode          String   @default("system") @map("color_mode")
-  look               String   @default("classic")
   defaultTranslation String   @default("BSB") @map("default_translation")
   reviewWindowDays   Int      @default(14) @map("review_window_days")
   autoPreviewVerses  Boolean  @default(true) @map("auto_preview_verses")

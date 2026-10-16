@@ -1,7 +1,7 @@
 # Wireframes — app shell and settings
 
 Low-fi layouts for M2-02, M2-03 and M2-11. They show what is on each screen and where; colours, type
-and exact spacing come from the components and the presets. Rules that apply everywhere are in
+and exact spacing come from the components and the theme. Rules that apply everywhere are in
 [UX-PATTERNS.md](../UX-PATTERNS.md).
 
 Legend: `[ Button ]` · `[ field____ ]` · `( A | B )` segmented control · `[○ ]` / `[● ]` switch off / on ·
@@ -70,8 +70,7 @@ blocker.
 │ [ Sign up ]  [ Sign in ]             │
 │                                      │
 │ APPEARANCE                           │
-│ Theme                    Parchment › │  ← the look; the preset with Classic
-│ Mode       ( Light | Dark | System ) │
+│ Mode         ( Light | Dark | Auto ) │  ← the only appearance setting
 │                                      │
 │ BIBLE                                │
 │ Translation            ( BSB | KJV ) │
@@ -106,60 +105,22 @@ Signed in, the account section becomes (M3-03, M3-12):
 │ Delete account…                      │  ← at the very end, in the destructive colour
 ```
 
-## Theme picker (M2-03, M2-14)
+## Appearance (M2-03, M2-15)
 
-A bottom sheet over Settings, opened from the Theme row (decided 2026-10-13). On a laptop it's
-the same sheet, centred and no wider than the column. It closes with Esc, a tap outside or ×.
-A tap applies a choice at once; there is no Save.
-
-Two choices, then the mode. The **look** decides how the whole interface is drawn: Classic, Folio,
-Soft or Lamplight (TECH-DESIGN §8.5). Classic's card is drawn live in the chosen preset; the
-others by a picture of the look in the current mode, since their stylesheet isn't downloaded
-until they're chosen. The **presets** colour Classic only, so they show only with Classic; each
-card is drawn in its own preset (`data-theme` on the card) in the current mode, so the choice is
-visible before it's made. With the looks first, the presets are usually below the fold.
+One theme, Lamplight, in light and dark (TECH-DESIGN §8.5), so Appearance holds only the mode.
+There is no Theme row and no sheet (the theme picker, its looks and presets were removed on
+2026-10-16). A tap applies the mode at once; there is no Save.
 
 ```text
-│ Settings (dimmed)                    │
-╭──────────────────────────────────────╮
-│ Theme                              × │
+│ APPEARANCE                           │
+│ Mode         ( Light | Dark | Auto ) │
 │                                      │
-│ ┌────────────────┐ ┌────────────────┐│
-│ │ [ preview ]    │ │ [ picture ]    ││  ← Classic live; the others a picture
-│ │ Classic      ✓ │ │ Folio          ││
-│ │ Clean and fam… │ │ Like a printed…││
-│ └────────────────┘ └────────────────┘│
-│ ┌────────────────┐ ┌────────────────┐│
-│ │ Soft           │ │ Lamplight      ││
-│ └────────────────┘ └────────────────┘│
-│ Downloading Folio…                   │  ← only while a look downloads, or if it can't
-│                                      │
-│ Mode       ( Light | Dark | System ) │
-│                                      │
-│ ┌────────────────┐ ┌────────────────┐│
-│ │ Aa  Grace ▬▬   │ │ Aa  Grace ▬▬   ││  ← sample text, a badge, a button
-│ │ Parchment    ✓ │ │ Vellum         ││
-│ └────────────────┘ └────────────────┘│
-│ ┌────────────────┐ ┌────────────────┐│
-│ │ Olive          │ │ Slate          ││
-│ └────────────────┘ └────────────────┘│
-│ ┌────────────────┐ ┌────────────────┐│
-│ │ Cedar          │ │ Midnight       ││
-│ └────────────────┘ └────────────────┘│
-│                                      │
-│ Midnight is made for dark mode.      │  ← only with Midnight in light mode
-│ [ Use dark mode ]                    │
-└──────────────────────────────────────┘  ← scrolls inside the sheet past 85 % of the screen
 ```
 
-With Folio, Soft or Lamplight chosen, the sheet ends after the mode control: the look brings its
-own colours.
-
-Looks and presets are two radio groups of cards: arrow keys move within each, the selected card
-has `aria-checked`. A look that is still downloading leaves the interface as it was until its
-stylesheet has arrived, so it never shows half-applied. Offline with no stored copy, the line
-under the looks says "Folio couldn't be downloaded. It's applied when you're back online." and
-Classic stays until then.
+- **Auto** (`system`, the default) follows the device, and changes with it while the app is open.
+- The control is three native radios in one group (a segmented control): arrow keys move
+  between them. The same control is on the first-run welcome (lessons.md).
+- The mode is synced and applies before the first paint, so a reload never flashes the other one.
 
 ## Bible download (M2-11)
 

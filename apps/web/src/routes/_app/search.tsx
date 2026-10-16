@@ -18,6 +18,7 @@ import {
   textResults,
   verseResults,
 } from '@/search/results.ts';
+import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 
 interface SearchParams {
   /** What's in the box, so going back to search shows the same results. */
@@ -244,7 +245,7 @@ function VerseResults({
 }) {
   const { passage } = query;
   const groups = useLiveQuery(() => verseResults(passage), [passage.display]);
-  if (!groups) return null;
+  if (!groups) return <ScreenSkeleton rows={3} />;
   if (groups.length === 0) {
     return (
       <p className="py-8 text-center text-muted-foreground">No notes cite {passage.display} yet.</p>
@@ -283,7 +284,9 @@ function TagResults({
   const suggestions = useLiveQuery(() => (tag ? [] : tagSuggestions(name)), [name, tag]);
   const groups = useLiveQuery(async () => (tag ? tagResults(tag.id) : []), [tag?.id]);
 
-  if (tag === undefined || suggestions === undefined || groups === undefined) return null;
+  if (tag === undefined || suggestions === undefined || groups === undefined) {
+    return <ScreenSkeleton rows={3} />;
+  }
   if (tag) {
     return (
       <>

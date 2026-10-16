@@ -1,0 +1,238 @@
+/*
+ * Lamplight's surfaces: glass panels with lit edges and amber for what matters. The colour tokens
+ * are in globals.css. Plain CSS outside Tailwind's layers, so these rules win over the
+ * components' utilities.
+ *
+ * Kept cheap to paint: the lamp's glow is one fixed layer behind the page (no
+ * `background-attachment: fixed`), and only the two bars, one of each per page, blur what's
+ * behind them.
+ */
+
+/*
+ * The lamp's light, the glass fill and the lit edge of a panel, per mode. The edge is a gradient
+ * drawn under a transparent border (`padding-box` fill over a `border-box` edge).
+ */
+body {
+  --lamp: oklch(0.78 0.15 70);
+  --lamp-glass: color-mix(in oklch, var(--card) 72%, transparent);
+  --lamp-panel: color-mix(in oklch, var(--card) 88%, transparent);
+  --lamp-edge: linear-gradient(
+    160deg,
+    oklch(0.5 0.08 60 / 0.3),
+    oklch(0.5 0.08 60 / 0.08) 40%,
+    oklch(0.5 0.08 60 / 0.16)
+  );
+  --lamp-lit-edge: linear-gradient(150deg, oklch(0.7 0.15 65 / 0.8), oklch(0.5 0.08 60 / 0.1) 45%);
+  --lamp-glow: 0 0 22px -4px color-mix(in oklch, var(--lamp) 55%, transparent);
+  --lamp-light:
+    radial-gradient(50rem 32rem at 12% -8%, oklch(0.88 0.08 75 / 0.7), transparent 65%),
+    radial-gradient(36rem 24rem at 100% 100%, oklch(0.9 0.05 45 / 0.5), transparent 70%);
+}
+
+.dark body {
+  --lamp: oklch(0.82 0.14 75);
+  --lamp-glass: color-mix(in oklch, var(--card) 60%, transparent);
+  --lamp-panel: color-mix(in oklch, var(--card) 85%, transparent);
+  --lamp-edge: linear-gradient(
+    160deg,
+    oklch(1 0 0 / 0.16),
+    oklch(1 0 0 / 0.03) 40%,
+    oklch(1 0 0 / 0.07)
+  );
+  --lamp-lit-edge: linear-gradient(150deg, oklch(0.82 0.14 75 / 0.6), oklch(1 0 0 / 0.04) 45%);
+  --lamp-glow: 0 0 24px -2px color-mix(in oklch, var(--lamp) 45%, transparent);
+  --lamp-light:
+    radial-gradient(50rem 32rem at 12% -8%, oklch(0.55 0.13 65 / 0.32), transparent 65%),
+    radial-gradient(36rem 24rem at 100% 100%, oklch(0.45 0.12 35 / 0.18), transparent 70%);
+}
+
+/* The lamp: painted once, fixed behind everything, so scrolling never repaints it. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--lamp-light);
+  pointer-events: none;
+}
+
+@media print {
+  body::before {
+    display: none;
+  }
+}
+
+/* ---- Type --------------------------------------------------------------------------------- */
+
+:is(
+  [data-slot='screen-title'],
+  [data-slot='welcome-title'],
+  [data-slot='lesson-title-input'],
+  [data-slot='brand']
+) {
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+[data-slot='welcome-title'] {
+  font-size: 2.25rem;
+  line-height: 1.05;
+  background: linear-gradient(90deg, var(--foreground) 40%, var(--primary));
+  background-clip: text;
+  color: transparent;
+}
+
+:is([data-slot='page-section-title'], [data-slot='row-meta']) {
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+[data-slot='page-section-title'] {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+[data-slot='row-title'] {
+  font-weight: 550;
+}
+
+/* ---- Shell -------------------------------------------------------------------------------- */
+
+[data-slot='sidebar'] {
+  background: transparent;
+  border-right-color: transparent;
+}
+
+[data-slot='brand'] {
+  text-shadow: 0 0 18px color-mix(in oklch, var(--lamp) 60%, transparent);
+}
+
+[data-slot='sidebar'] a:not([data-slot='brand']) {
+  border-radius: 0.5rem;
+}
+
+/* The page you're on: a lit strip at the left edge, like a bookmark catching the light. */
+[data-slot='sidebar'] a[aria-current='page']:not([data-slot='brand']) {
+  background: var(--lamp-glass);
+  box-shadow:
+    inset 2px 0 0 var(--primary),
+    -8px 0 16px -8px var(--lamp);
+}
+
+[data-slot='screen-header'] {
+  border-bottom-color: transparent;
+  background: transparent;
+  backdrop-filter: blur(14px);
+  mask-image: linear-gradient(to bottom, black 75%, transparent);
+}
+
+[data-slot='bottom-nav'] {
+  border-top-color: transparent;
+  background:
+    linear-gradient(var(--lamp-glass), var(--lamp-glass)) padding-box,
+    var(--lamp-edge) border-box;
+  backdrop-filter: blur(18px) saturate(1.3);
+}
+
+[data-slot='bottom-nav'] a[aria-current='page'] {
+  color: var(--primary);
+  box-shadow: inset 0 2px 0 var(--primary);
+}
+
+[data-slot='bottom-nav'] a[aria-current='page'] svg {
+  filter: drop-shadow(0 0 6px var(--lamp));
+}
+
+/* ---- Panels: glass with a lit edge ------------------------------------------------------- */
+
+[data-slot='row-list'] {
+  padding: 0.25rem;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  background:
+    linear-gradient(var(--lamp-panel), var(--lamp-panel)) padding-box,
+    var(--lamp-edge) border-box;
+}
+
+[data-slot='row-list'] > li {
+  border-width: 0;
+}
+
+[data-slot='row-list'] a {
+  margin-inline: 0;
+  padding-inline: 0.75rem;
+  border-radius: 0.75rem;
+}
+
+[data-slot='row-meta'] {
+  color: var(--muted-foreground);
+}
+
+:is(
+  [data-slot='card'],
+  [data-slot='dialog-content'],
+  [data-slot='sheet-content'],
+  [data-slot='popover-content'],
+  [data-slot='dropdown-menu-content'],
+  [data-slot='select-content']
+) {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    var(--lamp-edge) border-box;
+  box-shadow: 0 24px 48px -20px oklch(0 0 0 / 0.45);
+}
+
+[data-slot='card'] {
+  background:
+    linear-gradient(var(--lamp-panel), var(--lamp-panel)) padding-box,
+    var(--lamp-lit-edge) border-box;
+  box-shadow: none;
+}
+
+/* ---- Controls ----------------------------------------------------------------------------- */
+
+[data-slot='button'][data-variant='default'] {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--lamp) 50%, transparent),
+    var(--lamp-glow),
+    inset 0 1px 0 oklch(1 0 0 / 0.35);
+  font-weight: 600;
+}
+
+[data-slot='button'][data-variant='default']:hover {
+  transform: translateY(-1px);
+}
+
+[data-slot='button']:is([data-variant='outline'], [data-variant='secondary']) {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--lamp-glass), var(--lamp-glass)) padding-box,
+    var(--lamp-edge) border-box;
+}
+
+:is([data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger']) {
+  background: var(--lamp-glass);
+}
+
+:is([data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger']):focus-visible {
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--ring) 25%, transparent),
+    var(--lamp-glow);
+}
+
+/* ---- Notes -------------------------------------------------------------------------------- */
+
+[data-slot='verse-chip'] {
+  padding-inline: 0.375rem;
+  border: 1px solid color-mix(in oklch, var(--primary) 40%, transparent);
+  border-radius: 0.375rem;
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  color: var(--primary);
+  font-size: 0.8em;
+}
+
+[data-slot='verse-chip']:hover {
+  box-shadow: 0 0 16px -2px var(--lamp);
+}

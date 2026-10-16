@@ -25,17 +25,7 @@ export const LESSON_SOURCES = ['sermon', 'personal', 'group'] as const;
 export const QUESTION_STATUSES = ['open', 'answered', 'parked'] as const;
 export const HIGHLIGHT_COLOURS = ['yellow', 'green', 'blue', 'pink'] as const;
 export const CITATION_SOURCE_TYPES = ['lesson', 'section', 'highlight', 'memory_item'] as const;
-export const THEME_PRESETS = [
-  'parchment',
-  'vellum',
-  'olive',
-  'slate',
-  'cedar',
-  'midnight',
-] as const;
 export const COLOR_MODES = ['light', 'dark', 'system'] as const;
-/** How the interface is drawn; `classic` is built in, the others are downloaded when chosen. */
-export const THEME_LOOKS = ['classic', 'folio', 'soft', 'lamplight'] as const;
 export const USER_ROLES = ['user', 'admin'] as const;
 
 /** Fields every synced row carries (§5.1). */
@@ -51,10 +41,8 @@ const synced = {
 
 /** One row per account, keyed by the user, so it has no id, createdAt or tombstone. */
 export const userSettingsSchema = z.strictObject({
-  themePreset: z.enum(THEME_PRESETS),
+  /** Light, dark, or "system" (Auto: follows the device). The app has one theme, Lamplight. */
   colorMode: z.enum(COLOR_MODES),
-  /** Folio brings its own colours; the preset applies to Classic. */
-  look: z.enum(THEME_LOOKS),
   defaultTranslation: z.enum(TRANSLATIONS),
   reviewWindowDays: z.int().min(1).max(365),
   /** Each paragraph's verse chips show their text under it (F3). */

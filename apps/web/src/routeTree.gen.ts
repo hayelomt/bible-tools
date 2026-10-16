@@ -20,9 +20,7 @@ import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as AppSigninRouteImport } from './routes/_app/signin'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppVerifyEmailRouteImport } from './routes/_app/verify-email'
-import { Route as DevLooksRouteImport } from './routes/dev.looks'
 import { Route as DevSeedRouteImport } from './routes/dev.seed'
-import { Route as DevThemesRouteImport } from './routes/dev.themes'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
 import { Route as AppReadIndexRouteImport } from './routes/_app/read/index'
@@ -91,19 +89,9 @@ const AppVerifyEmailRoute = AppVerifyEmailRouteImport.update({
   path: '/verify-email',
   getParentRoute: () => AppRoute,
 } as any)
-const DevLooksRoute = DevLooksRouteImport.update({
-  id: '/dev/looks',
-  path: '/dev/looks',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DevSeedRoute = DevSeedRouteImport.update({
   id: '/dev/seed',
   path: '/dev/seed',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevThemesRoute = DevThemesRouteImport.update({
-  id: '/dev/themes',
-  path: '/dev/themes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppLessonsIndexRoute = AppLessonsIndexRouteImport.update({
@@ -189,9 +177,7 @@ export interface FileRoutesByFullPath {
   '/signin': typeof AppSigninRoute
   '/signup': typeof AppSignupRoute
   '/verify-email': typeof AppVerifyEmailRoute
-  '/dev/looks': typeof DevLooksRoute
   '/dev/seed': typeof DevSeedRoute
-  '/dev/themes': typeof DevThemesRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
   '/review/memory': typeof AppReviewMemoryRoute
@@ -217,9 +203,7 @@ export interface FileRoutesByTo {
   '/signin': typeof AppSigninRoute
   '/signup': typeof AppSignupRoute
   '/verify-email': typeof AppVerifyEmailRoute
-  '/dev/looks': typeof DevLooksRoute
   '/dev/seed': typeof DevSeedRoute
-  '/dev/themes': typeof DevThemesRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
   '/review/memory': typeof AppReviewMemoryRoute
@@ -247,9 +231,7 @@ export interface FileRoutesById {
   '/_app/signin': typeof AppSigninRoute
   '/_app/signup': typeof AppSignupRoute
   '/_app/verify-email': typeof AppVerifyEmailRoute
-  '/dev/looks': typeof DevLooksRoute
   '/dev/seed': typeof DevSeedRoute
-  '/dev/themes': typeof DevThemesRoute
   '/_app/': typeof AppIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/_app/read/$chapter': typeof AppReadChapterRoute
@@ -278,9 +260,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/verify-email'
-    | '/dev/looks'
     | '/dev/seed'
-    | '/dev/themes'
     | '/lessons/$lessonId'
     | '/read/$chapter'
     | '/review/memory'
@@ -306,9 +286,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/verify-email'
-    | '/dev/looks'
     | '/dev/seed'
-    | '/dev/themes'
     | '/lessons/$lessonId'
     | '/read/$chapter'
     | '/review/memory'
@@ -335,9 +313,7 @@ export interface FileRouteTypes {
     | '/_app/signin'
     | '/_app/signup'
     | '/_app/verify-email'
-    | '/dev/looks'
     | '/dev/seed'
-    | '/dev/themes'
     | '/_app/'
     | '/_app/lessons/$lessonId'
     | '/_app/read/$chapter'
@@ -358,9 +334,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   PrintRoute: typeof PrintRouteWithChildren
-  DevLooksRoute: typeof DevLooksRoute
   DevSeedRoute: typeof DevSeedRoute
-  DevThemesRoute: typeof DevThemesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -442,25 +416,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVerifyEmailRouteImport
       parentRoute: typeof AppRoute
     }
-    '/dev/looks': {
-      id: '/dev/looks'
-      path: '/dev/looks'
-      fullPath: '/dev/looks'
-      preLoaderRoute: typeof DevLooksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/dev/seed': {
       id: '/dev/seed'
       path: '/dev/seed'
       fullPath: '/dev/seed'
       preLoaderRoute: typeof DevSeedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/themes': {
-      id: '/dev/themes'
-      path: '/dev/themes'
-      fullPath: '/dev/themes'
-      preLoaderRoute: typeof DevThemesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/lessons/': {
@@ -629,9 +589,7 @@ const PrintRouteWithChildren = PrintRoute._addFileChildren(PrintRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   PrintRoute: PrintRouteWithChildren,
-  DevLooksRoute: DevLooksRoute,
   DevSeedRoute: DevSeedRoute,
-  DevThemesRoute: DevThemesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

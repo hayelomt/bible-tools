@@ -11,7 +11,7 @@ let dbCount = 0;
 
 beforeEach(async () => {
   db = new LampDb(`seed-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'olive', colorMode: 'dark', look: 'classic' });
+  await ensureDevice(db, { colorMode: 'dark' });
 });
 
 afterEach(async () => {
@@ -65,7 +65,6 @@ describe('clearDevice', () => {
     expect(await db.citation.count()).toBe(0);
     expect(await db.tag.count()).toBe(SEED_TAGS.length);
     expect(await db.userSettings.get(SETTINGS_KEY)).toMatchObject({
-      themePreset: 'olive',
       colorMode: 'dark',
     });
   });

@@ -110,16 +110,14 @@ function rowOf(entity: RowEntity, to: Rows): Row {
   }
 }
 
-const settings = (themePreset: string) => ({
+const settings = (colorMode: string) => ({
   changeId: newId(),
   baseRev: 0,
   clientTime: NOW,
   entity: 'userSettings' satisfies EntityName,
   op: 'upsert',
   row: {
-    themePreset,
-    colorMode: 'dark',
-    look: 'classic',
+    colorMode,
     defaultTranslation: 'BSB',
     reviewWindowDays: 14,
     autoPreviewVerses: false,
@@ -230,11 +228,11 @@ describe('overwriting', () => {
   it('my settings are mine: pushing them leaves theirs', async () => {
     const their = await theirAccount();
     const mine = await signUp();
-    const [result] = await pushOk(client, mine, [settings('midnight')]);
+    const [result] = await pushOk(client, mine, [settings('dark')]);
     expect(result).toMatchObject({ status: 'applied' });
     await expect(
       t.prisma.userSettings.findUniqueOrThrow({ where: { userId: mine.id } }),
-    ).resolves.toMatchObject({ themePreset: 'midnight' });
+    ).resolves.toMatchObject({ colorMode: 'dark' });
     await expectUntouched(their);
   });
 

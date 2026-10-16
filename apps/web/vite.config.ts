@@ -65,6 +65,33 @@ function bibleText(): Plugin {
 }
 
 /**
+ * Preloads the app's one font (Inter Tight, Latin) in the built page, so it downloads alongside
+ * the stylesheet instead of after it, and text doesn't swap late.
+ */
+function preloadFont(): Plugin {
+  return {
+    name: 'lamp-preload-font',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, { bundle }) {
+        const font = Object.keys(bundle ?? {}).find((file) =>
+          /inter-tight-latin-wght-normal-[\w-]+\.woff2$/.test(file),
+        );
+        if (!font) return;
+        return [
+          {
+            tag: 'link',
+            attrs: { rel: 'preload', as: 'font', type: 'font/woff2', href: `/${font}`, crossorigin: '' },
+            injectTo: 'head',
+          },
+        ];
+      },
+    },
+  };
+}
+
+/**
  * The PWA (TECH-DESIGN §8.6): `src/sw.ts` precaches the app shell, built with the list of files
  * Workbox injects. The Bible files are left out: the app downloads them in the background into
  * their own cache (src/data/bible-download.ts). A new version waits for the user (`UpdatePrompt`).
@@ -82,15 +109,9 @@ function pwa() {
       // worker doesn't report to Sentry, so it needs none.
       sourcemap: false,
       globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-      // The Literata subsets for other scripts load only when such text shows; offline it falls
-      // back to the next font. Downloaded looks (src/lib/looks.ts) and their fonts are stored
-      // only when chosen.
-      globIgnores: [
-        'bible/**',
-        '**/literata-{cyrillic,greek,vietnamese}*',
-        '**/assets/{folio,soft,lamplight}-*.css',
-        '**/{fraunces,inter-tight,jetbrains-mono}-*',
-      ],
+      // Inter Tight's subsets for other scripts load only when such text shows; offline it falls
+      // back to the system font.
+      globIgnores: ['bible/**', '**/inter-tight-{cyrillic,greek,vietnamese}*'],
     },
     // Already matched by the patterns above.
     includeManifestIcons: false,
@@ -102,9 +123,9 @@ function pwa() {
       start_url: '/',
       scope: '/',
       display: 'standalone',
-      // Parchment, the default theme.
-      background_color: '#f9f2e2',
-      theme_color: '#f9f2e2',
+      // Lamplight's light background.
+      background_color: '#f8f3e9',
+      theme_color: '#f8f3e9',
       icons: [
         { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
         { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -129,6 +150,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     bibleText(),
+    preloadFont(),
     pwa(),
     // Last, so it sees the files as they're written.
     ...sentrySourceMaps(),

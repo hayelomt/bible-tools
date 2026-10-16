@@ -144,7 +144,7 @@ function Verses({
     <div
       ref={ref}
       data-slot="chapter"
-      className="flex flex-col gap-4 font-serif text-[17px] leading-[1.6] select-none"
+      className="flex flex-col gap-4 text-[17px] leading-[1.6] select-none"
     >
       {blocks(text, at.chapter).map((block, i) => (
         <div key={i} className="flex flex-col gap-2">

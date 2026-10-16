@@ -23,7 +23,7 @@ let section: TagTarget;
 
 beforeEach(async () => {
   db = new LampDb(`tags-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+  await ensureDevice(db, { colorMode: 'system' });
   const { id: lessonId } = await createLesson(
     {
       seriesId: null,

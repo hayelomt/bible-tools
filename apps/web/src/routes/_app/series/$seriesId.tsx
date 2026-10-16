@@ -9,6 +9,7 @@ import { seriesById, seriesLessons } from '@/data/queries.ts';
 import { shortDate } from '@/lib/dates.ts';
 import { count, SERIES_KIND_LABELS } from '@/lib/labels.ts';
 import { newLessonTarget } from '@/lib/new-lesson.ts';
+import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 
 export const Route = createFileRoute('/_app/series/$seriesId')({
   staticData: { back: '/' },
@@ -21,7 +22,7 @@ function SeriesScreen() {
   const navigate = useNavigate();
   const series = useLiveQuery(() => seriesById(seriesId), [seriesId]);
   const lessons = useLiveQuery(() => seriesLessons(seriesId), [seriesId]);
-  if (series === undefined || lessons === undefined) return null;
+  if (series === undefined || lessons === undefined) return <ScreenSkeleton />;
   if (series === null) {
     return (
       <>

@@ -171,8 +171,6 @@ export {
   tagSchema,
   type Takeaway,
   takeawaySchema,
-  THEME_LOOKS,
-  THEME_PRESETS,
   USER_ROLES,
   type UserSettings,
   userSettingsSchema,

@@ -4,6 +4,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ErrorScreen, NotFoundScreen } from './components/error-screen.tsx';
+import { ScreenSkeleton } from './components/screen-skeleton.tsx';
 import { routeTree } from './routeTree.gen.ts';
 
 // TanStack Query is only for the few server calls (§8.1); notes are read from Dexie.
@@ -13,6 +14,8 @@ const router = createRouter({
   // Rendered in place of the failing screen, so the shell around it stays.
   defaultErrorComponent: ErrorScreen,
   defaultNotFoundComponent: () => <NotFoundScreen />,
+  // A screen whose code is slow to arrive shows its shape inside the shell, not a blank column.
+  defaultPendingComponent: () => <ScreenSkeleton />,
 });
 
 declare module '@tanstack/react-router' {

@@ -50,9 +50,7 @@ const ROM_8_28: VerseRef = {
 /** One valid row per synced entity. */
 const ROWS: { [E in EntityName]: unknown } = {
   userSettings: {
-    themePreset: 'parchment',
     colorMode: 'system',
-    look: 'classic',
     defaultTranslation: 'BSB',
     reviewWindowDays: 14,
     autoPreviewVerses: false,
@@ -149,8 +147,8 @@ describe('entity schemas', () => {
     ['an unknown colour', 'highlight', { colour: 'red' }],
     ['an ease below 1.3', 'memoryItem', { ease: 1.2 }],
     ['a fractional interval', 'memoryItem', { interval: 1.5 }],
-    ['an unknown theme', 'userSettings', { themePreset: 'neon' }],
-    ['an unknown look', 'userSettings', { look: 'neon' }],
+    ['an unknown colour mode', 'userSettings', { colorMode: 'dim' }],
+    ['a retired theme field', 'userSettings', { look: 'folio' }],
     ['a review window of 0 days', 'userSettings', { reviewWindowDays: 0 }],
   ] as [string, EntityName, Record<string, unknown>][])('rejects %s', (_, entity, change) => {
     const row = { ...(ROWS[entity] as object), ...change };
@@ -214,6 +212,15 @@ describe('sync schemas', () => {
     expect(changeSchema.parse(upsert)).toEqual(upsert);
     expect(changeSchema.parse(remove)).toEqual(remove);
     expect(changeSchema.parse(settings)).toEqual(settings);
+  });
+
+  it("drops an older app's retired theme fields from a settings change", () => {
+    const old = {
+      ...settings,
+      row: { ...settingsRow, themePreset: 'cedar', look: 'folio' },
+      changed: ['look', 'colorMode'],
+    };
+    expect(changeSchema.parse(old)).toEqual({ ...settings, changed: ['colorMode'] });
   });
 
   it.each([

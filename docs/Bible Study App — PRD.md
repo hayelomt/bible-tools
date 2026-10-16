@@ -1,6 +1,6 @@
 # Lamp — Bible Study App PRD
 
-Oct 13, 2026 · @Frost Biter · v1.4 (see [Change log](#change-log))
+Oct 16, 2026 · @Frost Biter · v1.6 (see [Change log](#change-log))
 
 ## Overview
 
@@ -147,8 +147,8 @@ Each feature is a user story with acceptance criteria. All are phase 1 unless ma
 
 **F16. Themes**
 
-- As a user I can pick how the app looks, from a set of looks and, for the classic look, a set of colour presets, and choose light, dark or system mode.
-- Accepts: four looks (Classic, Folio, Soft, Lamplight); six presets for Classic (Parchment, Vellum, Olive, Slate, Cedar, Midnight); every look and preset meets WCAG AA contrast in both modes; a new device offers the choice on first run, with defaults so it can be skipped; a look other than Classic is downloaded only when chosen and then works offline; the choice syncs across my devices and applies before the first paint.
+- As a user I can choose light or dark mode, or Auto to follow my device.
+- Accepts: one theme, Lamplight, in light and dark, set in Inter Tight throughout; it meets WCAG AA contrast in both modes; a new device offers the mode on first run, defaulting to Auto so it can be skipped; the choice syncs across my devices and applies before the first paint.
 
 ## Bible text and translation strategy
 
@@ -228,7 +228,7 @@ Phase 2 builds on the accounts and sync from phase 1 to add sharing, community a
 - [ ] Versification: phase 1 maps KJV numbers onto WEB's (TECH-DESIGN §9); revisit for other translations when a second one is added in phase 2.
 - [ ] Storage growth: WEB plus notes stays small; measure storage on a low-end phone before release.
 - [x] ~~Licence for the project itself (MIT or Apache-2.0) and a contributor guide.~~ MIT; the contributor guide is a backlog task.
-- [x] ~~Theme preset names and colours.~~ The reading-room set: Parchment, Vellum, Olive, Slate, Cedar, Midnight; colours tuned in the UX pass.
+- [x] ~~Theme preset names and colours.~~ The reading-room set: Parchment, Vellum, Olive, Slate, Cedar, Midnight; colours tuned in the UX pass. (Superseded 2026-10-16: one theme.)
 - [ ] Notes are personal: hosting them needs a privacy note for users (what is stored, who can see it, how to delete it) before a public deployment.
 
 ## Change log
@@ -241,3 +241,4 @@ Phase 2 builds on the accounts and sync from phase 1 to add sharing, community a
 | 1.3 | 2026-10-13 | Verse entry (F3) accepts KJV verse numbers that WEB places elsewhere and moves them onto WEB's; parser rules for ambiguous input settled (TECH-DESIGN §4.1, §15). |
 | 1.4 | 2026-10-13 | Build order: milestone C (structure) before B (accounts and sync). Letters and features unchanged. |
 | 1.5 | 2026-10-13 | Themes (F16) gain looks: Classic with the six presets, plus Folio, Soft and Lamplight, downloaded when chosen; a new device picks a look and mode first (TECH-DESIGN §8.5). |
+| 1.6 | 2026-10-16 | One theme (F16): Lamplight in light and dark, with Auto following the device, and Inter Tight as the only font. The looks and presets are removed; a new device picks only the mode (TECH-DESIGN §8.5). |

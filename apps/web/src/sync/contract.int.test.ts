@@ -126,7 +126,7 @@ interface Device {
 
 async function device(name: string, ip: string): Promise<Device> {
   const db = new LampDb(`contract-${++databases}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+  await ensureDevice(db, { colorMode: 'system' });
   const api = new HttpApi(ip);
   const engine = new SyncEngine({ db, api, deviceName: name, clientVersion: '0.0.0' });
   const made = { name, db, api, engine };

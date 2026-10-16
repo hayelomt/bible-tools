@@ -52,7 +52,7 @@ export function PrintPage({ back, title, printNow, onPrinted, children }: PrintP
           Print
         </Button>
       </div>
-      <main className="mx-auto max-w-[46rem] bg-white px-5 py-8 font-serif text-neutral-900 sm:my-6 sm:px-12 sm:py-12 sm:shadow-md print:m-0 print:max-w-none print:p-0 print:shadow-none">
+      <main className="mx-auto max-w-[46rem] bg-white px-5 py-8 text-neutral-900 sm:my-6 sm:px-12 sm:py-12 sm:shadow-md print:m-0 print:max-w-none print:p-0 print:shadow-none">
         {children}
       </main>
     </div>

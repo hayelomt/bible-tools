@@ -194,7 +194,7 @@ function EntryItem({ entry, where }: { entry: GlossaryEntry; where?: string }) {
   return (
     <li className="flex flex-col gap-0.5 py-3">
       <p className="flex flex-wrap items-baseline gap-x-2">
-        <dfn className="font-serif text-lg font-medium not-italic">{entry.term}</dfn>
+        <dfn className="text-lg font-medium not-italic">{entry.term}</dfn>
         <span className="text-xs text-muted-foreground">{KIND_LABEL[entry.kind]}</span>
       </p>
       <p>{entry.meaning}</p>

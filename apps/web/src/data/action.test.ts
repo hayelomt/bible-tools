@@ -46,7 +46,7 @@ let dbCount = 0;
 
 beforeEach(async () => {
   db = new LampDb(`test-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+  await ensureDevice(db, { colorMode: 'system' });
 });
 
 afterEach(async () => {
@@ -65,9 +65,7 @@ describe('first run', () => {
     const state = await db.syncState.get(SYNC_STATE_KEY);
     expect(state).toMatchObject({ cursor: 0, ownerUserId: null, clockOffsetMs: 0 });
     expect(await db.userSettings.get(SETTINGS_KEY)).toMatchObject({
-      themePreset: 'parchment',
       colorMode: 'system',
-      look: 'classic',
       reviewWindowDays: 14,
       autoPreviewVerses: true,
       rev: 0,
@@ -86,8 +84,8 @@ describe('first run', () => {
   it('runs once, however often it is called', async () => {
     const before = await snapshot();
     await Promise.all([
-      ensureDevice(db, { themePreset: 'midnight', colorMode: 'dark', look: 'classic' }),
-      ensureDevice(db, { themePreset: 'midnight', colorMode: 'dark', look: 'classic' }),
+      ensureDevice(db, { colorMode: 'dark' }),
+      ensureDevice(db, { colorMode: 'dark' }),
     ]);
     expect(await snapshot()).toEqual(before);
   });
@@ -197,10 +195,10 @@ describe('action', () => {
       changed: ['deletedAt', 'updatedAt'],
     });
 
-    await action(db, (w) => w.updateSettings({ look: 'folio' }));
+    await action(db, (w) => w.updateSettings({ colorMode: 'dark' }));
     expect(await db.outbox.orderBy('seq').last()).toMatchObject({
       entity: 'userSettings',
-      changed: ['look', 'updatedAt'],
+      changed: ['colorMode', 'updatedAt'],
     });
   });
 
@@ -217,7 +215,7 @@ describe('action', () => {
           conflictOf: null,
           conflictDevice: null,
         });
-        await w.updateSettings({ themePreset: 'olive' });
+        await w.updateSettings({ colorMode: 'light' });
         throw new Error('the tab died');
       });
       await expect(failing).rejects.toThrow('the tab died');
@@ -249,20 +247,20 @@ describe('action', () => {
 
 describe('updateSettings', () => {
   it('stores the settings and queues them', async () => {
-    const settings = await updateSettings({ themePreset: 'midnight', colorMode: 'dark' }, db);
+    const settings = await updateSettings({ colorMode: 'dark', reviewWindowDays: 7 }, db);
     expect(await db.userSettings.get(SETTINGS_KEY)).toEqual(settings);
     const change = await db.outbox.orderBy('seq').last();
     const { seq: _, ...sent } = change!;
     expect(changeSchema.parse(sent)).toMatchObject({
       entity: 'userSettings',
-      row: { themePreset: 'midnight', colorMode: 'dark' },
+      row: { colorMode: 'dark', reviewWindowDays: 7 },
     });
   });
 
   it('rejects a value outside the schema', async () => {
     const before = await snapshot();
-    // @ts-expect-error: not a preset
-    await expect(updateSettings({ themePreset: 'neon' }, db)).rejects.toThrow('themePreset');
+    // @ts-expect-error: not a mode
+    await expect(updateSettings({ colorMode: 'dim' }, db)).rejects.toThrow('colorMode');
     expect(await snapshot()).toEqual(before);
   });
 });

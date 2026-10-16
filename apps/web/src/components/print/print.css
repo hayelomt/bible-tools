@@ -1,5 +1,5 @@
 /*
- * The print view (M6-06): only the white page prints, on white, whatever the theme or look shows
+ * The print view (M6-06): only the white page prints, on white, whatever the mode shows
  * around it on screen.
  */
 @page {

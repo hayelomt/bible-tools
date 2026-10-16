@@ -25,7 +25,7 @@ let lessonId: string;
 
 beforeEach(async () => {
   db = new LampDb(`sections-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+  await ensureDevice(db, { colorMode: 'system' });
   ({ id: lessonId } = await createLesson(
     {
       seriesId: null,

@@ -112,7 +112,7 @@ function previewDom(refs: VerseRef[]): HTMLElement {
     label.textContent = `${ref.display} · ${ref.translation}`;
     const text = document.createElement('div');
     if (ref.snapshotText) {
-      text.className = 'font-serif text-foreground/80 italic';
+      text.className = 'text-foreground/80 italic';
       text.append(...verseTextNodes(bookState(ref.translation, ref.book), ref, ref.snapshotText));
     } else {
       text.className = 'font-sans text-sm text-muted-foreground';

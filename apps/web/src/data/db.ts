@@ -53,6 +53,12 @@ export interface SyncState {
   ownerEmail?: string | null;
 }
 
+/** Settings fields from before the app had one theme, removed in version 5. */
+interface RetiredSettings {
+  themePreset?: string;
+  look?: string;
+}
+
 export const SYNC_STATE_KEY = 'device';
 export const SETTINGS_KEY = 'settings';
 
@@ -110,11 +116,12 @@ export class LampDb extends Dexie {
         }),
     );
     // `look` added; Classic, the look every device had before. Not queued, like the above.
+    // Dropped again in version 5.
     this.version(3).upgrade((tx) =>
       tx
         .table('userSettings')
         .toCollection()
-        .modify((settings: Partial<UserSettings>) => {
+        .modify((settings: RetiredSettings) => {
           settings.look ??= 'classic';
         }),
     );
@@ -136,6 +143,28 @@ export class LampDb extends Dexie {
             (entry as { row: Partial<Section> }).row.conflictDevice ??= null;
           });
       });
+    // One theme (Lamplight): `themePreset` and `look` dropped, from the row and from queued
+    // settings changes, which the server's schema no longer has.
+    this.version(5).upgrade(async (tx) => {
+      await tx
+        .table('userSettings')
+        .toCollection()
+        .modify((settings: RetiredSettings) => {
+          delete settings.themePreset;
+          delete settings.look;
+        });
+      await tx
+        .table('outbox')
+        .filter((entry: OutboxEntry) => entry.entity === 'userSettings')
+        .modify((entry: OutboxEntry) => {
+          const change = entry as { row?: RetiredSettings; changed?: string[] };
+          delete change.row?.themePreset;
+          delete change.row?.look;
+          if (change.changed) {
+            change.changed = change.changed.filter((f) => f !== 'themePreset' && f !== 'look');
+          }
+        });
+    });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {

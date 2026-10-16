@@ -1,26 +1,17 @@
 /*
- * Tailwind, the shadcn tokens and the reading-room presets (TECH-DESIGN §8.5). `<html>` always
- * carries a preset, `data-theme="parchment"`, and the class `dark` in dark mode; the presets in
- * ../themes set the colour tokens for both. Components use only the semantic classes
- * (`bg-background`, `text-primary`), never raw colours.
+ * Tailwind, the shadcn tokens and the app's one theme, Lamplight (TECH-DESIGN §8.5). `<html>`
+ * carries the class `dark` in dark mode; the tokens below set the colours for both. Components use
+ * only the semantic classes (`bg-background`, `text-primary`), never raw colours. One font, Inter
+ * Tight, for everything.
  */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/literata/wght.css';
-@import '@fontsource-variable/literata/wght-italic.css';
-@import '../themes/parchment.css';
-@import '../themes/vellum.css';
-@import '../themes/olive.css';
-@import '../themes/slate.css';
-@import '../themes/cedar.css';
-@import '../themes/midnight.css';
+@import '@fontsource-variable/inter-tight/wght.css';
+@import './lamplight.css';
 
-/*
- * Dark styles apply inside `.dark`. A `.light` element inside it switches back, so the theme demo
- * can show both modes on one page.
- */
-@custom-variant dark (&:where(.dark, .dark *):not(:where(.light, .light *)));
+/* Dark styles apply inside `.dark`. */
+@custom-variant dark (&:where(.dark, .dark *));
 /* The app using this file is scanned automatically (its Vite root); add this package's components. */
 @source "../**/*.{ts,tsx}";
 
@@ -63,17 +54,56 @@
   --color-highlight-green: var(--highlight-green);
   --color-highlight-blue: var(--highlight-blue);
   --color-highlight-pink: var(--highlight-pink);
-  /* The interface uses the system font; scripture and notes are set in Literata (font-serif). */
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-serif: 'Literata Variable', ui-serif, Georgia, serif;
+  /* One font for everything: `font-serif` and `font-mono` resolve to it too. */
+  --font-sans: 'Inter Tight Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-sans);
+  --font-mono: var(--font-sans);
 }
 
 /*
- * Tokens every preset shares. They're declared on each `[data-theme]` element, not only on
- * `<html>`, so that aliases like `var(--card)` resolve against that element's preset.
+ * Lamplight: a study lit by one lamp. Dark is the evening study; light is the same room in the
+ * morning, cream paper with the amber deepened to read. The contrast test reads these tokens, so
+ * keep the two blocks flat.
  */
-[data-theme] {
-  --radius: 0.625rem;
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.965 0.014 80);
+  --foreground: oklch(0.23 0.02 55);
+  --card: oklch(0.985 0.008 85);
+  --card-foreground: oklch(0.23 0.02 55);
+  --primary: oklch(0.45 0.1 58);
+  --primary-foreground: oklch(0.985 0.008 85);
+  --secondary: oklch(0.93 0.02 80);
+  --secondary-foreground: oklch(0.26 0.022 55);
+  --muted: oklch(0.935 0.016 80);
+  --muted-foreground: oklch(0.47 0.025 65);
+  --accent: oklch(0.92 0.045 80);
+  --accent-foreground: oklch(0.3 0.06 60);
+  --border: oklch(0.88 0.02 80);
+  --input: oklch(0.6 0.03 70);
+  --ring: oklch(0.45 0.1 58);
+}
+
+:root.dark {
+  --background: oklch(0.16 0.01 60);
+  --foreground: oklch(0.93 0.015 80);
+  --card: oklch(0.205 0.012 60);
+  --card-foreground: oklch(0.93 0.015 80);
+  --primary: oklch(0.82 0.14 75);
+  --primary-foreground: oklch(0.2 0.03 60);
+  --secondary: oklch(0.25 0.012 60);
+  --secondary-foreground: oklch(0.93 0.015 80);
+  --muted: oklch(0.23 0.011 60);
+  --muted-foreground: oklch(0.68 0.02 70);
+  --accent: oklch(0.27 0.03 70);
+  --accent-foreground: oklch(0.93 0.015 80);
+  --border: oklch(0.29 0.012 60);
+  --input: oklch(0.56 0.02 65);
+  --ring: oklch(0.82 0.14 75);
+}
+
+/* Tokens derived from the palette, in both modes. */
+:root {
   --popover: var(--card);
   --popover-foreground: var(--card-foreground);
   --sidebar: var(--card);
@@ -93,7 +123,7 @@
   color-scheme: light;
 }
 
-[data-theme].dark {
+:root.dark {
   --destructive: oklch(0.8 0.11 22);
   --highlight-yellow: oklch(0.42 0.08 90);
   --highlight-green: oklch(0.4 0.06 145);

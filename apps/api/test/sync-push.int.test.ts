@@ -209,9 +209,7 @@ describe('POST /api/sync/push', () => {
   it('stores the account settings as one row', async () => {
     const account = await signUp();
     const settings = {
-      themePreset: 'midnight',
       colorMode: 'dark',
-      look: 'folio',
       defaultTranslation: 'BSB',
       reviewWindowDays: 7,
       autoPreviewVerses: true,
@@ -241,8 +239,7 @@ describe('POST /api/sync/push', () => {
     const stored = await t.prisma.userSettings.findMany({ where: { userId: account.id } });
     expect(stored).toEqual([
       expect.objectContaining({
-        themePreset: 'midnight',
-        look: 'folio',
+        colorMode: 'dark',
         reviewWindowDays: 30,
         rev: 2n,
       }),

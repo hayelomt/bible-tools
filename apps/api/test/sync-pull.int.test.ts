@@ -103,9 +103,7 @@ describe('a first pull from 0', () => {
     const tag = tagRow('hope');
     const link = { ...synced(), tagId: tag.id, sectionId: section.id };
     const settings = {
-      themePreset: 'olive',
       colorMode: 'dark',
-      look: 'classic',
       defaultTranslation: 'BSB',
       reviewWindowDays: 14,
       autoPreviewVerses: false,

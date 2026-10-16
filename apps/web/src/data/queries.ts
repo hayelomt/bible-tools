@@ -52,6 +52,27 @@ export async function allSeries(db: LampDb = appDb): Promise<SeriesSummary[]> {
     db.series.filter(notDeleted).toArray(),
     db.lesson.filter(notDeleted).toArray(),
   ]);
+  return summarise(series, lessons);
+}
+
+/**
+ * Every lesson (newest first) and every series (as `allSeries`), reading the lessons once: for
+ * a screen that shows both, like the lessons home.
+ */
+export async function lessonsAndSeries(
+  db: LampDb = appDb,
+): Promise<{ lessons: Lesson[]; series: SeriesSummary[] }> {
+  const [series, lessons] = await Promise.all([
+    db.series.filter(notDeleted).toArray(),
+    db.lesson.filter(notDeleted).toArray(),
+  ]);
+  return {
+    lessons: lessons.toSorted(byDate).toReversed(),
+    series: summarise(series, lessons),
+  };
+}
+
+function summarise(series: Series[], lessons: Lesson[]): SeriesSummary[] {
   const counts = new Map<string, number>();
   for (const { seriesId } of lessons) {
     if (seriesId) counts.set(seriesId, (counts.get(seriesId) ?? 0) + 1);

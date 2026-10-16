@@ -88,7 +88,6 @@ function ResultRow({
       <span
         className={cn(
           'line-clamp-3 min-w-0 flex-1 break-words whitespace-pre-line',
-          item.kind === 'section' && 'font-serif',
           item.kind === 'section' && item.reply && 'pl-4',
         )}
       >

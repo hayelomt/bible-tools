@@ -7,7 +7,8 @@ import { LessonList } from '@/components/lesson/lesson-list.tsx';
 import { SeriesDialog } from '@/components/series/series-dialog.tsx';
 import { Welcome } from '@/components/welcome.tsx';
 import { PageSection } from '@/components/page-section.tsx';
-import { allLessons, allSeries } from '@/data/queries.ts';
+import { lessonsAndSeries } from '@/data/queries.ts';
+import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { count } from '@/lib/labels.ts';
 import { newLessonTarget } from '@/lib/new-lesson.ts';
 import { useWelcomed } from '@/lib/welcome.ts';
@@ -22,16 +23,16 @@ export const Route = createFileRoute('/_app/')({
 
 /**
  * The lessons home (F1, wireframes/lessons.md "Lessons home"): "New lesson" first and one tap,
- * the recent lessons, then the series. A new device first picks its look (`Welcome`), then a first
+ * the recent lessons, then the series. A new device first picks its mode (`Welcome`), then a first
  * run shows a welcome that leads to the first lesson.
  */
 function LessonsHome() {
   const navigate = useNavigate();
-  const lessons = useLiveQuery(() => allLessons(), []);
-  const series = useLiveQuery(() => allSeries(), []);
+  const both = useLiveQuery(() => lessonsAndSeries(), []);
   const [creatingSeries, setCreatingSeries] = useState(false);
   const welcomed = useWelcomed();
-  if (!lessons || !series) return null;
+  if (!both) return <ScreenSkeleton />;
+  const { lessons, series } = both;
   // Someone with lessons already set the app up before the welcome existed.
   if (!welcomed && lessons.length === 0 && series.length === 0) return <Welcome />;
 
@@ -46,7 +47,7 @@ function LessonsHome() {
     <div className="flex flex-col gap-8">
       {lessons.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-10 text-center">
-          <p className="font-serif text-xl">Your notes start here.</p>
+          <p className="text-xl">Your notes start here.</p>
           <p className="max-w-xs text-muted-foreground">
             Capture a sermon or a study. It’s saved on this device and works offline; no account
             needed.

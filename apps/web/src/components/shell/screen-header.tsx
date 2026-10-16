@@ -9,10 +9,10 @@ import { SyncStatus } from './sync-status.tsx';
  * The screen's title, its one `h1`, from the deepest route's `staticData`, or from the screen
  * itself through `ScreenTitle` when it comes from data. On a phone it's the top bar, with the
  * Bible download (while it runs), the sync status and settings on the four destinations and `←`
- * on the screens below them; on a laptop the sidebar has those, and the title heads the content
- * column.
+ * on the screens below them; on a laptop the sidebar has those (and they aren't mounted here),
+ * and the title heads the content column.
  */
-export function ScreenHeader() {
+export function ScreenHeader({ laptop }: { laptop: boolean }) {
   const { title, back } = useMatches().at(-1)?.staticData ?? {};
   const titleSlot = useSlotRef('title');
   const actionsSlot = useSlotRef('actions');
@@ -40,7 +40,7 @@ export function ScreenHeader() {
         <span ref={titleSlot} className="contents" />
       </h1>
       <div ref={actionsSlot} className="flex items-center gap-1 empty:hidden" />
-      {!back && (
+      {!back && !laptop && (
         <div className="flex min-w-0 items-center gap-1 lg:hidden">
           <BibleDownloadIndicator />
           <SyncStatus />

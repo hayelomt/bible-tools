@@ -69,7 +69,7 @@ export async function noteCounts(db: LampDb) {
  *
  * With `owner`, the device then belongs to that account and pulls it ("Remove them from this
  * device"). Without, it's a guest that never signed in, with a new device id (Settings → "Remove
- * notes from this device"). The look and mode are kept either way; they're how the device looks,
+ * notes from this device"). The settings are kept either way; they're how the device looks,
  * not notes.
  */
 export async function removeNotes(db: LampDb, owner: Owner | null): Promise<void> {

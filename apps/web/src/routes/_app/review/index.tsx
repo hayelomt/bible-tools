@@ -10,6 +10,7 @@ import { openQuestions, recentTakeaways } from '@/data/review.ts';
 import { DEFAULT_REVIEW_WINDOW_DAYS } from '@/data/setup.ts';
 import { useSettings } from '@/data/use-settings.ts';
 import { today } from '@/lib/dates.ts';
+import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 
 export const Route = createFileRoute('/_app/review/')({
   staticData: { title: 'Review' },
@@ -33,7 +34,7 @@ function Review() {
     () => (ready ? recentTakeaways(day, days) : undefined),
     [ready, day, days],
   );
-  if (!items || !questions || !takeaways) return null;
+  if (!items || !questions || !takeaways) return <ScreenSkeleton />;
 
   const due = items.filter((item) => isDue(item, day));
   if (due.length === 0 && questions.length === 0 && takeaways.length === 0) {

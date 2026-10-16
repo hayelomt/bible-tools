@@ -466,16 +466,12 @@ export async function seedBulk(db: LampDb, lessons = 50, sections = 100): Promis
 }
 
 /**
- * Empties this device's database: notes, the outbox and the sync state. The settings (theme, look)
- * are kept, and the device is set up again with its 24 seeded tags, as on a first run.
+ * Empties this device's database: notes, the outbox and the sync state. The settings are kept,
+ * and the device is set up again with its 24 seeded tags, as on a first run.
  */
 export async function clearDevice(db: LampDb): Promise<void> {
   const settings = await db.userSettings.get(SETTINGS_KEY);
   await db.transaction('rw', db.tables, () => Promise.all(db.tables.map((table) => table.clear())));
-  await ensureDevice(db, {
-    themePreset: settings?.themePreset ?? 'parchment',
-    colorMode: settings?.colorMode ?? 'system',
-    look: settings?.look ?? 'classic',
-  });
+  await ensureDevice(db, { colorMode: settings?.colorMode ?? 'system' });
   if (settings) await db.userSettings.put(settings, SETTINGS_KEY);
 }

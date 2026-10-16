@@ -1,5 +1,4 @@
 import type { Passage, TranslationId } from '@lamp/domain';
-import { cn } from 'cn';
 import { type BookState, type NumberedVerse, numberedVerses, useBook } from '@/data/bible.ts';
 
 /** A verse number before its text, raised without making its line taller. */
@@ -29,7 +28,7 @@ export function VerseText({
   const book = useBook(translation, passage.book);
   const numbered = verses(book, passage, text);
   return (
-    <p className={cn('font-serif', className)}>
+    <p className={className}>
       {numbered
         ? numbered.map((v, i) => (
             <span key={v.label}>

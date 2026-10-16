@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 /// <reference types="vite/client" />
-import { THEME_LOOKS, THEME_PRESETS } from '@lamp/domain';
 import { describe, expect, it } from 'vitest';
 import globals from '../styles/globals.css?raw';
 import {
@@ -12,35 +11,10 @@ import {
   type Rgba,
   withAlpha,
 } from './color.ts';
-import {
-  applyTheme,
-  LOOKS,
-  PRESETS,
-  type PresetId,
-  readTheme,
-  resolveMode,
-  saveTheme,
-  THEME_STORAGE_KEY,
-  type ThemeChoice,
-} from './presets.ts';
+import { applyMode, readMode, resolveMode, saveMode, THEME_STORAGE_KEY } from './theme.ts';
 
-const files = import.meta.glob<string>('./*.css', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
-
-const lookFiles = import.meta.glob<string>('../looks/*.css', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
-
-/** The looks with a stylesheet of their own; Classic uses the presets. */
-const DOWNLOADED_LOOKS = LOOKS.filter((l) => l.id !== 'classic').map((l) => l.id);
-
-/** The tokens each preset sets, in both modes. */
-const PRESET_TOKENS = [
+/** The palette tokens Lamplight sets, in both modes. */
+const PALETTE_TOKENS = [
   'background',
   'foreground',
   'card',
@@ -58,7 +32,7 @@ const PRESET_TOKENS = [
   'ring',
 ];
 
-/** The custom properties set by each CSS rule, keyed by selector. */
+/** The custom properties set by each CSS rule, keyed by selector (repeated rules merged). */
 function rules(css: string): Map<string, Map<string, string>> {
   const result = new Map<string, Map<string, string>>();
   const withoutComments = css.replaceAll(/\/\*[^]*?\*\//g, '').replaceAll(/@import[^;]+;/g, '');
@@ -66,36 +40,18 @@ function rules(css: string): Map<string, Map<string, string>> {
     const declarations = [...body!.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map(
       ([, name, value]) => [name!.slice(2), value!.trim()] as const,
     );
-    if (declarations.length > 0) result.set(selector!.trim(), new Map(declarations));
+    if (declarations.length === 0) continue;
+    const key = selector!.trim();
+    result.set(key, new Map([...(result.get(key) ?? []), ...declarations]));
   }
   return result;
 }
 
-const shared = rules(globals);
+const own = rules(globals);
 
-/** Every token of a preset in one mode, with `var()` aliases resolved. */
-function tokens(preset: PresetId, mode: 'light' | 'dark'): Map<string, string> {
-  return resolved(rules(files[`./${preset}.css`] ?? ''), `[data-theme='${preset}']`, mode);
-}
-
-/** The same for a downloaded look, whose colours replace the preset's. */
-function lookTokens(look: string, mode: 'light' | 'dark'): Map<string, string> {
-  return resolved(rules(lookFiles[`../looks/${look}.css`] ?? ''), lookSelector(look), mode);
-}
-
-const lookSelector = (look: string) => `:root[data-look='${look}']`;
-
-function resolved(
-  own: Map<string, Map<string, string>>,
-  selector: string,
-  mode: 'light' | 'dark',
-): Map<string, string> {
-  const merged = new Map([
-    ...shared.get('[data-theme]')!,
-    ...(mode === 'dark' ? shared.get('[data-theme].dark')! : []),
-    ...(own.get(selector) ?? []),
-    ...((mode === 'dark' ? own.get(`${selector}.dark`) : undefined) ?? []),
-  ]);
+/** Every token in one mode, with `var()` aliases resolved. */
+function tokens(mode: 'light' | 'dark'): Map<string, string> {
+  const merged = new Map([...own.get(':root')!, ...(mode === 'dark' ? own.get(':root.dark')! : [])]);
   const resolve = (value: string): string => {
     const alias = /^var\(--([\w-]+)\)$/.exec(value);
     return alias ? resolve(merged.get(alias[1]!) ?? value) : value;
@@ -224,34 +180,31 @@ const CHECKS: Check[] = [
   },
 ];
 
-const CASES = PRESETS.flatMap((p) =>
-  (['light', 'dark'] as const).map((mode) => [p.id, mode] as const),
-);
+const MODES = ['light', 'dark'] as const;
 
-describe('presets', () => {
-  it('match the presets UserSettings accepts', () => {
-    expect(PRESETS.map((p) => p.id)).toEqual(THEME_PRESETS);
+describe('Lamplight', () => {
+  it('sets every palette token in both modes', () => {
+    expect([...own.get(':root')!.keys()].filter((n) => PALETTE_TOKENS.includes(n))).toEqual(
+      PALETTE_TOKENS,
+    );
+    expect([...own.get(':root.dark')!.keys()].filter((n) => PALETTE_TOKENS.includes(n))).toEqual(
+      PALETTE_TOKENS,
+    );
   });
 
-  it('are all imported by globals.css', () => {
-    const imported = [...globals.matchAll(/@import '\.\.\/themes\/(\w+)\.css'/g)].map((m) => m[1]);
-    expect(imported).toEqual(PRESETS.map((p) => p.id));
-    expect(Object.keys(files).toSorted()).toEqual(PRESETS.map((p) => `./${p.id}.css`).toSorted());
+  it.each(MODES)('%s uses only opaque, displayable oklch colours', (mode) => {
+    expect(outsideGamut(tokens(mode))).toEqual([]);
   });
 
-  it.each(PRESETS.map((p) => p.id))('%s sets every token in both modes, and nothing else', (id) => {
-    const own = rules(files[`./${id}.css`]!);
-    expect([...own.keys()]).toEqual([`[data-theme='${id}']`, `[data-theme='${id}'].dark`]);
-    for (const declarations of own.values())
-      expect([...declarations.keys()]).toEqual(PRESET_TOKENS);
+  it.each(MODES)('%s meets WCAG AA contrast', (mode) => {
+    expect(contrastFailures(tokens(mode), mode)).toEqual([]);
   });
 
-  it.each(CASES)('%s (%s) uses only opaque, displayable oklch colours', (id, mode) => {
-    expect(outsideGamut(tokens(id, mode))).toEqual([]);
-  });
-
-  it.each(CASES)('%s (%s) meets WCAG AA contrast', (id, mode) => {
-    expect(contrastFailures(tokens(id, mode), mode)).toEqual([]);
+  it.each(MODES)('%s: verse chips read on their tint', (mode) => {
+    const values = tokens(mode);
+    const color = (token: string) => oklchToRgba(values.get(token)!);
+    const tint = over(withAlpha(color('primary'), 0.1), color('background'));
+    expect(contrast(color('primary'), tint)).toBeGreaterThanOrEqual(TEXT);
   });
 });
 
@@ -269,56 +222,6 @@ function contrastFailures(values: Map<string, string>, mode: 'light' | 'dark'): 
     .filter(({ check, ratio }) => ratio < check.minimum)
     .map(({ check, ratio }) => `${check.label}: ${ratio.toFixed(2)} < ${check.minimum}`);
 }
-
-const LOOK_CASES = DOWNLOADED_LOOKS.flatMap((id) =>
-  (['light', 'dark'] as const).map((mode) => [id, mode] as const),
-);
-
-describe('looks', () => {
-  it('match the looks UserSettings accepts', () => {
-    expect(LOOKS.map((l) => l.id)).toEqual(THEME_LOOKS);
-  });
-
-  it('each have a stylesheet, except Classic', () => {
-    expect(Object.keys(lookFiles).toSorted()).toEqual(
-      DOWNLOADED_LOOKS.map((id) => `../looks/${id}.css`).toSorted(),
-    );
-  });
-
-  it.each(DOWNLOADED_LOOKS)('%s sets every colour token in both modes', (id) => {
-    const own = rules(lookFiles[`../looks/${id}.css`]!);
-    const light = [...(own.get(lookSelector(id))?.keys() ?? [])];
-    const dark = [...(own.get(`${lookSelector(id)}.dark`)?.keys() ?? [])];
-    expect(light.filter((name) => name !== 'radius')).toEqual(PRESET_TOKENS);
-    expect(dark).toEqual(PRESET_TOKENS);
-  });
-
-  it.each(LOOK_CASES)('%s (%s) uses only opaque, displayable oklch colours', (id, mode) => {
-    expect(outsideGamut(lookTokens(id, mode))).toEqual([]);
-  });
-
-  it.each(LOOK_CASES)('%s (%s) meets WCAG AA contrast', (id, mode) => {
-    expect(contrastFailures(lookTokens(id, mode), mode)).toEqual([]);
-  });
-
-  it.each(LOOK_CASES)('%s (%s): its ink button reads, plain and hovered', (id, mode) => {
-    const values = lookTokens(id, mode);
-    const color = (token: string) => oklchToRgba(values.get(token)!);
-    expect(contrast(color('background'), color('foreground'))).toBeGreaterThanOrEqual(TEXT);
-    expect(contrast(color('primary-foreground'), color('primary'))).toBeGreaterThanOrEqual(TEXT);
-  });
-
-  it.each(LOOK_CASES)('%s (%s): verse chips read on their tints', (id, mode) => {
-    const values = lookTokens(id, mode);
-    const color = (token: string) => oklchToRgba(values.get(token)!);
-    // Soft's pill (primary at 12 %, 20 % on hover); Folio's hover (accent).
-    for (const alpha of [0.12, 0.2]) {
-      const tint = over(withAlpha(color('primary'), alpha), color('background'));
-      expect(contrast(color('primary'), tint)).toBeGreaterThanOrEqual(TEXT);
-    }
-    expect(contrast(color('primary'), color('accent'))).toBeGreaterThanOrEqual(TEXT);
-  });
-});
 
 describe('contrast', () => {
   it('matches the WCAG reference values', () => {
@@ -356,45 +259,29 @@ describe('theme helpers', () => {
     expect(resolveMode('dark', false)).toBe('dark');
   });
 
-  it('applies a preset and mode to an element', () => {
+  it('applies a mode to an element', () => {
     const element = document.createElement('html');
-    applyTheme(element, 'midnight', 'dark');
-    expect(element.outerHTML).toBe(
-      '<html data-theme="midnight" class="dark" style="color-scheme: dark;"></html>',
-    );
-    applyTheme(element, 'olive', 'light');
-    expect(element.outerHTML).toBe(
-      '<html data-theme="olive" class="" style="color-scheme: light;"></html>',
-    );
+    applyMode(element, 'dark');
+    expect(element.outerHTML).toBe('<html class="dark" style="color-scheme: dark;"></html>');
+    applyMode(element, 'light');
+    expect(element.outerHTML).toBe('<html class="" style="color-scheme: light;"></html>');
   });
 
-  it('stores the choice, and falls back to the default for anything unknown', () => {
+  it('stores the mode, and falls back to "system" for anything unknown', () => {
     const storage = new Map<string, string>();
     const store = {
       getItem: (key: string) => storage.get(key) ?? null,
       setItem: (key: string, value: string) => void storage.set(key, value),
     };
-    expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system', look: 'classic' });
-    saveTheme(store, { preset: 'cedar', mode: 'dark', look: 'classic' });
-    expect(readTheme(store)).toEqual({ preset: 'cedar', mode: 'dark', look: 'classic' });
-    const folio: ThemeChoice = {
-      preset: 'cedar',
-      mode: 'light',
-      look: 'folio',
-      lookHref: '/assets/folio-a1.css',
-    };
-    saveTheme(store, folio);
-    expect(readTheme(store)).toEqual(folio);
-    storage.set(THEME_STORAGE_KEY, '{"preset":"neon","mode":"dim"}');
-    expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system', look: 'classic' });
-    // A stylesheet address that isn't a same-origin path is dropped, and the look kept.
-    for (const href of ['https://evil.example/x.css', '/x.css"><script>', 42]) {
-      storage.set(THEME_STORAGE_KEY, JSON.stringify({ look: 'folio', lookHref: href }));
-      expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system', look: 'folio' });
-    }
-    for (const bad of ['not json', 'null', '[1]']) {
+    expect(readMode(store)).toBe('system');
+    saveMode(store, 'dark');
+    expect(readMode(store)).toBe('dark');
+    // A choice saved before the single theme keeps its mode.
+    storage.set(THEME_STORAGE_KEY, '{"preset":"cedar","mode":"light","look":"folio"}');
+    expect(readMode(store)).toBe('light');
+    for (const bad of ['{"mode":"dim"}', 'not json', 'null', '[1]']) {
       storage.set(THEME_STORAGE_KEY, bad);
-      expect(readTheme(store)).toEqual({ preset: 'parchment', mode: 'system', look: 'classic' });
+      expect(readMode(store)).toBe('system');
     }
   });
 });

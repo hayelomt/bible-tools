@@ -17,7 +17,7 @@ let dbCount = 0;
 
 beforeEach(async () => {
   db = new LampDb(`export-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+  await ensureDevice(db, { colorMode: 'system' });
 });
 
 afterEach(async () => {

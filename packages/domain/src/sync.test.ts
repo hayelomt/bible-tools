@@ -108,15 +108,13 @@ describe('resolveUpsert', () => {
 
     it('applies to settings, which have no tombstone', () => {
       const settings: SyncRow<'userSettings'> = {
-        themePreset: 'parchment',
         colorMode: 'system',
-        look: 'classic',
         defaultTranslation: 'BSB',
         reviewWindowDays: 14,
         autoPreviewVerses: false,
         updatedAt: BASE,
       };
-      const server: SyncRow<'userSettings'> = { ...settings, look: 'folio' };
+      const server: SyncRow<'userSettings'> = { ...settings, colorMode: 'dark' };
       const incoming = { ...settings, reviewWindowDays: 7, updatedAt: LATE };
       const outcome = resolveUpsert({
         ...stale,
@@ -125,7 +123,7 @@ describe('resolveUpsert', () => {
         changed: ['reviewWindowDays', 'updatedAt'],
       });
       expect(outcome).toMatchObject({
-        row: { look: 'folio', reviewWindowDays: 7, updatedAt: LATE },
+        row: { colorMode: 'dark', reviewWindowDays: 7, updatedAt: LATE },
         resolution: 'client-won',
       });
     });

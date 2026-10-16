@@ -1,4 +1,4 @@
-import { readTheme } from '@lamp/ui/themes/presets';
+import { readMode } from '@lamp/ui/themes/theme';
 import { startBackgroundWork } from './background.ts';
 import { db } from './db.ts';
 import { ensureDevice } from './setup.ts';
@@ -32,8 +32,7 @@ function whenIdle(work: () => void) {
   else setTimeout(work, 500);
 }
 
-/** A first run keeps the theme the `localStorage` mirror already shows (§8.5). */
+/** A first run keeps the mode the `localStorage` mirror already shows (§8.5). */
 function initialTheme() {
-  const { preset, mode, look } = readTheme(localStorage);
-  return { themePreset: preset, colorMode: mode, look };
+  return { colorMode: readMode(localStorage) };
 }

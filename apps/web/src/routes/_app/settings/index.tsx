@@ -8,7 +8,6 @@ import { ReminderSetting } from '@/components/review/reminder-setting.tsx';
 import { ReviewWindowSetting } from '@/components/review/review-window-setting.tsx';
 import { RemoveNotes } from '@/components/remove-notes.tsx';
 import { StorageStatus } from '@/components/storage-status.tsx';
-import { ThemeSheet } from '@/components/theme-sheet.tsx';
 import { VersePreviewSetting } from '@/components/verse-preview-setting.tsx';
 import { useSettings } from '@/data/use-settings.ts';
 import packageJson from '../../../../package.json' with { type: 'json' };
@@ -28,7 +27,6 @@ function Settings() {
       <AccountSection />
       {settings && (
         <PageSection title="Appearance">
-          <ThemeSheet />
           <ModeControl value={settings.colorMode} />
         </PageSection>
       )}

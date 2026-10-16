@@ -5,6 +5,7 @@ import { NotFoundScreen } from '@/components/error-screen.tsx';
 import { LessonEditor } from '@/components/lesson/lesson-editor.tsx';
 import { ScreenTitle } from '@/components/shell/slots.tsx';
 import { lessonById } from '@/data/queries.ts';
+import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 
 interface LessonSearch {
   /** A draft from "New lesson": stored once it has a title (`newLessonTarget`). */
@@ -51,7 +52,7 @@ function LessonScreen() {
     }
   }, [lesson, search.answer, navigate]);
 
-  if (lesson === undefined) return null;
+  if (lesson === undefined) return <ScreenSkeleton />;
   if (lesson === null && !search.new) {
     return (
       <>

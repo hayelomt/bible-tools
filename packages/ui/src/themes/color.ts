@@ -1,5 +1,5 @@
 /**
- * Just enough colour maths to check the presets' contrast (TECH-DESIGN §8.5): OKLCH → sRGB,
+ * Just enough colour maths to check the theme's contrast (TECH-DESIGN §8.5): OKLCH → sRGB,
  * alpha compositing as browsers do it (in gamma-encoded sRGB), and the WCAG 2 contrast ratio.
  */
 

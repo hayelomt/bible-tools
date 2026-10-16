@@ -39,8 +39,8 @@ milestone with the next free ID; a change of scope also needs an entry in the PR
   and its §15 decisions log records why. A change that goes against a decision needs the decision
   changed first, in the same pull request, with the reason.
 - **Screens** follow [docs/UX-PATTERNS.md](docs/UX-PATTERNS.md) and the wireframe for the screen.
-  Check them in the browser at 360 px and 1280 px wide, with the keyboard alone, and in a dark
-  preset (the theme demo is at `/dev/themes`).
+  Check them in the browser at 360 px and 1280 px wide, with the keyboard alone, and in dark
+  mode.
 - **Shared code** goes in `packages/domain` (pure TypeScript, no I/O) when the web app and the API
   both need it. Request and response shapes are Zod schemas there, used by both sides.
 - **Write the code like the code around it:** naming, comment density, idioms. Comments say why,

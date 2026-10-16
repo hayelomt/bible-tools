@@ -127,7 +127,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
         aria-invalid={missingTitle || undefined}
         aria-describedby={missingTitle ? errorId : undefined}
         data-slot="lesson-title-input"
-        className="w-full bg-transparent font-serif text-2xl font-semibold outline-none placeholder:text-muted-foreground lg:text-3xl"
+        className="w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-muted-foreground lg:text-3xl"
         onChange={(event) => {
           setTitle(event.target.value);
           if (event.target.value.trim()) save({ title: event.target.value }, { debounce: true });

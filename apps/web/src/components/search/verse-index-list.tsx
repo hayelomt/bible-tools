@@ -69,7 +69,7 @@ function HighlightRow({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'high
           Highlight · {shortDate(today(new Date(entry.createdAt)))} ·{' '}
           {HIGHLIGHT_COLOUR_NAME[entry.colour].toLowerCase()}
         </span>
-        <span className="line-clamp-3 font-serif break-words">
+        <span className="line-clamp-3 break-words">
           {entry.passages[0]}
           {entry.text && ` — ${entry.text}`}
         </span>
@@ -95,7 +95,7 @@ function MemoryRow({ item }: { item: MemoryItem }) {
           <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Memory · {dueLabel(item)} · {stageLabel(item)}
           </span>
-          <span className="line-clamp-3 font-serif break-words">
+          <span className="line-clamp-3 break-words">
             {ref.display}
             {ref.snapshotText && ` — ${ref.snapshotText}`}
           </span>
@@ -127,7 +127,7 @@ function EntryText({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'lesson'
   return (
     <span
       className={cn(
-        'line-clamp-3 font-serif break-words',
+        'line-clamp-3 break-words',
         entry.reply && 'border-l-2 border-border pl-3',
       )}
     >

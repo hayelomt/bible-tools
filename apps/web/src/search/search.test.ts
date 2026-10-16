@@ -88,7 +88,7 @@ async function section(name: string, lessonId: string, content: SectionBody, par
  */
 beforeEach(async () => {
   db = new LampDb(`search-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+  await ensureDevice(db, { colorMode: 'system' });
   const shepherd = await createLesson(
     lessonFields('The Good Shepherd', '2026-10-12', [{ book: 'JHN', chapter: 10 }]),
     db,

@@ -187,7 +187,7 @@ const ROW_ENTITIES = ENTITY_NAMES.filter((name): name is RowEntity => name !== '
 
 async function device(): Promise<LampDb> {
   const made = new LampDb(`sync-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(made, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+  await ensureDevice(made, { colorMode: 'system' });
   return made;
 }
 
@@ -420,7 +420,7 @@ describe('a pulled page', () => {
     const gone = remoteLesson({ rev: 4, deletedAt: NOW });
     const settings = {
       ...(await db.userSettings.get(SETTINGS_KEY))!,
-      themePreset: 'midnight',
+      colorMode: 'dark' as const,
       rev: 5,
     };
     const stored = await applyPage(
@@ -446,11 +446,11 @@ describe('a pulled page', () => {
 
   it('skips a row the outbox has a change for, until that change is pushed', async () => {
     const mine = await createLesson(LESSON, db);
-    await updateSettings({ themePreset: 'midnight' }, db);
+    await updateSettings({ colorMode: 'dark' }, db);
     const theirs = { ...mine, title: 'Theirs', rev: 2 };
     const settings = {
       ...(await db.userSettings.get(SETTINGS_KEY))!,
-      themePreset: 'olive',
+      colorMode: 'light' as const,
       rev: 3,
     };
     const stored = await applyPage(
@@ -466,7 +466,7 @@ describe('a pulled page', () => {
     );
     expect(stored).toBe(0);
     expect((await db.lesson.get(mine.id))!.title).toBe('The Good Shepherd');
-    expect((await db.userSettings.get(SETTINGS_KEY))!.themePreset).toBe('midnight');
+    expect((await db.userSettings.get(SETTINGS_KEY))!.colorMode).toBe('dark');
     expect((await state()).cursor).toBe(3);
   });
 
@@ -990,7 +990,7 @@ describe('guests and devices (§6.6)', () => {
   it('removes the notes from a signed-out device, which starts again as a new guest', async () => {
     const server = new FakeServer();
     const lesson = await createLesson(LESSON, db);
-    await updateSettings({ look: 'folio' }, db);
+    await updateSettings({ colorMode: 'dark' }, db);
     await engineFor(db, server).syncNow();
     await rename(lesson.id, 'Unsynced');
     const { deviceId } = await state();
@@ -1002,7 +1002,7 @@ describe('guests and devices (§6.6)', () => {
     expect(indexed).toContainEqual({ entity: 'lesson', id: lesson.id });
     expect(await db.tag.filter((tag) => tag.rev === 0).count()).toBe(SEEDED_TAGS);
     expect(await db.outbox.count()).toBe(SEEDED_TAGS);
-    expect(await db.userSettings.get(SETTINGS_KEY)).toMatchObject({ look: 'folio', rev: 0 });
+    expect(await db.userSettings.get(SETTINGS_KEY)).toMatchObject({ colorMode: 'dark', rev: 0 });
     const after = await state();
     expect(after).toMatchObject({ ownerUserId: null, ownerEmail: null, cursor: 0 });
     expect(after.deviceId).not.toBe(deviceId);

@@ -3,11 +3,11 @@ import { useId } from 'react';
 import { updateSettings } from '@/data/actions/settings.ts';
 import { Segmented } from './segmented.tsx';
 
-const LABELS = { light: 'Light', dark: 'Dark', system: 'System' } as const;
+const LABELS = { light: 'Light', dark: 'Dark', system: 'Auto' } as const;
 
 /**
- * Light / dark / system (wireframes/shell.md); a choice applies at once, with no Save. Settings and
- * the theme sheet both show it, so each gets its own radio group name.
+ * Light / dark / auto (wireframes/shell.md); a choice applies at once, with no Save. Auto follows
+ * the device. Settings and the welcome screen both show it, so each gets its own radio group name.
  */
 export function ModeControl({ value }: { value: UserSettings['colorMode'] }) {
   const name = useId();

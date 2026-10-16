@@ -7,6 +7,7 @@ import { ResultList } from '@/components/search/result-list.tsx';
 import { tagById } from '@/data/queries.ts';
 import { count } from '@/lib/labels.ts';
 import { tagResults } from '@/search/results.ts';
+import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 
 export const Route = createFileRoute('/_app/tags/$tagId')({
   staticData: { back: '/' },
@@ -21,7 +22,7 @@ function TagScreen() {
   const { tagId } = Route.useParams();
   const tag = useLiveQuery(() => tagById(tagId), [tagId]);
   const groups = useLiveQuery(() => tagResults(tagId), [tagId]);
-  if (tag === undefined || groups === undefined) return null;
+  if (tag === undefined || groups === undefined) return <ScreenSkeleton />;
   if (tag === null) {
     return (
       <>

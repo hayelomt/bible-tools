@@ -13,7 +13,7 @@ import { ConfirmDialog } from './confirm-dialog.tsx';
 
 /**
  * Settings → Storage → "Remove notes from this device" (wireframes/account.md, §6.6): for a shared
- * computer, so only while signed out. The device starts again as a new guest; the look stays.
+ * computer, so only while signed out. The device starts again as a new guest; the settings stay.
  */
 export function RemoveNotes() {
   const signedIn = !!useAccount().data;

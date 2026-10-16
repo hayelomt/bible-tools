@@ -19,7 +19,7 @@ export function DragPreview({ row, text, level }: DragPreviewProps) {
     <div className="flex cursor-grabbing items-start gap-1 rounded-lg bg-card shadow-xl ring-1 ring-primary/40">
       <div className="min-w-0 flex-1 border-l-2 border-primary py-2 pl-3">
         <p className="text-xs font-medium text-primary">{level === 1 ? 'Reply' : 'Note'}</p>
-        <p className="line-clamp-3 font-serif text-[17px] leading-[1.6]">
+        <p className="line-clamp-3 text-[17px] leading-[1.6]">
           {text.trim() || <span className="text-muted-foreground">Empty</span>}
         </p>
         {replies > 0 && (

@@ -17,7 +17,7 @@ let dbCount = 0;
 
 beforeEach(async () => {
   db = new LampDb(`rejected-${++dbCount}`, { indexedDB, IDBKeyRange });
-  await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+  await ensureDevice(db, { colorMode: 'system' });
   await db.outbox.clear();
 });
 

@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { useReviewCount } from '@/components/review/use-review-count.ts';
+import { useReviewCount } from '@/components/review/review-count.tsx';
 import type { NavItem } from './nav-items.ts';
 
 /**

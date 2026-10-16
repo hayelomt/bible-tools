@@ -62,14 +62,26 @@ function changeOf<const E extends Exclude<EntityName, 'userSettings'>, R extends
 const sameId = (change: { entityId: string; row: { id: string } }) =>
   change.row.id === change.entityId;
 
-/** Settings are one row per account: no id, and never deleted. */
-const settingsRow = ENTITY_SCHEMAS.userSettings.omit({ rev: true });
+/** Settings fields dropped when the app went to one theme, still sent by an older app. */
+const RETIRED_SETTINGS_FIELDS: readonly string[] = ['themePreset', 'look'];
+
+/**
+ * Settings are one row per account: no id, and never deleted. An older app's retired fields are
+ * dropped rather than rejected, so its other settings still sync.
+ */
+const settingsRow = z.object(ENTITY_SCHEMAS.userSettings.omit({ rev: true }).shape);
 const settingsChange = z.strictObject({
   ...changeFields,
   entity: z.literal('userSettings'),
   op: z.literal('upsert'),
   row: settingsRow,
-  changed: changedOf(settingsRow),
+  changed: z.preprocess(
+    (fields) =>
+      Array.isArray(fields)
+        ? fields.filter((field) => !RETIRED_SETTINGS_FIELDS.includes(field as string))
+        : fields,
+    changedOf(settingsRow),
+  ),
 });
 
 export const changeSchema = z.discriminatedUnion('entity', [

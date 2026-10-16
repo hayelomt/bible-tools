@@ -329,7 +329,7 @@ function editorAttributes(level: 0 | 1): Record<string, string> {
 
 /** Note text in the reading font (UX-PATTERNS "Typography"), with the body's few block styles. */
 const EDITOR_CLASS = [
-  'min-h-11 font-serif text-[17px] leading-[1.6] outline-none',
+  'min-h-11 text-[17px] leading-[1.6] outline-none',
   '[&_p+*]:mt-2 [&_*+p]:mt-2',
   '[&_h3]:font-semibold [&_h3]:text-lg',
   '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6',

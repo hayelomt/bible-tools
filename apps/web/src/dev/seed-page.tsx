@@ -26,7 +26,7 @@ const JOBS: Record<Job, { title: string; description: string; confirm: string }>
   clear: {
     title: 'Clear this device?',
     description:
-      'Every lesson, series, tag and question on this device is deleted, as on a first run. The theme and look stay.',
+      'Every lesson, series, tag and question on this device is deleted, as on a first run. Your settings stay.',
     confirm: 'Clear everything',
   },
 };
@@ -53,7 +53,7 @@ export function SeedPage() {
     const started = performance.now();
     try {
       await writesSettled();
-      await ensureDevice(db, { themePreset: 'parchment', colorMode: 'system', look: 'classic' });
+      await ensureDevice(db, { colorMode: 'system' });
       if (job !== 'bulk') {
         await clearDevice(db);
         localStorage.removeItem('lamp.recentSearches');

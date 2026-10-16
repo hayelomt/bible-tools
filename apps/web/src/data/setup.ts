@@ -2,7 +2,7 @@ import { DEFAULT_TRANSLATION, newId, SEED_TAGS, type UserSettings } from '@lamp/
 import { action } from './action.ts';
 import { type LampDb, SETTINGS_KEY, SYNC_STATE_KEY } from './db.ts';
 
-export type InitialSettings = Pick<UserSettings, 'themePreset' | 'colorMode' | 'look'>;
+export type InitialSettings = Pick<UserSettings, 'colorMode'>;
 
 export const DEFAULT_REVIEW_WINDOW_DAYS = 14;
 
@@ -14,8 +14,12 @@ export const DEFAULT_REVIEW_WINDOW_DAYS = 14;
  * settings don't: they stay at rev 0 until the user changes one, so signing in later takes the
  * account's settings instead of overwriting them with this device's defaults.
  */
-export function ensureDevice(db: LampDb, initial: InitialSettings): Promise<void> {
+export async function ensureDevice(db: LampDb, initial: InitialSettings): Promise<void> {
+  // Every start after the first: one read, with no write lock on every table (which would wait
+  // for another tab's sync and hold up the first screen).
+  if (await db.syncState.get(SYNC_STATE_KEY)) return;
   return db.transaction('rw', db.tables, async () => {
+    // Checked again inside: another tab may have set the device up in between.
     if (await db.syncState.get(SYNC_STATE_KEY)) return;
     await db.syncState.put(
       {

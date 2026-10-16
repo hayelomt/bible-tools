@@ -15,7 +15,7 @@ screen needs something new.
 |---|---|---|
 | App shell: bottom bar, sidebar | [shell.md](wireframes/shell.md#app-shell-m2-02) | M2-02 |
 | Settings | [shell.md](wireframes/shell.md#settings-m2-02) | M2-02, M3-03 |
-| Theme picker: looks, mode, presets | [shell.md](wireframes/shell.md#theme-picker-m2-03-m2-14) | M2-03, M2-14 |
+| Appearance: light, dark, auto | [shell.md](wireframes/shell.md#appearance-m2-03-m2-15) | M2-03, M2-15 |
 | Bible download, update prompt | [shell.md](wireframes/shell.md#bible-download-m2-11) | M2-11 |
 | Lessons home, welcome and first run | [lessons.md](wireframes/lessons.md#lessons-home-m2-06) | M2-06, M2-14 |
 | Lesson: capture and edit (phone, laptop) | [lessons.md](wireframes/lessons.md#lesson-capture-and-edit-m2-04-m2-07) | M2-04, M2-07 |
@@ -40,8 +40,8 @@ screen needs something new.
 | Export menu, print view | [export.md](wireframes/export.md) | M6-05, M6-06 |
 | Empty, loading and error states | [states.md](wireframes/states.md) | all |
 
-The theme demo at `/dev/themes` (M1-13) shows every component in every preset and mode. The
-explorations behind the looks are at `/dev/looks` (M2-14).
+The theme demo (`/dev/themes`, M1-13) and the looks explorations (`/dev/looks`, M2-14) were removed
+with the single theme (M2-15).
 
 ## Layout
 
@@ -63,7 +63,7 @@ explorations behind the looks are at `/dev/looks` (M2-14).
 - **Touch targets are at least 44 × 44 px.** `globals.css` enforces this on touch screens
   (`pointer: coarse`) for buttons, inputs, select and tab triggers, menu items, and labels that
   hold a checkbox or switch; a mouse keeps the compact sizes. Custom controls must meet the same
-  size, and adjacent targets keep 8 px apart. An E2E test measures the theme demo on a phone.
+  size, and adjacent targets keep 8 px apart. An E2E test measures Settings on a phone.
 - **Inputs use 16 px text on phones** (the components' `text-base`), so iOS doesn't zoom on focus.
 - **The keyboard reaches everything.** Every action has a keyboard path, including the ones done by
   drag (reorder has Move up and Move down in the section menu). Focus is always visible (the `ring`
@@ -77,30 +77,31 @@ explorations behind the looks are at `/dev/looks` (M2-14).
 
 ## Typography
 
-- **Interface:** the system font (`font-sans`). **Scripture and note text:** Literata
-  (`font-serif`), at least 17 px on a phone, line height 1.6.
+- **One font, Inter Tight,** for the interface, scripture and notes (`font-sans`, `font-serif` and
+  `font-mono` all resolve to it). Scripture and note text are at least 17 px on a phone, line
+  height 1.6.
 - Verse numbers in the reader are small and muted, and are not read aloud as part of the verse
   text.
 - Sentence case everywhere. Section labels in lists (RECENT, SERIES) are small capitals or a small
   muted heading, not shouting.
 
-## Colour and themes
+## Colour and theme
 
 - **Semantic tokens only** (`bg-background`, `text-muted-foreground`, `bg-highlight-yellow`). No
   raw colours in components or screens. A new token, or a new pair of tokens used together, is added
-  to the contrast test in `packages/ui/src/themes/themes.test.ts`.
+  to the contrast test in `packages/ui/src/themes/theme.test.ts`.
 - **The destructive colour** is for destructive actions and for errors the user must act on, never
   for decoration or for states that fix themselves (offline is not an error).
 - **Colour is never the only signal.** Highlights have names ("Highlighted yellow"), question
   statuses have symbols and words, the sync status has text.
-- **A look restyles, it doesn't rebuild.** Folio, Soft and Lamplight are stylesheets over the
-  same screens (TECH-DESIGN §8.5): they hook onto `data-slot`, `data-variant` and `data-size`, never
-  onto Tailwind classes. A screen that wants a look to reach a new element gives it a `data-slot`.
-  Screens and their wireframes stay the same in every look.
-- **Each look has its own colours** in light and dark, checked by the same contrast test as the
-  presets. The presets apply to Classic only.
-- The theme applies before the first paint, from `localStorage` (§8.5), including a downloaded
-  look. The picker shows each preset in its own colours and each look by a picture of it.
+- **One theme, Lamplight** (glass panels with lit edges, amber accents), in light and dark. Auto
+  follows the device. There are no looks or presets to choose.
+- **Lamplight's surfaces are plain CSS** (`lamplight.css`, TECH-DESIGN §8.5): they hook onto
+  `data-slot` and `data-variant`, never onto Tailwind classes. A screen that wants the theme to
+  reach a new element gives it a `data-slot`.
+- **Keep it cheap to paint.** Only the top bar and the bottom bar blur what's behind them; repeated
+  panels (rows, cards) use an opaque fill instead of a blur each.
+- The mode applies before the first paint, from `localStorage` (§8.5), so there's no flash.
 
 ## Saving and feedback
 
@@ -180,7 +181,7 @@ The shared layouts are in [states.md](wireframes/states.md).
 
 ## Accessibility
 
-- WCAG 2.2 AA: contrast is tested for every preset; landmarks (`header`, `nav`, `main`); one `h1`
+- WCAG 2.2 AA: contrast is tested for Lamplight in both modes; landmarks (`header`, `nav`, `main`); one `h1`
   per screen; every control has a name.
 - Motion respects `prefers-reduced-motion`: no slide or bounce, only fades.
 - The sync status and toasts are live regions (`role="status"`); errors that block an action use

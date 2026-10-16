@@ -105,16 +105,14 @@ describe('both sides changed a row: last write wins by updatedAt', () => {
 
   it('applies to settings', async () => {
     const settings = {
-      themePreset: 'parchment',
       colorMode: 'system',
-      look: 'classic',
       defaultTranslation: 'BSB',
       reviewWindowDays: 14,
       autoPreviewVerses: false,
       updatedAt: NOW,
     };
     await pushOne(settingsChange(settings, 0));
-    await pushOne(settingsChange({ ...settings, look: 'folio', updatedAt: LATER }, 1, ['look']));
+    await pushOne(settingsChange({ ...settings, colorMode: 'dark', updatedAt: LATER }, 1, ['colorMode']));
     const result = await pushOne(
       settingsChange({ ...settings, reviewWindowDays: 7, updatedAt: LATEST }, 1, [
         'reviewWindowDays',
@@ -122,7 +120,7 @@ describe('both sides changed a row: last write wins by updatedAt', () => {
     );
     expect(result).toMatchObject({ status: 'conflict', resolution: 'client-won' });
     const stored = await t.prisma.userSettings.findUniqueOrThrow({ where: { userId: account.id } });
-    expect(stored).toMatchObject({ look: 'folio', reviewWindowDays: 7, rev: 3n });
+    expect(stored).toMatchObject({ colorMode: 'dark', reviewWindowDays: 7, rev: 3n });
   });
 });
 
