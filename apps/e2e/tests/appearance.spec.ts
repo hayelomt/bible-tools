@@ -1,7 +1,9 @@
 import { devices, expect, test } from '@playwright/test';
 
 test('the saved mode is applied before the app loads', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('lamp.theme', JSON.stringify({ mode: 'dark' })));
+  await page.addInitScript(() =>
+    localStorage.setItem('lamp.theme', JSON.stringify({ mode: 'dark' })),
+  );
   // Stop the app's own script, so only the inline script in index.html can set the mode.
   await page.route('**/*.js', (route) => route.abort());
   await page.goto('/');

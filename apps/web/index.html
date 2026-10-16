@@ -18,7 +18,8 @@
           mode = (JSON.parse(localStorage.getItem('lamp.theme') || '{}') || {}).mode;
         } catch (e) {}
         var dark =
-          mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+          mode === 'dark' ||
+          (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
         var root = document.documentElement;
         root.classList.toggle('dark', dark);
         root.style.colorScheme = dark ? 'dark' : 'light';

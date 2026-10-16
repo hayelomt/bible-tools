@@ -126,10 +126,7 @@ function EntryText({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'lesson'
   }
   return (
     <span
-      className={cn(
-        'line-clamp-3 break-words',
-        entry.reply && 'border-l-2 border-border pl-3',
-      )}
+      className={cn('line-clamp-3 break-words', entry.reply && 'border-l-2 border-border pl-3')}
     >
       {around(entry.text, passages).map((segment, i) =>
         segment.match ? (

@@ -51,7 +51,10 @@ const own = rules(globals);
 
 /** Every token in one mode, with `var()` aliases resolved. */
 function tokens(mode: 'light' | 'dark'): Map<string, string> {
-  const merged = new Map([...own.get(':root')!, ...(mode === 'dark' ? own.get(':root.dark')! : [])]);
+  const merged = new Map([
+    ...own.get(':root')!,
+    ...(mode === 'dark' ? own.get(':root.dark')! : []),
+  ]);
   const resolve = (value: string): string => {
     const alias = /^var\(--([\w-]+)\)$/.exec(value);
     return alias ? resolve(merged.get(alias[1]!) ?? value) : value;

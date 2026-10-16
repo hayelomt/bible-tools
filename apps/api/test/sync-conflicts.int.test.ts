@@ -112,7 +112,9 @@ describe('both sides changed a row: last write wins by updatedAt', () => {
       updatedAt: NOW,
     };
     await pushOne(settingsChange(settings, 0));
-    await pushOne(settingsChange({ ...settings, colorMode: 'dark', updatedAt: LATER }, 1, ['colorMode']));
+    await pushOne(
+      settingsChange({ ...settings, colorMode: 'dark', updatedAt: LATER }, 1, ['colorMode']),
+    );
     const result = await pushOne(
       settingsChange({ ...settings, reviewWindowDays: 7, updatedAt: LATEST }, 1, [
         'reviewWindowDays',

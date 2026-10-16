@@ -394,9 +394,7 @@ function Rejected({ changes, onOpen }: { changes: RejectedChange[]; onOpen: () =
           <li key={change.seq} className="flex flex-col gap-1 rounded-lg border p-3 text-sm">
             <span className="font-medium break-words">{change.what}</span>
             <span>{change.reason}</span>
-            <span className="text-xs break-words text-muted-foreground">
-              {change.details}
-            </span>
+            <span className="text-xs break-words text-muted-foreground">{change.details}</span>
             <div className="mt-1 flex flex-wrap gap-2">
               <OpenLink change={change} onOpen={onOpen} />
               <Button
