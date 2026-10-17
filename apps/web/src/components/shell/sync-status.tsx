@@ -460,6 +460,12 @@ function OpenLink({ change, onOpen }: { change: RejectedChange; onOpen: () => vo
           Open
         </Link>
       );
+    case 'inbox':
+      return (
+        <Link to="/inbox" onClick={onOpen} className={className}>
+          Open
+        </Link>
+      );
     default:
       return null;
   }

@@ -36,8 +36,15 @@ const REFS: Readonly<Record<RowEntity, Readonly<Record<string, RowEntity>>>> = {
   question: { lessonId: 'lesson', answerSectionId: 'section' },
   highlight: { promotedSectionId: 'section' },
   memoryItem: {},
+  inboxItem: { placedInSectionId: 'section' },
 };
-const OPTIONAL_REFS = new Set(['seriesId', 'conflictOf', 'answerSectionId', 'promotedSectionId']);
+const OPTIONAL_REFS = new Set([
+  'seriesId',
+  'conflictOf',
+  'answerSectionId',
+  'promotedSectionId',
+  'placedInSectionId',
+]);
 
 type AnyRow = EntityRow<RowEntity> & Record<string, unknown>;
 
@@ -60,6 +67,7 @@ export async function noteCounts(db: LampDb) {
     lessons: await db.lesson.filter(live).count(),
     highlights: await db.highlight.filter(live).count(),
     memoryItems: await db.memoryItem.filter(live).count(),
+    inboxItems: await db.inboxItem.filter(live).count(),
   };
 }
 

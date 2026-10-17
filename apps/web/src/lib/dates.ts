@@ -74,3 +74,10 @@ export function agoLabel(iso: string, now = new Date()): string {
   if (minutes < 12 * 60) return `${Math.floor(minutes / 60)} h ago`;
   return momentLabel(iso, now);
 }
+
+/** When something arrived, as a list shows it: "10:42" today, "Thu 16 Oct" before. */
+export function receivedLabel(iso: string, now = new Date()): string {
+  const at = new Date(iso);
+  const day = today(at);
+  return day === today(now) ? TIME.format(at) : shortDate(day, now);
+}

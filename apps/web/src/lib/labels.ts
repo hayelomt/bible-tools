@@ -25,16 +25,24 @@ export function maskEmail(email: string): string {
   return at > 0 ? `${email[0]}•••${email.slice(at)}` : '•••';
 }
 
-/** "12 lessons, 3 highlights and 2 memory verses", leaving out what there's none of. */
-export function notesSummary(counts: {
+/** The notes on a device, as the removal dialogs count them (`noteCounts`). */
+export interface NoteCounts {
   lessons: number;
   highlights: number;
   memoryItems: number;
-}): string {
+  inboxItems: number;
+}
+
+export const notesTotal = (counts: NoteCounts): number =>
+  counts.lessons + counts.highlights + counts.memoryItems + counts.inboxItems;
+
+/** "12 lessons, 3 highlights and 2 memory verses", leaving out what there's none of. */
+export function notesSummary(counts: NoteCounts): string {
   const parts = [
     counts.lessons && count(counts.lessons, 'lesson'),
     counts.highlights && count(counts.highlights, 'highlight'),
     counts.memoryItems && count(counts.memoryItems, 'memory verse'),
+    counts.inboxItems && count(counts.inboxItems, 'inbox item'),
   ].filter((part): part is string => !!part);
   if (parts.length === 0) return 'No notes';
   return parts.length === 1 ? parts[0]! : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;

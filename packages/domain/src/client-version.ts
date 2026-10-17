@@ -21,6 +21,11 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
     fingerprint: 'bbca1ba1',
     change: 'Phase 1 (v1): the eleven entities, section bodies with verse chips, BSB and KJV',
   },
+  {
+    minClientVersion: '0.2.0',
+    fingerprint: '6dad71d8',
+    change: 'M9 (interop): the inbox item',
+  },
 ];
 
 /**

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { writesSettled } from '@/data/action.ts';
 import { db } from '@/data/db.ts';
 import { useAccount } from '@/lib/account.ts';
-import { count, notesSummary } from '@/lib/labels.ts';
+import { count, type NoteCounts, notesSummary, notesTotal } from '@/lib/labels.ts';
 import { forgetSearches } from '@/lib/recent-searches.ts';
 import { noteCounts, removeNotes, unsyncedCount } from '@/sync/device-data.ts';
 import { syncEngine } from '@/sync/sync.ts';
@@ -57,8 +57,8 @@ async function remove() {
 }
 
 /** "12 lessons and 3 highlights are deleted from this device." */
-function removedLine(counts: Parameters<typeof notesSummary>[0]) {
-  const total = counts.lessons + counts.highlights + counts.memoryItems;
+function removedLine(counts: NoteCounts) {
+  const total = notesTotal(counts);
   if (total === 0) return 'Everything on this device is deleted.';
   return `${notesSummary(counts)} ${total === 1 ? 'is' : 'are'} deleted from this device.`;
 }

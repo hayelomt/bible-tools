@@ -127,6 +127,8 @@ export const PARENT_COLUMNS: Readonly<Record<EntityName, readonly string[]>> = {
   question: ['lessonId'],
   highlight: [],
   memoryItem: [],
+  // The section an item was placed in isn't its parent: the item is done with once placed.
+  inboxItem: [],
 };
 
 /**

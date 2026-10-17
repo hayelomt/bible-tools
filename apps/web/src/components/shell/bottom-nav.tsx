@@ -16,7 +16,7 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
       data-slot="bottom-nav"
       className="fixed inset-x-0 bottom-0 z-10 border-t bg-background pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      <ul className="grid h-14 grid-cols-4">
+      <ul className="grid h-14 grid-cols-5">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
           <li key={to}>
             <Link

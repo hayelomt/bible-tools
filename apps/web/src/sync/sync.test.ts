@@ -1006,7 +1006,12 @@ describe('guests and devices (§6.6)', () => {
     const after = await state();
     expect(after).toMatchObject({ ownerUserId: null, ownerEmail: null, cursor: 0 });
     expect(after.deviceId).not.toBe(deviceId);
-    expect(await noteCounts(db)).toEqual({ lessons: 0, highlights: 0, memoryItems: 0 });
+    expect(await noteCounts(db)).toEqual({
+      lessons: 0,
+      highlights: 0,
+      memoryItems: 0,
+      inboxItems: 0,
+    });
   });
 });
 

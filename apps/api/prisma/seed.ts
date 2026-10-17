@@ -209,6 +209,16 @@ async function main(): Promise<void> {
   const memory = await prisma.memoryItem.create({
     data: { userId, ref: { ...rom8, verseEnd: undefined, display: 'Romans 8:28' }, rev: next() },
   });
+  // Not cited: an inbox item joins the verse index only once it's placed in a lesson.
+  await prisma.inboxItem.create({
+    data: {
+      userId,
+      origin: 'typed',
+      text: 'Look up "hesed" before Sunday.',
+      receivedAt: new Date(),
+      rev: next(),
+    },
+  });
 
   await prisma.citation.createMany({
     data: [

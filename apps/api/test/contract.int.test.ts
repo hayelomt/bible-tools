@@ -29,6 +29,7 @@ const ENTITY_TABLES: Record<EntityName, string> = {
   question: 'question',
   highlight: 'highlight',
   memoryItem: 'memory_item',
+  inboxItem: 'inbox_item',
 };
 
 interface Contract {

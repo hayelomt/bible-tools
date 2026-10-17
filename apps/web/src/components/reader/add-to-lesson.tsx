@@ -37,13 +37,34 @@ export function AddToLesson({ open, onOpenChange, label, onAdd }: AddToLessonPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         {/* Mounted only while open, so each opening starts at the most recent lesson. */}
-        {open && <AddForm label={label} onAdd={onAdd} />}
+        {open && (
+          <LessonPicker
+            title={`Add ${label} to a lesson`}
+            description="Adds a section with the verse and your note."
+            newLesson={label}
+            submit="Add"
+            onPick={onAdd}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function AddForm({ label, onAdd }: Pick<AddToLessonProps, 'label' | 'onAdd'>) {
+interface LessonPickerProps {
+  title: string;
+  description: string;
+  /** The title of the new lesson offered last; null offers none. */
+  newLesson: string | null;
+  submit: string;
+  onPick: (choice: AddChoice) => void;
+}
+
+/**
+ * The form inside a dialog that picks a lesson: the most recent chosen to start with, so it's one
+ * tap; a search once there are more than five.
+ */
+export function LessonPicker({ title, description, newLesson, submit, onPick }: LessonPickerProps) {
   const lessons = useLiveQuery(() => allLessons(), []);
   const [query, setQuery] = useState('');
   const [chosen, setChosen] = useState<string | null>(null);
@@ -55,19 +76,19 @@ function AddForm({ label, onAdd }: Pick<AddToLessonProps, 'label' | 'onAdd'>) {
     ? lessons.filter((lesson) => lesson.title.toLowerCase().includes(words))
     : lessons.slice(0, RECENT);
   // The most recent lesson until another is picked; a new lesson when there are none.
-  const choice = chosen ?? lessons[0]?.id ?? 'new';
+  const choice = chosen ?? lessons[0]?.id ?? (newLesson === null ? null : 'new');
 
   return (
     <form
       className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault();
-        onAdd(choice === 'new' ? 'new' : { lessonId: choice });
+        if (choice) onPick(choice === 'new' ? 'new' : { lessonId: choice });
       }}
     >
       <DialogHeader>
-        <DialogTitle>Add {label} to a lesson</DialogTitle>
-        <DialogDescription>Adds a section with the verse and your note.</DialogDescription>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
       {lessons.length > RECENT && (
         <Input
@@ -88,6 +109,9 @@ function AddForm({ label, onAdd }: Pick<AddToLessonProps, 'label' | 'onAdd'>) {
       )}
       <fieldset className="flex max-h-[50svh] min-w-0 flex-col gap-1 overflow-y-auto border-0 p-0">
         <legend className="sr-only">Lesson</legend>
+        {lessons.length === 0 && newLesson === null && (
+          <p className="py-2 text-sm text-muted-foreground">No lessons yet.</p>
+        )}
         {words && shown.length === 0 && (
           <p className="py-2 text-sm text-muted-foreground">No lesson matches “{query.trim()}”.</p>
         )}
@@ -101,24 +125,30 @@ function AddForm({ label, onAdd }: Pick<AddToLessonProps, 'label' | 'onAdd'>) {
             <LessonLabel lesson={lesson} />
           </Choice>
         ))}
-        <Choice value="new" checked={choice === 'new'} onChoose={setChosen}>
-          New lesson “{label}”
-        </Choice>
+        {newLesson !== null && (
+          <Choice value="new" checked={choice === 'new'} onChoose={setChosen}>
+            New lesson “{newLesson}”
+          </Choice>
+        )}
       </fieldset>
       <DialogFooter>
         <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
-        <Button type="submit">Add</Button>
+        <Button type="submit" disabled={!choice}>
+          {submit}
+        </Button>
       </DialogFooter>
     </form>
   );
 }
 
-function Choice({
+export function Choice({
+  name = 'lesson',
   value,
   checked,
   onChoose,
   children,
 }: {
+  name?: string;
   value: string;
   checked: boolean;
   onChoose: (value: string) => void;
@@ -128,7 +158,7 @@ function Choice({
     <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-muted has-focus-visible:ring-3 has-focus-visible:ring-ring/50 pointer-coarse:min-h-11">
       <input
         type="radio"
-        name="lesson"
+        name={name}
         value={value}
         checked={checked}
         onChange={() => onChoose(value)}

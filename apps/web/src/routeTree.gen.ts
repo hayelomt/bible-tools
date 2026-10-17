@@ -21,6 +21,7 @@ import { Route as AppSigninRouteImport } from './routes/_app/signin'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppVerifyEmailRouteImport } from './routes/_app/verify-email'
 import { Route as DevSeedRouteImport } from './routes/dev.seed'
+import { Route as AppInboxIndexRouteImport } from './routes/_app/inbox/index'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
 import { Route as AppReadIndexRouteImport } from './routes/_app/read/index'
@@ -93,6 +94,11 @@ const DevSeedRoute = DevSeedRouteImport.update({
   id: '/dev/seed',
   path: '/dev/seed',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppInboxIndexRoute = AppInboxIndexRouteImport.update({
+  id: '/inbox/',
+  path: '/inbox/',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppLessonsIndexRoute = AppLessonsIndexRouteImport.update({
   id: '/lessons/',
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
+  '/inbox/': typeof AppInboxIndexRoute
   '/lessons/': typeof AppLessonsIndexRoute
   '/read/': typeof AppReadIndexRoute
   '/review/': typeof AppReviewIndexRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
+  '/inbox': typeof AppInboxIndexRoute
   '/lessons': typeof AppLessonsIndexRoute
   '/read': typeof AppReadIndexRoute
   '/review': typeof AppReviewIndexRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_app/settings/password': typeof AppSettingsPasswordRoute
   '/_app/tags/$tagId': typeof AppTagsTagIdRoute
   '/_app/verses/$passage': typeof AppVersesPassageRoute
+  '/_app/inbox/': typeof AppInboxIndexRoute
   '/_app/lessons/': typeof AppLessonsIndexRoute
   '/_app/read/': typeof AppReadIndexRoute
   '/_app/review/': typeof AppReviewIndexRoute
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/settings/password'
     | '/tags/$tagId'
     | '/verses/$passage'
+    | '/inbox/'
     | '/lessons/'
     | '/read/'
     | '/review/'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/settings/password'
     | '/tags/$tagId'
     | '/verses/$passage'
+    | '/inbox'
     | '/lessons'
     | '/read'
     | '/review'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/_app/settings/password'
     | '/_app/tags/$tagId'
     | '/_app/verses/$passage'
+    | '/_app/inbox/'
     | '/_app/lessons/'
     | '/_app/read/'
     | '/_app/review/'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dev/seed'
       preLoaderRoute: typeof DevSeedRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/inbox/': {
+      id: '/_app/inbox/'
+      path: '/inbox'
+      fullPath: '/inbox/'
+      preLoaderRoute: typeof AppInboxIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/lessons/': {
       id: '/_app/lessons/'
@@ -542,6 +561,7 @@ interface AppRouteChildren {
   AppSettingsPasswordRoute: typeof AppSettingsPasswordRoute
   AppTagsTagIdRoute: typeof AppTagsTagIdRoute
   AppVersesPassageRoute: typeof AppVersesPassageRoute
+  AppInboxIndexRoute: typeof AppInboxIndexRoute
   AppLessonsIndexRoute: typeof AppLessonsIndexRoute
   AppReadIndexRoute: typeof AppReadIndexRoute
   AppReviewIndexRoute: typeof AppReviewIndexRoute
@@ -566,6 +586,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsPasswordRoute: AppSettingsPasswordRoute,
   AppTagsTagIdRoute: AppTagsTagIdRoute,
   AppVersesPassageRoute: AppVersesPassageRoute,
+  AppInboxIndexRoute: AppInboxIndexRoute,
   AppLessonsIndexRoute: AppLessonsIndexRoute,
   AppReadIndexRoute: AppReadIndexRoute,
   AppReviewIndexRoute: AppReviewIndexRoute,

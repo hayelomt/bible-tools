@@ -22,6 +22,7 @@ export {
   type Suggestion,
   suggest,
 } from './parse-reference.ts';
+export { type FoundReference, findReferences } from './find-references.ts';
 export {
   type CitationEntry,
   CITING_ENTITIES,
@@ -157,6 +158,11 @@ export {
   HIGHLIGHT_COLOURS,
   type Highlight,
   highlightSchema,
+  hasRefOrText,
+  INBOX_ORIGINS,
+  type InboxItem,
+  inboxItemSchema,
+  type InboxOrigin,
   type Lesson,
   LESSON_SOURCES,
   lessonSchema,

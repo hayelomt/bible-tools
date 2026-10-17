@@ -4,6 +4,7 @@ import {
   keyBetween,
   type MeResponse,
   meResponseSchema,
+  MIN_CLIENT_VERSION,
   type PullResponse,
   pullResponseSchema,
   type PushRequest,
@@ -21,6 +22,7 @@ import {
   type LessonFields,
   updateLesson,
 } from '@/data/actions/lessons.ts';
+import { addInboxItem, dismissInboxItem, inboxItems, sendToLesson } from '@/data/actions/inbox.ts';
 import { addQuestion } from '@/data/actions/questions.ts';
 import {
   createSection,
@@ -86,7 +88,11 @@ class HttpApi implements SyncApi {
   }
 
   async pull(cursor: number, by: { deviceId: string; deviceName: string }): Promise<PullResponse> {
-    const query = new URLSearchParams({ cursor: `${cursor}`, clientVersion: '0.0.0', ...by });
+    const query = new URLSearchParams({
+      cursor: `${cursor}`,
+      clientVersion: MIN_CLIENT_VERSION,
+      ...by,
+    });
     return pullResponseSchema.parse(await this.call('GET', `/api/sync/pull?${query}`));
   }
 
@@ -128,7 +134,7 @@ async function device(name: string, ip: string): Promise<Device> {
   const db = new LampDb(`contract-${++databases}`, { indexedDB, IDBKeyRange });
   await ensureDevice(db, { colorMode: 'system' });
   const api = new HttpApi(ip);
-  const engine = new SyncEngine({ db, api, deviceName: name, clientVersion: '0.0.0' });
+  const engine = new SyncEngine({ db, api, deviceName: name, clientVersion: MIN_CLIENT_VERSION });
   const made = { name, db, api, engine };
   devices.push(made);
   return made;
@@ -321,6 +327,57 @@ describe('two devices editing offline', () => {
       reviewWindowDays: 7,
       autoPreviewVerses: true,
     });
+  });
+});
+
+describe('the inbox on two devices', () => {
+  it('syncs its items, and where one was placed, to both and to a new device', async () => {
+    const { email, first: phone } = await signUp('Safari on iOS');
+    const shared = await addInboxItem(
+      {
+        origin: 'share',
+        ref: {
+          book: 'JHN',
+          chapter: 10,
+          verseStart: 11,
+          display: 'John 10:11',
+          translation: 'BSB',
+          snapshotText: 'I am the good shepherd.',
+        },
+        text: null,
+        sourceUrl: 'https://www.bible.com/bible/3034/JHN.10.11.BSB',
+      },
+      phone.db,
+    );
+    const note = await addInboxItem(
+      { origin: 'typed', ref: null, text: 'Look up hesed' },
+      phone.db,
+    );
+    // Settings sync once changed; until then each device keeps its own defaults.
+    await updateSettings({ reviewWindowDays: 7 }, phone.db);
+    await sync(phone);
+    const laptop = await signIn(email, 'Firefox on macOS');
+    await sync(laptop);
+    expect(await laptop.db.inboxItem.get(shared.id)).toEqual(
+      await phone.db.inboxItem.get(shared.id),
+    );
+
+    // Offline: the laptop sends the verse to a lesson, the phone dismisses the note.
+    laptop.api.online = false;
+    phone.api.online = false;
+    const lesson = await createLesson({ ...LESSON, title: 'The Good Shepherd' }, laptop.db);
+    const { section } = await sendToLesson(shared.id, { lessonId: lesson.id }, laptop.db);
+    await dismissInboxItem(note.id, phone.db);
+
+    await settle(laptop, phone);
+    await expectIdentical(email, laptop, phone);
+    expect(await phone.db.inboxItem.get(shared.id)).toMatchObject({
+      placedInSectionId: section.id,
+    });
+    expect(await inboxItems('2026-10-17', phone.db)).toEqual([]);
+    // The placed section is cited like any other; the item never was.
+    expect(await phone.db.citation.where('sourceId').equals(section.id).count()).toBe(1);
+    expect(await phone.db.citation.where('sourceId').anyOf(shared.id, note.id).count()).toBe(0);
   });
 });
 

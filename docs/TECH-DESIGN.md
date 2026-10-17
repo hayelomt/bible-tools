@@ -113,6 +113,7 @@ interface VerseRef {
   - Psalms display as "Psalm 23" for one and "Psalms 1–2" for a range.
   - Part-verse letters are accepted and dropped (`8:28a` → 8:28).
   - Verse numbers are the KJV's, which both translations use (§9), so nothing typed is remapped.
+- **Reference finder** (M9-03, F19): `findReferences(text) → { from, to, text, ref }[]` finds every reference in a block of free text, for pasted prose and shares. It is stricter than the autocomplete (decided 2026-10-17): the book must be an exact name or listed abbreviation (`matchBooks`' exact matches; no misspellings or partial names) starting with a capital; abbreviations that are also English words (`Is`, `Am`, `Job`, `Ex`, …) need a verse; numbers that don't exist aren't a reference; and a full stop after a whole name ends a sentence ("said John. 3 days"). A list continues the reference before it: after a comma a bare number is a verse in the same chapter, after a semicolon a chapter of the same book, and `chapter:verse` stays in the same book (`Romans 8:28, 31–32; 9:1` is three references, each with its own span).
 
 ### 4.2 Section document model
 
@@ -164,6 +165,7 @@ Section bodies are stored as **ProseMirror JSON**, the format TipTap uses (§8.3
 | `Question` | id, userId, lessonId, text, status, answerSectionId? | |
 | `Highlight` | id, userId, ref jsonb, colour, note?, promotedSectionId? | |
 | `MemoryItem` | id, userId, ref jsonb, ease, interval, nextReviewAt, reviewCount | |
+| `InboxItem` | id, userId, origin, ref jsonb?, text?, sourceUrl?, receivedAt, colour?, importId?, snoozedUntil (`date`)?, placedInSectionId? | v2 (M9-01, §17.2). A CHECK requires `ref` or `text`. Not cited until placed |
 | `Citation` | id, userId, sourceType, sourceId, lessonId?, book, startOrd, endOrd | **Derived:** rebuilt from the source row on every write, on the server and on the device. Index on `(user_id, start_ord, end_ord)`. Never pushed by the client. |
 | `SyncChange` | id (= change id), userId, deviceId, receivedAt, status (`applied`/`conflict`/`rejected`), error jsonb, resultRev | Makes each change idempotent and records what happened (§6) |
 | `Device` | id, userId, name, lastSyncAt, clientVersion | Primary key (userId, id): the id is the device's own `syncState.deviceId`, and one device can sync with several accounts over its life (§6.6). Created on first sync; shown in account settings with "Sign out this device" |
@@ -171,7 +173,7 @@ Section bodies are stored as **ProseMirror JSON**, the format TipTap uses (§8.3
 `Citation` is the only table the client never writes to the server. Both sides compute it from the source rows with the same domain function, so it can't disagree.
 
 ### 5.3 Migrations
-`prisma migrate dev` creates migrations locally and `prisma migrate deploy` applies them at release. Raw SQL in migrations adds what Prisma can't express: `citext`, partial unique indexes (`WHERE deleted_at IS NULL`), check constraints on enum-like text columns, and the `"C"` collation on `section.order_key` (fractional keys compare byte by byte). *Checked at M1-04: `prisma migrate dev` leaves all of these alone (no drift), and an integration test runs `prisma migrate diff --exit-code` against the migrated database.* Enum values: series kind `sermon_series`/`book_study`/`custom`, lesson source `sermon`/`personal`/`group`, question status `open`/`answered`/`parked`, highlight colour `yellow`/`green`/`blue`/`pink`, citation sourceType `lesson`/`section`/`highlight`/`memory_item`. Foreign keys cascade from the user (account deletion) and from a lesson to its contents; optional links (a lesson's series, a question's answer section, a highlight's promoted section, `conflictOf`) are set to null. `Citation.sourceId` and `SyncChange.deviceId` have no foreign key. The Prisma client is generated into `apps/api/src/generated/` (git-ignored) by the Turbo task `db:generate` and on install.
+`prisma migrate dev` creates migrations locally and `prisma migrate deploy` applies them at release. Raw SQL in migrations adds what Prisma can't express: `citext`, partial unique indexes (`WHERE deleted_at IS NULL`), check constraints on enum-like text columns, and the `"C"` collation on `section.order_key` (fractional keys compare byte by byte). *Checked at M1-04: `prisma migrate dev` leaves all of these alone (no drift), and an integration test runs `prisma migrate diff --exit-code` against the migrated database.* Enum values: series kind `sermon_series`/`book_study`/`custom`, lesson source `sermon`/`personal`/`group`, question status `open`/`answered`/`parked`, highlight colour `yellow`/`green`/`blue`/`pink`, inbox item origin `share`/`paste`/`typed`/`import`/`capture` and colour as a highlight's, citation sourceType `lesson`/`section`/`highlight`/`memory_item`. Foreign keys cascade from the user (account deletion) and from a lesson to its contents; optional links (a lesson's series, a question's answer section, a highlight's promoted section, an inbox item's section, `conflictOf`) are set to null. `Citation.sourceId` and `SyncChange.deviceId` have no foreign key. The Prisma client is generated into `apps/api/src/generated/` (git-ignored) by the Turbo task `db:generate` and on install.
 
 ## 6. Sync
 
@@ -674,6 +676,9 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 62 | The Inbox in the navigation (2026-10-17) | A fifth bottom-bar tab after Lessons, with a count badge; in the sidebar after Lessons | UX-PATTERNS |
 | 63 | Chip translations from outside (2026-10-17) | `shared` and `pasted` join the chip translations, with an optional `versionLabel` ("NIV") when the source names its version; the reading translations stay BSB and KJV | §17.3 |
 | 64 | Templates (2026-10-17) | Built-in templates are code, not rows; custom templates sync; the default per lesson kind is a setting | §17.6 |
+| 65 | M9's sync format (2026-10-17, M9-01) | One `SYNC_FORMATS` entry at 0.2.0 for the whole M9 release, and the web app raised to 0.2.0 at once; each later M9 format change updates that entry's fingerprint | §6.7, §17.1 |
+| 66 | Free-text references (2026-10-17, M9-03) | Exact, capitalised book names; English-word abbreviations need a verse; lists split into one reference per part | §4.1 |
+| 67 | The Inbox's add box (2026-10-17, M9-02) | A whole entry that is one reference becomes a chip in the default translation; anything else is a note, until M9-09's paste prompt. Its origin is `typed`, shown as "Added" | §17.2 |
 
 **Still open:** nothing blocks phase 1. For v2: how a section citing several passages shows in the compile view (M10-03), group sync (M13-06), and the YouVersion export format and deep-link formats (M8-05).
 
@@ -690,7 +695,7 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 
 ## 17. v2 design (F17–F35)
 
-*Designed 2026-10-17 (M8-02); not built yet.* As in v1, each M9–M13 task records what it builds in the sections above. v2 keeps every principle in §1: screens read only from IndexedDB, every change a user makes goes through the sync push, and sync stays per user. Only F34 and F35 add server surface beyond sync (M13). Decisions 56–64 (§15) were made with this design.
+*Designed 2026-10-17 (M8-02). Built so far: the inbox item and the Inbox screen (M9-01, M9-02) and the reference finder (M9-03, §4.1).* As in v1, each M9–M13 task records what it builds in the sections above. v2 keeps every principle in §1: screens read only from IndexedDB, every change a user makes goes through the sync push, and sync stays per user. Only F34 and F35 add server surface beyond sync (M13). Decisions 56–64 (§15) were made with this design.
 
 ### 17.1 Entities
 
@@ -715,13 +720,13 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 - **Conflicts:** last write wins per listed field (§6.4). None of these rows has a body, so none makes a conflicted copy.
 - **Another account's notes** (§6.6, `copyNotes`): the new id columns are remapped, and so are the targets of links inside section bodies (§17.4).
 - **On the device:** each release adds its stores in a new Dexie version, which converts stored rows and queued changes (§6.7).
-- **Format:** each milestone release that changes the wire format adds one `SYNC_FORMATS` entry (§6.7): M9 (inbox items, chip translations, settings), M10 (the `noteLink` node, question entries, templates, `Lesson.kind`), M11 (lesson and section source columns, inbox tags and snooze), M12 (visits, dismissals, settings), M13 (groups), and the release after M10, which drops `question.status`.
+- **Format:** each milestone release that changes the wire format adds one `SYNC_FORMATS` entry (§6.7): M9 (inbox items, chip translations, settings; the entry is at 0.2.0, and the web app went to 0.2.0 with M9-01, decided 2026-10-17; later M9 tasks update its fingerprint), M10 (the `noteLink` node, question entries, templates, `Lesson.kind`), M11 (lesson and section source columns, inbox tags and snooze), M12 (visits, dismissals, settings), M13 (groups), and the release after M10, which drops `question.status`.
 
 ### 17.2 Inbox item (F17, F18, F19, F21, F27)
 
 | Column | Type | Notes |
 |---|---|---|
-| `origin` | text: `share`, `paste`, `import`, `capture` | How it arrived |
+| `origin` | text: `share`, `paste`, `typed`, `import`, `capture` | How it arrived. `typed` (shown as "Added") is the Inbox's add box, added in M9-02 |
 | `ref` | jsonb `VerseRef`, nullable | The chip, with its snapshot; translation as in §17.3 |
 | `text` | text up to 10,000, nullable | The note, or the text around the reference. A CHECK requires `ref` or `text` |
 | `sourceUrl` | text up to 2,048, nullable | The shared URL |
@@ -735,6 +740,7 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 - **Not indexed** (decision 59): `citationsFor` gives an inbox item no citations, and the search index leaves it out, so the verse index, verse and free-text search and the reader's `•` don't see it until it is placed. The section it is placed in is indexed as usual.
 - **Re-import** (M9-11): an imported item matches an earlier one with the same passage (book and ordinals), `receivedAt` and `text`. Dismissed (tombstoned) items count, so a dismissal isn't undone by importing again.
 - **Tags** (F27): `inboxItemTag` (`tagId`, `inboxItemId`), one live link per item and tag like `sectionTag` (§6.6's link merging applies). Placing an item moves its tags onto the section.
+- **Built (M9-01, M9-02):** `inboxItemSchema` checks for a chip or non-blank text, also in the push schema (a refined object can't be `omit`ted, so the push uses `inboxItemChangeRow`). The API writes a null `ref` as `Prisma.DbNull` (`nullableJson` in `entity-tables.ts`) and reads `snoozedUntil` back as `YYYY-MM-DD`. Placing an item makes a section with the chip then the text (a paragraph a line), at the end of the lesson; a new lesson is personal and titled from the reference or the note's first line. Appending adds the same paragraphs to the end of a section. Undo of a placement takes the section out again (and a lesson made for it), or puts the appended section's body back, unless the section was edited since, which keeps the edit. The add box makes a chip, in the default translation with its text when the book is here within 2 s, only when the whole entry is one reference ("Rom 8:28"); anything else is a note (decided 2026-10-17). The removal dialogs count inbox items among the notes.
 - **Share target** (M9-06): `/share` opens in the precached shell and writes the item with an ordinary action, so a share works offline.
 - Dexie indexes `receivedAt`, `importId` and `placedInSectionId`.
 

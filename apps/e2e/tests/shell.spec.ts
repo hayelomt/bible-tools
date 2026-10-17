@@ -2,6 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 const SCREENS = [
   ['/', 'Lessons'],
+  ['/inbox', 'Inbox'],
   ['/read', 'John 1'],
   ['/search', 'Search'],
   ['/review', 'Review'],

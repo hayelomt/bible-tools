@@ -4,6 +4,7 @@ import type {
   EntityName,
   EntityRow,
   Highlight,
+  InboxItem,
   Lesson,
   LessonTag,
   MemoryItem,
@@ -80,6 +81,7 @@ export class LampDb extends Dexie {
   question!: Table<Question, string>;
   highlight!: Table<Highlight, string>;
   memoryItem!: Table<MemoryItem, string>;
+  inboxItem!: Table<InboxItem, string>;
   /** One row, under `SETTINGS_KEY`. */
   userSettings!: Table<UserSettings, string>;
   citation!: Table<Citation, string>;
@@ -165,6 +167,9 @@ export class LampDb extends Dexie {
           }
         });
     });
+    // The inbox (F17, §17.2): sorted by when an item arrived, an import's items found together,
+    // and an item found from the section it was placed in.
+    this.version(6).stores({ inboxItem: 'id, receivedAt, importId, placedInSectionId' });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {

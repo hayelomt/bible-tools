@@ -15,7 +15,7 @@ import { db, SYNC_STATE_KEY } from '@/data/db.ts';
 import { setAccount, useAccount } from '@/lib/account.ts';
 import { logout } from '@/lib/api.ts';
 import { authErrorMessage } from '@/lib/auth-messages.ts';
-import { count, maskEmail, notesSummary } from '@/lib/labels.ts';
+import { count, maskEmail, notesSummary, notesTotal } from '@/lib/labels.ts';
 import { useOnline } from '@/lib/use-online.ts';
 import { noteCounts, unsyncedCount } from '@/sync/device-data.ts';
 import type { OtherAccountChoice } from '@/sync/engine.ts';
@@ -56,7 +56,7 @@ export function OtherAccountDialog() {
   if (!account || !info) return null;
 
   const owner = info.owner ? maskEmail(info.owner) : 'another account';
-  const total = info.counts.lessons + info.counts.highlights + info.counts.memoryItems;
+  const total = notesTotal(info.counts);
   const notes = total > 0 ? `${notesSummary(info.counts)} here` : 'The notes here';
   const choices: Array<{ value: OtherAccountChoice; label: string; hint: string }> = [
     {

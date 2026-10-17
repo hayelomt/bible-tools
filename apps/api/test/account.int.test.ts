@@ -154,6 +154,7 @@ async function fillAccount(userId: string): Promise<void> {
     p.question.create({ data: { userId, lessonId: lesson.id, text: 'q' } }),
     p.highlight.create({ data: { userId, ref: {}, colour: 'yellow' } }),
     p.memoryItem.create({ data: { userId, ref: {} } }),
+    p.inboxItem.create({ data: { userId, origin: 'share', receivedAt: new Date(), text: 't' } }),
     p.citation.create({
       data: {
         userId,

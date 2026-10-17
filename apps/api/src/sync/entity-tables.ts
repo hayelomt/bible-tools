@@ -1,5 +1,5 @@
 import type { EntityName, EntityRow, SyncRow } from '@lamp/domain';
-import type { Prisma } from '../generated/prisma/client.js';
+import { Prisma } from '../generated/prisma/client.js';
 
 export type Tx = Prisma.TransactionClient;
 
@@ -34,6 +34,8 @@ interface EntityTable {
   refs: Readonly<Record<string, RowEntity>>;
   /** Columns sent as ISO strings and stored as timestamps or dates. */
   times: readonly string[];
+  /** Nullable `jsonb` columns, whose `null` Prisma writes only as `DbNull`. */
+  nullableJson?: readonly string[];
 }
 
 const SYNC_TIMES = ['createdAt', 'updatedAt', 'deletedAt'];
@@ -80,7 +82,16 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
     refs: {},
     times: [...SYNC_TIMES, 'nextReviewAt'],
   },
+  inboxItem: {
+    model: model((tx) => tx.inboxItem),
+    refs: { placedInSectionId: 'section' },
+    times: [...SYNC_TIMES, 'receivedAt', 'snoozedUntil'],
+    nullableJson: ['ref'],
+  },
 };
+
+/** Columns stored as a `date`, which the device has as `YYYY-MM-DD`. */
+const DATE_COLUMNS = new Set(['date', 'snoozedUntil']);
 
 /** Columns that never leave the server; `rev` travels beside the row. */
 const SERVER_COLUMNS = new Set(['userId', 'rev', 'bodyRev', 'bodyDevice']);
@@ -91,7 +102,11 @@ export function toRow<E extends EntityName>(stored: object): SyncRow<E> {
   for (const [column, value] of Object.entries(stored)) {
     if (SERVER_COLUMNS.has(column)) continue;
     if (!(value instanceof Date)) row[column] = value;
-    else row[column] = column === 'date' ? value.toISOString().slice(0, 10) : value.toISOString();
+    else {
+      row[column] = DATE_COLUMNS.has(column)
+        ? value.toISOString().slice(0, 10)
+        : value.toISOString();
+    }
   }
   return row as SyncRow<E>;
 }
@@ -102,9 +117,13 @@ export function toColumns(
   row: Omit<EntityRow<RowEntity>, 'rev'>,
 ): Record<string, unknown> {
   const columns: Record<string, unknown> = { ...row };
-  for (const time of ENTITY_TABLES[entity].times) {
+  const { times, nullableJson = [] } = ENTITY_TABLES[entity];
+  for (const time of times) {
     const value = columns[time] as string | null;
     columns[time] = value === null ? null : new Date(value);
+  }
+  for (const column of nullableJson) {
+    if (columns[column] === null) columns[column] = Prisma.DbNull;
   }
   return columns;
 }

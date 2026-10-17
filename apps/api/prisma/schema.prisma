@@ -45,6 +45,7 @@ model User {
   questions   Question[]
   highlights  Highlight[]
   memoryItems MemoryItem[]
+  inboxItems  InboxItem[]
   citations   Citation[]
   syncChanges SyncChange[]
   devices     Device[]
@@ -182,6 +183,7 @@ model Section {
   tags               SectionTag[]
   answeredQuestions  Question[]
   promotedHighlights Highlight[]
+  placedInboxItems   InboxItem[]
 
   @@index([userId, rev])
   @@index([lessonId, parentId, orderKey])
@@ -324,6 +326,33 @@ model MemoryItem {
   @@index([userId, rev])
   @@index([userId, nextReviewAt])
   @@map("memory_item")
+}
+
+// A verse or a note waiting to be put in a lesson (TECH-DESIGN §17.2). Not cited until placed.
+// origin: share | paste | typed | import | capture; ref: VerseRef; colour: yellow | green | blue |
+// pink. A CHECK requires ref or text.
+model InboxItem {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  origin            String
+  ref               Json?
+  text              String?
+  sourceUrl         String?   @map("source_url")
+  receivedAt        DateTime  @map("received_at") @db.Timestamptz(3)
+  colour            String?
+  importId          String?   @map("import_id") @db.Uuid
+  snoozedUntil      DateTime? @map("snoozed_until") @db.Date
+  placedInSectionId String?   @map("placed_in_section_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev               BigInt    @default(0)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placedInSection Section? @relation(fields: [placedInSectionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, rev])
+  @@map("inbox_item")
 }
 
 // Derived from the source row on every write and never pushed by the client.

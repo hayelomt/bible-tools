@@ -5,7 +5,7 @@ import { type TestApp, createTestApp } from './int/app.js';
 import { truncateAll } from './int/db.js';
 import { type Client, createClient, sessionCookie } from './int/http.js';
 import { runEmail } from './int/mail.js';
-import { lessonRow, upsert } from './int/sync.js';
+import { CLIENT_VERSION, lessonRow, upsert } from './int/sync.js';
 
 /** `GET /api/account/devices` and `DELETE /api/account/devices/:id` (§6.6). */
 
@@ -45,7 +45,7 @@ async function signIn(email: string): Promise<string> {
   return sessionCookie(res)?.token ?? '';
 }
 
-const pull = (token: string, device: DeviceOf, clientVersion = '0.0.0') => {
+const pull = (token: string, device: DeviceOf, clientVersion = CLIENT_VERSION) => {
   const query = new URLSearchParams({
     cursor: '0',
     clientVersion,
@@ -55,7 +55,7 @@ const pull = (token: string, device: DeviceOf, clientVersion = '0.0.0') => {
   return client.get(`/api/sync/pull?${query}`, token);
 };
 
-const push = (token: string, device: DeviceOf, clientVersion = '0.0.0') =>
+const push = (token: string, device: DeviceOf, clientVersion = CLIENT_VERSION) =>
   client.post(
     '/api/sync/push',
     {
@@ -88,16 +88,16 @@ describe('GET /api/account/devices', () => {
     const before = Date.now();
     await pull(phone, PHONE).expect(200);
     const [listed] = await devices(phone);
-    expect(listed).toMatchObject({ ...PHONE, clientVersion: '0.0.0' });
+    expect(listed).toMatchObject({ ...PHONE, clientVersion: CLIENT_VERSION });
     expect(Date.parse(listed!.lastSyncAt!)).toBeGreaterThanOrEqual(before - 1000);
     expect(listed!.createdAt).toBe(listed!.lastSyncAt);
 
     // A push updates the name and version, and keeps when it was first seen.
-    await push(phone, { ...PHONE, name: 'Chrome on Android tablet' }, '0.2.0').expect(200);
+    await push(phone, { ...PHONE, name: 'Chrome on Android tablet' }, '99.0.0').expect(200);
     const [again] = await devices(phone);
     expect(again).toMatchObject({
       name: 'Chrome on Android tablet',
-      clientVersion: '0.2.0',
+      clientVersion: '99.0.0',
       createdAt: listed!.createdAt,
     });
   });

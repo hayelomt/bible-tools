@@ -123,6 +123,20 @@ describe('check constraints', () => {
     await expect(
       prisma.lesson.create({ data: { userId, title: 'x', date: new Date(), mainPassages: {} } }),
     ).rejects.toThrow(/lesson_main_passages_check/);
+    const item = { userId, origin: 'share', receivedAt: new Date(), text: 'x' };
+    await expect(prisma.inboxItem.create({ data: { ...item, origin: 'email' } })).rejects.toThrow(
+      /inbox_item_origin_check/,
+    );
+    await expect(prisma.inboxItem.create({ data: { ...item, colour: 'purple' } })).rejects.toThrow(
+      /inbox_item_colour_check/,
+    );
+  });
+
+  it('reject an inbox item with neither a verse nor text', async () => {
+    const { id: userId } = await newUser();
+    await expect(
+      prisma.inboxItem.create({ data: { userId, origin: 'typed', receivedAt: new Date() } }),
+    ).rejects.toThrow(/inbox_item_ref_or_text_check/);
   });
 
   it('reject a citation whose range ends before it starts', async () => {
@@ -178,6 +192,9 @@ describe('deletes', () => {
       prisma.question.create({ data: { userId, lessonId: lesson.id, text: 'q' } }),
       prisma.highlight.create({ data: { userId, ref: {}, colour: 'yellow' } }),
       prisma.memoryItem.create({ data: { userId, ref: {} } }),
+      prisma.inboxItem.create({
+        data: { userId, origin: 'share', receivedAt: new Date(), text: 't' },
+      }),
       prisma.citation.create({
         data: {
           userId,
@@ -215,6 +232,7 @@ describe('deletes', () => {
       prisma.question.count({ where }),
       prisma.highlight.count({ where }),
       prisma.memoryItem.count({ where }),
+      prisma.inboxItem.count({ where }),
       prisma.citation.count({ where }),
       prisma.syncChange.count({ where }),
       prisma.device.count({ where }),
@@ -268,7 +286,7 @@ describe('deletes', () => {
     });
   });
 
-  it('of a section unlink the questions, highlights and conflicted copies that point at it', async () => {
+  it('of a section unlink the questions, highlights, inbox items and conflicted copies that point at it', async () => {
     const { id: userId } = await newUser();
     const lesson = await newLesson(userId);
     const section = await newSection(userId, lesson.id);
@@ -288,6 +306,16 @@ describe('deletes', () => {
       data: { userId, ref: {}, colour: 'green', promotedSectionId: section.id },
     });
 
+    const item = await prisma.inboxItem.create({
+      data: {
+        userId,
+        origin: 'typed',
+        text: 'x',
+        receivedAt: new Date(),
+        placedInSectionId: section.id,
+      },
+    });
+
     await prisma.section.delete({ where: { id: section.id } });
 
     await expect(prisma.question.findUnique({ where: { id: question.id } })).resolves.toMatchObject(
@@ -299,6 +327,9 @@ describe('deletes', () => {
       prisma.highlight.findUnique({ where: { id: highlight.id } }),
     ).resolves.toMatchObject({
       promotedSectionId: null,
+    });
+    await expect(prisma.inboxItem.findUnique({ where: { id: item.id } })).resolves.toMatchObject({
+      placedInSectionId: null,
     });
     await expect(prisma.section.findUnique({ where: { id: copy.id } })).resolves.toMatchObject({
       conflictOf: null,

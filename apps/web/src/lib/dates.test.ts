@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agoLabel, longDate, momentLabel, shortDate, today } from './dates.ts';
+import { agoLabel, longDate, momentLabel, receivedLabel, shortDate, today } from './dates.ts';
 
 const NOW = new Date(2026, 9, 13, 23, 30);
 
@@ -24,6 +24,11 @@ describe('dates', () => {
       'yesterday at 21:05',
     );
     expect(momentLabel(new Date(2026, 9, 11, 9, 41).toISOString(), NOW)).toBe('Sun 11 Oct 09:41');
+  });
+
+  it('gives the time something arrived today, and the date before', () => {
+    expect(receivedLabel(new Date(2026, 9, 13, 10, 42).toISOString(), NOW)).toBe('10:42');
+    expect(receivedLabel(new Date(2026, 9, 12, 23, 59).toISOString(), NOW)).toBe('Mon 12 Oct');
   });
 
   it('says how long ago, then the moment', () => {

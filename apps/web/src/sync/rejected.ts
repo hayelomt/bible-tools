@@ -11,6 +11,7 @@ export type RejectedTarget =
   | { kind: 'series'; seriesId: string }
   | { kind: 'tag'; tagId: string }
   | { kind: 'settings' }
+  | { kind: 'inbox' }
   | null;
 
 /** A change the server refused (§6.2), as the sync panel lists it. */
@@ -48,6 +49,7 @@ const NOUNS: Record<EntityName, string> = {
   question: 'Question',
   highlight: 'Highlight',
   memoryItem: 'Memory verse',
+  inboxItem: 'Inbox item',
 };
 
 /** The outbox's refused changes, oldest first, described for the sync panel. */
@@ -111,6 +113,8 @@ async function describe(db: LampDb, entry: OutboxEntry): Promise<RejectedChange>
           : {};
       return { ...base, what, target: lessonTarget(lesson.id, search) };
     }
+    case 'inboxItem':
+      return { ...base, what: 'An inbox item', target: { kind: 'inbox' } };
     case 'highlight':
     case 'memoryItem':
       // Their screens come in M5 and M6.

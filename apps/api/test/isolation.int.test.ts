@@ -16,6 +16,7 @@ import { type Client, createClient, sessionCookie } from './int/http.js';
 import { runEmail } from './int/mail.js';
 import {
   type Account,
+  CLIENT_VERSION,
   DEVICE_ID,
   JOHN_3_16,
   LATER,
@@ -99,6 +100,19 @@ function rowOf(entity: RowEntity, to: Rows): Row {
         interval: 0,
         nextReviewAt: NOW,
         reviewCount: 0,
+      };
+    case 'inboxItem':
+      return {
+        ...synced(),
+        origin: 'share',
+        ref: JOHN_3_16,
+        text: 'Loved',
+        sourceUrl: 'https://www.bible.com/bible/3034/JHN.3.16.BSB',
+        receivedAt: NOW,
+        colour: null,
+        importId: null,
+        snoozedUntil: null,
+        ...refs,
       };
     case 'takeaway':
       return { ...synced(), text: 'Hold fast', ...refs };
@@ -201,7 +215,10 @@ describe('reading', () => {
     const mine = await signUp();
     for (const cursor of [0, 3]) {
       const res = await client
-        .get(`/api/sync/pull?cursor=${cursor}&clientVersion=0.0.0&${PULL_DEVICE}`, mine.token)
+        .get(
+          `/api/sync/pull?cursor=${cursor}&clientVersion=${CLIENT_VERSION}&${PULL_DEVICE}`,
+          mine.token,
+        )
         .expect(200);
       expect(pullResponseSchema.parse(res.body)).toMatchObject({ rows: [], remaining: 0 });
     }

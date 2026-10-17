@@ -1,18 +1,27 @@
 import { cn } from 'cn';
+import { useInboxCount } from '@/components/inbox/inbox-count.ts';
 import { useReviewCount } from '@/components/review/review-count.tsx';
 import type { NavItem } from './nav-items.ts';
 
 /**
- * The number on the Review tab: open questions plus verses due (wireframes/review.md). Read as
- * part of the link's name: "Review 3 waiting".
+ * The number on the Inbox tab (items waiting) and the Review tab (open questions plus verses due),
+ * wireframes/shell.md. Read as part of the link's name: "Review 3 waiting".
  */
 export function NavCount({ to, className }: { to: NavItem['to']; className?: string }) {
-  if (to !== '/review') return null;
-  return <ReviewCount className={className} />;
+  if (to === '/inbox') return <InboxCount className={className} />;
+  if (to === '/review') return <ReviewCount className={className} />;
+  return null;
+}
+
+function InboxCount({ className }: { className?: string }) {
+  return <Count count={useInboxCount()} className={className} />;
 }
 
 function ReviewCount({ className }: { className?: string }) {
-  const count = useReviewCount();
+  return <Count count={useReviewCount()} className={className} />;
+}
+
+function Count({ count, className }: { count: number | undefined; className?: string }) {
   if (!count) return null;
   return (
     <span

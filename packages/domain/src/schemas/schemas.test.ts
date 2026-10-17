@@ -97,10 +97,22 @@ const ROWS: { [E in EntityName]: unknown } = {
     nextReviewAt: NOW,
     reviewCount: 0,
   },
+  inboxItem: {
+    ...meta(11),
+    origin: 'share',
+    ref: ROM_8_28,
+    text: 'From Sunday',
+    sourceUrl: 'https://www.bible.com/bible/3034/ROM.8.28.BSB',
+    receivedAt: NOW,
+    colour: null,
+    importId: null,
+    snoozedUntil: '2026-10-20',
+    placedInSectionId: id(3),
+  },
 };
 
 describe('entity schemas', () => {
-  it('cover the 11 synced entities', () => {
+  it('cover the 12 synced entities', () => {
     expect(ENTITY_NAMES).toEqual(Object.keys(ROWS));
   });
 
@@ -147,6 +159,11 @@ describe('entity schemas', () => {
     ['an unknown colour', 'highlight', { colour: 'red' }],
     ['an ease below 1.3', 'memoryItem', { ease: 1.2 }],
     ['a fractional interval', 'memoryItem', { interval: 1.5 }],
+    ['an inbox item with neither a verse nor text', 'inboxItem', { ref: null, text: null }],
+    ['an inbox item with only blank text', 'inboxItem', { ref: null, text: '  ' }],
+    ['an unknown origin', 'inboxItem', { origin: 'email' }],
+    ['a source address that is not http', 'inboxItem', { sourceUrl: 'javascript:alert(1)' }],
+    ['a snooze with a time', 'inboxItem', { snoozedUntil: '2026-10-20T00:00:00Z' }],
     ['an unknown colour mode', 'userSettings', { colorMode: 'dim' }],
     ['a retired theme field', 'userSettings', { look: 'folio' }],
     ['a review window of 0 days', 'userSettings', { reviewWindowDays: 0 }],
@@ -237,6 +254,15 @@ describe('sync schemas', () => {
     expect(changeSchema.safeParse(change).success).toBe(false);
   });
 
+  it('checks that a pushed inbox item holds a verse or text', () => {
+    const { rev: _itemRev, ...item } = ROWS.inboxItem as Record<string, unknown>;
+    const change = { ...upsert, entity: 'inboxItem', entityId: id(11), row: item };
+    expect(changeSchema.parse(change)).toEqual(change);
+    expect(changeSchema.safeParse({ ...change, row: { ...item, ref: null } }).success).toBe(true);
+    const empty = { ...change, row: { ...item, ref: null, text: null } };
+    expect(changeSchema.safeParse(empty).success).toBe(false);
+  });
+
   it('narrows a change by entity and op', () => {
     const change = changeSchema.parse(upsert);
     if (change.entity === 'lesson' && change.op === 'upsert') {
@@ -316,7 +342,7 @@ describe('sync schemas', () => {
       rows: ENTITY_NAMES.map((entity) => ({ entity, row: ROWS[entity] })),
       nextCursor: 3,
       hasMore: false,
-      remaining: 11,
+      remaining: 12,
       serverTime: NOW,
       minClientVersion: '0.1.0',
     };

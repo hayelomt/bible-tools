@@ -1,8 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { type ReactNode, createContext, use, useEffect, useState } from 'react';
+import { type ReactNode, createContext, use, useEffect } from 'react';
 import { reviewCount } from '@/data/review.ts';
-import { today } from '@/lib/dates.ts';
 import { setAppBadge } from '@/lib/reminder.ts';
+import { useToday } from '@/lib/use-today.ts';
 
 const ReviewCount = createContext<number | undefined>(undefined);
 
@@ -28,14 +28,7 @@ export function useReviewCount(): number | undefined {
  * into view, so a new day's verses count.
  */
 function useLiveReviewCount(): number | undefined {
-  const [day, setDay] = useState(today);
-  useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') setDay(today());
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, []);
+  const day = useToday();
   const count = useLiveQuery(() => reviewCount(day), [day]);
   return count && count.questions + count.verses;
 }

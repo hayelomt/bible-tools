@@ -27,6 +27,8 @@ export const HIGHLIGHT_COLOURS = ['yellow', 'green', 'blue', 'pink'] as const;
 export const CITATION_SOURCE_TYPES = ['lesson', 'section', 'highlight', 'memory_item'] as const;
 export const COLOR_MODES = ['light', 'dark', 'system'] as const;
 export const USER_ROLES = ['user', 'admin'] as const;
+/** How an inbox item arrived (§17.2): shared, pasted or typed into the add box, imported, captured. */
+export const INBOX_ORIGINS = ['share', 'paste', 'typed', 'import', 'capture'] as const;
 
 /** Fields every synced row carries (§5.1). */
 const synced = {
@@ -124,6 +126,46 @@ export const memoryItemSchema = z.strictObject({
   reviewCount: z.int().min(0),
 });
 
+/** An http or https address, as shared from another app. */
+const webUrlSchema = z.url({ protocol: /^https?$/ }).max(2048);
+
+/**
+ * A verse or a note waiting to be put in a lesson (F17, §17.2). Not indexed until it's placed.
+ * The fields without the check that it holds something, since a refined object can't be `omit`ted
+ * (the push schema drops `rev`).
+ */
+export const inboxItemFields = z.strictObject({
+  ...synced,
+  origin: z.enum(INBOX_ORIGINS),
+  /** The chip, with its snapshot. */
+  ref: verseRefSchema.nullable(),
+  /** The note, or the text around the reference. */
+  text: textSchema(10_000).nullable(),
+  sourceUrl: webUrlSchema.nullable(),
+  /** When it arrived; for an import, the date in the export. Sorts the inbox. */
+  receivedAt: timestampSchema,
+  /** An imported highlight's colour. */
+  colour: z.enum(HIGHLIGHT_COLOURS).nullable(),
+  /** One id per import run, so an import can be dismissed as one (M9-12). */
+  importId: idSchema.nullable(),
+  /** "Process later" (F27). */
+  snoozedUntil: dateSchema.nullable(),
+  /** The section it was put in; cleared again by Undo. */
+  placedInSectionId: idSchema.nullable(),
+});
+
+/** An inbox item holds a chip, some text, or both (the table's CHECK). */
+export const hasRefOrText = (item: { ref: unknown; text: string | null }): boolean =>
+  item.ref !== null || (item.text !== null && item.text.trim() !== '');
+const REF_OR_TEXT = { message: 'An inbox item needs a verse or some text', path: ['text'] };
+
+export const inboxItemSchema = inboxItemFields.refine(hasRefOrText, REF_OR_TEXT);
+
+/** The push's inbox item row: without `rev`, with the same check. */
+export const inboxItemChangeRow = inboxItemFields
+  .omit({ rev: true })
+  .refine(hasRefOrText, REF_OR_TEXT);
+
 /**
  * A row of the derived verse index (§5.2). Built from its source row on the device and on the
  * server, never pushed, so it has no sync fields.
@@ -151,6 +193,7 @@ export const ENTITY_SCHEMAS = {
   question: questionSchema,
   highlight: highlightSchema,
   memoryItem: memoryItemSchema,
+  inboxItem: inboxItemSchema,
 } as const;
 
 export type EntityName = keyof typeof ENTITY_SCHEMAS;
@@ -167,5 +210,7 @@ export type Takeaway = z.infer<typeof takeawaySchema>;
 export type Question = z.infer<typeof questionSchema>;
 export type Highlight = z.infer<typeof highlightSchema>;
 export type MemoryItem = z.infer<typeof memoryItemSchema>;
+export type InboxItem = z.infer<typeof inboxItemSchema>;
+export type InboxOrigin = (typeof INBOX_ORIGINS)[number];
 export type Citation = z.infer<typeof citationSchema>;
 export type EntityRow<E extends EntityName = EntityName> = z.infer<(typeof ENTITY_SCHEMAS)[E]>;

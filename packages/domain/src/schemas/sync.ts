@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { idSchema, lineSchema, revSchema, timestampSchema } from './common.ts';
-import { ENTITY_SCHEMAS, type EntityName } from './entities.ts';
+import { ENTITY_SCHEMAS, type EntityName, inboxItemChangeRow } from './entities.ts';
 
 /**
  * Sync messages (TECH-DESIGN §6). A change is one outbox entry; the server applies each change
@@ -96,6 +96,7 @@ export const changeSchema = z.discriminatedUnion('entity', [
   changeOf('question', ENTITY_SCHEMAS.question.omit({ rev: true })),
   changeOf('highlight', ENTITY_SCHEMAS.highlight.omit({ rev: true })),
   changeOf('memoryItem', ENTITY_SCHEMAS.memoryItem.omit({ rev: true })),
+  changeOf('inboxItem', inboxItemChangeRow),
 ]);
 export type Change = z.infer<typeof changeSchema>;
 
@@ -195,6 +196,7 @@ export const pulledRowSchema = z.discriminatedUnion('entity', [
   pulledRowOf('question'),
   pulledRowOf('highlight'),
   pulledRowOf('memoryItem'),
+  pulledRowOf('inboxItem'),
 ]);
 export type PulledRow = z.infer<typeof pulledRowSchema>;
 

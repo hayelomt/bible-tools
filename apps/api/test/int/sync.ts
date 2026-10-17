@@ -1,4 +1,10 @@
-import { type EntityName, newId, type PushResult, pushResponseSchema } from '@lamp/domain';
+import {
+  type EntityName,
+  MIN_CLIENT_VERSION,
+  newId,
+  type PushResult,
+  pushResponseSchema,
+} from '@lamp/domain';
 import type { TestApp } from './app.js';
 import { type Client, sessionCookie } from './http.js';
 import { runEmail } from './mail.js';
@@ -6,6 +12,8 @@ import { runEmail } from './mail.js';
 /** Rows and changes as a device sends them (`changeSchema`), and the calls to push them. */
 
 export const DEVICE_ID = '0199e0a0-0000-7000-8000-000000000001';
+/** The version the test device reports: the oldest the API serves. */
+export const CLIENT_VERSION = MIN_CLIENT_VERSION;
 /** The device a pull names, as query parameters. */
 export const PULL_DEVICE = `deviceId=${DEVICE_ID}&deviceName=Chrome%20on%20Android`;
 export const EARLIER = '2026-10-13T09:00:00.000Z';
@@ -118,7 +126,7 @@ export const push = (
 ) =>
   client.post(
     '/api/sync/push',
-    { deviceId: DEVICE_ID, deviceName, clientVersion: '0.0.0', changes },
+    { deviceId: DEVICE_ID, deviceName, clientVersion: CLIENT_VERSION, changes },
     account?.token,
   );
 
