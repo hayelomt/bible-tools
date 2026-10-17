@@ -1,9 +1,34 @@
+/** One version of what sync carries, and the oldest web app that reads and writes it. */
+export interface SyncFormat {
+  /** The release that first carries this format: the oldest app the API serves once it ships. */
+  minClientVersion: string;
+  /** `syncFormatFingerprint()` of the schemas as they are in that release. */
+  fingerprint: string;
+  /** What changed, in a line. */
+  change: string;
+}
+
 /**
- * The oldest web app the sync API serves (TECH-DESIGN §6.6). Raise it in the release that changes
- * what push or pull carry, so an older app shows "Update required" instead of syncing rows it
- * can't read or write. A constant, not configuration: it follows from the code.
+ * Every change to the sync wire format, oldest first (TECH-DESIGN §6.7). A change to the entity,
+ * body or sync schemas makes `sync-format.test.ts` fail until an entry is added here. An app
+ * older than the entry's version would reject the new rows (it parses each pull page strictly),
+ * so the entry normally takes the version of the release that ships the change. A change older
+ * apps can still read and write keeps the previous minimum and says why.
  */
-export const MIN_CLIENT_VERSION = '0.0.0';
+export const SYNC_FORMATS: readonly SyncFormat[] = [
+  {
+    minClientVersion: '0.0.0',
+    fingerprint: 'bbca1ba1',
+    change: 'Phase 1 (v1): the eleven entities, section bodies with verse chips, BSB and KJV',
+  },
+];
+
+/**
+ * The oldest web app the sync API serves (§6.6): the newest format's minimum, so an older app
+ * shows "Update required" instead of syncing rows it can't read or write. It follows from the
+ * code, never from configuration.
+ */
+export const MIN_CLIENT_VERSION: string = SYNC_FORMATS.at(-1)?.minClientVersion ?? '0.0.0';
 
 const numbers = (version: string): number[] =>
   (version.split(/[-+]/, 1)[0] ?? '').split('.').map((part) => Number.parseInt(part, 10) || 0);

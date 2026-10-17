@@ -1,17 +1,21 @@
 # Wireframes — app shell and settings
 
-Low-fi layouts for M2-02, M2-03 and M2-11. They show what is on each screen and where; colours, type
+Low-fi layouts for M2-02, M2-03 and M2-11, and the shell's v2 changes (the Inbox tab, M9-02; the
+new Settings sections, M9–M13). They show what is on each screen and where; colours, type
 and exact spacing come from the components and the theme. Rules that apply everywhere are in
 [UX-PATTERNS.md](../UX-PATTERNS.md).
 
 Legend: `[ Button ]` · `[ field____ ]` · `( A | B )` segmented control · `[○ ]` / `[● ]` switch off / on ·
 `›` opens a screen · `⋯` / `⋮` menu · `◌` sync status · `≡` settings · `⟦John 10:9 · BSB⟧` verse chip ·
-`▏` cursor.
+`▏` cursor · `⟨→ The Good Shepherd⟩` link chip · `⟨⊘ The Good Shepherd · deleted⟩` broken link chip ·
+`☐` / `☑` checkbox · `▒` skeleton · `Inbox⁴` a count badge in a one-line bar.
 
-## App shell (M2-02)
+## App shell (M2-02, M9-02)
 
 **Phone, under 1024 px.** A header with the screen title, the sync status and settings; a bottom bar
-with the four destinations. The bar hides while the on-screen keyboard is open.
+with the five destinations: Lessons, Inbox, Read, Search, Review (Inbox joined in v2, decided
+2026-10-17). Each tab is 72 px wide at 360 px, its icon above its label. The bar hides while the
+on-screen keyboard is open.
 
 ```text
 ┌──────────────────────────────────────┐
@@ -24,7 +28,8 @@ with the four destinations. The bar hides while the on-screen keyboard is open.
 │                                      │
 │                                      │
 ├──────────────────────────────────────┤
-│ ▤ Lessons  ▢ Read  ⌕ Search  ✓ Review│  ← bottom bar, 56 px + safe area; Review shows a count badge
+│   ▤      ✉ 4     ▢      ⌕      ✓ 3   │  ← bottom bar, 56 px + safe area
+│ Lessons  Inbox   Read  Search  Review│  ← Inbox and Review show count badges
 └──────────────────────────────────────┘
 ```
 
@@ -37,14 +42,18 @@ text). Screens that have a side panel (the lesson) use the space to the right.
 │ Lamp          │                                                              │
 │               │   Screen title                                         ⋯     │
 │ ▤ Lessons     │                                                              │
-│ ▢ Read        │   ┌──────────────────────────────────────────┐               │
-│ ⌕ Search   /  │   │                                          │               │
-│ ✓ Review   3  │   │       content, max 42 rem, centred       │               │
-│               │   │                                          │               │
-│ SERIES        │   └──────────────────────────────────────────┘               │
+│ ✉ Inbox    4  │   ┌──────────────────────────────────────────┐               │
+│ ▢ Read        │   │                                          │               │
+│ ⌕ Search   /  │   │       content, max 42 rem, centred       │               │
+│ ✓ Review   3  │   │                                          │               │
+│               │   └──────────────────────────────────────────┘               │
+│ SERIES        │                                                              │
 │ Romans        │                                                              │
 │ John          │                                                              │
 │ + New series  │                                                              │
+│               │                                                              │
+│ GROUPS        │                                                              │  ← M13-07; only once in a group
+│ Thursday  2   │                                                              │
 │               │                                                              │
 │ ◌ Synced      │                                                              │
 │ ≡ Settings    │                                                              │
@@ -53,6 +62,11 @@ text). Screens that have a side panel (the lesson) use the space to the right.
 
 - `/` focuses search from anywhere except a text field. `n` starts a new lesson.
 - The current destination is marked in the bar or sidebar (`aria-current="page"`).
+- **Badges:** Inbox counts the items waiting (not snoozed); Review counts open questions and verses
+  due. Each is a small filled number on the icon, and at the end of the sidebar row; hidden at zero,
+  "99+" above 99. Screen readers hear "Inbox, 4 waiting".
+- The M2–M6 wireframes in the other files still draw the four-tab bar in its one-line form; read
+  it as the five tabs above.
 
 ## Settings (M2-02)
 
@@ -103,6 +117,30 @@ Signed in, the account section becomes (M3-03, M3-12):
 │ [ Sign out ]                         │
 │ ...                                  │
 │ Delete account…                      │  ← at the very end, in the destructive colour
+```
+
+## Settings in v2 (M9–M13)
+
+New sections join the page, between Bible and Review unless noted. Each is drawn with its screen.
+
+```text
+│ EDITING                              │
+│ Offer verse chips when pasting [● ]  │  ← interop.md (M9-09)
+│ Open in                          4 › │  ← interop.md (M9-10)
+│ Templates                          › │  ← thinking.md (M10-13, M10-14)
+│                                      │
+│ REVIEW                               │
+│ …                                    │
+│ Bring back: a year ago, repeated     │  ← reflection.md (M12-01)
+│ verses, stale questions              │
+│                                      │
+│ IMPORT                               │
+│ YouVersion highlights and notes    › │  ← interop.md (M9-11)
+│                                      │
+│ SHARING                              │  ← signed in only
+│ Shared links                     3 › │  ← sharing.md (M13-04)
+│ Weekly email of group activity [○ ]  │  ← sharing.md (M13-12); once in a group
+│ Privacy and sharing                › │  ← M13-05
 ```
 
 ## Appearance (M2-03, M2-15)
@@ -173,7 +211,7 @@ dismissed, and it never appears while an editor has focus or a push is running.
 │ A new version of Lamp is ready.      │
 │                 [ Later ] [ Reload ] │
 ├──────────────────────────────────────┤
-│ ▤ Lessons  ▢ Read  ⌕ Search  ✓ Review│
+│ Lessons  Inbox   Read  Search  Review│
 ```
 
 "Update required" (the server refuses this version, §6.6) is a sync state, shown in
@@ -194,5 +232,5 @@ on this device. The installed app never shows it.
 │ home screen and use it offline.      │
 │              [ Not now ] [ Install ] │
 ├──────────────────────────────────────┤
-│ ▤ Lessons  ▢ Read  ⌕ Search  ✓ Review│
+│ Lessons  Inbox   Read  Search  Review│
 ```

@@ -104,7 +104,14 @@ export {
   type UpsertInput,
 } from './sync.ts';
 export { passageSchema, verseRefSchema } from './schemas/verse-ref.ts';
-export { compareVersions, isClientSupported, MIN_CLIENT_VERSION } from './client-version.ts';
+export {
+  compareVersions,
+  isClientSupported,
+  MIN_CLIENT_VERSION,
+  SYNC_FORMATS,
+  type SyncFormat,
+} from './client-version.ts';
+export { syncFormatFingerprint } from './sync-format.ts';
 export {
   type ApiError,
   apiErrorSchema,

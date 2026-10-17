@@ -1,5 +1,6 @@
+import { isClientSupported, MIN_CLIENT_VERSION } from '@lamp/domain';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApiRequestError, fetchMe, login, NetworkError } from './api.ts';
+import { ApiRequestError, CLIENT_VERSION, fetchMe, login, NetworkError } from './api.ts';
 
 const me = {
   id: '01929f4e-7b1a-7cc0-8000-000000000001',
@@ -71,5 +72,14 @@ describe('the API client', () => {
       vi.fn(async () => new Response('Bad Gateway', { status: 502 })),
     );
     await expect(fetchMe()).rejects.toBeInstanceOf(NetworkError);
+  });
+});
+
+describe('the client version', () => {
+  it('is one the sync API serves', () => {
+    // The API and the web app ship together (§11.2): a minimum newer than this app would answer
+    // its own release with 426 for ever. Raise the version in package.json with the format
+    // (TECH-DESIGN §6.7).
+    expect(isClientSupported(CLIENT_VERSION, MIN_CLIENT_VERSION)).toBe(true);
   });
 });

@@ -1,8 +1,8 @@
-# Lamp — Technical Design (v1.0)
+# Lamp — Technical Design (v1.1)
 
-**Date:** 2026-10-12
-**Based on:** [PRD v1.2](<Bible Study App — PRD.md>) and the decisions recorded in §2. The task breakdown is in [BACKLOG.md](BACKLOG.md). Feature IDs (F1–F16) refer to the PRD.
-**Status:** draft for review. Product decisions are settled (§15), and the PRD changes in §16 are applied in PRD v1.1.
+**Date:** 2026-10-12; v2 design added 2026-10-17 (§6.7, §17)
+**Based on:** [PRD v1.7](<Bible Study App — PRD.md>) and the decisions recorded in §2. The task breakdown is in [BACKLOG.md](BACKLOG.md). Feature IDs (F1–F35) refer to the PRD; F17–F35 are v2, designed in §17.
+**Status:** v1 is built as described in §1–§14. v2 is designed (§17) and not built. Product decisions are settled (§15), and the PRD changes in §16 are applied in PRD v1.1.
 
 ---
 
@@ -46,7 +46,7 @@ Principles:
 | Theme | One theme, Lamplight, in light / dark / auto (follows the device); the mode is per user and synced (§8.5) | Q&A; one theme 2026-10-16 |
 | Translations | **BSB** (default) and **KJV** in phase 1, both public domain; the user picks one in settings (decided 2026-10-15, replacing WEB). ESV and licensed translations move to phase 2 | Q&A; 2026-10-15 |
 | Guest mode | The app works fully without an account. Guest notes join the account at sign-up | Product Q&A 2026-10-12 |
-| Verse chips | Show the captured snapshot with its translation label; expanding a chip can show it in any other downloaded translation (not built yet) | Product Q&A |
+| Verse chips | Show the captured snapshot with its translation label (viewing it in the other translation was dropped in PRD v1.7) | Product Q&A; 2026-10-17 |
 | Sign-out | Local notes **stay on the device** as guest data; a different account signing in must choose what to do with them (§6.6) | Product Q&A |
 | Tags | 24 seeded themes (§4.3), applied to sections and lessons | Product Q&A |
 | Review queue | Takeaways from the last 14 days, adjustable in settings | Product Q&A |
@@ -125,6 +125,7 @@ Section bodies are stored as **ProseMirror JSON**, the format TipTap uses (§8.3
 - Bodies nested more than 32 levels deep are rejected before parsing, so a hostile push can't exhaust the stack.
 - `toPlainText` writes one line per text block, with each chip as its display reference. `citedRefs` lists the chips in document order, repeats included.
 - `toMarkdown` writes a chip as "Romans 8:28 (BSB)" in the sentence and puts its snapshot after the paragraph as a quote: `> **Romans 8:28 (BSB)** …` (decided 2026-10-13).
+- v2 adds an inline `link` node (F23) and the chip translations `shared` and `pasted` (F18, F19), §17.3; both are sync format changes (§6.7).
 
 ### 4.3 Other domain modules
 - `order.ts`: fractional index keys for section siblings, using the `fractional-indexing` package (rocicorp, CC0). `keyAt(siblingKeys, index)` places an insert or a move; siblings sort by key, then by id (`compareOrder`), so two devices that insert at the same place offline still agree on the order. Keys compare by byte, matching the `"C"` collation on `section.order_key`.
@@ -214,7 +215,7 @@ Returns every row of the user's with `rev > cursor`, tombstones included, ordere
 - **Order:** by rev, and within a rev parents first (the order of `ENTITY_NAMES`: settings, series, lesson, section, tag, then links and the rest). Each row is the device's row (`ENTITY_SCHEMAS`, `rev` included), tagged with its entity; settings carry no id.
 - **Access:** a session and a verified email, as for push (`403 EMAIL_NOT_VERIFIED`).
 - **`remaining`** (added in M3-09, decided 2026-10-13): the rows after the request's cursor, this page's included, counted in the same snapshot, so first-sync progress can show "1,240 of 3,000".
-- **Client version (§6.6):** push and pull both carry `clientVersion` (`major.minor.patch`, from the web app's package.json; anything else is a `400`). Older than `MIN_CLIENT_VERSION` gets `426 UPGRADE_REQUIRED` with `details.minClientVersion`, before anything is read or applied. `MIN_CLIENT_VERSION` is a constant in `domain/client-version.ts`, `0.0.0` for now, raised in the release that changes what sync carries.
+- **Client version (§6.6):** push and pull both carry `clientVersion` (`major.minor.patch`, from the web app's package.json; anything else is a `400`). Older than `MIN_CLIENT_VERSION` gets `426 UPGRADE_REQUIRED` with `details.minClientVersion`, before anything is read or applied. `MIN_CLIENT_VERSION` is a constant in `domain/client-version.ts`, `0.0.0` for now, raised in the release that changes what sync carries (§6.7).
 
 The device applies a pulled row **only if the outbox has nothing pending for that entity**. Otherwise it skips the row, since the server will send the merged result again after the push. A new device starts at cursor 0 and pages through ("Getting your notes… 1,240 / 3,000").
 
@@ -268,7 +269,7 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 - **Signing in on a device that holds someone else's notes** (`ownerUserId` set and different): before anything syncs, the app asks **"This device has notes from another account"**. The choices are *Remove them from this device* (the default; deletes the local copy, then pulls the new account) and *Add them to this account*. That option copies every local row with **new ids** (references remapped), because the original ids belong to the other account on the server. It then replaces the outbox with the copies. If the outbox held unsynced changes, the dialog warns that those changes go only to the new account, not to the account they came from. Nothing from one account reaches another without that choice.
 - **Settings → "Remove notes from this device"** lets a signed-out user wipe the local copy, e.g. on a shared computer.
 - **Expired session while offline:** local work continues. The outbox waits until the user signs in again.
-- **Client too old:** the server answers `426` to a push or pull when `clientVersion < minClientVersion`, and the app shows "Update required" (§8.6).
+- **Client too old:** the server answers `426` to a push or pull when `clientVersion < minClientVersion`, and the app shows "Update required" (§8.6). When the minimum is raised is §6.7.
 
 *Built in M3-10 (`apps/web/src/sync`; decided 2026-10-13):*
 - **Owner:** the first sync with an account claims a device whose `ownerUserId` is empty, and records `ownerEmail` too, so the dialog can name the other account (masked: "a•••@example.com").
@@ -293,6 +294,22 @@ Every pull returns `serverTime`. The device stores `clockOffsetMs` and stamps `u
 - **Refused changes** are listed with what they were ("Section in "The Good Shepherd""), the reason in words by error code, the server's code and message as details, **Open** (the lesson, scrolled to the section, takeaway or question; the series; the tag; Settings) and **Discard** (`discardRejected`, then a sync).
 - **Reload to update** waits for writes in flight, asks the service worker to look for a new version, lets a waiting one take over, and reloads.
 - **Tests:** `status-view.test.ts` (every state and its words), `rejected.test.ts` (descriptions, the Dexie upgrade), `sections.test.ts` (Keep this instead), and `e2e/tests/sync-status.spec.ts`, which shows every state in the browser against a mocked API (`page.route` for `/api/auth/me` and the sync endpoints).
+
+### 6.7 Format changes
+
+*Decided 2026-10-17 (M8-03).* An app parses every pull page with the strict schemas it was built with (`pullResponseSchema` in `lib/api.ts`). One row in a format it doesn't know (a new body node, a new translation id, a new column or entity) fails the whole page, and every pull after it, so the app would stay in *failing* rather than say what to do. The release that changes the format therefore raises the minimum, and older apps get `426` and "Update required" before any row reaches them.
+
+- **`SYNC_FORMATS`** (`domain/client-version.ts`) lists every format, oldest first: the first release that carries it (`minClientVersion`), its fingerprint, and the change in a line. `MIN_CLIENT_VERSION` is the newest entry's version. The first entry is phase 1 at `0.0.0`.
+- **The fingerprint** (`syncFormatFingerprint` in `domain/sync-format.ts`) is a hash of the JSON Schema of a pull page, as the device parses it, and of a push, as the server takes it. Keys and the `required` and `enum` lists are sorted, so moving a field in the source changes nothing. `sync-format.test.ts` fails when the fingerprint differs from the newest entry, so the wire format can't change by accident. Refinements (a passage in the book table, a repeated mark) aren't in the fingerprint; making one stricter is a format change all the same, entered by hand.
+- **Procedure** for a change to what push or pull carry:
+  1. Change the schemas. The domain test fails and prints the new fingerprint.
+  2. Add an entry to `SYNC_FORMATS` with that fingerprint and the version of the release that ships it, and raise the web app's `version` to at least that. `api.test.ts` fails on a minimum newer than the app, since the API would then answer its own release with `426`. Changes that ship in one release share one entry: each entry makes every older app update.
+  3. A change older apps can still read and write (a looser limit on push that they never reach, a field only the server reads) keeps the previous `minClientVersion` and says why in `change`.
+  4. The device's Dexie upgrade converts stored rows **and queued changes** to the new format, as versions 4 and 5 did, because an outbox written by the old app is pushed by the new one.
+  5. Server migrations stay backward compatible for one release (§11.2): add and backfill first, drop the old column in the next release.
+  6. Deploy the API and the web app together. An old app's next push or pull gets `426`, so nothing is applied or sent. Its outbox waits, and Reload takes the new service worker (§8.6).
+- **Tested** in `sync-pull.int.test.ts`: a section whose body holds F23's link node, stored as the release that raises the minimum would store it, gets `426` for the app before that release and is never sent; the current app gets the row. `sync-format.test.ts` shows that an app on the current format rejects a whole page holding that node.
+- **v2** is expected to add one entry per milestone that changes the format (§17.1), the first with M9's release.
 
 ## 7. API (`apps/api`)
 
@@ -513,8 +530,8 @@ The queue is a local query: open questions, takeaways from the last `reviewWindo
 - **Build:** `pnpm --filter @lamp/bible-data build` → `dist/<translation>/<BOOK>.<hash>.json` (`{ "c": [[ "v1 text", "v2 text", … ], …], "n"?: {…} }`) plus `manifest.json` (per translation: name, licence, size, and per book the file, content hash, size and verse counts). Files are named by content hash and served as immutable static files. The build cleans the source's markup leftovers without changing words (a stray `[’’]`, `vvv`, a space before closing punctuation). The build fails if a source doesn't have 66 books, a verse is empty without a note, or the counts differ from the domain book table. *2026-10-15:* BSB 3.94 MB and KJV 4.21 MB, 66 files each. `passageVerses` and `passageText` in the package do the lookup.
 - **Text lookup:** the web app loads the book file of a translation from its Bible cache (`bookState`, `whenBook`; §8.6) and slices it (`snapshotText`). The server never needs Bible text in phase 1. It validates references against the book table only.
 - **Versification:** both translations number verses the KJV's way, which is the domain book table (1,189 chapters, 31,102 verses). The BSB leaves out 16 verses that later manuscripts add (Matthew 17:21, Acts 8:37, Romans 16:24, …) and its source drops them from the arrays; the build puts each back as `""` with a note in `n`, so later verses keep their numbers. A chip on one alone holds that note, marked "[Not in BSB: …]" (§8.3). Nothing typed is remapped.
-- **Chips and translations:** a chip always shows its snapshot with its translation label. "View in …" for another downloaded translation is not built yet.
-- **ESV and other licensed translations:** phase 2. Licensed ones go through a server proxy so the key never reaches the browser.
+- **Chips and translations:** a chip always shows its snapshot with its translation label. Viewing it in the other translation was dropped in PRD v1.7. From v2 a chip can also carry text from outside, labelled `shared` or `pasted` (§17.3).
+- **ESV and other translations:** not planned (PRD v1.7). F20 hands off to other apps for reading instead.
 
 ## 10. Testing
 
@@ -592,7 +609,7 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 |---|---|---|---|
 | 1 | Can the app be used without an account? | Yes: guest until sign-up; guest notes join the account | §6.6 |
 | 2 | Which translations ship in phase 1? | WEB only; replaced by BSB and KJV on 2026-10-15 (#53) | §9 |
-| 3 | What do verse chips show if the default translation changes? | The captured snapshot with its label; "View in …" for other downloaded translations | §4.1, §9 |
+| 3 | What do verse chips show if the default translation changes? | The captured snapshot with its label; "View in …" for other downloaded translations (dropped 2026-10-17, PRD v1.7) | §4.1, §9 |
 | 4 | Seeded tags, and tags on lessons? | 24 core themes; tags apply to sections and lessons | §4.3, §5.2 |
 | 5 | PDF export | Print view + "Save as PDF" | §8.7 |
 | 6 | Review window for takeaways | 14 days, adjustable in settings | §8.8 |
@@ -648,8 +665,17 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 | 53 | Translations (2026-10-15) | BSB (the default) and KJV replace WEB, from JSON sources committed in `bible-data/data/`; both use KJV numbering, so the KJV → WEB mapping and `mappedFrom` are gone | §9 |
 | 54 | Choosing and downloading a translation (2026-10-15) | Picked in settings (`defaultTranslation`, synced). The active one downloads in the background; the other on request, and can be removed | §8.6, §9 |
 | 55 | One theme (2026-10-16) | Lamplight only, in light / dark / auto, set in Inter Tight alone; looks, presets and the other fonts removed, and `themePreset` / `look` dropped from settings | §8.5 |
+| 56 | Format changes (2026-10-17, M8-03) | One global minimum: the release that changes the sync format raises `MIN_CLIENT_VERSION`, recorded in `SYNC_FORMATS`; a fingerprint test fails until it is, and another keeps the minimum at or below the web app's version. Not a minimum per row | §6.7 |
+| 57 | F23 links (2026-10-17) | Derived from section bodies, like `Citation`: the `link` node is the only source, and a `link` table is rebuilt on every write on both sides. Never pushed | §17.4 |
+| 58 | F24 question status (2026-10-17) | Derived from the thread's latest entry (entry kinds include `parked`); `status` and `answerSectionId` are kept for one release after the migration, then dropped | §17.5 |
+| 59 | Inbox items and the verse index (2026-10-17) | Not in the verse index, verse search or free-text search until placed; they have no citations | §17.2 |
+| 60 | `Lesson.source` vs F28's Source (2026-10-17) | The v1 column becomes `Lesson.kind` (Sermon / Personal / Group, labelled "Kind"), matching `Series.kind`; F28's source is optional columns on the lesson, since a lesson has at most one | §17.7 |
+| 61 | Compile view visits and dismissals (2026-10-17) | Synced, append-only rows (`passageVisit`, `resurfaceDismissal`), never edited, so they need no conflict rules and hold on every device | §17.8 |
+| 62 | The Inbox in the navigation (2026-10-17) | A fifth bottom-bar tab after Lessons, with a count badge; in the sidebar after Lessons | UX-PATTERNS |
+| 63 | Chip translations from outside (2026-10-17) | `shared` and `pasted` join the chip translations, with an optional `versionLabel` ("NIV") when the source names its version; the reading translations stay BSB and KJV | §17.3 |
+| 64 | Templates (2026-10-17) | Built-in templates are code, not rows; custom templates sync; the default per lesson kind is a setting | §17.6 |
 
-**Still open:** nothing blocks phase 1. Mapping between other translations' numbering waits for a second translation in phase 2.
+**Still open:** nothing blocks phase 1. For v2: how a section citing several passages shows in the compile view (M10-03), group sync (M13-06), and the YouVersion export format and deep-link formats (M8-05).
 
 ## 16. PRD changes this design implies (applied in PRD v1.1)
 - **Architecture:** phase 1 now has a server (NestJS + Postgres) and accounts, with guest use still allowed. The "no backend" wording and the *Architecture* table need rewriting.
@@ -661,3 +687,133 @@ The product decisions below were settled on 2026-10-12 and are reflected in the 
 - **F11:** PDF is made through the browser's print view.
 - **Open questions:** tick framework/storage, ESV terms (deferred), chips vs snapshot, seeded tags, licence (MIT).
 - **BACKLOG:** rewritten as v2.0 with seven milestones; accounts and sync are M3.
+
+## 17. v2 design (F17–F35)
+
+*Designed 2026-10-17 (M8-02); not built yet.* As in v1, each M9–M13 task records what it builds in the sections above. v2 keeps every principle in §1: screens read only from IndexedDB, every change a user makes goes through the sync push, and sync stays per user. Only F34 and F35 add server surface beyond sync (M13). Decisions 56–64 (§15) were made with this design.
+
+### 17.1 Entities
+
+| Dexie store / table | Kind | Milestone | Features |
+|---|---|---|---|
+| `inboxItem` / `inbox_item` | Synced | M9 | F17, F18, F19, F21, F27 |
+| `inboxItemTag` / `inbox_item_tag` | Synced join, like `sectionTag` | M11 | F27 |
+| `link` / `link` | **Derived**, never pushed, like `citation` | M10 | F23 |
+| `questionEntry` / `question_entry` | Synced | M10 | F24 |
+| `template` / `template` | Synced | M10 | F25 |
+| `passageVisit` / `passage_visit` | Synced, append-only | M12 | F30 |
+| `resurfaceDismissal` / `resurface_dismissal` | Synced, append-only | M12 | F30 |
+| New columns on `lesson`, `section`, `user_settings` | Synced with their rows | M9–M12 | F19, F20, F25, F28, F30, F32 |
+| `ShareLink` | Server only, like `Session` | M13 | F34 |
+| Group tables, `Comment` | Designed in M13-06 | M13 | F35 |
+
+**Every new synced entity** follows the v1 rules (§5.1, §6):
+- **Columns:** a UUIDv7 `id` made on the device, `userId`, `createdAt`, `updatedAt`, `deletedAt` and `rev`; `snake_case` names; a CHECK on each enum-like text column; foreign keys that cascade from the user, so account deletion takes the rows (the `account` integration test's fixture must include a row).
+- **Schemas:** a strict row schema in `entities.ts`, in `ENTITY_SCHEMAS` in parent-first order (after `memoryItem`: `inboxItem`, `inboxItemTag`, `questionEntry`, `template`, `passageVisit`, `resurfaceDismissal`), and a branch of `pulledRowSchema`. The contract test compares each one with the migrated table.
+- **Push checks:** every id column must name a row of this account (`REFERENCE_NOT_FOUND`). Parents (a question entry's question and lesson, a tag link's tag and item) join `PARENT_COLUMNS`, so an edit kept on a live row restores them (§6.4).
+- **Isolation:** `isolation.int.test.ts` finds tables from the Prisma models and their `user_id` columns, so its fixture check fails until the new table has a row there, and every id column joins the `ENTITY_TABLES` refs it tries.
+- **Conflicts:** last write wins per listed field (§6.4). None of these rows has a body, so none makes a conflicted copy.
+- **Another account's notes** (§6.6, `copyNotes`): the new id columns are remapped, and so are the targets of links inside section bodies (§17.4).
+- **On the device:** each release adds its stores in a new Dexie version, which converts stored rows and queued changes (§6.7).
+- **Format:** each milestone release that changes the wire format adds one `SYNC_FORMATS` entry (§6.7): M9 (inbox items, chip translations, settings), M10 (the `noteLink` node, question entries, templates, `Lesson.kind`), M11 (lesson and section source columns, inbox tags and snooze), M12 (visits, dismissals, settings), M13 (groups), and the release after M10, which drops `question.status`.
+
+### 17.2 Inbox item (F17, F18, F19, F21, F27)
+
+| Column | Type | Notes |
+|---|---|---|
+| `origin` | text: `share`, `paste`, `import`, `capture` | How it arrived |
+| `ref` | jsonb `VerseRef`, nullable | The chip, with its snapshot; translation as in §17.3 |
+| `text` | text up to 10,000, nullable | The note, or the text around the reference. A CHECK requires `ref` or `text` |
+| `sourceUrl` | text up to 2,048, nullable | The shared URL |
+| `receivedAt` | timestamptz | When it arrived; for an import, the date in the export. Sorts the inbox |
+| `colour` | highlight colour, nullable | An imported highlight's colour, mapped to the nearest of the four |
+| `importId` | uuid, nullable | One id per import run, so one import can be dismissed (M9-12) |
+| `snoozedUntil` | date, nullable | "Process later" (F27) |
+| `placedInSectionId` | uuid, nullable, references `section` (set null) | Set when placed |
+
+- **The inbox** is the live items that aren't placed and aren't snoozed past today, newest `receivedAt` first, and the Inbox tab's badge counts them. Placing is one action that adds or appends to the section and sets `placedInSectionId`, and Undo reverses both. Dismissing is a tombstone, and Undo restores it.
+- **Not indexed** (decision 59): `citationsFor` gives an inbox item no citations, and the search index leaves it out, so the verse index, verse and free-text search and the reader's `•` don't see it until it is placed. The section it is placed in is indexed as usual.
+- **Re-import** (M9-11): an imported item matches an earlier one with the same passage (book and ordinals), `receivedAt` and `text`. Dismissed (tombstoned) items count, so a dismissal isn't undone by importing again.
+- **Tags** (F27): `inboxItemTag` (`tagId`, `inboxItemId`), one live link per item and tag like `sectionTag` (§6.6's link merging applies). Placing an item moves its tags onto the section.
+- **Share target** (M9-06): `/share` opens in the precached shell and writes the item with an ordinary action, so a share works offline.
+- Dexie indexes `receivedAt`, `importId` and `placedInSectionId`.
+
+### 17.3 Chips from outside Lamp (F18, F19, F21)
+
+- `verseRefSchema` takes `CHIP_TRANSLATIONS`: `BSB`, `KJV`, `shared` and `pasted` (decision 63). `TRANSLATIONS` stays BSB and KJV, which is what the reader and `defaultTranslation` take.
+- `shared` is text that came with a share or an import, kept as it came. `pasted` is pasted text that matched neither the BSB nor the KJV (F19). Text identified as the BSB or KJV, by its URL, a version id or the verse-text matcher, gets that translation's id instead.
+- An optional `versionLabel` (1–16 characters, such as "NIV") is set when the source names its version (a YouVersion version id, Blue Letter Bible's `t=`). The chip shows it in place of "Shared", and `toMarkdown` writes "John 3:16 (NIV)" or "John 3:16 (shared)".
+- Lamp never fills or replaces the text of a `shared` or `pasted` chip from its own books (`fillStoredSnapshots` and `VerseSnapshots` skip them), and "Text not downloaded yet" never applies to one. They are cited like any chip.
+
+### 17.4 Links (F23)
+
+- **The node:** an inline atom `noteLink` with `attrs: { targetType: 'lesson' | 'section', targetId, label }`. It isn't called `link`, as the backlog first had it, because TipTap's `link` mark already uses that name and extension names must be unique. `label` (up to 200 characters) is the target's title when the link was made. The chip shows the target's current title, so a rename shows everywhere, and falls back to `label` only when the target is gone: a visibly broken chip, with its text kept. `toPlainText` and search use `label`. M10-05 picks the Markdown form of a relative reference.
+- **Derived** (decision 57): `linksFor(section)` in `domain` returns the section's links, and a `link` table on both sides is rebuilt from the body on every write, exactly like `citationsFor`. A tombstoned section has none. The columns are `fromSectionId`, `fromLessonId`, `targetType` and `targetId`, with an index on `(user_id, target_id)`. `targetId` has no foreign key, since a link can be broken. Like `citation`, the table has a schema without sync fields and is never pushed or pulled.
+- **Not checked on push:** a target may have been deleted, and the server never resolves a link (only the device does, from its own rows), so a link naming another account's id shows as broken and reveals nothing.
+- **"Linked from"** under a section lists the links whose target is that section; under a lesson, the links whose target is the lesson.
+
+### 17.5 Question entries (F24)
+
+| Column | Type | Notes |
+|---|---|---|
+| `questionId` | references `question` (cascade) | Parent |
+| `lessonId` | references `lesson` (cascade) | The lesson it happened in: the question's own, or the one it was revisited from |
+| `kind` | text: `asked`, `revisited`, `partial`, `answered`, `reopened`, `parked` | `parked` is new, so v1's parked questions keep their state |
+| `sectionId` | references `section` (set null), nullable | The section holding a partial or full answer |
+
+- **Status is derived** (decision 58): `questionStatus(entries, hasAnswerText)` in `domain` takes the latest live entry by `createdAt`, then id. `answered` gives *answered* while its section has text below its heading, and *open* otherwise (v1's "the status follows the answer", §8.1); `parked` gives *parked*; every other kind gives *open*. Entries made on two devices offline are all kept, so both devices derive the same status.
+- **Actions** write entries: a new question writes `asked`; Answer in a section writes `answered` with the section; Park and Reopen write `parked` and `reopened`; Revisit from another lesson writes `revisited` with that lesson, and the question then shows in that lesson as well. Merging moves one question's entries onto the other and deletes it; splitting makes a new question with `asked` and moves the chosen entries (M10-10).
+- **Readers:** the review queue, the Review badge and the service worker's count (§8.8) read `questionEntry` as well as `question`; the worker opens that store directly, as it does `question`.
+- **Migration** (M10-08): on the server, SQL gives each question an `asked` entry (its `createdAt` and lesson), plus `answered` (with `answerSectionId`) for an answered one and `parked` for a parked one. Ids come from Postgres 18's `uuidv7()`, and each row takes a new rev from its user's `syncRev`, so devices pull them. On the device, the Dexie upgrade makes the same entries, queued, only for questions the server never had (`rev` 0: a guest's, or ones not yet synced); the rest arrive in the pull.
+- `question.status` and `answerSectionId` leave the wire format with M10 and stay in the database, unwritten, for one release so a rollback still works; the next release drops them.
+
+### 17.6 Templates (F25)
+
+- **Built-ins are code** (decision 64): `BUILT_IN_TEMPLATES` in `domain` (SOAP, inductive, Lectio Divina, verse mapping), never rows and never synced, so they can't be deleted. To change one, the user saves a copy.
+- **`template`** rows: `name` (one line, up to 80 characters) and `structure` jsonb, a list of 1–30 `{ title, children? }` with titles of up to 120 characters and children one level deep, as sections are.
+- **Applying** a template is one action that makes ordinary sections, each with the title as its `h3` heading and an empty paragraph. Nothing links back to the template afterwards.
+- **Default per lesson kind:** `UserSettings.defaultTemplates` jsonb, `{ sermon, personal, group }`, each null, a built-in key (`builtin:soap`) or a template id. A deleted template counts as none. A setting rather than a flag on the template, so two templates can't both claim a kind.
+
+### 17.7 Lesson kind and source (F28)
+
+- **`Lesson.source` becomes `Lesson.kind`** (decision 60), labelled "Kind" in Details, matching `Series.kind`. The migration adds `kind` and backfills it, and `source` is dropped a release later (§11.2). The Dexie upgrade renames the field in stored lessons and queued lesson changes, `changed` lists included. Ships with M10, where the default template per kind needs it.
+- **The source is columns on the lesson,** all nullable: `sourceType` (`sermon`, `book`, `podcast`, `other`), `sourceTitle` and `sourceAuthor` (up to 200 characters), `sourceUrl` (http or https, up to 2,048) and `sourceStartedAt` (timestamptz, when the recording starts). Columns rather than an entity because a lesson has at most one source: two devices can't make two, and last write wins field by field. A lesson without one is unchanged.
+- **Sections** gain `sourceAt` (timestamptz, nullable), the moment in the source, and `sourcePage` (one line, up to 20 characters, for a book). Capture mode sets `sourceAt` to the time the section was made. The offset shown is `sourceAt − sourceStartedAt`, so setting the start time afterwards corrects every offset, and a typed "12:30" stores the start plus 12 minutes 30 seconds. How each kind of URL opens at a time is M11-07.
+
+### 17.8 Visits and dismissals (F30)
+
+- **`passageVisit`** (decision 61): `book`, `startOrd`, `endOrd` (the compile view's scope); the visit time is `createdAt`. Opening a compile view writes one, at most once per scope per day on a device, and the same action deletes that scope's older visits, so about one live row per scope remains. Rows are never edited, so two devices' visits both stand and need no conflict rules. Indexed on `(user_id, start_ord, end_ord)` and in Dexie on `startOrd` and `endOrd`. "No compile view visit in six months" means no live visit overlapping the verse since then.
+- **`resurfaceDismissal`**: `rule` (`year_ago`, `repeated_verse`, `stale_question`), `targetKey` (a lesson or question id, or a passage slug; no foreign key) and `until` (a date, a year on). Never edited; for a target, the latest `until` wins.
+- Neither has citations: a visit isn't a note.
+
+### 17.9 Settings
+
+`UserSettings` gains, each with the milestone that uses it:
+
+| Field | Default | Feature |
+|---|---|---|
+| `pasteChips` boolean | true | F19, M9-09 |
+| `openInTargets` jsonb, the visible target keys in order | all four | F20, M9-10 |
+| `defaultTemplates` jsonb | all null | F25, M10-14 |
+| `resurfacing` jsonb, `{ yearAgo, repeatedVerse, staleQuestion }` | all true | F30, M12-01 |
+| `lastDigestQuarter` text (`2026-Q3`), nullable | null | F32, M12-08: the digest is drafted once per account, not once per device |
+
+### 17.10 Server surface (F34, F35)
+
+- **`ShareLink`** is server-only, like `Session`, and on the contract test's server-only list. Its columns are `userId`, `targetType` (`lesson`, `series`, `compile`, `handout`), `targetId` or a passage, `tokenHash` (SHA-256 only, as for sessions), `expiresAt?`, `live` (for compile views), `snapshot` jsonb (for a frozen one), `createdAt`, `lastOpenedAt` and `revokedAt`. It is made, listed and revoked online through its own endpoints (M13-01), not through sync. Shared pages are rendered on the server from the owner's rows (M13-02). Snapshots carry the verse text, so the server still needs no Bible text.
+- **Groups:** the M13-06 spike designs how group rows sync to members. Private rows keep v1's per-user `syncRev` and ownership checks.
+
+### 17.11 "Open in…" targets and the YouVersion export (M8-05)
+
+*Researched 2026-10-17 from each site and its app-link files. **Not yet tried by hand on a phone and a laptop**, which M8-05 still needs.* "Fetched" means the link was opened and showed the right passage. These formats seed `open-in.json` (M9-10). The table is served network-first, so a format can change without a release.
+
+| Target | Verse | Range | Chapter | Cross-chapter (Rom 7:24–8:2) | Translation | Opens the app |
+|---|---|---|---|---|---|---|
+| YouVersion | `https://www.bible.com/bible/1/JHN.3.16.KJV` | `…/bible/3034/ROM.8.28-30.BSB` | `…/bible/3034/PSA.23.BSB` | not supported (404): use `ROM.7.24` | `/bible/{id}/{USFM}.{ABBR}`: KJV `1`, BSB `3034` | iOS and Android (universal and app links) |
+| Blue Letter Bible | `https://www.blueletterbible.org/kjv/jhn/3/16/` | `…/kjv/rom/8/28-30/` | `…/kjv/psa/23/` | not supported (404): use `…/rom/7/24/` | First path segment. **No BSB**: a BSB chip links to the KJV | Android only |
+| Bible Hub | `https://biblehub.com/kjv/john/3-16.htm`; BSB: `https://biblehub.com/bsb/john/3.htm#16` (`/bsb/john/3-16.htm` is a 404) | none: the first verse | `https://biblehub.com/bsb/psalms/23.htm` | the first verse | Path prefix `/bsb/` or `/kjv/` | Web only |
+| Logos | `https://ref.ly/Jn3.16;kjv` | `https://ref.ly/Ro8.28-30;kjv` | `https://ref.ly/Ps23;kjv` | supported: `https://ref.ly/Ro7.24-8.2;kjv` | `;kjv` suffix (no suffix gives ESV); `;bsb` goes to Biblia through a sign-in, so a BSB chip links to the KJV | iOS (universal links); Android opens the web |
+
+- **Book codes** differ per target, so each needs its own table from the domain's USFM codes. YouVersion uses USFM (`1JN`, `SNG`). Blue Letter Bible uses its own three-character codes (`Sng`, `Eze`, `Joe`, `Mar`, `Phl`, `1Jo`, `Jde`). Bible Hub uses lower-case names with underscores (`1_john`, `psalms`, `songs`; `psalm` and `song_of_solomon` are 404s). Logos uses loose abbreviations (`Jn`, `Ro`, `Ps`, `So`, `1Jn`). All were fetched.
+- No `youversion://` scheme is documented, and `logos4:` is a legacy scheme. Use the https links, which the installed apps claim.
+- **YouVersion export:** there is no self-serve download. A user asks for their data under the privacy policy's right of access (email `help@youversion.com`, subject "[State/Country] Privacy Request"), and the policy doesn't say what format comes back. An unofficial API client suggests records ("moments") of kind highlight, note or bookmark, with `content`, `created_dt`, a six-digit hex `color`, and `references: [{ human, version_id, usfm: ["JHN.3.16", …] }]` (one USFM id per verse). This is a guess until a real export arrives. M9-11 builds against that export (the M8-05 fixture), not against this guess.

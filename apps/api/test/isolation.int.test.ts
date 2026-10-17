@@ -131,7 +131,7 @@ async function fill(account: Account) {
   for (const entity of ROW_ENTITIES) rows[entity] = rowOf(entity, rows);
   const changes = [
     ...ROW_ENTITIES.map((entity) => upsert(entity, rows[entity]!)),
-    settings('olive'),
+    settings('light'),
   ];
   const results = await pushOk(client, account, changes);
   expect(results.map((r) => r.status)).toEqual(changes.map(() => 'applied'));

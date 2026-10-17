@@ -1,6 +1,6 @@
 # Lamp — Bible Study App PRD
 
-Oct 17, 2026 · @Frost Biter · v1.7 (see [Change log](#change-log))
+Oct 17, 2026 · @Frost Biter · v1.8 (see [Change log](#change-log))
 
 ## Overview
 
@@ -77,7 +77,7 @@ Series contain lessons; lessons contain a tree of sections; a question can be pr
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | Series | id, title, description, kind (sermon series / book study / custom), createdAt | Optional grouping of lessons |
-| Lesson | id, seriesId?, title, date, source (sermon / personal / group), speaker?, church?, mainPassages\[\] | Top-level container; mainPassages are verse references |
+| Lesson | id, seriesId?, title, date, kind (sermon / personal / group; called source until v1.8), speaker?, church?, mainPassages\[\] | Top-level container; mainPassages are verse references |
 | Section | id, lessonId, parentId?, order, body (rich text), createdAt, updatedAt | Tree, max two levels deep in UI; body holds inline verse chips |
 | Verse reference | book, chapter, verseStart?, chapterEnd?, verseEnd?, display, translation, snapshotText | Stored on every citing entity; book as canonical code (e.g. ROM); snapshotText frozen at capture; ranges may cross chapters |
 | Tag | id, name, isSeeded | Many-to-many with sections and lessons; 24 seeded themes ship with the app |
@@ -91,17 +91,18 @@ Series contain lessons; lessons contain a tree of sections; a question can be pr
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | Inbox item | id, origin (share / paste / import / capture), verseRef?, text?, translation?, sourceUrl?, receivedAt, snoozedUntil?, placedInSectionId? | F17, F27; placed items keep a pointer for undo |
-| Link | id, fromSectionId, toLessonId or toSectionId, createdAt | F23; backlinks are the reverse index |
-| Question entry | id, questionId, lessonId, kind (asked / revisited / partial / answered / reopened), sectionId?, createdAt | F24; question status derives from the latest entry |
-| Template | id, name, isBuiltIn, structure (named sections with nesting), defaultForSource? | F25 |
-| Source | id, lessonId, type (sermon / book / podcast / other), title, url?, author?, startedAt? | F28; sections carry an optional timestamp or page |
+| Link | fromSectionId, targetType (lesson / section), targetId | F23; derived from the link chips in section bodies, like the verse index, so it can never disagree with the text; backlinks are the reverse index |
+| Question entry | id, questionId, lessonId, kind (asked / revisited / partial / answered / reopened / parked), sectionId?, createdAt | F24; question status derives from the latest entry |
+| Template | id, name, structure (named sections with nesting) | F25; the four built-ins are part of the app, not stored; the default template per lesson kind is a setting |
+| Source | type (sermon / book / podcast / other), title, url?, author?, startedAt? | F28; optional fields on the lesson, since a lesson has at most one; sections carry an optional timestamp or page |
+| Passage visit, resurface dismissal | passage, visitedAt; rule, target, until | F30; synced so a visit or a dismissal on one device holds on all |
 | Share link | id, targetType, targetId, token, expiresAt?, isLive, createdAt, lastOpenedAt, revokedAt? | F34 |
 | Group | id, name, ownerUserId, inviteToken, createdAt | F35 |
 | Group membership | groupId, userId, role (owner / member), joinedAt | F35 |
 | Group series | groupId, seriesId | F35; a series shared into a group |
 | Comment | id, sectionId, userId, body, createdAt | F35; only on public sections |
 
-Sections gain `visibility` (private / group) and an optional `groupId`; both default to private so v1 data needs no migration beyond new columns.
+Sections gain `visibility` (private / group) and an optional `groupId`; both default to private so v1 data needs no migration beyond new columns. The lesson's source (sermon / personal / group) is renamed its *kind*, so it doesn't clash with F28's source. The technical design of each entity is in [TECH-DESIGN §17](TECH-DESIGN.md#17-v2-design-f17f35).
 
 ## Feature specification
 
@@ -236,7 +237,7 @@ Each feature is a user story with acceptance criteria. F1–F16 are phase 1 (v1)
 **F25. Study-method templates**
 
 - As a user I can start a lesson or a section from a study-method scaffold, so I follow a method without rebuilding its structure every time.
-- Accepts: four built-in templates: SOAP (Scripture, Observation, Application, Prayer), inductive (Observe, Interpret, Apply), Lectio Divina (Read, Meditate, Pray, Contemplate) and verse mapping (the verse, key words, cross-references I find, paraphrase, application); applying a template creates named sections (and child sections where the method nests) that behave like ordinary sections afterwards; the user can create and edit their own templates; a template can be set as the default for new lessons from a given source (e.g. personal study).
+- Accepts: four built-in templates: SOAP (Scripture, Observation, Application, Prayer), inductive (Observe, Interpret, Apply), Lectio Divina (Read, Meditate, Pray, Contemplate) and verse mapping (the verse, key words, cross-references I find, paraphrase, application); applying a template creates named sections (and child sections where the method nests) that behave like ordinary sections afterwards; the user can create and edit their own templates; a template can be set as the default for new lessons of a given kind (e.g. personal study).
 
 ### v2 long tail
 
@@ -398,3 +399,4 @@ v2 replaces the earlier phase 2 plan. Share links and groups are F34 and F35; im
 | 1.5 | 2026-10-13 | Themes (F16) gain looks: Classic with the six presets, plus Folio, Soft and Lamplight, downloaded when chosen; a new device picks a look and mode first (TECH-DESIGN §8.5). |
 | 1.6 | 2026-10-16 | One theme (F16): Lamplight in light and dark, with Auto following the device, and Inter Tight as the only font. The looks and presets are removed; a new device picks only the mode (TECH-DESIGN §8.5). |
 | 1.7 | 2026-10-17 | v2 scope. Position: study alongside other Bible apps rather than repeat them; reader stays minimal. Added F17–F35: inbox, share target, paste intelligence, "Open in…", YouVersion import, compile view, backlinks, question lineage, study-method templates, capture mode, inbox triage, source attachment, prep card, resurfacing, theme map, quarterly digest, Notion Markdown and handout export, read-only share links, groups with a shared questions queue. Milestones F–J, with F and G as the core. Dropped from the roadmap: ESV and further translations (BSB bundled, KJV optional), reading plans, streaks, audio, commentaries, Strong's, interlinear, friend feeds, teaching tools, importers other than YouVersion. Also: the PRD now says BSB and KJV where it said WEB (replaced 2026-10-15, TECH-DESIGN §15 #53), and the KJV → WEB verse mapping is gone; F3 drops viewing a chip in another translation; F33's handout prints dark on white like the F11 print view, and F34's shared pages use Lamplight in the reader's light or dark mode, since looks were removed in 1.6. "Phase 2 and beyond" becomes "Beyond v2". |
+| 1.8 | 2026-10-17 | The v2 data model follows TECH-DESIGN §17 (M8-02): links are derived from section bodies, question entries gain *parked*, built-in templates are part of the app and the default per lesson kind is a setting, the source is fields on the lesson, and visits and dismissals for resurfacing are added. The lesson's source (sermon / personal / group) becomes its kind. |

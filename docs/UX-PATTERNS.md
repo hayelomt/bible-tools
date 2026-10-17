@@ -1,6 +1,7 @@
 # Lamp — UX patterns
 
-**Date:** 2026-10-13 (M1-14) · **Applies to:** every UI task in M2–M6 ([BACKLOG](BACKLOG.md)).
+**Date:** 2026-10-17 (M1-14; v2 screens from M8-04) · **Applies to:** every UI task in M2–M6 and
+M9–M13 ([BACKLOG](BACKLOG.md)).
 
 Screens are designed in code: each UI task builds its screen from the shared components in
 `packages/ui` and is reviewed in the browser at 360 px and 1280 px wide. This guide holds the rules
@@ -13,8 +14,9 @@ screen needs something new.
 
 | Screen | Wireframe | Tasks |
 |---|---|---|
-| App shell: bottom bar, sidebar | [shell.md](wireframes/shell.md#app-shell-m2-02) | M2-02 |
+| App shell: bottom bar, sidebar, Inbox tab and badge | [shell.md](wireframes/shell.md#app-shell-m2-02-m9-02) | M2-02, M9-02 |
 | Settings | [shell.md](wireframes/shell.md#settings-m2-02) | M2-02, M3-03 |
+| Settings: v2 sections | [shell.md](wireframes/shell.md#settings-in-v2-m9m13) | M9-09, M9-10, M10-13, M12-01, M13-04, M13-12 |
 | Appearance: light, dark, auto | [shell.md](wireframes/shell.md#appearance-m2-03-m2-15) | M2-03, M2-15 |
 | Bible download, update prompt | [shell.md](wireframes/shell.md#bible-download-m2-11) | M2-11 |
 | Lessons home, welcome and first run | [lessons.md](wireframes/lessons.md#lessons-home-m2-06) | M2-06, M2-14 |
@@ -38,6 +40,33 @@ screen needs something new.
 | Review queue | [review.md](wireframes/review.md#review-queue-m6-03) | M6-03, M6-04 |
 | Memory card, memorise | [review.md](wireframes/review.md#memory-card-m6-02) | M6-01, M6-02 |
 | Export menu, print view | [export.md](wireframes/export.md) | M6-05, M6-06 |
+| Inbox | [interop.md](wireframes/interop.md#inbox-m9-02-m9-07) | M9-02, M9-07 |
+| Share landing (`/share`) | [interop.md](wireframes/interop.md#share-landing-m9-06) | M9-06 |
+| Paste prompt (section, inbox) | [interop.md](wireframes/interop.md#paste-prompt-m9-08-m9-09) | M9-08, M9-09 |
+| "Open in…" and its settings | [interop.md](wireframes/interop.md#open-in-m9-10) | M9-10 |
+| YouVersion import, dismiss an import | [interop.md](wireframes/interop.md#youversion-import-m9-11-m9-12) | M9-11, M9-12 |
+| Commentary (compile view) | [thinking.md](wireframes/thinking.md#commentary-m10-01-to-m10-04) | M10-01 to M10-04 |
+| `[[` link picker | [thinking.md](wireframes/thinking.md#link-picker-m10-06) | M10-06 |
+| Link chip, broken link | [thinking.md](wireframes/thinking.md#link-chip-m10-06) | M10-05, M10-06 |
+| Linked from | [thinking.md](wireframes/thinking.md#linked-from-m10-07) | M10-07 |
+| Question thread, revisit, split, merge | [thinking.md](wireframes/thinking.md#question-thread-m10-08-to-m10-11) | M10-08 to M10-11 |
+| Template picker, templates settings | [thinking.md](wireframes/thinking.md#template-picker-m10-12-to-m10-14) | M10-12 to M10-14 |
+| Capture mode | [sermon.md](wireframes/sermon.md#capture-mode-m11-01) | M11-01 |
+| Inbox triage, keys | [sermon.md](wireframes/sermon.md#inbox-triage-m11-02-to-m11-05) | M11-02 to M11-05 |
+| Lesson source, kind | [sermon.md](wireframes/sermon.md#lesson-source-m11-06) | M11-06 |
+| Section timestamps and pages | [sermon.md](wireframes/sermon.md#section-timestamps-and-pages-m11-07) | M11-07, M11-08 |
+| Prep card | [sermon.md](wireframes/sermon.md#prep-card-m11-09) | M11-09 |
+| Resurfaced in Review | [reflection.md](wireframes/reflection.md#resurfaced-in-review-m12-01-m12-02) | M12-01, M12-02 |
+| Theme map | [reflection.md](wireframes/reflection.md#theme-map-m12-03-m12-04-m12-10) | M12-03, M12-04, M12-10 |
+| Quarterly digest draft | [reflection.md](wireframes/reflection.md#quarterly-digest-m12-07-m12-08) | M12-07, M12-08 |
+| Export: Notion, handout | [reflection.md](wireframes/reflection.md#export-notion-and-handout-m12-05-m12-06) | M12-05, M12-06 |
+| Handout | [reflection.md](wireframes/reflection.md#handout-m12-05) | M12-05 |
+| Share link, shared links in Settings | [sharing.md](wireframes/sharing.md#share-link-m13-04) | M13-01, M13-04 |
+| Shared page | [sharing.md](wireframes/sharing.md#shared-page-m13-02-m13-03) | M13-02, M13-03 |
+| Groups: create, invite, join, members | [sharing.md](wireframes/sharing.md#groups-m13-07) | M13-07 |
+| Group and private threads, comments | [sharing.md](wireframes/sharing.md#lesson-in-a-group-public-and-private-threads-m13-08) | M13-08, M13-09 |
+| Group questions | [sharing.md](wireframes/sharing.md#group-questions-m13-10) | M13-10 |
+| Notifications, email digest | [sharing.md](wireframes/sharing.md#notifications-m13-11-m13-12) | M13-11, M13-12 |
 | Empty, loading and error states | [states.md](wireframes/states.md) | all |
 
 The theme demo (`/dev/themes`, M1-13) and the looks explorations (`/dev/looks`, M2-14) were removed
@@ -48,11 +77,18 @@ with the single theme (M2-15).
 - **Two layouts.** Under 1024 px (Tailwind `lg`): one column with a header and a bottom bar.
   From 1024 px: a sidebar, and a side panel where a screen has one. Tablets get the phone layout
   with a wider column.
-- **Four destinations:** Lessons, Read, Search, Review. Settings opens from the header (phone) or
-  the sidebar (laptop). Nothing else goes in the bottom bar.
+- **Five destinations:** Lessons, Inbox, Read, Search, Review (Inbox joined in v2). Under
+  1024 px each tab is 72 px wide at 360 px, with its icon above its label. Settings opens from the
+  header (phone) or the sidebar (laptop). Nothing else goes in the bottom bar: groups live on the
+  Lessons home and in the sidebar, the theme map in Review.
+- **Badges:** Inbox counts items waiting, Review counts open questions and verses due. A small
+  filled number, hidden at zero, "99+" above 99, and part of the tab's name for screen readers.
+  Nothing else gets a badge; resurfaced items and group activity are quiet.
 - **Width:** reading text (notes, scripture) is at most 42 rem wide, about 70 characters per line.
   Side margins are 16 px on a phone.
-- **No sideways scroll** at 360 px on any screen. Long references and tag names wrap.
+- **No sideways scroll** at 360 px on any screen. Long references and tag names wrap. A grid too
+  wide for a phone (the theme map) changes shape instead: its rows become the touch targets, and
+  each opens a list.
 - **Safe areas:** the bottom bar and bottom sheets add `env(safe-area-inset-bottom)` for installed
   apps on phones with a home indicator.
 - **Back:** every screen below a destination has `←` in the header, and the browser's back button
@@ -70,7 +106,14 @@ with the single theme (M2-15).
   token, checked by the contrast test) and moves into a dialog when it opens and back when it
   closes.
 - **Shortcuts (laptop):** `/` search, `n` new lesson, `←` `→` previous and next chapter in the
-  reader, Esc closes the top layer. None of them fire while typing in a field.
+  reader, Esc closes the top layer. None of them fire while typing in a field. A screen with its own
+  keys (inbox triage) lists them with `?`, and shows each action's key beside its button.
+- **Multi-select:** "Select" in the header, or holding an item, shows checkboxes (44 px targets).
+  A bar with the count and the actions replaces the bottom bar, as the reader's selection bar
+  does; ✕ or Esc ends it. Bulk actions are one action with one Undo.
+- **Read-only views** (the commentary, shared pages, other members' sections): no cursor, no `⠿`,
+  no editing toolbar. Text can be selected and copied, chips open as anywhere, and each section
+  has a byline that opens it where it can be edited, if the reader may.
 - **Phone keyboard:** the editing toolbar sits on top of the on-screen keyboard
   (`visualViewport`), and the bottom bar hides while the keyboard is open. The field being typed in
   is never hidden behind the keyboard.
@@ -94,6 +137,12 @@ with the single theme (M2-15).
   for decoration or for states that fix themselves (offline is not an error).
 - **Colour is never the only signal.** Highlights have names ("Highlighted yellow"), question
   statuses have symbols and words, the sync status has text.
+- **Heat grids** (the theme map) use a stepped scale of theme tokens, shown with its numbers
+  ("· none ░ 1–2 ▒ 3–5 ▓ 6–9 █ 10+"); zero is a plain dot, not the lightest colour. Each cell or row
+  has its count in its name, and the grid is a table to screen readers. The scale is in the
+  contrast test.
+- **Paper and shared pages:** the print view and the handout are dark on white whatever the mode.
+  Shared pages are in Lamplight, light or dark following the reader's device.
 - **One theme, Lamplight** (glass panels with lit edges, amber accents), in light and dark. Auto
   follows the device. There are no looks or presets to choose.
 - **Lamplight's surfaces are plain CSS** (`lamplight.css`, TECH-DESIGN §8.5): they hook onto
@@ -106,7 +155,8 @@ with the single theme (M2-15).
 ## Saving and feedback
 
 - **Everything saves as it's typed.** Notes, lesson details, takeaways and settings have no Save
-  button. The lesson header shows a tick (muted), named "Saved" for screen readers, once the last
+  button. Drafts that aren't lessons yet (the quarterly digest) save as they're typed too, and have
+  one button that makes them a lesson ("Keep as a lesson"). The lesson header shows a tick (muted), named "Saved" for screen readers, once the last
   change is stored, which is within a second. Forms that talk to the server (sign-in, password) are
   the only forms with a submit button.
 - **Local actions are instant** and never show a spinner. Only server actions and long background
@@ -125,6 +175,14 @@ toast. An action that removes more than one thing, or can't be undone, asks firs
 |---|---|
 | Delete a section without replies, a takeaway, a question, a highlight, a tag from an item | At once, Undo toast |
 | Park a question, remove a memory verse | At once, Undo toast |
+| Dismiss or place an inbox item; snooze one | At once, Undo toast |
+| Bulk send, tag or dismiss of selected inbox items | At once, one Undo toast for all (the selection is the confirmation) |
+| Dismiss all items from an import | Ask, giving the count and the import's date |
+| Dismiss a resurfaced item for a year | At once, Undo toast |
+| Delete a template, a comment of one's own; discard the digest draft | At once, Undo toast |
+| Split or merge questions | A dialog that says where each entry goes |
+| Revoke a share link, make a new invite link | Ask: the old address stops working |
+| Remove a member, make someone owner, leave a group | Ask, naming the person and the group |
 | Delete a section with replies | Ask: "Delete this section and its 2 replies?" |
 | Delete a lesson | Ask, giving the number of sections |
 | Delete a series | Ask: its lessons stay, without a series |
@@ -144,8 +202,9 @@ count ("Delete all 3"). Focus starts on Cancel.
   waiting" in muted text; no banners, no red.
 - **The sync status lives in one place** (the header on a phone, the sidebar foot on a laptop) and
   opens the sync panel. States, wording and the panel: [sync.md](wireframes/sync.md).
-- **Server-only actions** (sign-in, sign-up, password, devices, delete account) keep what was typed
-  when offline, disable the submit button, and say "Needs a connection" above it.
+- **Server-only actions** (sign-in, sign-up, password, devices, delete account, share links,
+  joining and managing groups) keep what was typed when offline, disable the submit button, and say
+  "Needs a connection" above it. A guest sees "Sign in to…" in their place, once, with Sign in.
 - **A guest is never nagged.** Settings invites sign-up once, in the account section. The sync
   status says "On this device" without a call to action.
 - **Nothing typed is ever lost**, and the UI says so where people worry: on sign-out, on errors
@@ -165,6 +224,15 @@ count ("Delete all 3"). Focus starts on Cancel.
   the source text is corrected later.
 - A chip is one unit for the cursor and for Backspace, and screen readers hear it as a button:
   "John 10:9, Berean Standard Bible, verse. Show text."
+- **Labels for text from outside:** a shared chip whose translation can't be identified is labelled
+  "shared" (`⟦Psalm 23:1 · shared⟧`), a pasted one "pasted". They are never guessed as BSB or KJV.
+- **Link chips are not verse chips.** A link chip (`⟨→ The Good Shepherd⟩`) has an arrow, the
+  target's current title and no translation, and a tap opens the target itself rather than a sheet.
+  A broken one (the target was deleted) keeps its last title, struck through, with ⊘ and the word
+  "deleted", so colour isn't the only signal. Screen readers hear "Link to lesson The Good
+  Shepherd" or "Broken link, The Good Shepherd, deleted".
+- **Inbox items aren't notes yet:** they don't show in the verse index, search or a commentary
+  until they're placed in a lesson.
 
 ## Empty, loading and error states
 
@@ -194,5 +262,10 @@ The shared layouts are in [states.md](wireframes/states.md).
 - Plain words, sentence case, no jargon: "sync", not "replicate"; "lesson", not "document".
 - Buttons are verbs: "Add", "Delete all 3", "Sign in". Links say where they go.
 - Dates: "Sun 12 Oct" in lists, "Sunday 12 October 2026" on the lesson and in exports. Times are
-  relative for sync ("2 min ago") and absolute elsewhere.
+  relative for sync and for a share link's "opened 2 h ago", and absolute elsewhere. Today's inbox
+  items show the time ("10:42").
+- **Names for v2 things:** the compile view is "Commentary" ("Read as commentary"); the lesson's
+  Sermon / Personal / Group is its "Kind", and "Source" is what it came from (a sermon recording, a
+  book, a podcast); an inbox item is "sent to" a lesson or "dismissed"; a group's own part of a
+  lesson is the "group thread", the rest "my notes".
 - Counts are exact and singular when one: "1 change waiting", "3 changes waiting".
