@@ -6,6 +6,7 @@ import { LessonEditor } from '@/components/lesson/lesson-editor.tsx';
 import { ScreenTitle } from '@/components/shell/slots.tsx';
 import { lessonById } from '@/data/queries.ts';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
+import { useScreenReady } from '@/lib/screen-ready.ts';
 
 interface LessonSearch {
   /** A draft from "New lesson": stored once it has a title (`newLessonTarget`). */
@@ -38,6 +39,7 @@ function LessonScreen() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const lesson = useLiveQuery(() => lessonById(lessonId), [lessonId]);
+  useScreenReady('lesson', lesson !== undefined);
 
   // Once the draft is stored, its address loses `?new`, so reloading or going back shows the lesson.
   useEffect(() => {

@@ -11,6 +11,7 @@ import { DEFAULT_REVIEW_WINDOW_DAYS } from '@/data/setup.ts';
 import { useSettings } from '@/data/use-settings.ts';
 import { today } from '@/lib/dates.ts';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
+import { useScreenReady } from '@/lib/screen-ready.ts';
 
 export const Route = createFileRoute('/_app/review/')({
   staticData: { title: 'Review' },
@@ -33,6 +34,10 @@ function Review() {
   const takeaways = useLiveQuery(
     () => (ready ? recentTakeaways(day, days) : undefined),
     [ready, day, days],
+  );
+  useScreenReady(
+    'review',
+    items !== undefined && questions !== undefined && takeaways !== undefined,
   );
   if (!items || !questions || !takeaways) return <ScreenSkeleton />;
 

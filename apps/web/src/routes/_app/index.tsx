@@ -9,6 +9,7 @@ import { Welcome } from '@/components/welcome.tsx';
 import { PageSection } from '@/components/page-section.tsx';
 import { lessonsAndSeries } from '@/data/queries.ts';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
+import { useScreenReady } from '@/lib/screen-ready.ts';
 import { count } from '@/lib/labels.ts';
 import { newLessonTarget } from '@/lib/new-lesson.ts';
 import { useWelcomed } from '@/lib/welcome.ts';
@@ -31,6 +32,7 @@ function LessonsHome() {
   const both = useLiveQuery(() => lessonsAndSeries(), []);
   const [creatingSeries, setCreatingSeries] = useState(false);
   const welcomed = useWelcomed();
+  useScreenReady('lessons', both !== undefined);
   if (!both) return <ScreenSkeleton />;
   const { lessons, series } = both;
   // Someone with lessons already set the app up before the welcome existed.
