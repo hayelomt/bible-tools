@@ -1,14 +1,14 @@
-# Lamp — Build Backlog (v2.1)
+# Lamp — Build Backlog (v2.2)
 
-**Date:** 2026-10-12 (v1.0: first version, static app with no server · v2.0: rewritten for PRD v1.1 and TECH-DESIGN v1.0, adding the NestJS + Postgres server, accounts and sync · v2.1: name, themes, hosting, email, backups and error reporting decided)
-**Based on:** [PRD v1.2](<Bible Study App — PRD.md>) and [TECH-DESIGN v1.0](TECH-DESIGN.md). Refs point to feature IDs (F1–F16) and to design sections (§).
+**Date:** 2026-10-17 (v1.0: first version, static app with no server · v2.0: rewritten for PRD v1.1 and TECH-DESIGN v1.0, adding the NestJS + Postgres server, accounts and sync · v2.1: name, themes, hosting, email, backups and error reporting decided · v2.2: PRD v2 (F17–F35) added as M8–M13)
+**Based on:** [PRD v1.7](<Bible Study App — PRD.md>) and [TECH-DESIGN v1.0](TECH-DESIGN.md). Refs point to feature IDs (F1–F35) and to design sections (§).
 **Team:** one developer working with Claude Code. Open source (MIT), so contributors can pick up tasks. Screens are designed in code: each UI task builds the screen with the shared components and is reviewed in the browser at phone and laptop widths.
 
 ## How to use this file
 - **Status:** ☐ to do · ◐ in progress · ☑ done. Update the status cell in place.
 - **Size:** **S** ≤ ½ day · **M** ≈ 1 day · **L** 2–3 days. Anything bigger is split before starting.
 - **Done when:** a task isn't done until its condition is met, it has tests where it says so, and CI is green.
-- **UI tasks** (M2–M6) follow `docs/UX-PATTERNS.md` and the wireframes from M1-14.
+- **UI tasks** (M2–M6, M9–M13) follow `docs/UX-PATTERNS.md` and the wireframes from M1-14 (v1) and M8-04 (v2).
 - **Tests** run against the machine's own PostgreSQL (`lamp_test_dev`, `lamp_e2e_dev`), never Docker (§10.2).
 - **New work:** goes into a milestone table with the next free ID. A scope change also needs a PRD change-log entry.
 
@@ -25,18 +25,28 @@
 | [M5](#m5--reader) | D | Read, highlight and promote scripture | 2 | 3 | 0 | 2 – 4 |
 | [M6](#m6--loops-and-output) | E | Review queue, scripture memory, export | 3 | 4 | 0 | 2.75 – 5.5 |
 | [M7](#m7--release) | — | VPS deploy, hardening, a month of real use, public v1.0 | 6 | 4 | 0 | 3.5 – 7 |
-| **Total** | | | **22** | **40** | **11** | **≈ 42 – 78.5** |
+| [M8](#m8--v2-groundwork) | — | PRD merge, v2 design, doc-model compatibility, v2 UX pass | 2 | 3 | 0 | 2 – 4 |
+| [M9](#m9--interop-core) | F | Verses from other apps reach a lesson in two taps; YouVersion import | 5 | 6 | 3 | 8.75 – 16 |
+| [M10](#m10--thinking-layer) | G | Compile view, backlinks, question lineage, study-method templates | 4 | 8 | 3 | 9.5 – 17.5 |
+| [M11](#m11--sermon-workflow) | H | Capture live, triage in the week, trace back to the recording | 4 | 6 | 1 | 5.5 – 10.5 |
+| [M12](#m12--reflection-and-export) | I | Resurfacing, theme map, quarterly digest, Notion and handout export | 2 | 9 | 0 | 5 – 10 |
+| [M13](#m13--sharing-and-groups) | J | Read-only share links; groups studying a series together | 5 | 8 | 4 | 11.25 – 20.5 |
+| **Total** | | | **44** | **80** | **22** | **≈ 84 – 157** |
 
-The effort range runs from optimistic (S ¼ d, M ½ d, L 1½ d, assuming Claude Code handles most boilerplate) to conservative (S ½ d, M 1 d, L 2½ d). This is a hobby project with no deadline, so the range is for planning order, not dates. The likeliest to run over: the reference parser (M1-09), the section editor (M2-07), the verse autocomplete (M2-09), and the sync engine with its conflict rules (M3-06, M3-07, M3-09).
+The effort range runs from optimistic (S ¼ d, M ½ d, L 1½ d, assuming Claude Code handles most boilerplate) to conservative (S ½ d, M 1 d, L 2½ d). This is a hobby project with no deadline, so the range is for planning order, not dates. The likeliest to run over: the reference parser (M1-09), the section editor (M2-07), the verse autocomplete (M2-09), and the sync engine with its conflict rules (M3-06, M3-07, M3-09); in v2, verse-text matching for paste (M9-04), the YouVersion importer (M9-11), the `[[` link picker (M10-06), question lineage on existing data (M10-08), and everything that syncs between users in groups (M13-07, M13-08).
 
 ### Order
 ```
 M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶ M6 (E) ──▶ M7 (v1.0)
+M7 (v1.0) ──▶ M8 ──▶ M9 (F) ──▶ M10 (G) ──▶ { M11 (H), M12 (I), M13 (J) }
 ```
 - **M2 builds the app as a guest-only, offline app**, but every write already goes through the outbox (M2-01). M3 then only has to drain that outbox, with no rework of the screens.
 - **Structure (M4) comes before sync (M3)** (decided 2026-10-13): finding past notes is worth more than sync while the app is used on one device. M4 needs nothing from M3: it's local, its writes queue in the outbox like every other, and its entities are already in the shared schemas, the Prisma model and the sync entity list. The cost: sync is proven against more entities, so M3 also covers tags, takeaways and questions (two devices creating the same tag, a promoted question edited on both sides, guest tags and questions joining an account). The IDs keep their numbers.
 - M5 can come before M3 too, or swap with M4. M6 needs both: the review queue reads questions and takeaways (M4), and memory verses come from the reader (M5).
 - Each milestone ends with a **gate test** that checks the PRD gate for that milestone. You can study with the app from the end of M2, and across devices from the end of M3.
+- **v1.0 ships first.** M7 is still open, and v2 adds entities, a doc-model change and (in M13) public pages. M8 can run beside M7, since it is design and documents only.
+- **F and G are the v2 core** and go in order: the inbox (M9) is where captures, imports and triage (M11) all land, and the paste detector (M9-03, M9-04) is reused by capture mode.
+- **H, I and J can be reordered** (PRD). M12-05 (handout) comes before M13-03, which shares a handout. M13 is the only milestone with new server surface beyond sync, and it starts with its own design spike (M13-06).
 
 ---
 
@@ -157,6 +167,115 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 | ☐ | M7-09 | User guide (install, capture, verse entry, accounts and sync, what the sync indicator means), privacy note (what is stored, who can see it, how to delete it), architecture overview for contributors | S | PRD *Open questions* | Linked from the README and the app's settings |
 | ☐ | M7-10 | v1.0 release: changelog, tag, release notes, the repo made public, first issues labelled "good first issue" | S | — | v1.0 is live and the repo is public |
 
+## M8 — v2 groundwork
+*Goal: v2 is designed before it is built. The PRD is merged, the new entities and the decisions they need are in TECH-DESIGN, an older app can't break on a v2 note, and every v2 screen has a wireframe.*
+
+| Status | ID | Task | Size | Refs | Done when |
+|---|---|---|---|---|---|
+| ☑ | M8-01 | Merge `PRD-v2.md` into the PRD (v1.7) (the backlog was merged 2026-10-17); resolve the PRD's references to a "theme look" (F33 handout, F34 shared pages), since looks were removed in M2-15 and print is dark on white (M6-06) | S | PRD *Change log* | One PRD; no feature refers to a look (PRD v1.7, 2026-10-17). Decided 2026-10-17: the handout prints dark on white like the print view, and shared pages use Lamplight in the reader's light or dark mode; F3's view of a chip in the other translation is dropped (a parallel view is a v2 non-goal); WEB, which the BSB and KJV replaced on 2026-10-15, is gone from the PRD |
+| ☐ | M8-02 | **TECH-DESIGN v2**: tables and Dexie stores for inbox item, link, question entry, template and source; the sync entity list, isolation fixtures and citation rules for each; decisions on: links derived from bodies (like `Citation`) or pushed; question `status` stored or derived from entries; whether inbox items appear in the verse index; F28's `Source` vs the existing `Lesson.source` kind (rename one); where "compile view last visited" is kept (F30) | M | §4–§6, PRD *Data model additions* | Each v2 entity has a table, a sync rule and an isolation rule; each decision is in the §15 log |
+| ☐ | M8-03 | **Doc-model compatibility**: the v2 body adds an inline `link` node (F23) and the verse node gains the translations `shared` and `pasted` (F18, F19). An older app's strict schema would reject those rows on pull. Decide and build the rule: bump `MIN_CLIENT_VERSION` with the release that writes them (pull and push answer `426`), and document the procedure for later model changes | M | §4.2, §6.3, F18, F19, F23 | A test pulls a v2 body into a client below the minimum and gets `426`, not a rejected row; the procedure is in TECH-DESIGN |
+| ☐ | M8-04 | **v2 UX pass**: wireframes for the inbox and its badge (and where the Inbox tab goes in the bottom bar), the share landing, the paste prompt, "Open in…" in the chip viewer, the import progress, the compile view, the `[[` picker and "Linked from", the question thread, the template picker, capture mode, triage, source and timestamps, the prep card, resurfaced rows in Review, the theme map, the digest draft, the handout, share-link settings and the shared page, and the group screens; empty, loading and error states for each; `UX-PATTERNS.md` updated | M | F17–F35 | Every M9–M13 screen has a wireframe linked from the guide |
+| ☐ | M8-05 | Collect inputs the build depends on: a real YouVersion export from an account with highlights and notes in several versions (anonymised into a fixture), and the deep-link formats of Blue Letter Bible, YouVersion, Bible Hub and Logos tried by hand on a phone and a laptop | S | F20, F21, PRD *Open questions* | A fixture is committed under `apps/web/src/import/fixtures/`; each target's URL format is written down with a working example |
+
+## M9 — Interop core
+*PRD milestone F (F17, F18, F19, F20, F21). **Gate:** a verse shared from YouVersion reaches a lesson in two taps; a YouVersion export lands in the inbox.*
+
+| Status | ID | Task | Size | Refs | Done when |
+|---|---|---|---|---|---|
+| ☐ | M9-01 | Inbox item entity: Zod schema in `domain`, Prisma model and migration, Dexie store (v6), sync entity, isolation test fixture; `placedInSectionId` set when placed, so placing can be undone | M | M8-02, F17 | An inbox item syncs between two devices in the contract test (M3-14); the isolation suite covers it |
+| ☐ | M9-02 | F17 **Inbox screen**: newest first, each item's chip, text, origin and translation; send to a new section of a chosen lesson, append to an existing section, or dismiss, each with Undo; a count badge on the Inbox tab; an add box that takes typed or pasted text | M | F17 | Placing an item adds the section and removes it from the inbox; Undo brings it back; the badge matches the list |
+| ☐ | M9-03 | **Reference finder** in `domain`: every reference in a block of free text, with its span, reusing `parseReference` and `find-reference`'s book matching | M | §4.1, F19 | A table-driven suite of at least 100 cases passes, including references inside sentences, lists of references and none at all |
+| ☐ | M9-04 | **Verse-text matcher**: an index of normalised verse text (case, punctuation, quotes, verse numbers removed) over the BSB and, once downloaded, the KJV, built in a worker; finds a whole verse or a run of verses inside pasted text and returns the reference and translation | L | §9, F19 | Known verses and ranges copied from YouVersion, Bible Hub and a web page match; other translations' text matches nothing; the index builds within the M7-07 budget and its memory use is recorded |
+| ☐ | M9-05 | Translation from a shared URL or text: YouVersion's version ids, Blue Letter Bible's `t=` and Bible Hub's path mapped to a label; anything else is `shared` | S | F18 | Table tests for each site; unknown URLs give `shared` |
+| ☐ | M9-06 | F18 **Share target**: `share_target` in the manifest (GET to `/share`, so the precached shell opens it offline); the landing screen shows what was found (M9-03 to M9-05) and sends it to the inbox, or to the lesson open in the last 10 minutes with "Add to current lesson" | M | §8.6, F18 | Opening `/share?text=…&url=…` offline puts an item in the inbox; within 10 minutes of a lesson, one more tap puts it in that lesson |
+| ☐ | M9-07 | Where the share sheet can't reach Lamp (iOS): an "Add from clipboard" button on the Inbox, and a line in the user guide; which platforms show Lamp in the share sheet recorded in the README | S | PRD *Open questions* | Checked on an iPhone and an Android phone; the README lists the results |
+| ☐ | M9-08 | F19 **Paste intelligence** in sections: a TipTap paste handler runs M9-03 and M9-04 on pasted text; a quiet prompt offers "Make chip" for each reference found; the rest of the text stays as the body; nothing changes without a tap; text from an unknown translation is kept as it was pasted, with the translation `pasted` | L | §8.3, F19 | Fixture pastes from three sites give the right prompts; dismissing the prompt leaves the paste exactly as it was |
+| ☐ | M9-09 | Paste intelligence in the inbox's add box, and Settings → Editing → "Offer verse chips when pasting" (synced) | S | F19 | With the setting off, no prompt shows in a section or the inbox |
+| ☐ | M9-10 | F20 **"Open in…"**: a target table (`open-in.json`, served network-first like the Bible manifest, so a format can change without a release) and a URL builder per target from the normalised ref and translation; the actions in the chip viewer; hide and reorder targets in settings (synced) | M | §8.6, F20 | Golden tests build each target's URL for a verse, a range, a chapter and a cross-chapter range; a changed table is used on the next start |
+| ☐ | M9-11 | F21 **YouVersion importer**: reads the export file client-side in a worker with a progress bar; each highlight or note becomes an inbox item with its chip (exported text and version), note, date and colour; re-imports skip items matched by reference, date and text | L | F21 | The M8-05 fixture imports completely; a second import adds nothing; a malformed file fails with a clear message and adds nothing |
+| ☐ | M9-12 | Bulk dismiss for an import (the rest of triage is M11-02), so an import can be undone before F27 | S | F21 | Dismissing an import's items removes only that import's items |
+| ☐ | M9-13 | Gate test (Playwright): a YouVersion URL and verse text shared to `/share` land in the inbox with a BSB chip and reach a lesson in two taps; the fixture export lands in the inbox, and a second import adds nothing | M | PRD *v2 milestones* F | Passes in CI |
+| ☐ | M9-14 | Real-use check: share from the YouVersion app on Android, paste from YouVersion on an iPhone, open each "Open in…" target from a chip | S | PRD *Goals (v2)* | Findings are fixed or logged as tasks before M10 starts |
+
+## M10 — Thinking layer
+*PRD milestone G (F22, F23, F24, F25). **Gate:** opening Romans 8 shows every section ever written on it as one document; a question's history reads as a thread.*
+
+| Status | ID | Task | Size | Refs | Done when |
+|---|---|---|---|---|---|
+| ☐ | M10-01 | F22 Compile query: the sections whose citations overlap a verse range, a chapter or a book, ordered by the first verse they cite, then by date, and grouped under that verse; a section citing several passages appears under each | M | §4.1, §8.4, F22 | Unit tests cover the order, cross-chapter ranges, and a section citing two chapters |
+| ☐ | M10-02 | F22 **Compile view**: `/compile/$passage`, from a chip, the reader, search and the verse index; each group's verse, then its sections read-only with the lesson title and date as a byline linking back; a book renders a screenful at a time, like a long lesson | L | §8.3, F22 | Opening a book with 500 sections shows the first screen within the lesson-open budget (M7-07); every byline opens its section |
+| ☐ | M10-03 | Try both ways to show a section that cites several passages (under each, or once with a pointer) with real notes; keep one and record why | S | PRD *Open questions* | The decision is in the TECH-DESIGN log and the view follows it |
+| ☐ | M10-04 | Compile view as Markdown, through the M6-05 export | S | §8.7, F22 | A golden-file test passes |
+| ☐ | M10-05 | F23 `link` node in the doc model: target type and id, `toPlainText` and `toMarkdown` (a relative reference), body schema; ships with the M8-03 version bump | M | §4.2, M8-03, F23 | Round-trip tests pass; Markdown export writes links as relative references |
+| ☐ | M10-06 | F23 **`[[` picker**: a TipTap suggestion over lesson titles and section text (the M4-05 search worker); inserts a link chip that shows the target's current title, so a rename shows everywhere; a deleted target shows as a broken chip, and its text stays | L | §8.3, §8.4, F23 | Renaming a lesson renames its chips; deleting it leaves a visibly broken chip; keyboard and screen reader work as for verse chips |
+| ☐ | M10-07 | F23 Link index (derived or synced, as decided in M8-02) and "Linked from" under each section and lesson | M | M8-02, F23 | Adding and removing a link updates "Linked from" on both devices after sync |
+| ☐ | M10-08 | F24 Question entry entity (schema, Prisma, Dexie, sync, isolation), and the migration that gives every existing question an `asked` entry, plus `answered` where it has an answer section, on the server and on the device | L | M8-02, F24 | After migration every question has a thread that matches its old status; the contract test covers entries made on two devices |
+| ☐ | M10-09 | F24 **Question thread**: "Revisit" from another lesson adds a linked entry rather than a copy; the question page lists asked, revisited, partly answered (a linked section), answered and reopened in date order; status follows the latest entry | M | F24 | Revisiting from a second lesson shows both lessons in one thread; reopening an answered question puts it back in Review |
+| ☐ | M10-10 | F24 Split a question into two, merge two into one, each keeping its entries | M | F24 | Unit tests: no entry is lost or duplicated by a split or a merge |
+| ☐ | M10-11 | F24 Review queue shows each question's lineage summary ("asked 3 times since March, 1 partial answer") | S | §8.8, F24 | The summary matches the thread in a fixture test |
+| ☐ | M10-12 | F25 Built-in templates as code (SOAP, inductive, Lectio Divina, verse mapping): applying one to a lesson or a section creates named sections and child sections that are ordinary sections afterwards | M | F25 | Each template makes its sections in order; they edit, move and delete like any other |
+| ☐ | M10-13 | F25 Template entity (schema, Prisma, Dexie, sync); custom templates made from scratch or saved from a lesson's structure, edited and deleted in settings | M | F25 | A custom template syncs and applies on a second device |
+| ☐ | M10-14 | F25 Default template per lesson source (sermon, personal, group), applied to a new lesson | S | F25 | A new personal lesson starts with SOAP when that is the default; other sources are unchanged |
+| ☐ | M10-15 | Gate test: seed a year of lessons, open Romans 8 in the compile view and find every section that cites it; revisit a question from a second lesson, answer it and see the thread | M | PRD *v2 milestones* G | Passes in CI |
+
+## M11 — Sermon workflow
+*PRD milestone H (F26, F27, F28, F29). **Gate:** a sermon is captured live, triaged in the week and traced back to its recording.*
+
+| Status | ID | Task | Size | Refs | Done when |
+|---|---|---|---|---|---|
+| ☐ | M11-01 | F26 **Capture mode**: one tap from a lesson; a large "New section" button, a quick verse box that inserts a chip, plain text only, no tags, formatting or drag; each section stamped with its time; the prep passage (M11-09) pinned at the top; exiting returns to the lesson with the sections as written | L | §8.3, F26 | A 40-minute capture on a phone loses nothing and needs no formatting; leaving it shows the same sections in the normal view |
+| ☐ | M11-02 | F27 Inbox multi-select with bulk "Send to lesson", "Dismiss" and "Tag" | M | F27 | Bulk actions on 50 items are one action each, with one Undo |
+| ☐ | M11-03 | F27 Promote an item to a takeaway or a question on a chosen lesson; make a new lesson from selected items | M | F27 | Each path removes the items from the inbox and keeps their chips |
+| ☐ | M11-04 | F27 "Process later" snooze until a date; items older than 30 days flagged | S | F27 | A snoozed item is hidden until its date on every device |
+| ☐ | M11-05 | F27 Keyboard shortcuts for triage on a laptop, listed with `?` | S | F27 | The whole inbox can be processed without a mouse |
+| ☐ | M11-06 | F28 Source entity (named as decided in M8-02): type, title, URL, author, start time; set on the lesson screen | M | M8-02, F28 | A source syncs and shows on the lesson; a lesson without one is unchanged |
+| ☐ | M11-07 | F28 Section timestamps and pages: a section carries a time (from capture mode, relative to the source's start) or a page; a tap opens the media at that time where the URL supports it (YouTube, Vimeo, and audio files with `#t=`) | M | F28 | A timestamped section opens a YouTube sermon at the right second; an unsupported URL opens at the start |
+| ☐ | M11-08 | F28 Sources and timestamps in Markdown export and the print view | S | §8.7, F28 | Golden files include them |
+| ☐ | M11-09 | F29 **Prep card** on the lessons home: enter the coming sermon's passage to see its compile summary, open questions and tags that cite it, and the last lesson of the series; it makes a draft lesson that capture mode opens; the card clears when the lesson is saved | M | F29 | The card shows what the M10-01 query finds for the passage; starting capture from it pins the passage |
+| ☐ | M11-10 | Gate test: prep a passage, capture a sermon in capture mode with timestamps and a source URL, triage its shares in the inbox, open a section's moment in the recording | M | PRD *v2 milestones* H | Passes in CI |
+| ☐ | M11-11 | Real-use check: prep, capture and triage one real Sunday's sermon on a phone | S | PRD *Goals (v2)* | Findings are fixed or logged as tasks |
+
+## M12 — Reflection and export
+*PRD milestone I (F30, F31, F32, F33). **Gate:** old questions and verses return on their own; a lesson pastes into Notion and prints on one page.*
+
+| Status | ID | Task | Size | Refs | Done when |
+|---|---|---|---|---|---|
+| ☐ | M12-01 | F30 **Resurfacing rules** in the review queue: "a year ago" (lessons and questions from the same week in earlier years), "repeated verse" (cited in three or more lessons, no compile view visit in six months) and "stale question" (open over 90 days); each turned off in Settings → Review | M | §8.8, F30 | Fixture tests for each rule, with dates around each boundary |
+| ☐ | M12-02 | F30 Compile view visits recorded (where M8-02 decided), and "Dismiss for a year" on a resurfaced item | S | F30 | A dismissed item stays out of the queue for a year on every device |
+| ☐ | M12-03 | F31 Theme map: tags by month for the last 24 months as a heat grid; a cell opens its sections | M | F31 | Counts match the tag pages for a fixture; works offline |
+| ☐ | M12-04 | F31 Theme map: tags by book across the whole Bible; books with no notes shown plainly | M | F31 | Every one of the 66 books appears; counts match the verse index |
+| ☐ | M12-05 | F33 **Handout**: a one-page print view of a lesson's main passages, takeaways, questions and section headings | M | §8.7, F33 | A lesson with ten sections prints on one A4 and one Letter page in Chrome, Firefox and Safari (Safari in MANUAL-TESTS.md) |
+| ☐ | M12-06 | F33 Notion Markdown: the section tree flattened into headings and quotes, verse text as block quotes with the reference as a caption, tags as a line of text | M | §8.7, F33 | Golden-file tests pass; the output pasted into Notion keeps its structure (checked by hand, recorded in MANUAL-TESTS.md) |
+| ☐ | M12-07 | F32 Digest generator: lessons and series, top tags, questions answered and still open, memory verses added and reviewed, the compile views that grew most, for a quarter | M | F32 | A fixture quarter gives the expected digest |
+| ☐ | M12-08 | F32 Digest draft on the first open after a quarter ends: editable, then saved as a lesson tagged "digest", exportable as Markdown | M | F32 | The draft appears once per quarter per account, not once per device |
+| ☐ | M12-09 | Gate test: a fixture year resurfaces a question and a verse; a lesson exports as Notion Markdown and prints on one page | M | PRD *v2 milestones* I | Passes in CI |
+| ☐ | M12-10 | Heat-grid colour scale from the theme tokens, readable in light and dark, with counts available to screen readers | S | §8.5 | The heat grid passes the contrast test in both modes |
+| ☐ | M12-11 | Performance: theme map and digest on two years of seeded notes on a low-end phone | M | §14 | Both render within the lesson-open budget; numbers in the README |
+
+## M13 — Sharing and groups
+*PRD milestone J (F34, F35). **Gate:** a lesson is readable by link; a group studies a series with a shared questions queue. The only milestone with new server surface beyond sync.*
+
+| Status | ID | Task | Size | Refs | Done when |
+|---|---|---|---|---|---|
+| ☐ | M13-01 | F34 Share link model and API: unguessable token (stored hashed), target type and id, expiry, revoke, created and last-opened dates; create, list and revoke endpoints for the owner | M | §7.1, F34 | Integration tests: a revoked or expired link answers `404`; another user can't list or revoke it |
+| ☐ | M13-02 | F34 **Shared pages** served by the API: lesson, series (listing its lessons) and compile view, read-only, rendered from the owner's synced rows; `noindex`, no cookies, rate limited, a strict CSP | L | §7, §12, F34 | Pages render with no session; a page never shows a private row the link doesn't cover (isolation tests) |
+| ☐ | M13-03 | F34 Handout and frozen compile views: a frozen link stores a snapshot at creation; a live one renders current rows | M | F34, M12-05 | A frozen link doesn't change after an edit; a live one does |
+| ☐ | M13-04 | F34 Share-link UI: "Share link" in the lesson, series and compile view `⋯`; Settings → Shared links lists them with dates, expiry and Revoke; works only signed in and online, and says so | S | F34 | The full flow works end to end against the dev API |
+| ☐ | M13-05 | Privacy note and user guide updated for share links, public threads and comments; the operator's moderation and data-deletion process written down | S | PRD *Open questions* | Linked from settings before any group feature ships |
+| ☐ | M13-06 | **Groups design spike**: sync is per user today (`User.syncRev`, ownership checks on every row). Design how group rows sync to members (a per-group revision, pull of group rows, membership checks on push), what leaves when a member leaves, and how private sections stay private; add it to TECH-DESIGN | L | §6, F35 | The design covers every row in the PRD's group tables, with its sync and isolation rules; reviewed before M13-07 starts |
+| ☐ | M13-07 | F35 Group, membership and invite: create a group, invite by link, join, leave, remove a member, transfer ownership; API, sync and screens | L | M13-06, F35 | Integration tests for each membership change; a removed member loses access on their next sync |
+| ☐ | M13-08 | F35 **Shared series and visibility**: a series shared into a group; sections gain `visibility` and `groupId` (default private); a lesson shows the public thread and the member's own private one | L | M13-06, F35 | The contract test runs two users in one group: public sections reach both, private ones never leave their owner |
+| ☐ | M13-09 | F35 Comments on public sections: entity, sync to members, add, edit and delete one's own | M | F35 | Comments sync to members only; non-members can't read them through any endpoint |
+| ☐ | M13-10 | F35 Group questions queue: open questions across the shared series, with who asked and who answered | M | F35 | Matches the questions in a two-member fixture |
+| ☐ | M13-11 | F35 In-app notifications for replies and new questions | M | F35 | A reply by one member shows for the other after sync |
+| ☐ | M13-12 | F35 Optional email digests through the existing mail module, with unsubscribe | M | §7.3, F35 | `.eml` tests: a digest lists the week's activity; unsubscribed members get none |
+| ☐ | M13-13 | Isolation tests extended to groups: a member can't read another member's private rows; a non-member can't read anything; a former member can't write | S | §12 | The suite fails if any group model has no row in its fixture |
+| ☐ | M13-14 | Gate test: a lesson opened by link in a signed-out browser; two members study a shared series, each adds a public question, one answers the other's, and the group queue shows both | M | PRD *v2 milestones* J | Passes in CI |
+| ☐ | M13-15 | Real-use check with a small group studying one series for a month | S | PRD *Goals (v2)* | Findings are fixed or logged as tasks |
+| ☐ | M13-16 | Release v2.0: changelog, tag, release notes | S | — | v2.0 is live |
+| ☐ | M13-17 | Load check for shared pages and group pulls on the VPS | M | §11, §14 | Response times under load recorded in the README |
+
 ---
 
 ## External dependencies
@@ -171,3 +290,8 @@ M1 ──▶ M2 (A) ──▶ M4 (C) ──▶ M3 (B) ──▶ M5 (D) ──▶
 | M7-01 | Resend account with the domain verified (SPF, DKIM) for verification and reset emails | You | ☐ |
 | M7-04 | Daily snapshots turned on at the VPS provider | You | ☐ |
 | M7-05 | Sentry account (free tier) | You | ☐ |
+| M8-05, M9-11 | A YouVersion account with highlights and notes, and its export file | You | ☐ |
+| M8-05, M9-10 | Logos installed (desktop or phone) to check its deep links | You | ☐ |
+| M9-07, M9-14 | An Android phone and an iPhone with the YouVersion app (the v1 test devices) | You | ☐ |
+| M11-07 | A sermon recording on YouTube or Vimeo, and a podcast episode, for timestamp links | You | ☐ |
+| M13-15 | Two or three people willing to study a series in a group for a month | You | ☐ |
