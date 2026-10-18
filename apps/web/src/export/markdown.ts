@@ -1,6 +1,8 @@
 import {
   citedRefs,
+  type CompileGroup,
   escapeMarkdown,
+  formatPassage,
   type Lesson,
   type Question,
   type Section,
@@ -13,6 +15,7 @@ import {
   type VerseRef,
 } from '@lamp/domain';
 import { outline } from '@/components/sections/outline.ts';
+import type { Commentary, CompiledNote } from '@/search/compile.ts';
 import { longDate } from '@/lib/dates.ts';
 import { count, SERIES_KIND_LABELS, SOURCE_LABELS } from '@/lib/labels.ts';
 
@@ -53,6 +56,50 @@ export function seriesMarkdown(series: Series, lessons: LessonForExport[]): stri
     ...lessons.flatMap((lesson) => lessonBlocks(lesson, 2)),
     ...credits(lessons),
   ]);
+}
+
+/**
+ * The compile view (F22, M10-04) as one document: "Commentary on Romans 8", then each group's
+ * passage as a heading over its sections, each followed by its lesson and date. A book has a
+ * heading for each chapter above its groups. A reply nested under its section is quoted, as in a
+ * lesson; a section under several passages says where else it is, or, shown once, points there.
+ */
+export function commentaryMarkdown(title: string, data: Commentary, wholeBook: boolean): string {
+  const blocks = [
+    `# Commentary on ${escapeMarkdown(title)}`,
+    `${count(data.sections, 'section')} in ${count(data.lessons, 'lesson')}`,
+  ];
+  const level = wholeBook ? 3 : 2;
+  let chapter: number | null = null;
+  for (const group of data.groups) {
+    if (wholeBook && group.passage.chapter !== chapter) {
+      chapter = group.passage.chapter;
+      blocks.push(`## ${formatPassage({ book: group.passage.book, chapter })}`);
+    }
+    blocks.push(`${'#'.repeat(level)} ${formatPassage(group.passage)}`);
+    for (const entry of group.entries) blocks.push(commentaryEntry(entry, level + 1));
+  }
+  const sections = data.groups.flatMap((g) =>
+    g.entries.filter((e) => !e.shownUnder).map((e) => e.item.section),
+  );
+  const credit = creditFor(sections.flatMap((s) => citedRefs(s.body)));
+  return document([...blocks, ...(credit ? ['---', credit] : [])]);
+}
+
+function commentaryEntry(entry: CompileGroup<CompiledNote>['entries'][number], level: number) {
+  const { section, lesson, nested } = entry.item;
+  const byline = `*${escapeMarkdown(lesson.title)} · ${longDate(lesson.date)}*`;
+  if (entry.shownUnder) {
+    return `${byline} — under ${formatPassage(entry.shownUnder)}, above.`;
+  }
+  const also =
+    entry.also.length > 0
+      ? `*Also under ${entry.also.map((p) => formatPassage(p)).join(', ')}*`
+      : '';
+  const lines = [toMarkdown(section.body, { headingLevel: level }).trimEnd(), byline, also]
+    .filter(Boolean)
+    .join('\n\n');
+  return nested ? quoted(lines) : lines;
 }
 
 /** Blocks joined by blank lines, ending in one newline. */
@@ -144,12 +191,18 @@ function credits(lessons: LessonForExport[]): string[] {
  * when they quote none.
  */
 export function scriptureCredit(lessons: LessonForExport[]): string | null {
+  return creditFor(
+    lessons.flatMap(({ lesson, sections }) => [
+      ...lesson.mainPassages,
+      ...sections.flatMap((section) => citedRefs(section.body)),
+    ]),
+  );
+}
+
+/** The credit for the translations of `refs`; null when none is the app's. */
+function creditFor(refs: readonly VerseRef[]): string | null {
   const used = new Set<TranslationId>();
-  const use = (ref: VerseRef) => isAppTranslation(ref.translation) && used.add(ref.translation);
-  for (const { lesson, sections } of lessons) {
-    lesson.mainPassages.forEach(use);
-    for (const section of sections) citedRefs(section.body).forEach(use);
-  }
+  for (const ref of refs) if (isAppTranslation(ref.translation)) used.add(ref.translation);
   // Text from outside isn't the app's to credit: it's labelled where it's quoted.
   if (used.size === 0) return null;
   const names = [...used].toSorted().map((id) => TRANSLATION_NAMES[id]);

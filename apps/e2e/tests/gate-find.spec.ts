@@ -9,7 +9,7 @@ import {
   type SectionBody,
 } from '@lamp/domain';
 import { expect, type Page, test } from '@playwright/test';
-import { rows } from './helpers.ts';
+import { rows, type Seed, writeRows } from './helpers.ts';
 
 // The M4 gate (PRD Milestones C): any past note can be found by tag, by text or by verse. A month
 // of lessons is written to the device as a sync pull would leave it, then one note is found
@@ -159,8 +159,6 @@ function noteBody(note: string): [SectionBody, string | undefined] {
   return [{ type: 'doc', content: [{ type: 'paragraph', content }] }, tag];
 }
 
-type Seed = Partial<Record<string, Record<string, unknown>[]>>;
-
 /** Every row of the month, checked against the sync schemas, with the derived citations. */
 function seedMonth(tagIds: Map<string, string>): Seed {
   const seed = {
@@ -223,26 +221,6 @@ function seedMonth(tagIds: Map<string, string>): Seed {
   return { ...seed, citation };
 }
 
-/** Writes `seed` into the device database in one transaction, as a pull would. */
-async function write(page: Page, seed: Seed) {
-  await page.evaluate(async (tables) => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const open = indexedDB.open('lamp');
-      open.addEventListener('success', () => resolve(open.result));
-      open.addEventListener('error', () => reject(open.error));
-    });
-    const tx = db.transaction(Object.keys(tables), 'readwrite');
-    for (const [table, list] of Object.entries(tables)) {
-      for (const row of list ?? []) tx.objectStore(table).put(row);
-    }
-    await new Promise((resolve, reject) => {
-      tx.addEventListener('complete', resolve);
-      tx.addEventListener('error', () => reject(tx.error));
-    });
-    db.close();
-  }, seed);
-}
-
 const box = (page: Page) => page.getByRole('searchbox', { name: 'Search' });
 const TARGET = /^Forgiveness keeps no ledger/;
 
@@ -257,7 +235,7 @@ test('a note from a month of lessons is found by tag, by text and by verse', asy
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'New lesson' })).toBeVisible();
   const tags = await rows<{ id: string; name: string }>(page, 'tag');
-  await write(page, seedMonth(new Map(tags.map((t) => [t.name, t.id]))));
+  await writeRows(page, seedMonth(new Map(tags.map((t) => [t.name, t.id]))));
   await page.reload();
   await expect(page.getByRole('link', { name: /The wedding feast/ })).toBeVisible();
   expect(await rows(page, 'lesson')).toHaveLength(MONTH.length);

@@ -13,20 +13,29 @@ import type { Exported } from '@/export/load.ts';
 interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The lesson's or series' title. */
+  /** The dialog's title: "Export “The Good Shepherd”". */
   title: string;
+  /** What the export keeps. */
+  description?: string;
   /** Reads the rows as they are now; null when it's gone. */
   load: () => Promise<Exported | null>;
-  /** Opens the print view, which opens the print dialog. */
-  onPrint: () => void;
+  /** Opens the print view, which opens the print dialog; without it, the export is Markdown only. */
+  onPrint?: () => void;
 }
 
 /**
- * Export (F11, wireframes/export.md "Export menu"), from a lesson's or a series' `⋯`: a Markdown
- * file, downloaded at once and offline, or the same Markdown copied; or the print view, to print
- * or save as a PDF (M6-06).
+ * Export (F11, wireframes/export.md "Export menu"), from a lesson's, a series' or a commentary's
+ * `⋯`: a Markdown file, downloaded at once and offline, or the same Markdown copied; or the print
+ * view, to print or save as a PDF (M6-06), which the commentary doesn't have.
  */
-export function ExportDialog({ open, onOpenChange, title, load, onPrint }: ExportDialogProps) {
+export function ExportDialog({
+  open,
+  onOpenChange,
+  title,
+  description = 'Markdown and print keep the notes, verses, tags and questions.',
+  load,
+  onPrint,
+}: ExportDialogProps) {
   async function run(use: (exported: Exported) => Promise<void> | void) {
     try {
       const exported = await load();
@@ -44,10 +53,8 @@ export function ExportDialog({ open, onOpenChange, title, load, onPrint }: Expor
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Export “{title}”</DialogTitle>
-          <DialogDescription>
-            Markdown and print keep the notes, verses, tags and questions.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
           <Button
@@ -71,17 +78,19 @@ export function ExportDialog({ open, onOpenChange, title, load, onPrint }: Expor
             <Copy aria-hidden />
             Copy as Markdown
           </Button>
-          <Button
-            variant="outline"
-            className="justify-start pointer-coarse:min-h-11"
-            onClick={() => {
-              onOpenChange(false);
-              onPrint();
-            }}
-          >
-            <Printer aria-hidden />
-            Print or save as PDF
-          </Button>
+          {onPrint && (
+            <Button
+              variant="outline"
+              className="justify-start pointer-coarse:min-h-11"
+              onClick={() => {
+                onOpenChange(false);
+                onPrint();
+              }}
+            >
+              <Printer aria-hidden />
+              Print or save as PDF
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

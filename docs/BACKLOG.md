@@ -1,7 +1,7 @@
 # Lamp — Build Backlog (v2.3)
 
 **Date:** 2026-10-17 (v1.0: first version, static app with no server · v2.0: rewritten for PRD v1.1 and TECH-DESIGN v1.0, adding the NestJS + Postgres server, accounts and sync · v2.1: name, themes, hosting, email, backups and error reporting decided · v2.2: PRD v2 (F17–F35) added as M8–M13 · v2.3: v2 design decisions from M8-02 applied to M10–M12)
-**Based on:** [PRD v1.8](<Bible Study App — PRD.md>) and [TECH-DESIGN v1.1](TECH-DESIGN.md). Refs point to feature IDs (F1–F35) and to design sections (§).
+**Based on:** [PRD v1.9](<Bible Study App — PRD.md>) and [TECH-DESIGN v1.1](TECH-DESIGN.md). Refs point to feature IDs (F1–F35) and to design sections (§).
 **Team:** one developer working with Claude Code. Open source (MIT), so contributors can pick up tasks. Screens are designed in code: each UI task builds the screen with the shared components and is reviewed in the browser at phone and laptop widths.
 
 ## How to use this file
@@ -203,10 +203,10 @@ M7 (v1.0) ──▶ M8 ──▶ M9 (F) ──▶ M10 (G) ──▶ { M11 (H), M
 
 | Status | ID | Task | Size | Refs | Done when |
 |---|---|---|---|---|---|
-| ☐ | M10-01 | F22 Compile query: the sections whose citations overlap a verse range, a chapter or a book, ordered by the first verse they cite, then by date, and grouped under that verse; a section citing several passages appears under each | M | §4.1, §8.4, F22 | Unit tests cover the order, cross-chapter ranges, and a section citing two chapters |
-| ☐ | M10-02 | F22 **Compile view**: `/compile/$passage`, from a chip, the reader, search and the verse index; each group's verse, then its sections read-only with the lesson title and date as a byline linking back; a book renders a screenful at a time, like a long lesson | L | §8.3, F22 | Opening a book with 500 sections shows the first screen within the lesson-open budget (M7-07); every byline opens its section |
-| ☐ | M10-03 | Try both ways to show a section that cites several passages (under each, or once with a pointer) with real notes; keep one and record why | S | PRD *Open questions* | The decision is in the TECH-DESIGN log and the view follows it |
-| ☐ | M10-04 | Compile view as Markdown, through the M6-05 export | S | §8.7, F22 | A golden-file test passes |
+| ☑ | M10-01 | F22 Compile query: the sections whose citations overlap a verse range, a chapter or a book, ordered by the first verse they cite, then by date, and grouped under that verse; a section citing several passages appears under each | M | §4.1, §8.4, F22 | Unit tests cover the order, cross-chapter ranges, and a section citing two chapters |
+| ☑ | M10-02 | F22 **Compile view**: `/compile/$passage`, from a chip, the reader, search and the verse index; each group's verse, then its sections read-only with the lesson title and date as a byline linking back; a book renders a screenful at a time, like a long lesson | L | §8.3, F22 | Opening a book with 500 sections shows the first screen within the lesson-open budget (M7-07); every byline opens its section |
+| ☑ | M10-03 | Try both ways to show a section that cites several passages (under each, or once with a pointer) with real notes; keep one and record why | S | PRD *Open questions* | The decision is in the TECH-DESIGN log and the view follows it. Once, with a pointer (decision 76, PRD v1.9) |
+| ☑ | M10-04 | Compile view as Markdown, through the M6-05 export | S | §8.7, F22 | A golden-file test passes |
 | ☐ | M10-05 | F23 `noteLink` node in the doc model (§17.4): target type, id and label, `toPlainText` and `toMarkdown` (a relative reference), body schema; ships with the M8-03 version bump | M | §4.2, M8-03, F23 | Round-trip tests pass; Markdown export writes links as relative references |
 | ☐ | M10-06 | F23 **`[[` picker**: a TipTap suggestion over lesson titles and section text (the M4-05 search worker); inserts a link chip that shows the target's current title, so a rename shows everywhere; a deleted target shows as a broken chip, and its text stays | L | §8.3, §8.4, F23 | Renaming a lesson renames its chips; deleting it leaves a visibly broken chip; keyboard and screen reader work as for verse chips |
 | ☐ | M10-07 | F23 Link index, derived from bodies like citations (`linksFor`, §17.4), and "Linked from" under each section and lesson | M | M8-02, F23 | Adding and removing a link updates "Linked from" on both devices after sync |

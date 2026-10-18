@@ -44,6 +44,29 @@ export function rows<T>(page: Page, table: string): Promise<T[]> {
   }, table) as Promise<T[]>;
 }
 
+/** Rows for device tables, by table name. */
+export type Seed = Partial<Record<string, Record<string, unknown>[]>>;
+
+/** Writes `seed` into the device database in one transaction, as a pull would. */
+export async function writeRows(page: Page, seed: Seed) {
+  await page.evaluate(async (tables) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const open = indexedDB.open('lamp');
+      open.addEventListener('success', () => resolve(open.result));
+      open.addEventListener('error', () => reject(open.error));
+    });
+    const tx = db.transaction(Object.keys(tables), 'readwrite');
+    for (const [table, list] of Object.entries(tables)) {
+      for (const row of list ?? []) tx.objectStore(table).put(row);
+    }
+    await new Promise((resolve, reject) => {
+      tx.addEventListener('complete', resolve);
+      tx.addEventListener('error', () => reject(tx.error));
+    });
+    db.close();
+  }, seed);
+}
+
 /** From the lessons home: New lesson, a title, and wait until it's stored. */
 export async function newLesson(page: Page, title: string) {
   await page.getByRole('button', { name: 'New lesson' }).click();

@@ -1,6 +1,6 @@
 # Lamp — Bible Study App PRD
 
-Oct 17, 2026 · @Frost Biter · v1.8 (see [Change log](#change-log))
+Oct 18, 2026 · @Frost Biter · v1.9 (see [Change log](#change-log))
 
 ## Overview
 
@@ -222,7 +222,7 @@ Each feature is a user story with acceptance criteria. F1–F16 are phase 1 (v1)
 **F22. Compile view**
 
 - As a user I can open a passage and read every section I have ever written about it stitched into one document in canonical order, so my notes become my own running commentary.
-- Accepts: reachable from a chip, the reader, search and the verse index; the scope can be a verse range, a chapter or a book; sections are ordered by the first verse they cite, then by date, and grouped under the verse they cite with the lesson title and date as a byline; sections that cite several passages appear under each; the view is read-only, with each section linking back to its lesson; exports as Markdown and (via F34) can be shared read-only; large books render progressively.
+- Accepts: reachable from a chip, the reader, search and the verse index; the scope can be a verse range, a chapter or a book; sections are ordered by the first verse they cite, then by date, and grouped under the verse they cite with the lesson title and date as a byline; a section that cites several passages appears in full under the first and as a pointer to it under the others; the view is read-only, with each section linking back to its lesson; exports as Markdown and (via F34) can be shared read-only; large books render progressively.
 
 **F23. Backlinks**
 
@@ -384,7 +384,7 @@ v2 replaces the earlier phase 2 plan. Share links and groups are F34 and F35; im
 - [ ] The YouVersion export format is not documented publicly; build the importer against a real export and expect it to change.
 - [ ] Deep-link URL formats for Blue Letter Bible, Bible Hub and Logos need verifying before F20; keep them in a config table so they can be updated without a release.
 - [ ] Verse-text matching for paste (F19) against BSB and KJV only; text from other translations will not match and keeps its reference only when one is present.
-- [ ] Compile view ordering when a section cites several passages: duplicated under each, as specified, or shown once with a pointer; decide after trying both with real notes.
+- [x] Compile view ordering when a section cites several passages: shown once, under its first passage, with a pointer under the others (decided 2026-10-18, M10-03; TECH-DESIGN decision 76).
 - [ ] Groups bring moderation and data-deletion duties for the operator; the privacy note from v1 must cover public threads and comments before J ships.
 
 ## Change log
@@ -400,3 +400,4 @@ v2 replaces the earlier phase 2 plan. Share links and groups are F34 and F35; im
 | 1.6 | 2026-10-16 | One theme (F16): Lamplight in light and dark, with Auto following the device, and Inter Tight as the only font. The looks and presets are removed; a new device picks only the mode (TECH-DESIGN §8.5). |
 | 1.7 | 2026-10-17 | v2 scope. Position: study alongside other Bible apps rather than repeat them; reader stays minimal. Added F17–F35: inbox, share target, paste intelligence, "Open in…", YouVersion import, compile view, backlinks, question lineage, study-method templates, capture mode, inbox triage, source attachment, prep card, resurfacing, theme map, quarterly digest, Notion Markdown and handout export, read-only share links, groups with a shared questions queue. Milestones F–J, with F and G as the core. Dropped from the roadmap: ESV and further translations (BSB bundled, KJV optional), reading plans, streaks, audio, commentaries, Strong's, interlinear, friend feeds, teaching tools, importers other than YouVersion. Also: the PRD now says BSB and KJV where it said WEB (replaced 2026-10-15, TECH-DESIGN §15 #53), and the KJV → WEB verse mapping is gone; F3 drops viewing a chip in another translation; F33's handout prints dark on white like the F11 print view, and F34's shared pages use Lamplight in the reader's light or dark mode, since looks were removed in 1.6. "Phase 2 and beyond" becomes "Beyond v2". |
 | 1.8 | 2026-10-17 | The v2 data model follows TECH-DESIGN §17 (M8-02): links are derived from section bodies, question entries gain *parked*, built-in templates are part of the app and the default per lesson kind is a setting, the source is fields on the lesson, and visits and dismissals for resurfacing are added. The lesson's source (sermon / personal / group) becomes its kind. |
+| 1.9 | 2026-10-18 | Compile view (F22): a section citing several passages is shown in full once, under the first, with a pointer to it under the others, instead of in full under each (M10-03). |

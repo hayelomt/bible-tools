@@ -1,11 +1,10 @@
-import { formatPassage, type Passage, parsePassageSlug, passageSlug } from '@lamp/domain';
-import { buttonVariants } from '@lamp/ui/components/button';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ChevronRight } from 'lucide-react';
+import { formatPassage, parsePassageSlug } from '@lamp/domain';
+import { createFileRoute } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { NotFoundScreen } from '@/components/error-screen.tsx';
 import { VerseIndexList } from '@/components/search/verse-index-list.tsx';
 import { Segmented } from '@/components/segmented.tsx';
+import { PassageLink, ReadLink } from '@/components/verses/passage-links.tsx';
 import { ScreenTitle } from '@/components/shell/slots.tsx';
 import { count } from '@/lib/labels.ts';
 import { verseIndex, type VerseIndexEntry } from '@/search/results.ts';
@@ -78,9 +77,18 @@ function VerseIndexScreen() {
         <>
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">{summary(entries)}</p>
-            <ReadLink passage={passage} label={`Read ${display}`}>
-              Read
-            </ReadLink>
+            <div className="flex shrink-0 gap-2">
+              <PassageLink
+                to="/compile/$passage"
+                passage={passage}
+                label={`Read ${display} as commentary`}
+              >
+                Commentary
+              </PassageLink>
+              <ReadLink passage={passage} label={`Read ${display}`}>
+                Read
+              </ReadLink>
+            </div>
           </div>
           <fieldset className="min-w-0 border-0 p-0">
             <legend className="sr-only">Show</legend>
@@ -107,33 +115,6 @@ function VerseIndexScreen() {
         </>
       )}
     </div>
-  );
-}
-
-/** Opens the reader at the passage's first verse, or the top of its first chapter (M5-04). */
-function ReadLink({
-  passage,
-  label,
-  children,
-}: {
-  passage: Passage;
-  label?: string;
-  children: React.ReactNode;
-}) {
-  const { book, chapter, verseStart } = passage;
-  return (
-    <Link
-      to="/read/$chapter"
-      params={{
-        chapter: passageSlug({ book, chapter, ...(verseStart != null ? { verseStart } : {}) }),
-      }}
-      aria-label={label}
-      data-slot="button"
-      className={buttonVariants({ variant: 'outline', size: 'sm', className: 'shrink-0' })}
-    >
-      {children}
-      <ChevronRight aria-hidden />
-    </Link>
   );
 }
 

@@ -47,7 +47,7 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
       <ExportDialog
         open={dialog === 'export'}
         onOpenChange={close}
-        title={lesson.title}
+        title={`Export “${lesson.title}”`}
         load={() => exportLesson(lesson.id)}
         onPrint={() =>
           void navigate({

@@ -1,4 +1,4 @@
-import { keyBetween, type SectionBody, type VerseRef } from '@lamp/domain';
+import { compileScopes, keyBetween, type SectionBody, type VerseRef } from '@lamp/domain';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createLesson } from '@/data/actions/lessons.ts';
@@ -9,7 +9,7 @@ import { addTag } from '@/data/actions/tags.ts';
 import { createTakeaway } from '@/data/actions/takeaways.ts';
 import { LampDb } from '@/data/db.ts';
 import { ensureDevice } from '@/data/setup.ts';
-import { exportLesson, exportSeries } from './load.ts';
+import { exportCommentary, exportLesson, exportSeries } from './load.ts';
 import { fileName } from './markdown.ts';
 
 let db: LampDb;
@@ -145,6 +145,94 @@ async function goodShepherd(seriesId: string | null) {
   return lesson;
 }
 
+const rom = (verseStart: number, snapshotText: string, chapter = 8): VerseRef => ({
+  book: 'ROM',
+  chapter,
+  verseStart,
+  display: `Romans ${chapter}:${verseStart}`,
+  translation: 'BSB',
+  snapshotText,
+});
+const ROM_8_1 = rom(
+  1,
+  'Therefore, there is now no condemnation for those who are in Christ Jesus.',
+);
+const ROM_8_28 = rom(
+  28,
+  'And we know that God works all things together for the good of those who love Him.',
+);
+const ROM_8_38 = rom(38, 'For I am convinced that neither death nor life…');
+const ROM_9_1 = rom(1, 'I speak the truth in Christ; I am not lying.', 9);
+
+async function lessonOn(title: string, date: string) {
+  return createLesson(
+    {
+      seriesId: null,
+      title,
+      date,
+      source: 'personal',
+      speaker: null,
+      church: null,
+      mainPassages: [],
+    },
+    db,
+  );
+}
+async function note(
+  lessonId: string,
+  orderKey: string,
+  b: SectionBody,
+  parentId: string | null = null,
+) {
+  return createSection(
+    { lessonId, parentId, orderKey, body: b, conflictOf: null, conflictDevice: null },
+    db,
+  );
+}
+
+/** Two lessons on Romans 8: a reply under its section, and a section citing two verses. */
+async function romans() {
+  const faith = await lessonOn('Justified by faith', '2025-09-07');
+  const shepherd = await lessonOn('The Good Shepherd', '2026-10-12');
+  const first = keyBetween(null, null);
+  await note(
+    faith.id,
+    first,
+    body(
+      { type: 'heading', attrs: { level: 3 }, content: [text('The verdict')] },
+      {
+        type: 'paragraph',
+        content: [text('No condemnation: '), verse(ROM_8_1), text(' the verdict is in.')],
+      },
+    ),
+  );
+  const promise = await note(
+    shepherd.id,
+    first,
+    body({
+      type: 'paragraph',
+      content: [
+        text('All things work together '),
+        verse(ROM_8_28),
+        text(' and nothing separates '),
+        verse(ROM_8_38),
+        text('.'),
+      ],
+    }),
+  );
+  await note(
+    shepherd.id,
+    first,
+    body({ type: 'paragraph', content: [text('Even *this* week. '), verse(ROM_8_28)] }),
+    promise.id,
+  );
+  await note(
+    shepherd.id,
+    keyBetween(first, null),
+    body({ type: 'paragraph', content: [text('Paul’s grief. '), verse(ROM_9_1)] }),
+  );
+}
+
 describe('Markdown export', () => {
   it('writes a lesson as the golden file shows', async () => {
     const lesson = await goodShepherd(null);
@@ -231,5 +319,26 @@ describe('fileName', () => {
     );
     expect(fileName('Épître aux Romains')).toBe('epitre-aux-romains.md');
     expect(fileName('???')).toBe('lesson.md');
+  });
+
+  describe('commentary', () => {
+    it('writes a chapter’s commentary as the golden file shows', async () => {
+      await romans();
+      const exported = await exportCommentary({ book: 'ROM', chapter: 8 }, db);
+      expect(exported.fileName).toBe('commentary-on-romans-8.md');
+      await expect(exported.markdown).toMatchFileSnapshot('./golden/commentary.md');
+    });
+
+    it('heads each chapter of a book, and points to a section shown once', async () => {
+      await romans();
+      const exported = await exportCommentary(compileScopes({ book: 'ROM', chapter: 8 }).book, db);
+      expect(exported.fileName).toBe('commentary-on-romans.md');
+      await expect(exported.markdown).toMatchFileSnapshot('./golden/commentary-book.md');
+    });
+
+    it('says when nothing cites the passage', async () => {
+      const exported = await exportCommentary({ book: 'ROM', chapter: 3 }, db);
+      expect(exported.markdown).toBe('# Commentary on Romans 3\n\n0 sections in 0 lessons\n');
+    });
   });
 });

@@ -44,7 +44,7 @@ export function SeriesMenu({ series, lessonCount }: { series: Series; lessonCoun
       <ExportDialog
         open={dialog === 'export'}
         onOpenChange={close}
-        title={series.title}
+        title={`Export “${series.title}”`}
         load={() => exportSeries(series.id)}
         onPrint={() =>
           void navigate({

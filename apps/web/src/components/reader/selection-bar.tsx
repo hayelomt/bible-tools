@@ -16,7 +16,7 @@ import { HIGHLIGHT_COLOUR_CLASS, HIGHLIGHT_COLOUR_NAME } from './colours.ts';
 /**
  * The bar that replaces the bottom navigation while verses are selected (wireframes/reader.md
  * "Selected verses"): four colours, a note, Add to lesson (or Open in lesson once added), Remove
- * once those verses are a highlight, and `⋯` with Memorise and the verse index. On a
+ * once those verses are a highlight, and `⋯` with Memorise, the verse index and the commentary (M10-02). On a
  * laptop it sits at the bottom of the window, to the right of the sidebar.
  */
 export function SelectionBar({
@@ -163,6 +163,16 @@ export function SelectionBar({
                 <DropdownMenuItem onClick={onMemorise}>Memorise</DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => index()}>Verse index</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  void navigate({
+                    to: '/compile/$passage',
+                    params: { passage: passageSlug(passage) },
+                  })
+                }
+              >
+                Read as commentary
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

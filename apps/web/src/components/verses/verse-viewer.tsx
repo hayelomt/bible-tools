@@ -120,18 +120,32 @@ function ChipText({ chip: { ref } }: { chip: OpenChip }) {
   );
 }
 
-/** To the verse index for the chip's passage (M4-07). */
+const ROW_LINK =
+  '-mx-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11';
+
+/** To the verse index for the chip's passage (M4-07), and to its commentary (M10-02). */
 function IndexLink({ chip: { ref } }: { chip: OpenChip }) {
   return (
-    <Link
-      to="/verses/$passage"
-      params={{ passage: passageSlug(ref) }}
-      className="-mx-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
-      onClick={leaveChip}
-    >
-      Every note on {ref.display}
-      <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
-    </Link>
+    <div className="flex flex-col">
+      <Link
+        to="/verses/$passage"
+        params={{ passage: passageSlug(ref) }}
+        className={ROW_LINK}
+        onClick={leaveChip}
+      >
+        Every note on {ref.display}
+        <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
+      </Link>
+      <Link
+        to="/compile/$passage"
+        params={{ passage: passageSlug(ref) }}
+        className={ROW_LINK}
+        onClick={leaveChip}
+      >
+        Read as commentary
+        <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
+      </Link>
+    </div>
   );
 }
 

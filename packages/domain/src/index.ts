@@ -47,6 +47,16 @@ export {
   citationsFor,
   isCitingEntity,
 } from './citations.ts';
+export {
+  compile,
+  type CompileEntry,
+  type CompileGroup,
+  type CompileScopes,
+  compileScopes,
+  type CompileSource,
+  isWholeBook,
+  type SeveralPassages,
+} from './compile.ts';
 export { newId } from './ids.ts';
 export { SEED_TAGS } from './seed-tags.ts';
 export {

@@ -16,7 +16,8 @@ export interface OpenChip {
   ref: VerseRef;
   /** The chip in the text; the popover hangs from it. */
   anchor: HTMLElement;
-  editor: Editor;
+  /** The note it's in; null for a chip in read-only text (the commentary), which takes focus back. */
+  editor: Editor | null;
   /** The editor's selection when it had focus as the chip opened; null when it didn't. */
   selection: Selection | null;
   /** Opened by resting the pointer on it: focus stays in the note, and it closes as it leaves. */
@@ -32,25 +33,32 @@ function setOpen(chip: OpenChip | null) {
 }
 
 /** Opens a chip in the viewer (`VerseViewer`); one open on hover stays open. */
-export function openChip(editor: Editor, anchor: HTMLElement, ref: VerseRef) {
+export function openChip(editor: Editor | null, anchor: HTMLElement, ref: VerseRef) {
   cancelHover();
   if (open?.hover && open.anchor === anchor) {
     setOpen({ ...open, hover: false });
     return;
   }
-  setOpen({ ref, anchor, editor, selection: editor.isFocused ? editor.state.selection : null });
+  const selection = editor?.isFocused ? editor.state.selection : null;
+  setOpen({ ref, anchor, editor, selection });
 }
 
 /**
  * Closes the viewer. If the editor had focus, it gets it back with the selection it had (the
- * chip itself, when it was opened from the keyboard), unless the text changed meanwhile. One
- * opened on hover never took focus, so there's nothing to give back.
+ * chip itself, when it was opened from the keyboard), unless the text changed meanwhile; a chip
+ * in read-only text gets focus itself. One opened on hover never took focus, so there's nothing
+ * to give back.
  */
 export function closeChip() {
   const chip = open;
   cancelHover();
   setOpen(null);
-  if (!chip?.selection || chip.hover || chip.editor.isDestroyed) return;
+  if (!chip || chip.hover) return;
+  if (!chip.editor) {
+    if (chip.anchor.isConnected) chip.anchor.focus();
+    return;
+  }
+  if (!chip.selection || chip.editor.isDestroyed) return;
   const { editor, selection } = chip;
   if (editor.state.doc.eq(selection.$anchor.doc)) {
     const restored = Selection.fromJSON(editor.state.doc, selection.toJSON());
@@ -77,14 +85,15 @@ function cancelHover() {
   hoverTimer = undefined;
 }
 
-function hoverOpen(editor: Editor, anchor: HTMLElement, ref: () => VerseRef) {
+/** Opens a chip after the pointer rests on it, on a laptop with a mouse. */
+export function hoverOpen(editor: Editor | null, anchor: HTMLElement, ref: () => VerseRef) {
   if (!window.matchMedia(HOVER_QUERY).matches) return;
   // One opened by a click or the keyboard stays until it's closed.
   if (open && !open.hover) return;
   cancelHover();
   if (open?.anchor === anchor) return;
   hoverTimer = setTimeout(() => {
-    if (!anchor.isConnected || editor.isDestroyed) return;
+    if (!anchor.isConnected || editor?.isDestroyed) return;
     setOpen({ ref: ref(), anchor, editor, selection: null, hover: true });
   }, HOVER_OPEN_MS);
 }
@@ -128,7 +137,7 @@ export const missingText = (ref: Pick<VerseRef, 'translation'>): string =>
     ? 'No text came with it.'
     : 'Text not downloaded yet.';
 
-const CHIP_CLASS =
+export const CHIP_CLASS =
   'cursor-pointer rounded-md bg-muted px-1 font-sans text-[0.9em] whitespace-nowrap hover:bg-accent';
 /** A chip selected as one unit, from the arrow keys. */
 const SELECTED_CLASS = ['ring-2', 'ring-primary'];

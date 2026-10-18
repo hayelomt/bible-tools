@@ -22,6 +22,7 @@ import { Route as AppSigninRouteImport } from './routes/_app/signin'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppVerifyEmailRouteImport } from './routes/_app/verify-email'
 import { Route as DevSeedRouteImport } from './routes/dev.seed'
+import { Route as AppCompilePassageRouteImport } from './routes/_app/compile/$passage'
 import { Route as AppInboxIndexRouteImport } from './routes/_app/inbox/index'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
@@ -102,6 +103,11 @@ const DevSeedRoute = DevSeedRouteImport.update({
   id: '/dev/seed',
   path: '/dev/seed',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppCompilePassageRoute = AppCompilePassageRouteImport.update({
+  id: '/compile/$passage',
+  path: '/compile/$passage',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppInboxIndexRoute = AppInboxIndexRouteImport.update({
   id: '/inbox/',
@@ -203,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof AppSignupRoute
   '/verify-email': typeof AppVerifyEmailRoute
   '/dev/seed': typeof DevSeedRoute
+  '/compile/$passage': typeof AppCompilePassageRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
   '/review/memory': typeof AppReviewMemoryRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/signup': typeof AppSignupRoute
   '/verify-email': typeof AppVerifyEmailRoute
   '/dev/seed': typeof DevSeedRoute
+  '/compile/$passage': typeof AppCompilePassageRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
   '/review/memory': typeof AppReviewMemoryRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/_app/verify-email': typeof AppVerifyEmailRoute
   '/dev/seed': typeof DevSeedRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/compile/$passage': typeof AppCompilePassageRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/_app/read/$chapter': typeof AppReadChapterRoute
   '/_app/review/memory': typeof AppReviewMemoryRoute
@@ -298,6 +307,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify-email'
     | '/dev/seed'
+    | '/compile/$passage'
     | '/lessons/$lessonId'
     | '/read/$chapter'
     | '/review/memory'
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify-email'
     | '/dev/seed'
+    | '/compile/$passage'
     | '/lessons/$lessonId'
     | '/read/$chapter'
     | '/review/memory'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/_app/verify-email'
     | '/dev/seed'
     | '/_app/'
+    | '/_app/compile/$passage'
     | '/_app/lessons/$lessonId'
     | '/_app/read/$chapter'
     | '/_app/review/memory'
@@ -477,6 +489,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dev/seed'
       preLoaderRoute: typeof DevSeedRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/compile/$passage': {
+      id: '/_app/compile/$passage'
+      path: '/compile/$passage'
+      fullPath: '/compile/$passage'
+      preLoaderRoute: typeof AppCompilePassageRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/inbox/': {
       id: '/_app/inbox/'
@@ -611,6 +630,7 @@ interface AppRouteChildren {
   AppSignupRoute: typeof AppSignupRoute
   AppVerifyEmailRoute: typeof AppVerifyEmailRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppCompilePassageRoute: typeof AppCompilePassageRoute
   AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
   AppReadChapterRoute: typeof AppReadChapterRoute
   AppReviewMemoryRoute: typeof AppReviewMemoryRoute
@@ -639,6 +659,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSignupRoute: AppSignupRoute,
   AppVerifyEmailRoute: AppVerifyEmailRoute,
   AppIndexRoute: AppIndexRoute,
+  AppCompilePassageRoute: AppCompilePassageRoute,
   AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
   AppReadChapterRoute: AppReadChapterRoute,
   AppReviewMemoryRoute: AppReviewMemoryRoute,

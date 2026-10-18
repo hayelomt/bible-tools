@@ -149,7 +149,7 @@ test('adds verses to a new lesson and to an existing one', async ({ page }) => {
   await markers.nth(1).click();
   await expect(page).toHaveURL(/\/verses\/JHN\.10\.14$/);
   await expect(page.getByText('1 note · main passage of 1 lesson · 1 highlight')).toBeVisible();
-  await page.getByRole('link', { name: 'Read John 10:14' }).click();
+  await page.getByRole('link', { name: 'Read John 10:14', exact: true }).click();
   await expect(page).toHaveURL(/\/read\/JHN\.10$/);
   await expect
     .poll(() => verse(page, 14).evaluate((el) => el.getBoundingClientRect().top))
@@ -162,7 +162,7 @@ test('adds verses to a new lesson and to an existing one', async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Verse index' }).click();
   await expect(page).toHaveURL(/\/verses\/JHN\.10\.3-4$/);
   await expect(page.getByText('Nothing cites John 10:3–4 yet.', { exact: false })).toBeVisible();
-  await page.getByRole('link', { name: 'Read John 10:3–4' }).click();
+  await page.getByRole('link', { name: 'Read John 10:3–4', exact: true }).click();
   await expect(page).toHaveURL(/\/read\/JHN\.10$/);
 });
 

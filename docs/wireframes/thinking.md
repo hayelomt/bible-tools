@@ -34,7 +34,11 @@ index (`[ Commentary › ]` beside `[ Read › ]`).
 │ All things work together. That's the │
 │ shepherd's promise.                  │
 │ The Good Shepherd · Sun 12 Oct 2026 ›│
-│ Also under Romans 8:38               │  ← it cites both; it appears under each
+│ Also under Romans 8:38               │  ← it cites both: in full here, and…
+│                                      │
+│ ROMANS 8:38                          │
+│ The Good Shepherd · Sun 12 Oct 2026 ›│  ← …a pointer under the other
+│ ↑ Under Romans 8:28                  │
 │                                      │
 │ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒         │  ← the rest arrives as you scroll
 ├──────────────────────────────────────┤
@@ -67,9 +71,9 @@ click jumps to the group; the current one is marked as you scroll.
   passage itself.
 - The scope control offers the passage it was opened with, its chapter and its book. A book shows
   each chapter as a small heading (ROMANS 8) above its groups.
-- **Several passages:** a section citing two passages in the scope is under each, with "Also under
-  …" linking to the other. M10-03 may change this to once with a pointer; the wireframe shows the
-  PRD's default.
+- **Several passages** (decided in M10-03): a section citing two passages in the scope is in full
+  under the first, with "Also under …" linking to the other, and is a one-line pointer under the
+  other: its lesson and date, then "↑ Under Romans 8:28", which jumps there.
 - **Export** is the M6-05 dialog, titled "Export the commentary on Romans 8"; Markdown only.
 - Opening it records a visit, synced (for "repeated verse", M12-01).
 - **Empty:** "Nothing cites Romans 8 yet. Sections that cite it will show here as one document."

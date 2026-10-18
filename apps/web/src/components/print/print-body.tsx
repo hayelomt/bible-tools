@@ -105,7 +105,7 @@ function Inline({ nodes }: { nodes: readonly InlineNode[] }) {
   );
 }
 
-function Marked({ text, marks }: { text: string; marks: readonly Mark[] }): ReactNode {
+export function Marked({ text, marks }: { text: string; marks: readonly Mark[] }): ReactNode {
   return marks.reduceRight<ReactNode>((inner, mark) => {
     if (mark.type === 'bold') return <strong className="font-semibold">{inner}</strong>;
     if (mark.type === 'italic') return <em>{inner}</em>;
