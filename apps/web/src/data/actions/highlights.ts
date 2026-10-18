@@ -80,7 +80,7 @@ export function promoteHighlight(
         seriesId: null,
         title: highlight.ref.display,
         date: target.newLesson.date,
-        source: 'personal',
+        kind: 'personal',
         speaker: null,
         church: null,
         mainPassages: [passage],

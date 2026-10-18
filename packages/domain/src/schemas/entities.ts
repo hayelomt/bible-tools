@@ -3,6 +3,7 @@ import { BOOK_CODES } from '../books.ts';
 import { bodySchema, LINK_TARGET_TYPES } from '../doc.ts';
 import { OPEN_IN_TARGETS } from '../open-in.ts';
 import { isOrderKey } from '../order.ts';
+import { templateStructureSchema } from '../templates.ts';
 import { TRANSLATIONS } from '../verse-ref.ts';
 import {
   dateSchema,
@@ -22,7 +23,8 @@ import { verseRefSchema } from './verse-ref.ts';
  */
 
 export const SERIES_KINDS = ['sermon_series', 'book_study', 'custom'] as const;
-export const LESSON_SOURCES = ['sermon', 'personal', 'group'] as const;
+/** A lesson's kind (§17.7): its `source` in v1, renamed so it doesn't clash with F28's source. */
+export const LESSON_KINDS = ['sermon', 'personal', 'group'] as const;
 /** A question's status, derived from its entries (`questionStatus`, §17.5). */
 export const QUESTION_STATUSES = ['open', 'answered', 'parked'] as const;
 /** What happened to a question, one entry each (F24, §17.5). */
@@ -52,6 +54,9 @@ const synced = {
   deletedAt: timestampSchema.nullable(),
 };
 
+/** A template as a default names it: a built-in's key (`builtin:soap`) or a template's id. */
+export const templateRefSchema = z.union([idSchema, z.string().regex(/^builtin:[a-z0-9-]{1,40}$/)]);
+
 /** One row per account, keyed by the user, so it has no id, createdAt or tombstone. */
 export const userSettingsSchema = z.strictObject({
   /** Light, dark, or "system" (Auto: follows the device). The app has one theme, Lamplight. */
@@ -67,6 +72,15 @@ export const userSettingsSchema = z.strictObject({
     .array(z.enum(OPEN_IN_TARGETS))
     .max(OPEN_IN_TARGETS.length)
     .refine((keys) => new Set(keys).size === keys.length, 'A target is listed twice'),
+  /**
+   * The template each kind of new lesson starts with (F25, §17.6): null, a built-in's key or a
+   * template's id. A deleted template counts as none.
+   */
+  defaultTemplates: z.strictObject({
+    sermon: templateRefSchema.nullable(),
+    personal: templateRefSchema.nullable(),
+    group: templateRefSchema.nullable(),
+  }),
   rev: revSchema,
   updatedAt: timestampSchema,
 });
@@ -83,7 +97,7 @@ export const lessonSchema = z.strictObject({
   seriesId: idSchema.nullable(),
   title: lineSchema(200),
   date: dateSchema,
-  source: z.enum(LESSON_SOURCES),
+  kind: z.enum(LESSON_KINDS),
   speaker: lineSchema(200).nullable(),
   church: lineSchema(200).nullable(),
   mainPassages: z.array(verseRefSchema).max(20),
@@ -138,6 +152,13 @@ export const questionEntrySchema = z.strictObject({
   kind: z.enum(QUESTION_ENTRY_KINDS),
   /** The section holding a partial or full answer. */
   sectionId: idSchema.nullable(),
+});
+
+/** One of the user's own study-method templates (F25, §17.6); the built-ins are code. */
+export const templateSchema = z.strictObject({
+  ...synced,
+  name: lineSchema(80),
+  structure: templateStructureSchema,
 });
 
 export const highlightSchema = z.strictObject({
@@ -241,6 +262,7 @@ export const ENTITY_SCHEMAS = {
   memoryItem: memoryItemSchema,
   inboxItem: inboxItemSchema,
   questionEntry: questionEntrySchema,
+  template: templateSchema,
 } as const;
 
 export type EntityName = keyof typeof ENTITY_SCHEMAS;
@@ -249,6 +271,8 @@ export const ENTITY_NAMES = Object.keys(ENTITY_SCHEMAS) as EntityName[];
 export type UserSettings = z.infer<typeof userSettingsSchema>;
 export type Series = z.infer<typeof seriesSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
+export type LessonKind = (typeof LESSON_KINDS)[number];
+export type DefaultTemplates = UserSettings['defaultTemplates'];
 export type Section = z.infer<typeof sectionSchema>;
 export type Tag = z.infer<typeof tagSchema>;
 export type SectionTag = z.infer<typeof sectionTagSchema>;
@@ -258,6 +282,7 @@ export type Question = z.infer<typeof questionSchema>;
 export type QuestionStatus = (typeof QUESTION_STATUSES)[number];
 export type QuestionEntry = z.infer<typeof questionEntrySchema>;
 export type QuestionEntryKind = (typeof QUESTION_ENTRY_KINDS)[number];
+export type Template = z.infer<typeof templateSchema>;
 export type Link = z.infer<typeof linkSchema>;
 export type Highlight = z.infer<typeof highlightSchema>;
 export type MemoryItem = z.infer<typeof memoryItemSchema>;

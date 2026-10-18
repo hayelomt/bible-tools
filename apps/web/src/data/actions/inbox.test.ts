@@ -58,7 +58,7 @@ const lesson = (title = 'The Good Shepherd') =>
       seriesId: null,
       title,
       date: '2026-10-12',
-      source: 'sermon',
+      kind: 'sermon',
       speaker: null,
       church: null,
       mainPassages: [],
@@ -169,7 +169,7 @@ describe('sending an item to a lesson', () => {
     expect(placement.lesson).toMatchObject({
       title: 'Romans 8:28',
       date: DAY,
-      source: 'personal',
+      kind: 'personal',
       mainPassages: [passage],
     });
     await undoPlacement(placement, db);
@@ -265,7 +265,7 @@ describe('saving a share', () => {
 
   it('makes one new lesson for them all, which Undo removes unless a section was edited', async () => {
     const result = await addShared(shared, { newLesson: { date: DAY } }, db);
-    expect(result.lesson).toMatchObject({ title: 'Romans 8:28', source: 'personal' });
+    expect(result.lesson).toMatchObject({ title: 'Romans 8:28', kind: 'personal' });
     expect(result.lesson?.mainPassages.map((p) => p.display)).toEqual([
       'Romans 8:28',
       'Romans 8:29',

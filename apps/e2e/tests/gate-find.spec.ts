@@ -175,7 +175,7 @@ function seedMonth(tagIds: Map<string, string>): Seed {
       seriesId: null,
       title: plan.title,
       date: plan.date,
-      source: plan.title.startsWith('Small group') ? 'group' : 'sermon',
+      kind: plan.title.startsWith('Small group') ? 'group' : 'sermon',
       speaker: null,
       church: null,
       mainPassages: plan.main ? [verseRef(plan.main)] : [],

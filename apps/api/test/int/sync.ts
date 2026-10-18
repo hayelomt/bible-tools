@@ -39,7 +39,7 @@ export const lessonRow = (fields: object = {}): Row => ({
   seriesId: null,
   title: 'More than conquerors',
   date: '2026-10-04',
-  source: 'sermon',
+  kind: 'sermon',
   speaker: null,
   church: null,
   mainPassages: [ROMANS_8],

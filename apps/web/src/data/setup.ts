@@ -1,6 +1,7 @@
 import {
   DEFAULT_TRANSLATION,
   newId,
+  NO_DEFAULT_TEMPLATES,
   OPEN_IN_TARGETS,
   SEED_TAGS,
   type UserSettings,
@@ -48,6 +49,7 @@ export async function ensureDevice(db: LampDb, initial: InitialSettings): Promis
           autoPreviewVerses: true,
           pasteChips: true,
           openInTargets: [...OPEN_IN_TARGETS],
+          defaultTemplates: { ...NO_DEFAULT_TEMPLATES },
           rev: 0,
           updatedAt: w.now,
         },

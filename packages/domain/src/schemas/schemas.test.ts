@@ -57,6 +57,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     autoPreviewVerses: false,
     pasteChips: true,
     openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
+    defaultTemplates: { sermon: null, personal: 'builtin:soap', group: id(13) },
     rev: 1,
     updatedAt: NOW,
   },
@@ -66,7 +67,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     seriesId: id(1),
     title: 'More than conquerors',
     date: '2026-10-04',
-    source: 'sermon',
+    kind: 'sermon',
     speaker: 'Pastor A',
     church: null,
     mainPassages: [ROM_8_28],
@@ -118,10 +119,19 @@ const ROWS: { [E in EntityName]: unknown } = {
     kind: 'answered',
     sectionId: id(3),
   },
+  template: {
+    ...meta(13),
+    name: 'Sermon notes',
+    structure: [
+      { title: 'Main point' },
+      { title: 'Points', children: [{ title: 'One' }, { title: 'Two' }] },
+      { title: 'Response' },
+    ],
+  },
 };
 
 describe('entity schemas', () => {
-  it('cover the 13 synced entities', () => {
+  it('cover the 14 synced entities', () => {
     expect(ENTITY_NAMES).toEqual(Object.keys(ROWS));
   });
 
@@ -166,6 +176,14 @@ describe('entity schemas', () => {
     ['a tag name over 50 characters', 'tag', { name: 'x'.repeat(51) }],
     ['a question status, which its entries now give', 'question', { status: 'open' }],
     ['an unknown question entry kind', 'questionEntry', { kind: 'closed' }],
+    ['a lesson source, which is its kind now', 'lesson', { source: 'sermon' }],
+    ['a template name over 80 characters', 'template', { name: 'x'.repeat(81) }],
+    ['a template with no sections', 'template', { structure: [] }],
+    [
+      'a default naming neither a built-in nor a template',
+      'userSettings',
+      { defaultTemplates: { sermon: 'soap', personal: null, group: null } },
+    ],
     ['an unknown colour', 'highlight', { colour: 'red' }],
     ['an ease below 1.3', 'memoryItem', { ease: 1.2 }],
     ['a fractional interval', 'memoryItem', { interval: 1.5 }],

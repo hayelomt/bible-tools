@@ -39,6 +39,9 @@ import { Route as AppSettingsPasswordRouteImport } from './routes/_app/settings/
 import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
 import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
 import { Route as AppInboxImportImportIdRouteImport } from './routes/_app/inbox/import.$importId'
+import { Route as AppSettingsTemplatesIndexRouteImport } from './routes/_app/settings/templates/index'
+import { Route as AppSettingsTemplatesTemplateIdRouteImport } from './routes/_app/settings/templates/$templateId'
+import { Route as AppSettingsTemplatesNewRouteImport } from './routes/_app/settings/templates/new'
 import { Route as PrintLessonsLessonIdPrintRouteImport } from './routes/_print/lessons/$lessonId.print'
 import { Route as PrintSeriesSeriesIdPrintRouteImport } from './routes/_print/series/$seriesId.print'
 
@@ -190,6 +193,23 @@ const AppInboxImportImportIdRoute = AppInboxImportImportIdRouteImport.update({
   path: '/inbox/import/$importId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsTemplatesIndexRoute =
+  AppSettingsTemplatesIndexRouteImport.update({
+    id: '/settings/templates/',
+    path: '/settings/templates/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppSettingsTemplatesTemplateIdRoute =
+  AppSettingsTemplatesTemplateIdRouteImport.update({
+    id: '/settings/templates/$templateId',
+    path: '/settings/templates/$templateId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppSettingsTemplatesNewRoute = AppSettingsTemplatesNewRouteImport.update({
+  id: '/settings/templates/new',
+  path: '/settings/templates/new',
+  getParentRoute: () => AppRoute,
+} as any)
 const PrintLessonsLessonIdPrintRoute =
   PrintLessonsLessonIdPrintRouteImport.update({
     id: '/lessons/$lessonId/print',
@@ -232,8 +252,11 @@ export interface FileRoutesByFullPath {
   '/review/': typeof AppReviewIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
+  '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
+  '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
   '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
+  '/settings/templates/': typeof AppSettingsTemplatesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -264,8 +287,11 @@ export interface FileRoutesByTo {
   '/review': typeof AppReviewIndexRoute
   '/settings': typeof AppSettingsIndexRoute
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
+  '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
+  '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
   '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
+  '/settings/templates': typeof AppSettingsTemplatesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -299,8 +325,11 @@ export interface FileRoutesById {
   '/_app/review/': typeof AppReviewIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/inbox/import/$importId': typeof AppInboxImportImportIdRoute
+  '/_app/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
+  '/_app/settings/templates/new': typeof AppSettingsTemplatesNewRoute
   '/_print/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/_print/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
+  '/_app/settings/templates/': typeof AppSettingsTemplatesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -333,8 +362,11 @@ export interface FileRouteTypes {
     | '/review/'
     | '/settings/'
     | '/inbox/import/$importId'
+    | '/settings/templates/$templateId'
+    | '/settings/templates/new'
     | '/lessons/$lessonId/print'
     | '/series/$seriesId/print'
+    | '/settings/templates/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -365,8 +397,11 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/inbox/import/$importId'
+    | '/settings/templates/$templateId'
+    | '/settings/templates/new'
     | '/lessons/$lessonId/print'
     | '/series/$seriesId/print'
+    | '/settings/templates'
   id:
     | '__root__'
     | '/_app'
@@ -399,8 +434,11 @@ export interface FileRouteTypes {
     | '/_app/review/'
     | '/_app/settings/'
     | '/_app/inbox/import/$importId'
+    | '/_app/settings/templates/$templateId'
+    | '/_app/settings/templates/new'
     | '/_print/lessons/$lessonId/print'
     | '/_print/series/$seriesId/print'
+    | '/_app/settings/templates/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -621,6 +659,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInboxImportImportIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/templates/': {
+      id: '/_app/settings/templates/'
+      path: '/settings/templates'
+      fullPath: '/settings/templates/'
+      preLoaderRoute: typeof AppSettingsTemplatesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/templates/$templateId': {
+      id: '/_app/settings/templates/$templateId'
+      path: '/settings/templates/$templateId'
+      fullPath: '/settings/templates/$templateId'
+      preLoaderRoute: typeof AppSettingsTemplatesTemplateIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/templates/new': {
+      id: '/_app/settings/templates/new'
+      path: '/settings/templates/new'
+      fullPath: '/settings/templates/new'
+      preLoaderRoute: typeof AppSettingsTemplatesNewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_print/lessons/$lessonId/print': {
       id: '/_print/lessons/$lessonId/print'
       path: '/lessons/$lessonId/print'
@@ -666,6 +725,9 @@ interface AppRouteChildren {
   AppReviewIndexRoute: typeof AppReviewIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppInboxImportImportIdRoute: typeof AppInboxImportImportIdRoute
+  AppSettingsTemplatesTemplateIdRoute: typeof AppSettingsTemplatesTemplateIdRoute
+  AppSettingsTemplatesNewRoute: typeof AppSettingsTemplatesNewRoute
+  AppSettingsTemplatesIndexRoute: typeof AppSettingsTemplatesIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -696,6 +758,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppReviewIndexRoute: AppReviewIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppInboxImportImportIdRoute: AppInboxImportImportIdRoute,
+  AppSettingsTemplatesTemplateIdRoute: AppSettingsTemplatesTemplateIdRoute,
+  AppSettingsTemplatesNewRoute: AppSettingsTemplatesNewRoute,
+  AppSettingsTemplatesIndexRoute: AppSettingsTemplatesIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

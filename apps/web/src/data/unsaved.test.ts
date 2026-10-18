@@ -25,7 +25,7 @@ beforeEach(async () => {
       seriesId: null,
       title: 'The Good Shepherd',
       date: '2026-10-12',
-      source: 'sermon',
+      kind: 'sermon',
       speaker: null,
       church: null,
       mainPassages: [],

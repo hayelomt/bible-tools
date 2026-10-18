@@ -47,6 +47,7 @@ model User {
   memoryItems     MemoryItem[]
   inboxItems      InboxItem[]
   questionEntries QuestionEntry[]
+  templates       Template[]
   citations       Citation[]
   links           Link[]
   syncChanges     SyncChange[]
@@ -100,6 +101,9 @@ model UserSettings {
   pasteChips         Boolean  @default(true) @map("paste_chips")
   // The "Open in…" target keys shown, in order: blueletterbible | youversion | biblehub | logos
   openInTargets      Json     @default("[\"blueletterbible\", \"youversion\", \"biblehub\", \"logos\"]") @map("open_in_targets")
+  // The template each kind of new lesson starts with: { sermon, personal, group }, each null, a
+  // built-in's key (builtin:soap) or a template's id (§17.6)
+  defaultTemplates   Json     @default("{\"sermon\": null, \"personal\": null, \"group\": null}") @map("default_templates")
   rev                BigInt   @default(0)
   updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
 
@@ -135,6 +139,10 @@ model Lesson {
   seriesId     String?   @map("series_id") @db.Uuid
   title        String
   date         DateTime  @db.Date
+  // sermon | personal | group; `source` until M10 (§17.7)
+  kind         String    @default("sermon")
+  // Left the wire format in M10 for `kind`; stays, unwritten, for one release so a rollback still
+  // works, and the next release drops it.
   source       String    @default("sermon")
   speaker      String?
   church       String?
@@ -413,6 +421,24 @@ model Citation {
   @@index([userId, startOrd, endOrd])
   @@index([sourceType, sourceId])
   @@map("citation")
+}
+
+// One of the user's own study-method templates (F25, §17.6); the built-ins are code. structure:
+// 1–30 { title, children? }, children one level deep, checked by the app's schema.
+model Template {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  name      String
+  structure Json
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@map("template")
 }
 
 // Derived from a section's link chips on every write, like Citation, and never pushed (§17.4).

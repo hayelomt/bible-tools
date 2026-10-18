@@ -325,3 +325,7 @@ text. Defaults per kind are set here:
 - Deleting a template happens at once, with Undo; lessons made from it don't change.
 - **Empty (yours):** "No templates of your own yet. Save one from a lesson's ⋯, or make one here."
   `[ + New template ]`.
+- Built (M10-13, M10-14): the editor saves with Create template or Save, and Cancel. Each name has a
+  `⋯` with Move up, Move down, Make a child or Move out, and Remove. A built-in's "Copy to edit"
+  opens the editor on "SOAP (copy)". Changing a new lesson's kind swaps its default while nothing is
+  written in it (decision 82).

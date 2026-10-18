@@ -42,7 +42,7 @@ async function lesson(name: string, date: string) {
       seriesId: null,
       title: name,
       date,
-      source: 'sermon',
+      kind: 'sermon',
       speaker: null,
       church: null,
       mainPassages: [verse(rom(8)).attrs],

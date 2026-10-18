@@ -109,6 +109,7 @@ describe('a first pull from 0', () => {
       autoPreviewVerses: false,
       pasteChips: true,
       openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
+      defaultTemplates: { sermon: null, personal: null, group: null },
       updatedAt: NOW,
     };
     await sync.pushOk(client, account, [

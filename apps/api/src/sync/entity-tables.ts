@@ -54,6 +54,8 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
     model: model((tx) => tx.lesson),
     refs: { seriesId: 'series' },
     times: [...SYNC_TIMES, 'date'],
+    // Its `kind` since M10 (§17.7); the next release drops it.
+    retired: ['source'],
   },
   section: {
     model: model((tx) => tx.section),
@@ -100,6 +102,7 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
     refs: { questionId: 'question', lessonId: 'lesson', sectionId: 'section' },
     times: SYNC_TIMES,
   },
+  template: { model: model((tx) => tx.template), refs: {}, times: SYNC_TIMES },
 };
 
 /** Columns stored as a `date`, which the device has as `YYYY-MM-DD`. */

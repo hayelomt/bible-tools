@@ -47,7 +47,7 @@ interface QuestionPlan {
 interface LessonPlan {
   title: string;
   daysAgo: number;
-  source: Lesson['source'];
+  kind: Lesson['kind'];
   speaker?: string;
   church?: string;
   series?: string;
@@ -79,7 +79,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'Peace with God',
     daysAgo: 35,
-    source: 'sermon',
+    kind: 'sermon',
     speaker: 'Pastor James Okafor',
     church: CHURCH,
     series: 'romans',
@@ -113,7 +113,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'Song of the pilgrim',
     daysAgo: 32,
-    source: 'group',
+    kind: 'group',
     series: 'ascents',
     main: ['Ps 121'],
     notes: [
@@ -132,7 +132,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'Dead to sin, alive to God',
     daysAgo: 28,
-    source: 'sermon',
+    kind: 'sermon',
     speaker: 'Pastor James Okafor',
     church: CHURCH,
     series: 'romans',
@@ -161,7 +161,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'Unless the Lord builds the house',
     daysAgo: 25,
-    source: 'group',
+    kind: 'group',
     series: 'ascents',
     main: ['Ps 127'],
     notes: [
@@ -179,7 +179,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'The wretched man',
     daysAgo: 21,
-    source: 'sermon',
+    kind: 'sermon',
     speaker: 'Rev. Anna Lindqvist',
     church: CHURCH,
     series: 'romans',
@@ -202,7 +202,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'Quiet time: forgiveness',
     daysAgo: 17,
-    source: 'personal',
+    kind: 'personal',
     main: ['Matt 18:21-35'],
     tags: ['forgiveness'],
     notes: [
@@ -221,7 +221,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'No condemnation',
     daysAgo: 14,
-    source: 'sermon',
+    kind: 'sermon',
     speaker: 'Pastor James Okafor',
     church: CHURCH,
     series: 'romans',
@@ -255,7 +255,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'Those who trust in the Lord',
     daysAgo: 11,
-    source: 'group',
+    kind: 'group',
     series: 'ascents',
     main: ['Ps 125'],
     notes: [
@@ -269,7 +269,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'More than conquerors',
     daysAgo: 7,
-    source: 'sermon',
+    kind: 'sermon',
     speaker: 'Pastor James Okafor',
     church: CHURCH,
     series: 'romans',
@@ -302,7 +302,7 @@ const LESSONS: LessonPlan[] = [
   {
     title: 'Kept from stumbling',
     daysAgo: 3,
-    source: 'personal',
+    kind: 'personal',
     main: ['Jude'],
     notes: [
       {
@@ -406,7 +406,7 @@ export async function seedDemo(db: LampDb): Promise<void> {
         seriesId: plan.series ? series.get(plan.series)! : null,
         title: plan.title,
         date: dateDaysAgo(plan.daysAgo),
-        source: plan.source,
+        kind: plan.kind,
         speaker: plan.speaker ?? null,
         church: plan.church ?? null,
         mainPassages: (plan.main ?? []).map(verseRef),
@@ -447,7 +447,7 @@ export async function seedBulk(db: LampDb, lessons = 50, sections = 100): Promis
         seriesId,
         title: `Bulk lesson ${l + 1}`,
         date: dateDaysAgo(60 + l),
-        source: 'sermon',
+        kind: 'sermon',
         speaker: null,
         church: null,
         mainPassages: [],

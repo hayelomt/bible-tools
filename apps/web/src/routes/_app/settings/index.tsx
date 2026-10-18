@@ -43,6 +43,9 @@ function Settings() {
       {settings && (
         <PageSection title="Editing">
           <PasteChipsSetting value={settings.pasteChips} />
+          <Link to="/settings/templates" className={linkClass}>
+            Templates ›
+          </Link>
         </PageSection>
       )}
       {settings && (

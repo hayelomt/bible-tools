@@ -1,7 +1,7 @@
 import { DndContext, DragOverlay, type DropAnimation } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { type BuiltInTemplate, emptyBody, keyBetween, newId, type SectionBody } from '@lamp/domain';
+import { emptyBody, keyBetween, newId, type SectionBody } from '@lamp/domain';
 import { toast } from '@lamp/ui/components/sonner';
 import type { Editor } from '@tiptap/core';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -9,7 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
 import { promoteQuestion } from '@/data/actions/questions.ts';
-import { applyTemplate, removeApplied } from '@/data/actions/templates.ts';
+import { applyTemplate, removeApplied, type TemplateChoice } from '@/data/actions/templates.ts';
 import { TemplatePicker } from '@/components/templates/template-picker.tsx';
 import { count } from '@/lib/labels.ts';
 import { useAutoPreview } from '@/components/verses/verse-preview.ts';
@@ -77,7 +77,7 @@ interface ListApi extends SectionListApi {
    */
   answer: (questionId: string, partial: boolean) => void;
   /** Applies a template where `pickTemplate` asked for it (F25). */
-  applyTemplate: (template: BuiltInTemplate, after: string | null) => void;
+  applyTemplate: (template: TemplateChoice, after: string | null) => void;
 }
 
 /** A move shown before it's stored; `storedAt` is the row's `updatedAt` once its write is done. */

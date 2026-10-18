@@ -107,7 +107,7 @@ describe('fillStoredSnapshots', () => {
         seriesId: null,
         title: 'Contend for the faith',
         date: '2026-10-13',
-        source: 'sermon',
+        kind: 'sermon',
         speaker: null,
         church: null,
         mainPassages: [],

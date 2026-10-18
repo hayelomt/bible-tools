@@ -172,7 +172,7 @@ async function targetLesson(
     seriesId: null,
     title: inboxItemTitle(items[0]!),
     date: target.newLesson.date,
-    source: 'personal',
+    kind: 'personal',
     speaker: null,
     church: null,
     mainPassages,

@@ -32,6 +32,7 @@ const ENTITY_TABLES: Record<EntityName, string> = {
   memoryItem: 'memory_item',
   inboxItem: 'inbox_item',
   questionEntry: 'question_entry',
+  template: 'template',
 };
 
 /** Columns only the server has. */
@@ -41,6 +42,8 @@ const SERVER_COLUMNS: Partial<Record<EntityName, string[]>> = {
   section: ['body_rev', 'body_device'],
   // Out of the wire format since M10, where its entries hold them; dropped in the next release.
   question: ['status', 'answer_section_id'],
+  // Its `kind` since M10 (§17.7); dropped in the next release.
+  lesson: ['source'],
 };
 
 interface Contract {

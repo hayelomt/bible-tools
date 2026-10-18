@@ -68,3 +68,98 @@ test('a template makes its sections in order, which then edit, move and delete l
   await expect(headings(page)).toHaveText(['Scripture', 'Prayer', 'Application']);
   await expect(section(page, 'Scripture')).toContainText('The Lord is my shepherd.');
 });
+
+/** Settings → Templates, from the Settings page. */
+async function openTemplates(page: Page) {
+  await page.goto('/settings');
+  await page.getByRole('link', { name: 'Templates ›' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Templates' })).toBeVisible();
+}
+
+const yours = (page: Page) =>
+  page.getByRole('list', { name: 'Your templates' }).getByRole('listitem');
+
+test('your own templates: made in Settings or from a lesson, and one a kind’s default', async ({
+  page,
+}) => {
+  await openTemplates(page);
+  await expect(page.getByText(/^No templates of your own yet\./)).toBeVisible();
+
+  // From scratch: Enter adds a name, Tab nests it under the section above, Shift+Tab undoes that.
+  await page.getByRole('link', { name: 'New' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('Sermon notes');
+  await page.getByRole('textbox', { name: 'Section 1' }).fill('Main point');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Points');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('One');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Two');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Response');
+  await page.keyboard.press('Shift+Tab');
+  await page.getByRole('button', { name: 'Create template' }).click();
+  await expect(yours(page)).toHaveText(['Sermon notesMain point · Points ↳ 2 · Response']);
+
+  // A built-in copied to change.
+  await page.getByRole('button', { name: 'Copy SOAP to edit' }).click();
+  await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('SOAP (copy)');
+  await page.getByRole('button', { name: 'Create template' }).click();
+  await expect(yours(page)).toHaveText([/^Sermon notes/, /^SOAP \(copy\)/]);
+  await expect.poll(async () => (await rows(page, 'template')).length).toBe(2);
+
+  // A personal lesson starts with SOAP; a lesson made as a sermon swaps to it when its kind
+  // changes, while nothing is written in it.
+  await page.getByRole('combobox', { name: 'Personal' }).selectOption('SOAP');
+  await page.goto('/');
+  await newLesson(page, 'Psalm 23');
+  await expect(headings(page)).toHaveCount(0);
+  await page.getByRole('radio', { name: 'Personal' }).check();
+  await expect(headings(page)).toHaveText(['Scripture', 'Observation', 'Application', 'Prayer']);
+
+  // The picker lists the user's own after the built-ins.
+  await actions(page, 'Prayer');
+  await page.getByRole('menuitem', { name: 'Add a template…' }).click();
+  const picker = page.getByRole('dialog', { name: 'Add a template' });
+  await expect(picker.getByRole('list', { name: 'Yours' }).getByRole('listitem')).toHaveText([
+    'Sermon notesMain point · Points ↳ 2 · Response',
+    'SOAP (copy)Scripture · Observation · Application · Prayer',
+  ]);
+  await picker.getByRole('button', { name: /^Sermon notes/ }).click();
+  await expect(headings(page)).toHaveText([
+    'Scripture',
+    'Observation',
+    'Application',
+    'Prayer',
+    'Main point',
+    'Points',
+    'One',
+    'Two',
+    'Response',
+  ]);
+
+  // The lesson saved as a template keeps its headings.
+  await page.getByRole('button', { name: 'Lesson actions' }).click();
+  await page.getByRole('menuitem', { name: 'Save as template…' }).click();
+  const save = page.getByRole('dialog', { name: 'Save as template' });
+  await expect(save.getByRole('textbox', { name: 'Name' })).toHaveValue('Psalm 23');
+  await save.getByRole('button', { name: 'Save template' }).click();
+  await expect(page.getByText('Saved “Psalm 23” as a template.')).toBeVisible();
+
+  // Deleted at once, with Undo.
+  await openTemplates(page);
+  await expect(yours(page)).toHaveText([/^Psalm 23/, /^Sermon notes/, /^SOAP \(copy\)/]);
+  await expect(yours(page).first()).toContainText(
+    'Scripture · Observation · Application · Prayer · Main point · Points ↳ 2 · Response',
+  );
+  await yours(page).filter({ hasText: 'SOAP (copy)' }).getByRole('link').click();
+  await page.getByRole('button', { name: 'Delete template' }).click();
+  await expect(yours(page)).toHaveText([/^Psalm 23/, /^Sermon notes/]);
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'Template “SOAP (copy)” deleted.' })
+    .getByRole('button', { name: 'Undo' })
+    .click();
+  await expect(yours(page)).toHaveText([/^Psalm 23/, /^Sermon notes/, /^SOAP \(copy\)/]);
+});

@@ -6,7 +6,7 @@ import { type SectionRequest, SectionList } from '@/components/sections/section-
 import { ScreenActions, ScreenTitle, SidePanel } from '@/components/shell/slots.tsx';
 import type { LessonFields } from '@/data/actions/lessons.ts';
 import { longDate, today } from '@/lib/dates.ts';
-import { SOURCE_LABELS } from '@/lib/labels.ts';
+import { KIND_LABELS } from '@/lib/labels.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { AddButton } from './add-button.tsx';
 import { LessonDetails } from './lesson-details.tsx';
@@ -42,7 +42,7 @@ function newLesson(seriesId?: string): LessonFields {
     seriesId: seriesId ?? null,
     title: '',
     date: today(),
-    source: 'sermon',
+    kind: 'sermon',
     speaker: null,
     church: null,
     mainPassages: [],
@@ -51,7 +51,7 @@ function newLesson(seriesId?: string): LessonFields {
 
 /**
  * Lesson capture and edit on one screen (F1, wireframes/lessons.md "Lesson: capture and edit"):
- * the title, large, then a line with the date and source that opens the details. On a wide laptop
+ * the title, large, then a line with the date and kind that opens the details. On a wide laptop
  * the details sit in the side panel instead. Everything saves as it's typed; there's no Save.
  */
 export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEditorProps) {
@@ -163,7 +163,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
       <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
         <span>{longDate(values.date)}</span>
         <span aria-hidden>·</span>
-        <span>{SOURCE_LABELS[values.source]}</span>
+        <span>{KIND_LABELS[values.kind]}</span>
         {values.speaker && (
           <>
             <span aria-hidden>·</span>

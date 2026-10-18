@@ -111,6 +111,7 @@ describe('both sides changed a row: last write wins by updatedAt', () => {
       autoPreviewVerses: false,
       pasteChips: true,
       openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
+      defaultTemplates: { sermon: null, personal: null, group: null },
       updatedAt: NOW,
     };
     await pushOne(settingsChange(settings, 0));

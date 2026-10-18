@@ -46,6 +46,7 @@ const REFS: Readonly<Record<RowEntity, Readonly<Record<string, RowEntity>>>> = {
   memoryItem: {},
   inboxItem: { placedInSectionId: 'section' },
   questionEntry: { questionId: 'question', lessonId: 'lesson', sectionId: 'section' },
+  template: {},
 };
 const OPTIONAL_REFS = new Set([
   'lesson.seriesId',

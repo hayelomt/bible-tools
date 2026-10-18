@@ -126,7 +126,7 @@ test('adds verses to a new lesson and to an existing one', async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByText('Added to The Good Shepherd.')).toBeVisible();
 
-  const lessons = await rows<{ id: string; title: string; source: string }>(page, 'lesson');
+  const lessons = await rows<{ id: string; title: string; kind: string }>(page, 'lesson');
   const shepherd = lessons.find((lesson) => lesson.title === 'The Good Shepherd')!;
   const sections = await rows<{ id: string; lessonId: string }>(page, 'section');
   const highlights = await rows<{ colour: string; promotedSectionId: string | null }>(

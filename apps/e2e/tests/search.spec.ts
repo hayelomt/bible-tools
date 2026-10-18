@@ -144,7 +144,7 @@ test('5,000 sections are indexed in under 1 s at a mid-range phone’s speed', a
         seriesId: null,
         title: `Seeded lesson ${l}`,
         date: `2026-0${1 + (l % 9)}-1${l % 10}`,
-        source: 'sermon',
+        kind: 'sermon',
         speaker: null,
         church: null,
         mainPassages: [],

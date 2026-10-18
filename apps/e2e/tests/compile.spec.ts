@@ -70,7 +70,7 @@ function seed(plans: LessonPlan[]): Seed {
       seriesId: null,
       title: plan.title,
       date: plan.date,
-      source: 'sermon',
+      kind: 'sermon',
       speaker: null,
       church: null,
       mainPassages: [],

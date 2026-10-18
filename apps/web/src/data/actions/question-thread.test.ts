@@ -37,7 +37,7 @@ const lesson = (title: string, date: string) =>
       seriesId: null,
       title,
       date,
-      source: 'sermon',
+      kind: 'sermon',
       speaker: null,
       church: null,
       mainPassages: [],

@@ -286,7 +286,7 @@ test('a conflicted copy: labelled, counted, and kept instead', async ({ page: p 
         seriesId: null,
         title: 'The Good Shepherd',
         date: '2026-10-11',
-        source: 'sermon',
+        kind: 'sermon',
         speaker: null,
         church: null,
         mainPassages: [],

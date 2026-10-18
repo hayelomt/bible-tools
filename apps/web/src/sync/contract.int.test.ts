@@ -37,6 +37,8 @@ import {
 } from '@/data/actions/sections.ts';
 import { updateSettings } from '@/data/actions/settings.ts';
 import { addTag, removeTag } from '@/data/actions/tags.ts';
+import { createTemplate, templateByKey } from '@/data/actions/templates.ts';
+import { lessonSections } from '@/data/queries.ts';
 import { createTakeaway, updateTakeaway } from '@/data/actions/takeaways.ts';
 import { LampDb, type RowEntity, SETTINGS_KEY, SYNC_STATE_KEY } from '@/data/db.ts';
 import { linkedFrom } from '@/data/links.ts';
@@ -246,7 +248,7 @@ const live = <T extends { deletedAt: string | null }>(rows: T[]) =>
 const LESSON: Omit<LessonFields, 'title'> = {
   seriesId: null,
   date: '2026-10-11',
-  source: 'sermon',
+  kind: 'sermon',
   speaker: null,
   church: null,
   mainPassages: [],
@@ -440,6 +442,39 @@ describe('a question on two devices', () => {
     await reopenQuestion(question.id, laptop.db);
     await settle(laptop, phone);
     expect((await view(phone)).status).toBe('open');
+    await expectIdentical(email, laptop, phone);
+  });
+});
+
+describe('templates on two devices', () => {
+  it('a template made on one is a new lesson’s default on the other', async () => {
+    const { email, first: laptop } = await signUp('Firefox on macOS');
+    const notes = await createTemplate(
+      {
+        name: 'Sermon notes',
+        structure: [
+          { title: 'Main point' },
+          { title: 'Points', children: [{ title: 'One' }] },
+          { title: 'Response' },
+        ],
+      },
+      laptop.db,
+    );
+    await updateSettings(
+      { defaultTemplates: { sermon: notes.id, personal: 'builtin:soap', group: null } },
+      laptop.db,
+    );
+    await sync(laptop);
+    const phone = await signIn(email, 'Safari on iOS');
+    await sync(phone);
+
+    expect(await templateByKey(notes.id, phone.db)).toMatchObject({ name: 'Sermon notes' });
+    const lesson = await createLesson({ ...LESSON, title: 'Romans 8' }, phone.db);
+    const sections = await lessonSections(lesson.id, phone.db);
+    expect(sections.filter((s) => s.parentId === null)).toHaveLength(3);
+    expect(sections.filter((s) => s.parentId !== null)).toHaveLength(1);
+
+    await settle(laptop, phone);
     await expectIdentical(email, laptop, phone);
   });
 });

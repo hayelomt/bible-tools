@@ -29,9 +29,9 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
   },
   {
     minClientVersion: '0.3.0',
-    fingerprint: 'de0d5635',
+    fingerprint: '6dce089d',
     change:
-      'M10 (thinking layer): the `noteLink` body node; question entries, with `question.status` and `answerSectionId` out of the wire format; `question.splitFromId`',
+      'M10 (thinking layer): the `noteLink` body node; question entries, with `question.status` and `answerSectionId` out of the wire format; `question.splitFromId`; the template entity and the `defaultTemplates` setting; `lesson.source` renamed `kind`',
   },
 ];
 

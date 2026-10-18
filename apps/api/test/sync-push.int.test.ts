@@ -308,6 +308,7 @@ describe('POST /api/sync/push', () => {
       autoPreviewVerses: true,
       pasteChips: true,
       openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
+      defaultTemplates: { sermon: null, personal: null, group: null },
       updatedAt: NOW,
     };
     const first = {

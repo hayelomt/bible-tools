@@ -84,7 +84,7 @@ describe('promoting a highlight', () => {
     seriesId: null,
     title: 'The Good Shepherd',
     date: '2026-10-12',
-    source: 'sermon' as const,
+    kind: 'sermon' as const,
     speaker: null,
     church: null,
     mainPassages: [],
@@ -154,7 +154,7 @@ describe('promoting a highlight', () => {
     expect(lesson).toMatchObject({
       title: 'John 10:11–12',
       date: '2026-10-14',
-      source: 'personal',
+      kind: 'personal',
       seriesId: null,
       mainPassages: [
         {

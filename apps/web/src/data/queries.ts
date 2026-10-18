@@ -6,6 +6,7 @@ import {
   type Series,
   type Tag,
   type Takeaway,
+  type Template,
 } from '@lamp/domain';
 import type { TagLink, TagTarget } from './actions/tags.ts';
 import { db as appDb, type LampDb } from './db.ts';
@@ -269,4 +270,10 @@ export async function lessonQuestions(
         : null,
     }))
     .toSorted((a, b) => since(a).localeCompare(since(b)) || a.id.localeCompare(b.id));
+}
+
+/** The user's own templates (M10-13), by name. */
+export async function allTemplates(db: LampDb = appDb): Promise<Template[]> {
+  const templates = await db.template.filter((t) => t.deletedAt === null).toArray();
+  return templates.toSorted((a, b) => a.name.localeCompare(b.name));
 }

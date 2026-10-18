@@ -125,6 +125,8 @@ function rowOf(entity: RowEntity, to: Rows): Row {
       return { ...synced(), text: 'Why?', ...refs };
     case 'questionEntry':
       return { ...synced(), kind: 'answered', ...refs };
+    case 'template':
+      return { ...synced(), name: 'Sermon notes', structure: [{ title: 'Main point' }] };
     case 'sectionTag':
     case 'lessonTag':
       return { ...synced(), ...refs };
@@ -144,6 +146,7 @@ const settings = (colorMode: string) => ({
     autoPreviewVerses: false,
     pasteChips: true,
     openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
+    defaultTemplates: { sermon: null, personal: null, group: null },
     updatedAt: NOW,
   },
 });

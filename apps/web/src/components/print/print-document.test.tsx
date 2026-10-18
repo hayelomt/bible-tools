@@ -30,7 +30,7 @@ function goodShepherd(overrides: Partial<Lesson> = {}): LessonForExport {
       id: 'l1',
       title: 'The Good Shepherd',
       date: '2026-10-12',
-      source: 'sermon',
+      kind: 'sermon',
       speaker: 'Pastor Ann',
       church: 'Grace Chapel',
       mainPassages: [{ ...JOHN_10_9, verseStart: 1, verseEnd: 18, display: 'John 10:1–18' }],

@@ -124,6 +124,15 @@ describe('check constraints', () => {
     await expect(
       prisma.lesson.create({ data: { userId, title: 'x', date: new Date(), mainPassages: {} } }),
     ).rejects.toThrow(/lesson_main_passages_check/);
+    await expect(
+      prisma.lesson.create({ data: { userId, title: 'x', date: new Date(), kind: 'podcast' } }),
+    ).rejects.toThrow(/lesson_kind_check/);
+    await expect(
+      prisma.template.create({ data: { userId, name: 'x', structure: { title: 'x' } } }),
+    ).rejects.toThrow(/template_structure_check/);
+    await expect(
+      prisma.userSettings.create({ data: { userId, defaultTemplates: [] } }),
+    ).rejects.toThrow(/user_settings_default_templates_check/);
     const item = { userId, origin: 'share', receivedAt: new Date(), text: 'x' };
     await expect(prisma.inboxItem.create({ data: { ...item, origin: 'email' } })).rejects.toThrow(
       /inbox_item_origin_check/,
@@ -413,6 +422,25 @@ describe('deletes', () => {
     await expect(prisma.section.findUnique({ where: { id: copy.id } })).resolves.toMatchObject({
       conflictOf: null,
       conflictDevice: null,
+    });
+  });
+});
+
+describe('the M10 templates migration', () => {
+  it('gives every lesson the kind that was its source', async () => {
+    const { id: userId } = await newUser();
+    const lesson = await prisma.lesson.create({
+      data: { userId, title: 'Psalm 23', date: new Date('2026-10-04'), source: 'group' },
+    });
+    const sql = readFileSync(
+      'prisma/migrations/20261018180000_templates_lesson_kind/migration.sql',
+      'utf8',
+    );
+    const backfill = /^UPDATE "lesson" SET "kind" = "source"(?=;)/m.exec(sql);
+    expect(backfill).not.toBeNull();
+    await prisma.$executeRawUnsafe(`${backfill![0]} WHERE "id" = '${lesson.id}'::uuid`);
+    await expect(prisma.lesson.findUnique({ where: { id: lesson.id } })).resolves.toMatchObject({
+      kind: 'group',
     });
   });
 });

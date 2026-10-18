@@ -1,4 +1,4 @@
-import { LESSON_SOURCES } from '@lamp/domain';
+import { LESSON_KINDS } from '@lamp/domain';
 import { Input } from '@lamp/ui/components/input';
 import { NativeSelect } from '@lamp/ui/components/native-select';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -8,7 +8,7 @@ import { Segmented } from '@/components/segmented.tsx';
 import { SeriesDialog } from '@/components/series/series-dialog.tsx';
 import { TagInput } from '@/components/tags/tag-input.tsx';
 import { allSeries } from '@/data/queries.ts';
-import { SOURCE_LABELS } from '@/lib/labels.ts';
+import { KIND_LABELS } from '@/lib/labels.ts';
 import type { LessonSaver } from './use-lesson-saver.ts';
 
 /** Not a series id (those are UUIDs): choosing it opens the new-series dialog. */
@@ -27,7 +27,7 @@ interface LessonDetailsProps {
 }
 
 /**
- * A lesson's details (wireframes/lessons.md "Details"): date, source, speaker, church, main
+ * A lesson's details (wireframes/lessons.md "Details"): date, kind, speaker, church, main
  * passages, series and tags. Each saves as it changes; typed fields once typing settles.
  */
 export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
@@ -44,7 +44,7 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
     series: useId(),
     tags: useId(),
   };
-  const sourceName = useId();
+  const kindName = useId();
 
   return (
     <div className="@container">
@@ -61,16 +61,16 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
           onChange={(event) => event.target.value && save({ date: event.target.value })}
         />
 
-        <span id={sourceName} className={labelClass}>
-          Source
+        <span id={kindName} className={labelClass}>
+          Kind
         </span>
-        <div role="radiogroup" aria-labelledby={sourceName}>
+        <div role="radiogroup" aria-labelledby={kindName}>
           <Segmented
-            name={`source-${sourceName}`}
-            options={LESSON_SOURCES}
-            labels={SOURCE_LABELS}
-            value={values.source}
-            onChange={(source) => save({ source })}
+            name={`kind-${kindName}`}
+            options={LESSON_KINDS}
+            labels={KIND_LABELS}
+            value={values.kind}
+            onChange={(kind) => save({ kind })}
           />
         </div>
 

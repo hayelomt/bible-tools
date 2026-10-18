@@ -38,7 +38,7 @@ describe('refused changes in the sync panel (§6.2)', () => {
         seriesId: null,
         title: 'The Good Shepherd',
         date: '2026-10-12',
-        source: 'sermon',
+        kind: 'sermon',
         speaker: null,
         church: null,
         mainPassages: [],
@@ -241,6 +241,62 @@ describe('Dexie version 9', () => {
     expect(await upgraded.question.get(id(1))).toEqual({ ...row, splitFromId: null });
     const [queued] = await upgraded.outbox.toArray();
     expect(queued).toMatchObject({ row: { ...sent, splitFromId: null } });
+    await upgraded.delete();
+  });
+});
+
+describe('Dexie version 10', () => {
+  it('renames a lesson’s source its kind, stored and queued, and adds defaultTemplates', async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(9).stores({
+      lesson: 'id, seriesId, date',
+      userSettings: '',
+      outbox: '++seq, [entity+entityId]',
+    });
+    const lesson = {
+      id: id(1),
+      seriesId: null,
+      title: 'Psalm 23',
+      date: '2026-10-04',
+      source: 'personal',
+      speaker: null,
+      church: null,
+      mainPassages: [],
+      createdAt: at(1),
+      updatedAt: at(1),
+      rev: 0,
+      deletedAt: null,
+    };
+    const settings = { colorMode: 'dark', rev: 0, updatedAt: at(1) };
+    await old.table('lesson').put(lesson);
+    await old.table('userSettings').put(settings, 'settings');
+    const { rev: _, ...sent } = lesson;
+    await old.table('outbox').bulkAdd([
+      { entity: 'lesson', entityId: id(1), op: 'upsert', row: sent, changed: ['source', 'title'] },
+      { entity: 'lesson', entityId: id(2), op: 'delete' },
+      { entity: 'userSettings', op: 'upsert', row: settings, changed: ['colorMode'] },
+    ]);
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    const { source: _source, ...rest } = lesson;
+    expect(await upgraded.lesson.get(id(1))).toEqual({ ...rest, kind: 'personal' });
+    const none = { sermon: null, personal: null, group: null };
+    expect(await upgraded.userSettings.get('settings')).toEqual({
+      ...settings,
+      defaultTemplates: none,
+    });
+    const [renamed, removed, queuedSettings] = await upgraded.outbox.toArray();
+    const { source: _sent, ...sentRest } = sent;
+    expect(renamed).toMatchObject({
+      row: { ...sentRest, kind: 'personal' },
+      changed: ['kind', 'title'],
+    });
+    expect(renamed).not.toHaveProperty('row.source');
+    expect(removed).toMatchObject({ entity: 'lesson', op: 'delete' });
+    expect(queuedSettings).toMatchObject({ row: { defaultTemplates: none } });
+    expect(await upgraded.template.count()).toBe(0);
     await upgraded.delete();
   });
 });

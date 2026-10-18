@@ -14,15 +14,19 @@ import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { ExportDialog } from '@/components/export-dialog.tsx';
 import { MoveToSeriesDialog } from '@/components/series/move-to-series-dialog.tsx';
+import { SaveAsTemplateDialog } from '@/components/templates/save-as-template-dialog.tsx';
 import { deleteLesson } from '@/data/actions/lessons.ts';
 import { sectionCount } from '@/data/queries.ts';
 import { exportLesson } from '@/export/load.ts';
 import { count } from '@/lib/labels.ts';
 
-/** The lesson's `⋯` (wireframes/lessons.md): Move to series, Export and Delete lesson. */
+/**
+ * The lesson's `⋯` (wireframes/lessons.md): Move to series, Export, Save as template (M10-13) and
+ * Delete lesson.
+ */
 export function LessonMenu({ lesson }: { lesson: Lesson }) {
   const navigate = useNavigate();
-  const [dialog, setDialog] = useState<'move' | 'export' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<'move' | 'export' | 'template' | 'delete' | null>(null);
   const sections = useLiveQuery(() => sectionCount(lesson.id), [lesson.id]) ?? 0;
   const close = (open: boolean) => !open && setDialog(null);
 
@@ -37,6 +41,9 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={() => setDialog('move')}>Move to series…</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('export')}>Export…</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setDialog('template')}>
+            Save as template…
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={() => setDialog('delete')}>
             Delete lesson…
@@ -56,6 +63,12 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
             search: { print: true },
           })
         }
+      />
+      <SaveAsTemplateDialog
+        lessonId={lesson.id}
+        title={lesson.title}
+        open={dialog === 'template'}
+        onOpenChange={close}
       />
       <ConfirmDialog
         open={dialog === 'delete'}

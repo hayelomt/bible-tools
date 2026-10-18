@@ -19,7 +19,7 @@ import { linkTitle } from '@/data/links.ts';
 import type { QuestionView } from '@/data/question-status.ts';
 import type { Commentary, CompiledNote } from '@/search/compile.ts';
 import { longDate } from '@/lib/dates.ts';
-import { count, SERIES_KIND_LABELS, SOURCE_LABELS } from '@/lib/labels.ts';
+import { count, SERIES_KIND_LABELS, KIND_LABELS } from '@/lib/labels.ts';
 
 /**
  * Markdown export (F11, TECH-DESIGN §8.7, wireframes/export.md): a lesson, or a series with its
@@ -187,7 +187,7 @@ function header(data: LessonForExport): string {
 export function headerLines({ lesson, tags }: LessonForExport): string[] {
   const who = [lesson.speaker, lesson.church].filter(Boolean).join(', ');
   return [
-    [longDate(lesson.date), SOURCE_LABELS[lesson.source], who].filter(Boolean).join(' · '),
+    [longDate(lesson.date), KIND_LABELS[lesson.kind], who].filter(Boolean).join(' · '),
     [...lesson.mainPassages.map((p) => p.display), ...tags.map(tagLabel)].join(' · '),
   ].filter(Boolean);
 }

@@ -51,6 +51,7 @@ const NOUNS: Record<EntityName, string> = {
   memoryItem: 'Memory verse',
   inboxItem: 'Inbox item',
   questionEntry: 'Change to a question',
+  template: 'Template',
 };
 
 /** The outbox's refused changes, oldest first, described for the sync panel. */
@@ -127,6 +128,8 @@ async function describe(db: LampDb, entry: OutboxEntry): Promise<RejectedChange>
     }
     case 'inboxItem':
       return { ...base, what: 'An inbox item', target: { kind: 'inbox' } };
+    case 'template':
+      return { ...base, what: named(noun, field('name')), target: { kind: 'settings' } };
     case 'highlight':
     case 'memoryItem':
       // Their screens come in M5 and M6.

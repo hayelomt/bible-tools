@@ -131,6 +131,7 @@ export const PARENT_COLUMNS: Readonly<Record<EntityName, readonly string[]>> = {
   inboxItem: [],
   // An edit kept on an entry brings back the question it's in, and the lesson it happened in.
   questionEntry: ['questionId', 'lessonId'],
+  template: [],
 };
 
 /**

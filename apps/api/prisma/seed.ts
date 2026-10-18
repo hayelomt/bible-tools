@@ -86,7 +86,7 @@ async function main(): Promise<void> {
       seriesId: series.id,
       title: 'All things work together',
       date: new Date('2026-10-04'),
-      source: 'sermon',
+      kind: 'sermon',
       speaker: 'Pastor Sam',
       church: 'Grace Fellowship',
       mainPassages: [rom8],

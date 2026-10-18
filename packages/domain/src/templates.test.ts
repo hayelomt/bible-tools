@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { bodySchema, toPlainText } from './doc.ts';
+import { keysBetween } from './order.ts';
 import {
   BUILT_IN_TEMPLATES,
+  builtInTemplate,
   headedBody,
+  isUntouchedHeading,
+  sectionTitle,
+  structureOf,
   templateStructureSchema,
   templateSummary,
 } from './templates.ts';
@@ -60,5 +65,75 @@ describe('headedBody', () => {
     const body = headedBody('Observation');
     expect(bodySchema.parse(body)).toEqual(body);
     expect(toPlainText(body)).toBe('Observation');
+  });
+});
+
+const paragraph = (text: string) => ({
+  type: 'paragraph' as const,
+  content: [{ type: 'text' as const, text }],
+});
+
+describe('sectionTitle and isUntouchedHeading', () => {
+  it('read the heading a section starts with, and whether anything follows it', () => {
+    const headed = headedBody('Observation');
+    expect(sectionTitle(headed)).toBe('Observation');
+    expect(isUntouchedHeading(headed)).toBe(true);
+
+    const written = { ...headed, content: [headed.content[0]!, paragraph('He leads me.')] };
+    expect(sectionTitle(written)).toBe('Observation');
+    expect(isUntouchedHeading(written)).toBe(false);
+
+    const plain = { type: 'doc' as const, content: [paragraph('Observation')] };
+    expect(sectionTitle(plain)).toBeNull();
+    expect(isUntouchedHeading(plain)).toBe(false);
+    expect(sectionTitle(headedBody('x'.repeat(130)))).toHaveLength(120);
+  });
+});
+
+/** A section of a lesson, headed with `title` and some text under it, or text alone. */
+const section = (
+  id: string,
+  orderKey: string,
+  title: string | null,
+  parentId = null as string | null,
+) => ({
+  id,
+  parentId,
+  orderKey,
+  body:
+    title === null
+      ? { type: 'doc' as const, content: [paragraph('Just text')] }
+      : {
+          type: 'doc' as const,
+          content: [headedBody(title).content[0]!, paragraph('Written under it.')],
+        },
+});
+
+describe('structureOf', () => {
+  it('keeps the headings of sections and replies in order, not the text', () => {
+    const [a, b, c] = keysBetween(null, null, 3) as [string, string, string];
+    const structure = structureOf([
+      section('3', c, 'Response'),
+      section('1', a, 'Main point'),
+      section('2', b, 'Points'),
+      section('2b', b, 'Two', '2'),
+      section('2a', a, 'One', '2'),
+      section('2c', c, null, '2'),
+      section('4', `${c}V`, null),
+    ]);
+    expect(structure).toEqual([
+      { title: 'Main point' },
+      { title: 'Points', children: [{ title: 'One' }, { title: 'Two' }] },
+      { title: 'Response' },
+    ]);
+    expect(templateStructureSchema.safeParse(structure).success).toBe(true);
+    expect(structureOf([section('1', a, null)])).toBeNull();
+  });
+});
+
+describe('builtInTemplate', () => {
+  it('finds a built-in by key', () => {
+    expect(builtInTemplate('builtin:soap')?.name).toBe('SOAP');
+    expect(builtInTemplate('builtin:gone')).toBeUndefined();
   });
 });

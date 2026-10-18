@@ -22,7 +22,7 @@ const lesson: Lesson = {
   seriesId: null,
   title: 'More than conquerors',
   date: '2026-10-04',
-  source: 'sermon',
+  kind: 'sermon',
   speaker: null,
   church: null,
   mainPassages: [ROM_8_28, JHN_3],

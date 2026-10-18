@@ -53,7 +53,7 @@ const lessonFields = (title: string, date: string, mainPassages: Passage[] = [])
   seriesId: null,
   title,
   date,
-  source: 'sermon',
+  kind: 'sermon',
   speaker: null,
   church: null,
   mainPassages: mainPassages.map((p) => verse(p).attrs),

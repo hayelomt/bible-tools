@@ -2,7 +2,7 @@ import type { Lesson, Series } from '@lamp/domain';
 
 /** Words for stored values (UX-PATTERNS "Words"). */
 
-export const SOURCE_LABELS: Record<Lesson['source'], string> = {
+export const KIND_LABELS: Record<Lesson['kind'], string> = {
   sermon: 'Sermon',
   personal: 'Personal',
   group: 'Group',

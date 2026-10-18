@@ -98,6 +98,7 @@ export const changeSchema = z.discriminatedUnion('entity', [
   changeOf('memoryItem', ENTITY_SCHEMAS.memoryItem.omit({ rev: true })),
   changeOf('inboxItem', inboxItemChangeRow),
   changeOf('questionEntry', ENTITY_SCHEMAS.questionEntry.omit({ rev: true })),
+  changeOf('template', ENTITY_SCHEMAS.template.omit({ rev: true })),
 ]);
 export type Change = z.infer<typeof changeSchema>;
 
@@ -199,6 +200,7 @@ export const pulledRowSchema = z.discriminatedUnion('entity', [
   pulledRowOf('memoryItem'),
   pulledRowOf('inboxItem'),
   pulledRowOf('questionEntry'),
+  pulledRowOf('template'),
 ]);
 export type PulledRow = z.infer<typeof pulledRowSchema>;
 

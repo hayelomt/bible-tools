@@ -35,7 +35,7 @@ const LESSON = {
   seriesId: null,
   title: 'The Good Shepherd',
   date: '2026-10-12',
-  source: 'sermon' as const,
+  kind: 'sermon' as const,
   speaker: null,
   church: null,
   mainPassages: [ROM_8_28],

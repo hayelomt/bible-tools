@@ -1,6 +1,7 @@
 import type { Lesson } from '@lamp/domain';
 import { action, type NewRow, type RowPatch } from '../action.ts';
 import { db as appDb, type LampDb } from '../db.ts';
+import { startWithDefault } from './templates.ts';
 
 export type LessonFields = NewRow<'lesson'>;
 
@@ -9,16 +10,30 @@ const live = <T extends { deletedAt: string | null }>(rows: T[]) =>
 
 /** Stores a new lesson. The id may come from the caller, so a draft's URL stays the same. */
 export function createLesson(fields: LessonFields, db: LampDb = appDb): Promise<Lesson> {
-  return action(db, (w) => w.create('lesson', fields));
+  return action(db, async (w) => {
+    const lesson = await w.create('lesson', fields);
+    await startWithDefault(w, lesson);
+    return lesson;
+  });
 }
 
-/** Changes a lesson's details; moving it to a series (or out of one) is a `seriesId` change. */
+/**
+ * Changes a lesson's details; moving it to a series (or out of one) is a `seriesId` change. A new
+ * kind can bring its default template (`startWithDefault`).
+ */
 export function updateLesson(
   id: string,
   patch: RowPatch<'lesson'>,
   db: LampDb = appDb,
 ): Promise<Lesson> {
-  return action(db, (w) => w.update('lesson', id, patch));
+  return action(db, async (w) => {
+    const before = await w.db.lesson.get(id);
+    const lesson = await w.update('lesson', id, patch);
+    if (before && patch.kind && patch.kind !== before.kind) {
+      await startWithDefault(w, lesson, before.kind);
+    }
+    return lesson;
+  });
 }
 
 /**

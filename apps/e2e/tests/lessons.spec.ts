@@ -32,8 +32,8 @@ test.describe('on a phone', () => {
     await expect(page).not.toHaveURL(/new=/);
     await page.reload();
     await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('The Good Shepherd');
-    const [lesson] = await rows<{ source: string; seriesId: null; date: string }>(page, 'lesson');
-    expect(lesson).toMatchObject({ source: 'sermon', seriesId: null });
+    const [lesson] = await rows<{ kind: string; seriesId: null; date: string }>(page, 'lesson');
+    expect(lesson).toMatchObject({ kind: 'sermon', seriesId: null });
     expect(lesson?.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
     await page.getByRole('link', { name: 'Back' }).click();
@@ -65,7 +65,7 @@ test.describe('on a phone', () => {
 
     const [lesson] = await rows<Record<string, unknown>>(page, 'lesson');
     expect(lesson).toMatchObject({
-      source: 'group',
+      kind: 'group',
       speaker: 'Pastor Ann',
       mainPassages: [
         {

@@ -17,9 +17,10 @@ import type {
   Series,
   Tag,
   Takeaway,
+  Template,
   UserSettings,
 } from '@lamp/domain';
-import { newId, OPEN_IN_TARGETS } from '@lamp/domain';
+import { NO_DEFAULT_TEMPLATES, newId, OPEN_IN_TARGETS } from '@lamp/domain';
 import { Dexie, type DexieOptions, type Table, type Transaction } from 'dexie';
 
 /** The entities stored one row per id; settings are one row per device. */
@@ -87,6 +88,7 @@ export class LampDb extends Dexie {
   memoryItem!: Table<MemoryItem, string>;
   inboxItem!: Table<InboxItem, string>;
   questionEntry!: Table<QuestionEntry, string>;
+  template!: Table<Template, string>;
   /** One row, under `SETTINGS_KEY`. */
   userSettings!: Table<UserSettings, string>;
   citation!: Table<Citation, string>;
@@ -207,11 +209,45 @@ export class LampDb extends Dexie {
         .filter((entry: OutboxEntry) => entry.entity === 'question' && entry.op === 'upsert')
         .modify((entry: OutboxEntry) => unsplit((entry as { row: Partial<Question> }).row));
     });
+    // The user's own templates (F25, M10-13), and `defaultTemplates` (M10-14) at its default.
+    // A lesson's `source` is its `kind` (§17.7), in stored lessons and queued lesson changes,
+    // `changed` lists too. Not queued themselves, like version 7.
+    this.version(10)
+      .stores({ template: 'id' })
+      .upgrade(async (tx) => {
+        await tx.table('userSettings').toCollection().modify(withNoDefaults);
+        await tx.table('lesson').toCollection().modify(kindFromSource);
+        await tx
+          .table('outbox')
+          .filter((entry: OutboxEntry) => entry.op === 'upsert')
+          .modify((entry: OutboxEntry) => {
+            const change = entry as unknown as { row?: object; changed?: string[] };
+            if (entry.entity === 'userSettings' && change.row) withNoDefaults(change.row);
+            if (entry.entity !== 'lesson' || !change.row) return;
+            kindFromSource(change.row as SourceLesson);
+            change.changed = change.changed?.map((f) => (f === 'source' ? 'kind' : f));
+          });
+      });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
     return this.table(entity);
   }
+}
+
+/** A lesson as stored before version 10. */
+type SourceLesson = Omit<Lesson, 'kind'> & { kind?: Lesson['kind']; source?: Lesson['kind'] };
+
+/** Version 10's rename, on a stored or queued lesson. */
+function kindFromSource(lesson: SourceLesson) {
+  if (lesson.source === undefined) return;
+  lesson.kind ??= lesson.source;
+  delete lesson.source;
+}
+
+/** Version 10's `defaultTemplates`, none for each kind, on a stored or queued settings row. */
+function withNoDefaults(settings: Partial<UserSettings>) {
+  settings.defaultTemplates ??= { ...NO_DEFAULT_TEMPLATES };
 }
 
 /** Version 9's `splitFromId`, on a stored or queued question. */
