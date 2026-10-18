@@ -33,6 +33,11 @@ export function setActiveTranslation(translation: TranslationId) {
   for (const listener of listeners) listener(translation);
 }
 
+let pasteChips = true;
+
+/** Whether pasting offers verse chips (F19, `UserSettings.pasteChips`), followed like the translation. */
+export const pasteChipsOn = (): boolean => pasteChips;
+
 /**
  * Follows the settings row, so a change here or from another device applies at once. Resolves once
  * the row has been read.
@@ -42,6 +47,7 @@ export function followSettings(): Promise<void> {
     liveQuery(() => db.userSettings.get(SETTINGS_KEY)).subscribe({
       next: (settings) => {
         setActiveTranslation(settings?.defaultTranslation ?? DEFAULT_TRANSLATION);
+        pasteChips = settings?.pasteChips ?? true;
         resolve();
       },
       error: (error: unknown) => {

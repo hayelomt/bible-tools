@@ -25,6 +25,11 @@ used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
 - **Export** a lesson or series as Markdown, or print it to PDF.
 - **Share verses in from other apps:** a verse shared from YouVersion or a Bible site, or pasted,
   waits in the Inbox with its reference and translation recognised, until it goes into a lesson.
+  Pasting into a note offers to turn the references and verses in it into chips, and each chip
+  opens in Blue Letter Bible, YouVersion, Bible Hub or Logos.
+- **Import from YouVersion:** highlights and notes from YouVersion's data download land in the
+  Inbox (Settings → Import). The export's format isn't confirmed yet, so this may not read a real
+  file until it is.
 
 ### The weekly reminder, by browser
 

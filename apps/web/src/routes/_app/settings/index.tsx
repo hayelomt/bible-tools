@@ -1,9 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { linkClass } from '@/components/account/fields.tsx';
 import { AccountSection } from '@/components/account/account-section.tsx';
 import { ApiStatus } from '@/components/api-status.tsx';
 import { BibleSettings } from '@/components/bible-status.tsx';
+import { YouVersionImport } from '@/components/import/youversion-import.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
+import { PasteChipsSetting } from '@/components/paste-chips-setting.tsx';
 import { ReminderSetting } from '@/components/review/reminder-setting.tsx';
 import { ReviewWindowSetting } from '@/components/review/review-window-setting.tsx';
 import { RemoveNotes } from '@/components/remove-notes.tsx';
@@ -33,13 +36,24 @@ function Settings() {
       <PageSection title="Bible">
         {settings && <BibleSettings value={settings.defaultTranslation} />}
         {settings && <VersePreviewSetting value={settings.autoPreviewVerses} />}
+        <Link to="/settings/open-in" className={linkClass}>
+          Open in other apps ›
+        </Link>
       </PageSection>
+      {settings && (
+        <PageSection title="Editing">
+          <PasteChipsSetting value={settings.pasteChips} />
+        </PageSection>
+      )}
       {settings && (
         <PageSection title="Review">
           <ReviewWindowSetting value={settings.reviewWindowDays} />
           <ReminderSetting />
         </PageSection>
       )}
+      <PageSection title="Import">
+        <YouVersionImport />
+      </PageSection>
       <PageSection title="Storage">
         <StorageStatus />
         <RemoveNotes />

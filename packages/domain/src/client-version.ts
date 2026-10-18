@@ -23,9 +23,9 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
   },
   {
     minClientVersion: '0.2.0',
-    fingerprint: 'd348cf8e',
+    fingerprint: 'd7eba789',
     change:
-      'M9 (interop): the inbox item; chips from outside (`shared`, `pasted`, a version label)',
+      'M9 (interop): the inbox item; chips from outside (`shared`, `pasted`, a version label); the `pasteChips` and `openInTargets` settings',
   },
 ];
 

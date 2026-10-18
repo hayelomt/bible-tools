@@ -16,6 +16,7 @@ import type {
   Takeaway,
   UserSettings,
 } from '@lamp/domain';
+import { OPEN_IN_TARGETS } from '@lamp/domain';
 import { Dexie, type DexieOptions, type Table } from 'dexie';
 
 /** The entities stored one row per id; settings are one row per device. */
@@ -170,11 +171,29 @@ export class LampDb extends Dexie {
     // The inbox (F17, §17.2): sorted by when an item arrived, an import's items found together,
     // and an item found from the section it was placed in.
     this.version(6).stores({ inboxItem: 'id, receivedAt, importId, placedInSectionId' });
+    // `pasteChips` (F19) and `openInTargets` (F20) added at their defaults, for queued settings
+    // changes too: the server's schema needs them. Not queued themselves, like version 2.
+    this.version(7).upgrade(async (tx) => {
+      await tx.table('userSettings').toCollection().modify(withDefaults);
+      await tx
+        .table('outbox')
+        .filter((entry: OutboxEntry) => entry.entity === 'userSettings')
+        .modify((entry: OutboxEntry) => {
+          const row = (entry as { row?: Partial<UserSettings> }).row;
+          if (row) withDefaults(row);
+        });
+    });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
     return this.table(entity);
   }
+}
+
+/** Version 7's new settings at their defaults, on a stored or queued settings row. */
+function withDefaults(settings: Partial<UserSettings>) {
+  settings.pasteChips ??= true;
+  settings.openInTargets ??= [...OPEN_IN_TARGETS];
 }
 
 /** The app's database. Tests make their own with `new LampDb(name)`. */

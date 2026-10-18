@@ -32,6 +32,7 @@ import { Route as AppReviewMemoryRouteImport } from './routes/_app/review/memory
 import { Route as AppSeriesSeriesIdRouteImport } from './routes/_app/series/$seriesId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsDevicesRouteImport } from './routes/_app/settings/devices'
+import { Route as AppSettingsOpenInRouteImport } from './routes/_app/settings/open-in'
 import { Route as AppSettingsPasswordRouteImport } from './routes/_app/settings/password'
 import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
 import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
@@ -151,6 +152,11 @@ const AppSettingsDevicesRoute = AppSettingsDevicesRouteImport.update({
   path: '/settings/devices',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsOpenInRoute = AppSettingsOpenInRouteImport.update({
+  id: '/settings/open-in',
+  path: '/settings/open-in',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsPasswordRoute = AppSettingsPasswordRouteImport.update({
   id: '/settings/password',
   path: '/settings/password',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/review/memory': typeof AppReviewMemoryRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/settings/devices': typeof AppSettingsDevicesRoute
+  '/settings/open-in': typeof AppSettingsOpenInRoute
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/review/memory': typeof AppReviewMemoryRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/settings/devices': typeof AppSettingsDevicesRoute
+  '/settings/open-in': typeof AppSettingsOpenInRoute
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/_app/review/memory': typeof AppReviewMemoryRoute
   '/_app/series/$seriesId': typeof AppSeriesSeriesIdRoute
   '/_app/settings/devices': typeof AppSettingsDevicesRoute
+  '/_app/settings/open-in': typeof AppSettingsOpenInRoute
   '/_app/settings/password': typeof AppSettingsPasswordRoute
   '/_app/tags/$tagId': typeof AppTagsTagIdRoute
   '/_app/verses/$passage': typeof AppVersesPassageRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/review/memory'
     | '/series/$seriesId'
     | '/settings/devices'
+    | '/settings/open-in'
     | '/settings/password'
     | '/tags/$tagId'
     | '/verses/$passage'
@@ -313,6 +323,7 @@ export interface FileRouteTypes {
     | '/review/memory'
     | '/series/$seriesId'
     | '/settings/devices'
+    | '/settings/open-in'
     | '/settings/password'
     | '/tags/$tagId'
     | '/verses/$passage'
@@ -343,6 +354,7 @@ export interface FileRouteTypes {
     | '/_app/review/memory'
     | '/_app/series/$seriesId'
     | '/_app/settings/devices'
+    | '/_app/settings/open-in'
     | '/_app/settings/password'
     | '/_app/tags/$tagId'
     | '/_app/verses/$passage'
@@ -524,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsDevicesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/open-in': {
+      id: '/_app/settings/open-in'
+      path: '/settings/open-in'
+      fullPath: '/settings/open-in'
+      preLoaderRoute: typeof AppSettingsOpenInRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/password': {
       id: '/_app/settings/password'
       path: '/settings/password'
@@ -578,6 +597,7 @@ interface AppRouteChildren {
   AppReviewMemoryRoute: typeof AppReviewMemoryRoute
   AppSeriesSeriesIdRoute: typeof AppSeriesSeriesIdRoute
   AppSettingsDevicesRoute: typeof AppSettingsDevicesRoute
+  AppSettingsOpenInRoute: typeof AppSettingsOpenInRoute
   AppSettingsPasswordRoute: typeof AppSettingsPasswordRoute
   AppTagsTagIdRoute: typeof AppTagsTagIdRoute
   AppVersesPassageRoute: typeof AppVersesPassageRoute
@@ -604,6 +624,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReviewMemoryRoute: AppReviewMemoryRoute,
   AppSeriesSeriesIdRoute: AppSeriesSeriesIdRoute,
   AppSettingsDevicesRoute: AppSettingsDevicesRoute,
+  AppSettingsOpenInRoute: AppSettingsOpenInRoute,
   AppSettingsPasswordRoute: AppSettingsPasswordRoute,
   AppTagsTagIdRoute: AppTagsTagIdRoute,
   AppVersesPassageRoute: AppVersesPassageRoute,

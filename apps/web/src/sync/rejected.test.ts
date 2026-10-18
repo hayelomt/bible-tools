@@ -1,4 +1,4 @@
-import { keyBetween, type SectionBody } from '@lamp/domain';
+import { keyBetween, OPEN_IN_TARGETS, type SectionBody } from '@lamp/domain';
 import { Dexie } from 'dexie';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -101,6 +101,31 @@ describe('Dexie version 4', () => {
     expect(remove).not.toHaveProperty('row');
     // Copies are indexed; null isn't, so ordinary sections stay out of it.
     expect(await upgraded.section.orderBy('conflictOf').count()).toBe(0);
+    await upgraded.delete();
+  });
+});
+
+describe('Dexie version 7', () => {
+  it('adds pasteChips and openInTargets to the settings and to queued settings changes', async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(6).stores({ userSettings: '', outbox: '++seq, [entity+entityId]' });
+    const row = { colorMode: 'dark', reviewWindowDays: 7, rev: 3 };
+    await old.table('userSettings').put(row, 'settings');
+    await old.table('outbox').add({
+      entity: 'userSettings',
+      entityId: 'settings',
+      op: 'upsert',
+      row,
+      changed: ['colorMode'],
+    });
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    const defaults = { pasteChips: true, openInTargets: [...OPEN_IN_TARGETS] };
+    expect(await upgraded.userSettings.get('settings')).toMatchObject({ ...row, ...defaults });
+    const [queued] = await upgraded.outbox.toArray();
+    expect(queued).toMatchObject({ row: defaults, changed: ['colorMode'] });
     await upgraded.delete();
   });
 });

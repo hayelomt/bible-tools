@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AddBox } from '@/components/inbox/add-box.tsx';
 import { ClipboardButton } from '@/components/inbox/clipboard-button.tsx';
 import { InboxList } from '@/components/inbox/inbox-list.tsx';
+import { InboxMenu } from '@/components/inbox/inbox-menu.tsx';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { inboxItems } from '@/data/actions/inbox.ts';
 import { useScreenReady } from '@/lib/screen-ready.ts';
@@ -52,6 +53,7 @@ function Inbox() {
 
   return (
     <div className="flex flex-col gap-6">
+      <InboxMenu />
       <div className="flex flex-col items-start gap-2">
         <AddBox onAdded={setFresh} />
         <ClipboardButton />

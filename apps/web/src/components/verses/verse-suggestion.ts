@@ -5,6 +5,7 @@ import { Suggestion, type SuggestionProps } from '@tiptap/suggestion';
 import { shift } from '@floating-ui/dom';
 import { bookState, snapshotText } from '@/data/bible.ts';
 import { activeTranslation } from '@/data/translation.ts';
+import { pasteOffered } from './paste-chips.ts';
 import { findReference, type ReferenceEntry, referenceEntries } from './find-reference.ts';
 import { LAPTOP_QUERY, type KeyHandler, VerseSuggestions } from './verse-suggestions.tsx';
 
@@ -41,6 +42,8 @@ export const VerseSuggestion = Extension.create({
           const from = $position.start() + match.from;
           return { range: { from, to: $position.pos }, query: match.text, text: match.text };
         },
+        // A paste ending in a reference is offered as a chip by the paste prompt instead.
+        allow: ({ state }) => !pasteOffered(state),
         items: ({ query }) => referenceEntries(query),
         command: ({ editor, range, props: { ref } }) => {
           const translation = activeTranslation();

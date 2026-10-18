@@ -1,6 +1,8 @@
 import type { SectionBody } from '@lamp/domain';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import youVersionFixture from '@/import/fixtures/youversion-guess.json' with { type: 'json' };
+import { exportRecords, type ImportedItem, recordItems } from '@/import/youversion.ts';
 import { LampDb } from '../db.ts';
 import { ensureDevice } from '../setup.ts';
 import {
@@ -8,6 +10,7 @@ import {
   addShared,
   appendToSection,
   dismissInboxItem,
+  importInboxItems,
   inboxCount,
   inboxItemBody,
   inboxItemTitle,
@@ -291,5 +294,30 @@ describe('an item in a section', () => {
       'Look up hesed',
     );
     expect(inboxItemTitle({ ref: null, text: 'x'.repeat(100) })).toHaveLength(80);
+  });
+});
+
+const imported = (): ImportedItem[] =>
+  exportRecords(youVersionFixture).flatMap((r) => recordItems(r) ?? []);
+
+describe('importInboxItems', () => {
+  it('puts each item in the inbox with one import id, skipping a repeat in the file', async () => {
+    const result = await importInboxItems(imported(), db);
+    expect(result).toMatchObject({ added: 8, skipped: 1 });
+    const rows = await db.inboxItem.toArray();
+    expect(rows).toHaveLength(8);
+    expect(new Set(rows.map((row) => row.importId))).toEqual(new Set([result.importId]));
+    expect(rows.every((row) => row.origin === 'import')).toBe(true);
+    expect(await db.inboxItem.where('importId').equals(result.importId).count()).toBe(8);
+    // The newest first, by the dates in the export.
+    expect((await inboxItems(DAY, db))[0]!.text).toBe('Sermon idea: waiting well.');
+  });
+
+  it('adds nothing the second time, dismissed items included', async () => {
+    await importInboxItems(imported(), db);
+    const [first] = await inboxItems(DAY, db);
+    await dismissInboxItem(first!.id, db);
+    expect(await importInboxItems(imported(), db)).toMatchObject({ added: 0, skipped: 9 });
+    expect(await db.inboxItem.count()).toBe(8);
   });
 });

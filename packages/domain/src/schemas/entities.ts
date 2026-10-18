@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BOOK_CODES } from '../books.ts';
 import { bodySchema } from '../doc.ts';
+import { OPEN_IN_TARGETS } from '../open-in.ts';
 import { isOrderKey } from '../order.ts';
 import { TRANSLATIONS } from '../verse-ref.ts';
 import {
@@ -49,6 +50,13 @@ export const userSettingsSchema = z.strictObject({
   reviewWindowDays: z.int().min(1).max(365),
   /** Each paragraph's verse chips show their text under it (F3). */
   autoPreviewVerses: z.boolean(),
+  /** Pasting offers verse chips for the references and verses in the text (F19). */
+  pasteChips: z.boolean(),
+  /** The "Open in…" targets shown in the verse sheet, in order (F20); a hidden one is left out. */
+  openInTargets: z
+    .array(z.enum(OPEN_IN_TARGETS))
+    .max(OPEN_IN_TARGETS.length)
+    .refine((keys) => new Set(keys).size === keys.length, 'A target is listed twice'),
   rev: revSchema,
   updatedAt: timestampSchema,
 });

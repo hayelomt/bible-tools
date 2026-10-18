@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
 import { promoteQuestion } from '@/data/actions/questions.ts';
 import { useAutoPreview } from '@/components/verses/verse-preview.ts';
+import { PasteChipsPrompt } from '@/components/verses/paste-prompt.tsx';
 import { VerseViewer } from '@/components/verses/verse-viewer.tsx';
 import {
   type RemovedSections,
@@ -518,6 +519,7 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
   return (
     <div className="flex flex-col gap-4">
       <VerseViewer />
+      <PasteChipsPrompt />
       <DndContext {...dndContext}>
         <SortableContext items={sortable} strategy={verticalListSortingStrategy}>
           <div ref={listRef} className="flex flex-col gap-3">

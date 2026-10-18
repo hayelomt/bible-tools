@@ -49,24 +49,28 @@ const MAX_NOTE = 10_000;
  * - A reference from anywhere else ("Look at John 3:16 for Sunday") is a chip in `translation`
  *   whose text comes from Lamp's book, and the rest of the text is the note.
  * With no reference and no match, the address's passage counts (`bible.com/…/JHN.10.11`); with
- * none of those, the share is a note.
+ * none of those, the share is a note. A paste reads the same, with text from an unknown version
+ * `pasted` instead of `shared`.
  */
 export function readShare(
   input: ShareInput,
   matches: readonly VerseTextMatch[],
   translation: TranslationId,
+  /** What text from an unknown version is: `shared`, or `pasted` for a paste (§17.3). */
+  outside: 'shared' | 'pasted' = 'shared',
 ): ShareReading {
   const raw = (input.text ?? '').trim();
   const sourceUrl = input.url?.trim() || (raw.match(URL_PATTERN)?.[0] ?? null);
   const text = raw.replaceAll(URL_PATTERN, (url) => ' '.repeat(url.length));
   const title = (input.title ?? '').trim();
   let references = findReferences(text);
-  const source = shareSource(sourceUrl, `${text}\n${title}`);
+  const named = shareSource(sourceUrl, `${text}\n${title}`);
+  const source = named.translation === 'shared' ? { ...named, translation: outside } : named;
   if (references.length === 0 && matches.length === 0 && title) {
     references = findReferences(title).map((found) => ({ ...found, from: -1, to: -1 }));
   }
   const identified =
-    source.translation !== 'shared' || !!source.versionLabel || isBibleSite(sourceUrl);
+    named.translation !== 'shared' || !!named.versionLabel || isBibleSite(sourceUrl);
 
   // Spans that aren't the note: references (with a version label after them) and matched verses.
   const spans: Array<[number, number]> = [];
@@ -147,7 +151,7 @@ function labelEnd(text: string, found: FoundReference): number {
   return found.to + (after?.[0].length ?? 0);
 }
 
-const samePassage = (a: Passage, b: Passage) => {
+export const samePassage = (a: Passage, b: Passage) => {
   const [x, y] = [passageRange(a), passageRange(b)];
   return x[0] === y[0] && x[1] === y[1];
 };
@@ -171,7 +175,7 @@ function without(text: string, spans: Array<[number, number]>): string {
  * Shared text tidied, words untouched: verse numbers before a verse ("28And", "29 For") and
  * spaces collapsed, quotes and dashes left dangling at either end dropped.
  */
-function tidy(text: string): string {
+export function tidy(text: string): string {
   return (
     text
       .replaceAll(/(^|[\s.;:!?”"’)])\d{1,3}(?=\s?[\p{Lu}“"‘'(])/gu, '$1 ')

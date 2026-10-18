@@ -95,6 +95,9 @@ model UserSettings {
   defaultTranslation String   @default("BSB") @map("default_translation")
   reviewWindowDays   Int      @default(14) @map("review_window_days")
   autoPreviewVerses  Boolean  @default(true) @map("auto_preview_verses")
+  pasteChips         Boolean  @default(true) @map("paste_chips")
+  // The "Open in…" target keys shown, in order: blueletterbible | youversion | biblehub | logos
+  openInTargets      Json     @default("[\"blueletterbible\", \"youversion\", \"biblehub\", \"logos\"]") @map("open_in_targets")
   rev                BigInt   @default(0)
   updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
 

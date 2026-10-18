@@ -112,6 +112,8 @@ describe('resolveUpsert', () => {
         defaultTranslation: 'BSB',
         reviewWindowDays: 14,
         autoPreviewVerses: false,
+        pasteChips: true,
+        openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
         updatedAt: BASE,
       };
       const server: SyncRow<'userSettings'> = { ...settings, colorMode: 'dark' };

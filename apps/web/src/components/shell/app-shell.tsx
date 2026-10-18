@@ -12,6 +12,7 @@ import { ScreenHeader } from './screen-header.tsx';
 import { SelectionBarOpenProvider } from './selection-bar-open.tsx';
 import { Sidebar } from './sidebar.tsx';
 import { ShellSlots, useSlotRef } from './slots.tsx';
+import { ImportToasts } from '@/components/import/youversion-import.tsx';
 import { UpdatePrompt } from './update-prompt.tsx';
 import { isTyping } from '@/lib/is-typing.ts';
 import { newLessonTarget } from '@/lib/new-lesson.ts';
@@ -51,6 +52,7 @@ export function AppShell() {
           </div>
           <AppToaster />
           <UpdatePrompt />
+          <ImportToasts />
           <InstallPrompt />
           <OtherAccountDialog />
         </ShellSlots>

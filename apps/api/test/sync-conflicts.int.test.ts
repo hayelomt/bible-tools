@@ -109,6 +109,8 @@ describe('both sides changed a row: last write wins by updatedAt', () => {
       defaultTranslation: 'BSB',
       reviewWindowDays: 14,
       autoPreviewVerses: false,
+      pasteChips: true,
+      openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
       updatedAt: NOW,
     };
     await pushOne(settingsChange(settings, 0));

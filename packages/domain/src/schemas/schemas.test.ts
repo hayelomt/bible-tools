@@ -55,6 +55,8 @@ const ROWS: { [E in EntityName]: unknown } = {
     defaultTranslation: 'BSB',
     reviewWindowDays: 14,
     autoPreviewVerses: false,
+    pasteChips: true,
+    openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
     rev: 1,
     updatedAt: NOW,
   },
@@ -168,6 +170,8 @@ describe('entity schemas', () => {
     ['an unknown colour mode', 'userSettings', { colorMode: 'dim' }],
     ['a retired theme field', 'userSettings', { look: 'folio' }],
     ['a review window of 0 days', 'userSettings', { reviewWindowDays: 0 }],
+    ['an unknown "Open in…" target', 'userSettings', { openInTargets: ['biblegateway'] }],
+    ['an "Open in…" target twice', 'userSettings', { openInTargets: ['logos', 'logos'] }],
   ] as [string, EntityName, Record<string, unknown>][])('rejects %s', (_, entity, change) => {
     const row = { ...(ROWS[entity] as object), ...change };
     expect(ENTITY_SCHEMAS[entity].safeParse(row).success).toBe(false);

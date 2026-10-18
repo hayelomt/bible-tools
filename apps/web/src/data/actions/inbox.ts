@@ -1,4 +1,12 @@
-import type { InboxItem, Lesson, Section, SectionBody, VerseRef } from '@lamp/domain';
+import {
+  type InboxItem,
+  type Lesson,
+  newId,
+  type Section,
+  type SectionBody,
+  type VerseRef,
+} from '@lamp/domain';
+import { type ImportedItem, importKey } from '@/import/youversion.ts';
 import { action, type NewRow, RowNotFoundError, type Writer } from '../action.ts';
 import { db as appDb, type LampDb } from '../db.ts';
 import { highlightBody, type PromoteTarget } from './highlights.ts';
@@ -177,6 +185,38 @@ export function undoShared(shared: Shared, db: LampDb = appDb): Promise<void> {
     }
     if (shared.newLesson && shared.lesson && !kept) await w.remove('lesson', shared.lesson.id);
     for (const item of shared.items) await w.remove('inboxItem', item.id);
+  });
+}
+
+/** What an import added (M9-11). */
+export interface Imported {
+  importId: string;
+  added: number;
+  /** Already in the inbox, placed or dismissed (§17.2), or twice in the file. */
+  skipped: number;
+}
+
+/**
+ * Puts imported highlights and notes in the inbox (F21, M9-11), in one action, all with one
+ * `importId` so the import can be dismissed together (M9-12). An item matching one already there
+ * by passage, date and text (§17.2), placed and dismissed ones included, is skipped.
+ */
+export function importInboxItems(
+  items: readonly ImportedItem[],
+  db: LampDb = appDb,
+): Promise<Imported> {
+  return action(db, async (w) => {
+    const importId = newId();
+    const seen = new Set((await w.db.inboxItem.toArray()).map(importKey));
+    let added = 0;
+    for (const item of items) {
+      const key = importKey(item);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      await createItem(w, { origin: 'import', importId, ...item });
+      added++;
+    }
+    return { importId, added, skipped: items.length - added };
   });
 }
 

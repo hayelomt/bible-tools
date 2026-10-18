@@ -174,3 +174,25 @@ describe('shareHints', () => {
     ).toEqual(['PRO 16:25', 'PRO 14:12']);
   });
 });
+
+describe('readShare for a paste', () => {
+  it('labels text from another version `pasted`', () => {
+    const niv = 'For God so loved the world that he gave his one and only Son';
+    const reading = readShare({ text: `John 3:16 NIV ${niv}` }, [], 'BSB', 'pasted');
+    expect(reading.verses[0]!.ref).toMatchObject({
+      translation: 'pasted',
+      versionLabel: 'NIV',
+      snapshotText: niv,
+    });
+  });
+
+  it('still names BSB and KJV', () => {
+    const reading = readShare(
+      { text: 'Psalm 23:1 KJV The LORD is my shepherd' },
+      [],
+      'BSB',
+      'pasted',
+    );
+    expect(reading.verses[0]!.ref.translation).toBe('KJV');
+  });
+});

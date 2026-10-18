@@ -213,6 +213,8 @@ describe('POST /api/sync/push', () => {
       defaultTranslation: 'BSB',
       reviewWindowDays: 7,
       autoPreviewVerses: true,
+      pasteChips: true,
+      openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
       updatedAt: NOW,
     };
     const first = {

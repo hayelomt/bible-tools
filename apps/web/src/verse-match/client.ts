@@ -67,14 +67,16 @@ export function startVerseMatcher() {
 /**
  * Whole BSB and KJV verses in `text` (F19), once the matcher is ready; none if it can't be built,
  * since a paste or a share works without it. `hints` are the references found in the text, which
- * decide between two passages with the same words.
+ * decide between two passages with the same words. With `wait: false`, a matcher still building
+ * finds none this time (a paste in a section offers its references meanwhile).
  */
 export async function matchVerseText(
   text: string,
   hints: readonly Passage[] = [],
+  { wait = true }: { wait?: boolean } = {},
 ): Promise<VerseTextMatch[]> {
   startVerseMatcher();
-  if (status === 'building') await new Promise<void>((wake) => readyWaiters.push(wake));
+  if (status === 'building' && wait) await new Promise<void>((wake) => readyWaiters.push(wake));
   if (status !== 'ready') return [];
   const id = ++nextId;
   return new Promise((resolve) => {

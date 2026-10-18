@@ -135,6 +135,8 @@ const settings = (colorMode: string) => ({
     defaultTranslation: 'BSB',
     reviewWindowDays: 14,
     autoPreviewVerses: false,
+    pasteChips: true,
+    openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
     updatedAt: NOW,
   },
 });

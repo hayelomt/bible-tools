@@ -23,7 +23,23 @@ export {
   suggest,
 } from './parse-reference.ts';
 export { type FoundReference, findReferences } from './find-references.ts';
-export { isBibleSite, type ShareSource, shareSource } from './share-source.ts';
+export {
+  OPEN_IN_TARGETS,
+  type OpenInLinks,
+  type OpenInTable,
+  openInTableSchema,
+  type OpenInTarget,
+  type OpenInTargetSpec,
+  openInUrl,
+  shownTargets,
+} from './open-in.ts';
+export {
+  isBibleSite,
+  type ShareSource,
+  shareSource,
+  versionAfter,
+  youVersionLabel,
+} from './share-source.ts';
 export {
   type CitationEntry,
   CITING_ENTITIES,

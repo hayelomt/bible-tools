@@ -146,10 +146,24 @@ function bibleHub(segments: string[]): UrlSource {
 /** A known version in capitals right after a reference: "John 3:16 NIV", "Romans 8:28 (ESV)". */
 function labelInText(text: string): string | null {
   for (const found of findReferences(text)) {
-    const after = AFTER_REFERENCE.exec(text.slice(found.to));
-    if (after && KNOWN_VERSIONS.has(after[1]!)) return after[1]!;
+    const after = versionAfter(text, found.to);
+    if (after) return after.label;
   }
   return null;
 }
+
+/**
+ * The known version written at `at`, just after a reference ("John 3:16 NIV", "(ESV)"), and how
+ * many characters it takes with the space and brackets before it; null if there's none.
+ */
+export function versionAfter(text: string, at: number): { label: string; length: number } | null {
+  const after = AFTER_REFERENCE.exec(text.slice(at));
+  return after && KNOWN_VERSIONS.has(after[1]!)
+    ? { label: after[1]!, length: after[0].length }
+    : null;
+}
+
+/** The label of a YouVersion version id (`111` is "NIV"), for the versions most shared. */
+export const youVersionLabel = (id: number | string): string | undefined => YOUVERSION_IDS[id];
 
 const AFTER_REFERENCE = /^[^\S\n]*[([]?([A-Z][A-Z0-9]{1,11})[)\]]?(?![\p{L}\p{N}])/u;

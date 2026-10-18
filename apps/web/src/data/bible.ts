@@ -1,9 +1,16 @@
-import { type BookText, passageText, passageVerses } from '@lamp/bible-data';
+import { type BookText, passageVerses } from '@lamp/bible-data';
 import type { BookCode, Passage, TranslationId } from '@lamp/domain';
 import { useSyncExternalStore } from 'react';
 import { loadManifest, storedBook } from './bible-files.ts';
 
-export { BIBLE_CACHE, bibleCache, bookUrl, loadManifest, storedBook } from './bible-files.ts';
+export {
+  BIBLE_CACHE,
+  bibleCache,
+  bookUrl,
+  loadManifest,
+  snapshotText,
+  storedBook,
+} from './bible-files.ts';
 
 /**
  * The Bible text, as the book files `@lamp/bible-data` builds (TECH-DESIGN §9), served under
@@ -117,20 +124,6 @@ export function whenBook(translation: TranslationId, code: BookCode): Promise<Bo
 /** The book's text, re-rendering when it arrives. */
 export function useBook(translation: TranslationId, code: BookCode): BookState {
   return useSyncExternalStore(subscribe, () => bookState(translation, code));
-}
-
-/**
- * A chip's snapshot (F3): the passage's verse texts. The BSB leaves 16 verses empty (Acts 8:37 and
- * others) with a note; on its own, such a verse snapshots as that note, marked (decided
- * 2026-10-13), so a chip never holds nothing. In a range they're skipped.
- */
-export function snapshotText(book: BookText, passage: Passage, translation: TranslationId): string {
-  const text = passageText(book, passage);
-  if (text) return text;
-  const notes = passageVerses(book, passage)
-    .map((v) => book.n?.[`${v.chapter}:${v.verse}`])
-    .filter(Boolean);
-  return notes.length > 0 ? `[Not in ${translation}: ${[...new Set(notes)].join(' ')}]` : '';
 }
 
 /** A verse of a snapshot, with its number: "28", or "9:1" where a new chapter starts. */

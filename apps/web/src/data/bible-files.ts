@@ -1,4 +1,5 @@
-import type { BookText, Manifest } from '@lamp/bible-data';
+import { type BookText, type Manifest, passageText, passageVerses } from '@lamp/bible-data';
+import type { Passage, TranslationId } from '@lamp/domain';
 
 /**
  * The Bible's files in Cache Storage (TECH-DESIGN §8.6), without React, so the verse matcher's
@@ -63,4 +64,18 @@ export async function storedBook(file: string): Promise<{ text: BookText; fetche
 export async function cachedBook(file: string): Promise<BookText | null> {
   const stored = await (await bibleCache())?.match(bookUrl(file));
   return stored ? ((await stored.json()) as BookText) : null;
+}
+
+/**
+ * A chip's snapshot (F3): the passage's verse texts. The BSB leaves 16 verses empty (Acts 8:37 and
+ * others) with a note; on its own, such a verse snapshots as that note, marked (decided
+ * 2026-10-13), so a chip never holds nothing. In a range they're skipped.
+ */
+export function snapshotText(book: BookText, passage: Passage, translation: TranslationId): string {
+  const text = passageText(book, passage);
+  if (text) return text;
+  const notes = passageVerses(book, passage)
+    .map((v) => book.n?.[`${v.chapter}:${v.verse}`])
+    .filter(Boolean);
+  return notes.length > 0 ? `[Not in ${translation}: ${[...new Set(notes)].join(' ')}]` : '';
 }

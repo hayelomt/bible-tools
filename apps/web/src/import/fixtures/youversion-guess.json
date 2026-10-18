@@ -1,0 +1,72 @@
+{
+  "_comment": "Made up in the format guessed in TECH-DESIGN §17.11, not a real export. Replace it with the anonymised M8-05 export when it arrives.",
+  "moments": [
+    {
+      "kind": "highlight",
+      "created_dt": "2025-03-02T08:15:00Z",
+      "color": "fffe00",
+      "references": [{ "human": "John 3:16", "version_id": 3034, "usfm": ["JHN.3.16"] }]
+    },
+    {
+      "kind": "highlight",
+      "created_dt": "2025-03-09T07:40:12.500Z",
+      "color": "5dff79",
+      "references": [
+        {
+          "human": "Romans 7:24-8:2",
+          "version_id": 1,
+          "usfm": ["ROM.7.24", "ROM.7.25", "ROM.8.1", "ROM.8.2"]
+        }
+      ]
+    },
+    {
+      "kind": "note",
+      "created_dt": "2025-04-13T19:02:00Z",
+      "content": "Read this before the funeral.\nHe restores my soul.",
+      "references": [
+        { "human": "Psalm 23:1,4", "version_id": 111, "usfm": ["PSA.23.1", "PSA.23.4"] }
+      ]
+    },
+    {
+      "kind": "highlight",
+      "created_dt": "2025-05-01T12:00:00Z",
+      "color": "ff95ef",
+      "references": [
+        {
+          "human": "Philippians 4:13",
+          "version_id": 111,
+          "usfm": ["PHP.4.13"],
+          "text": "I can do all this through him who gives me strength."
+        }
+      ]
+    },
+    {
+      "kind": "highlight",
+      "created_dt": "2025-05-20T06:30:00Z",
+      "color": "00d6ff",
+      "references": [{ "human": "Isaiah 40:31", "version_id": 59, "usfm": ["ISA.40.31"] }]
+    },
+    {
+      "kind": "note",
+      "created_dt": "2025-06-08T10:10:00Z",
+      "content": "Ask Ann about the Greek in this one.",
+      "references": [{ "human": "John 1:1", "version_id": 424242, "usfm": ["JHN.1.1"] }]
+    },
+    {
+      "kind": "note",
+      "created_dt": "2025-06-15T21:45:00Z",
+      "content": "Sermon idea: waiting well."
+    },
+    {
+      "kind": "bookmark",
+      "created_dt": "2025-07-01T09:00:00Z",
+      "references": [{ "human": "Genesis 1", "version_id": 3034, "usfm": ["GEN.1.1"] }]
+    },
+    {
+      "kind": "highlight",
+      "created_dt": "2025-03-02T08:15:00Z",
+      "color": "fffe00",
+      "references": [{ "human": "John 3:16", "version_id": 3034, "usfm": ["JHN.3.16"] }]
+    }
+  ]
+}

@@ -486,6 +486,9 @@ importers:
       workbox-window:
         specifier: 'catalog:'
         version: 7.4.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@lamp/config':
         specifier: workspace:*

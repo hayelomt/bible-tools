@@ -289,7 +289,10 @@ describe('two devices editing offline', () => {
       phone.db,
     );
     await addTag({ kind: 'section', id: door.id }, 'shepherd', phone.db);
-    await updateSettings({ autoPreviewVerses: true }, phone.db);
+    await updateSettings(
+      { autoPreviewVerses: true, pasteChips: false, openInTargets: ['logos', 'youversion'] },
+      phone.db,
+    );
     await sync(laptop);
     await sync(phone);
 
@@ -326,6 +329,8 @@ describe('two devices editing offline', () => {
     expect(await db.userSettings.get(SETTINGS_KEY)).toMatchObject({
       reviewWindowDays: 7,
       autoPreviewVerses: true,
+      pasteChips: false,
+      openInTargets: ['logos', 'youversion'],
     });
   });
 });

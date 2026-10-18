@@ -36,7 +36,8 @@
     "minisearch": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "workbox-window": "catalog:"
+    "workbox-window": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@lamp/config": "workspace:*",

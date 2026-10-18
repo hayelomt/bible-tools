@@ -1,4 +1,10 @@
-import { DEFAULT_TRANSLATION, newId, SEED_TAGS, type UserSettings } from '@lamp/domain';
+import {
+  DEFAULT_TRANSLATION,
+  newId,
+  OPEN_IN_TARGETS,
+  SEED_TAGS,
+  type UserSettings,
+} from '@lamp/domain';
 import { action } from './action.ts';
 import { type LampDb, SETTINGS_KEY, SYNC_STATE_KEY } from './db.ts';
 
@@ -40,6 +46,8 @@ export async function ensureDevice(db: LampDb, initial: InitialSettings): Promis
           defaultTranslation: DEFAULT_TRANSLATION,
           reviewWindowDays: DEFAULT_REVIEW_WINDOW_DAYS,
           autoPreviewVerses: true,
+          pasteChips: true,
+          openInTargets: [...OPEN_IN_TARGETS],
           rev: 0,
           updatedAt: w.now,
         },

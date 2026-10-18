@@ -107,6 +107,8 @@ describe('a first pull from 0', () => {
       defaultTranslation: 'BSB',
       reviewWindowDays: 14,
       autoPreviewVerses: false,
+      pasteChips: true,
+      openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
       updatedAt: NOW,
     };
     await sync.pushOk(client, account, [

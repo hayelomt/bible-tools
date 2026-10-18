@@ -10,6 +10,7 @@ import { SectionTags } from '@/components/tags/section-tags.tsx';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { forgetUnsaved, keepUnsaved } from '@/data/unsaved.ts';
 import { momentLabel } from '@/lib/dates.ts';
+import { startVerseMatcher } from '@/verse-match/client.ts';
 import { SAVE_DELAY_MS } from '@/components/lesson/use-lesson-saver.ts';
 import { hasText, toBody } from './body.ts';
 import { sectionExtensions } from './extensions.ts';
@@ -167,7 +168,11 @@ export const SectionEditor = memo(function SectionEditor({
       clearTimeout(timer.current);
       timer.current = setTimeout(() => flush(), SAVE_DELAY_MS);
     },
-    onFocus: () => apiRef.current.setActive(id, true),
+    onFocus: () => {
+      apiRef.current.setActive(id, true);
+      // Ready by the first paste, usually (decided 2026-10-18); a lesson only read never starts it.
+      startVerseMatcher();
+    },
     onBlur: ({ editor: e }) => {
       flush(false);
       // Focus may come straight back (a section moved in the page); decide once it settles.

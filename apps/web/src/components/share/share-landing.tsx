@@ -1,5 +1,5 @@
 import type { VerseTextMatch } from '@lamp/bible-data';
-import { DEFAULT_TRANSLATION, isAppTranslation, type VerseRef } from '@lamp/domain';
+import { DEFAULT_TRANSLATION } from '@lamp/domain';
 import { Button, buttonVariants } from '@lamp/ui/components/button';
 import { Checkbox } from '@lamp/ui/components/checkbox';
 import { Dialog, DialogContent } from '@lamp/ui/components/dialog';
@@ -7,7 +7,6 @@ import { toast } from '@lamp/ui/components/sonner';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useState } from 'react';
-import { withBookText } from '@/components/inbox/add-box.tsx';
 import { ChipLine } from '@/components/inbox/inbox-list.tsx';
 import { type AddChoice, LessonPicker } from '@/components/reader/add-to-lesson.tsx';
 import { ScreenTitle } from '@/components/shell/slots.tsx';
@@ -22,6 +21,7 @@ import { useScreenReady } from '@/lib/screen-ready.ts';
 import { useAfter } from '@/lib/use-after.ts';
 import type { ShareSearch } from '@/routes/_app/share.tsx';
 import { readShare, type ShareReading, shareHints } from '@/share/read-share.ts';
+import { shareItems } from '@/share/share-items.ts';
 import { matchVerseText } from '@/verse-match/client.ts';
 
 /**
@@ -48,8 +48,8 @@ export function ShareLanding({ title, text, url, from }: ShareSearch) {
     };
   }, [empty, input]);
   const reading = useMemo(
-    () => readShare(input, matches ?? [], translation),
-    [input, matches, translation],
+    () => readShare(input, matches ?? [], translation, from === 'clipboard' ? 'pasted' : 'shared'),
+    [input, matches, translation, from],
   );
   useScreenReady('share', true);
 
@@ -103,26 +103,11 @@ function Found({
   const count = verses.length > 0 ? chosen.length : 1;
   const firstItem = { ref: chosen[0]?.ref ?? null, text: note };
 
-  async function items(): Promise<NewInboxItem[]> {
-    if (verses.length === 0) return [{ origin, ref: null, text: note, sourceUrl }];
-    const refs = await Promise.all(
-      chosen.map(({ ref, fromBook }) =>
-        fromBook && isAppTranslation(ref.translation) ? withBookText(ref, ref.translation) : ref,
-      ),
-    );
-    return refs.map((ref: VerseRef, i) => ({
-      origin,
-      ref,
-      text: i === 0 ? note : null,
-      sourceUrl,
-    }));
-  }
-
   async function add(target: PromoteTarget | null) {
     if (busy || count === 0) return;
     setBusy(true);
     try {
-      const shared = await addShared(await items(), target);
+      const shared = await addShared(await shareItems(reading, chosen, origin), target);
       const undo = {
         label: 'Undo',
         onClick: () => runWrite(undoShared(shared), 'a share'),

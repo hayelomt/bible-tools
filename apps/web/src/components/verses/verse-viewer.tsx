@@ -22,6 +22,7 @@ import {
   type OpenChip,
   useOpenChip,
 } from './verse-chip.ts';
+import { OpenInLinks } from './open-in-links.tsx';
 import { LAPTOP_QUERY } from './verse-suggestions.tsx';
 import { VerseText } from './verse-text.tsx';
 
@@ -60,6 +61,7 @@ export function VerseViewer() {
             <ChipText chip={shown} />
             <IndexLink chip={shown} />
             <ChipActions chip={shown} />
+            <OpenInLinks chip={shown.ref} />
           </PopoverContent>
         )}
       </Popover>
@@ -81,6 +83,7 @@ export function VerseViewer() {
             <ChipText chip={shown} />
             <IndexLink chip={shown} />
             <ChipActions chip={shown} />
+            <OpenInLinks chip={shown.ref} />
           </div>
         </SheetContent>
       )}
