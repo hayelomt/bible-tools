@@ -9,6 +9,10 @@ everything you've ever written about a passage.
 **Status:** early development. The foundations (milestone M1) are being built; the app can't be
 used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
 
+# Motivation
+
+- @hawites won't share notes on class, trying to community source notes
+
 ## What it does
 
 - **Capture a lesson** from a sermon or a study in under two minutes, on a phone, offline.
