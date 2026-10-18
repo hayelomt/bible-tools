@@ -70,7 +70,7 @@ export async function writeRows(page: Page, seed: Seed) {
 /** From the lessons home: New lesson, a title, and wait until it's stored. */
 export async function newLesson(page: Page, title: string) {
   await page.getByRole('button', { name: 'New lesson' }).click();
-  const titleField = page.getByRole('textbox', { name: 'Title' });
+  const titleField = page.getByRole('textbox', { name: 'Title', exact: true });
   await expect(titleField).toBeFocused();
   await titleField.fill(title);
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();

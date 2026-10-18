@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { atTimeOfDay, clockLabel, offsetLabel, timeOfDay } from './source-time.ts';
+import {
+  atTimeOfDay,
+  clockLabel,
+  midnightOf,
+  offsetLabel,
+  offsetSeconds,
+  parseMoment,
+  timeOfDay,
+} from './source-time.ts';
 
 describe('source times', () => {
   it('show minutes and seconds, hours once there are any, and a minus before the start', () => {
@@ -22,5 +30,27 @@ describe('source times', () => {
     expect(timeOfDay(moved!)).toBe('10:30');
     expect(atTimeOfDay(start, '25:00')).toBeNull();
     expect(atTimeOfDay(start, 'soon')).toBeNull();
+  });
+
+  it('read a typed time into the recording, or a page', () => {
+    expect(parseMoment('9:45')).toEqual({ kind: 'time', ms: 585_000 });
+    expect(parseMoment(' 09:45 ')).toEqual({ kind: 'time', ms: 585_000 });
+    expect(parseMoment('1:02:10')).toEqual({ kind: 'time', ms: 3_730_000 });
+    expect(parseMoment('75:00')).toEqual({ kind: 'time', ms: 4_500_000 });
+    expect(parseMoment('p. 112')).toEqual({ kind: 'page', page: '112' });
+    expect(parseMoment('page 7')).toEqual({ kind: 'page', page: '7' });
+    expect(parseMoment('pp. 112-14')).toEqual({ kind: 'page', page: '112–14' });
+    expect(parseMoment('xii')).toBeNull();
+    expect(parseMoment('9:75')).toBeNull();
+    expect(parseMoment('1:75:00')).toBeNull();
+    expect(parseMoment('')).toBeNull();
+  });
+
+  it('give whole seconds into the source for a link, and anchor a lesson without a start', () => {
+    expect(offsetSeconds('2026-10-18T10:39:45.900Z', '2026-10-18T10:30:00.000Z')).toBe(585);
+    expect(offsetSeconds('2026-10-18T10:29:00.000Z', '2026-10-18T10:30:00.000Z')).toBe(0);
+    const midnight = midnightOf('2026-10-12');
+    expect(timeOfDay(midnight, true)).toBe('00:00:00');
+    expect(new Date(midnight).getDate()).toBe(12);
   });
 });

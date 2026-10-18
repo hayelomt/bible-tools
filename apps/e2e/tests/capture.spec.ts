@@ -107,8 +107,9 @@ test('captures forty minutes of a sermon in plain sections with times, and Done 
     .getByLabel('The recording starts at')
     .fill(`${pad(start.getHours())}:${pad(start.getMinutes())}:${pad(start.getSeconds())}`);
   await dialog.getByRole('button', { name: 'Set' }).click();
-  await expect(capture(page)).toContainText('00:10');
-  await expect(capture(page)).toContainText('07:45');
+  // The start typed is whole seconds, so a time can read a second later than the typing moved it.
+  await expect(capture(page)).toContainText(/00:1[01]/);
+  await expect(capture(page)).toContainText(/07:4[56]/);
 });
 
 test('a lesson’s formatted sections show read-only in capture mode, and stay as they are', async ({
@@ -116,7 +117,7 @@ test('a lesson’s formatted sections show read-only in capture mode, and stay a
 }) => {
   await page.goto('/');
   await newLesson(page, 'Psalm 23');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await page.keyboard.press('Control+b');
   await page.keyboard.type('Bold point');
   await expect.poll(async () => (await rows(page, 'section')).length).toBe(1);

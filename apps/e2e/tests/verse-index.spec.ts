@@ -7,7 +7,7 @@ const suggestions = (page: Page) => page.getByRole('listbox', { name: 'Verse sug
 async function lessonCiting(page: Page, title: string, note: string) {
   await page.goto('/');
   await newLesson(page, title);
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await page.keyboard.type(note);
   await expect(suggestions(page)).toBeVisible();
   await page.keyboard.press('Enter');

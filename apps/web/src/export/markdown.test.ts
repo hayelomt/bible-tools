@@ -11,7 +11,7 @@ import { createTakeaway } from '@/data/actions/takeaways.ts';
 import { LampDb } from '@/data/db.ts';
 import { ensureDevice } from '@/data/setup.ts';
 import { exportCommentary, exportLesson, exportSeries } from './load.ts';
-import { fileName } from './markdown.ts';
+import { fileName, sectionMoment, sourceOf } from './markdown.ts';
 
 let db: LampDb;
 let dbCount = 0;
@@ -61,11 +61,12 @@ async function goodShepherd(seriesId: string | null) {
       kind: 'sermon',
       speaker: 'Pastor Ann',
       church: 'Grace Chapel',
-      sourceType: null,
-      sourceTitle: null,
+      // A recording, so its sections' times link to their moments (M11-08).
+      sourceType: 'sermon',
+      sourceTitle: 'Sunday service',
       sourceAuthor: null,
-      sourceUrl: null,
-      sourceStartedAt: null,
+      sourceUrl: 'https://youtu.be/abc123',
+      sourceStartedAt: '2026-10-12T09:30:00.000Z',
       mainPassages: [
         {
           book: 'JHN',
@@ -99,7 +100,7 @@ async function goodShepherd(seriesId: string | null) {
       }),
       conflictOf: null,
       conflictDevice: null,
-      sourceAt: null,
+      sourceAt: '2026-10-12T09:39:45.000Z',
       sourcePage: null,
     },
     db,
@@ -126,7 +127,7 @@ async function goodShepherd(seriesId: string | null) {
       conflictOf: null,
       conflictDevice: null,
       sourceAt: null,
-      sourcePage: null,
+      sourcePage: '112',
     },
     db,
   );
@@ -141,7 +142,7 @@ async function goodShepherd(seriesId: string | null) {
       ),
       conflictOf: null,
       conflictDevice: null,
-      sourceAt: null,
+      sourceAt: '2026-10-12T10:05:02.000Z',
       sourcePage: null,
     },
     db,
@@ -389,5 +390,36 @@ describe('fileName', () => {
       const exported = await exportCommentary({ book: 'ROM', chapter: 3 }, db);
       expect(exported.markdown).toBe('# Commentary on Romans 3\n\n0 sections in 0 lessons\n');
     });
+  });
+});
+
+describe('sources (M11-08)', () => {
+  const lesson = {
+    sourceType: 'book' as const,
+    sourceTitle: 'Knowing God',
+    sourceAuthor: 'J. I. Packer',
+    sourceUrl: null,
+    sourceStartedAt: '2026-10-12T09:30:00.000Z',
+  };
+
+  it('name a book by its title and author, and a lesson without a source not at all', () => {
+    expect(sourceOf(lesson)).toEqual({ words: 'Book: Knowing God · J. I. Packer', url: null });
+    expect(
+      sourceOf({ ...lesson, sourceType: null, sourceTitle: null, sourceAuthor: null }),
+    ).toBeNull();
+  });
+
+  it('link a time only where the link can jump to it', () => {
+    const at = { sourceAt: '2026-10-12T09:39:45.000Z', sourcePage: null };
+    expect(sectionMoment(at, lesson)).toEqual({ label: '09:45', href: null });
+    expect(sectionMoment(at, { ...lesson, sourceUrl: 'https://gracechapel.org/s/1' })).toEqual({
+      label: '09:45',
+      href: null,
+    });
+    expect(sectionMoment({ sourceAt: null, sourcePage: '112' }, lesson)).toEqual({
+      label: 'p. 112',
+      href: null,
+    });
+    expect(sectionMoment({ sourceAt: null, sourcePage: null }, lesson)).toBeNull();
   });
 });

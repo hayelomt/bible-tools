@@ -56,7 +56,7 @@ test('a lesson captured offline as a guest reaches a second device, and a two-de
   await laptop.reload();
   await expect(status(laptop)).toHaveText('On this device');
   await newLesson(laptop, TITLE);
-  await laptop.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await laptop.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await expect(note(laptop)).toBeFocused();
   await laptop.keyboard.type('Jesus is the door');
   await laptop.keyboard.press('Escape');

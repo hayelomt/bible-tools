@@ -11,7 +11,7 @@ const openIn = (page: Page) => page.getByRole('region', { name: 'Open in' });
 async function openChip(page: Page) {
   await page.goto('/');
   await newLesson(page, 'Romans 8');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await expect(note(page)).toBeFocused();
   await page.keyboard.type('Rom 8:28-30');
   await expect(page.getByRole('option', { name: /^Romans 8:28–30/ })).toBeVisible();

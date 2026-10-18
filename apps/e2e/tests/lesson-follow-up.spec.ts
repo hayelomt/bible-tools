@@ -217,7 +217,7 @@ test.describe('on a laptop', () => {
     // The same column as the details, right of the notes.
     const left = async (name: string) =>
       (await page.getByRole('region', { name }).boundingBox())!.x;
-    const title = (await page.getByRole('textbox', { name: 'Title' }).boundingBox())!;
+    const title = (await page.getByRole('textbox', { name: 'Title', exact: true }).boundingBox())!;
     expect(await left('Details')).toBeGreaterThan(title.x + title.width);
     expect(await left('Takeaways')).toBe(await left('Details'));
     expect(await left('Questions')).toBe(await left('Details'));

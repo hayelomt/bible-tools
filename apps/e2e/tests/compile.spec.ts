@@ -189,7 +189,9 @@ test.describe('on a phone', () => {
       .getByRole('link', { name: /^Justified by faith · Sun 7 Sept? 2025/ })
       .last()
       .click();
-    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Justified by faith');
+    await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
+      'Justified by faith',
+    );
     await expect(page.locator('[data-flash]')).toContainText('Paul’s grief.');
   });
 

@@ -18,6 +18,7 @@ import { PanelHeading } from './panel-heading.tsx';
 import { LessonLinkedFrom } from '@/components/links/linked-from.tsx';
 import { Questions, type QuestionsApi } from './questions.tsx';
 import { type PanelApi, Takeaways } from './takeaways.tsx';
+import { SourceLine } from './source-line.tsx';
 import { useLessonSaver } from './use-lesson-saver.ts';
 
 /** The side panel needs room for the sidebar, the 42 rem column and itself. */
@@ -208,6 +209,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
           </>
         )}
       </p>
+      <SourceLine source={values} />
 
       {wide ? (
         <SidePanel>
@@ -233,6 +235,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
           <SectionList
             lessonId={id}
             sourceStartedAt={lesson.sourceStartedAt}
+            sourceUrl={lesson.sourceUrl}
             focusFirst={focusFirst}
             request={request}
             onSavingChange={setSectionsSaving}

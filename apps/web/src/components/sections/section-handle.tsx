@@ -21,6 +21,8 @@ interface SectionHandleProps {
   hidden: boolean;
   /** Tags: opens the tag input under the section. */
   onEditTags: () => void;
+  /** Time or page: the section's place in the lesson's source (M11-07). */
+  onEditMoment: () => void;
 }
 
 /**
@@ -36,6 +38,7 @@ export const SectionHandle = memo(function SectionHandle({
   drag,
   hidden,
   onEditTags,
+  onEditMoment,
 }: SectionHandleProps) {
   const [open, setOpen] = useState(false);
   const id = row.item.id;
@@ -79,6 +82,7 @@ export const SectionHandle = memo(function SectionHandle({
             <>
               <DropdownMenuItem onClick={() => api.reply(id)}>Reply</DropdownMenuItem>
               <DropdownMenuItem onClick={onEditTags}>Tags</DropdownMenuItem>
+              <DropdownMenuItem onClick={onEditMoment}>Time or page…</DropdownMenuItem>
               <DropdownMenuItem onClick={() => api.pickTemplate(id)}>
                 Add a template…
               </DropdownMenuItem>

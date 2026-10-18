@@ -146,7 +146,7 @@ test('a note without a verse is kept as a note', async ({ page }) => {
   await expect(dialog.getByRole('radio', { name: /New lesson/ })).toBeChecked();
   await dialog.getByRole('button', { name: 'Add' }).click();
   await expect(toast(page, 'Added to Look up "hesed" before Sunday.')).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue(
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
     'Look up "hesed" before Sunday.',
   );
 });

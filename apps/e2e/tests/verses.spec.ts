@@ -39,7 +39,7 @@ async function withoutBook(page: Page, code: string): Promise<() => Promise<void
 async function startLesson(page: Page) {
   await page.goto('/');
   await newLesson(page, 'Romans 8');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await expect(note(page)).toBeFocused();
 }
 

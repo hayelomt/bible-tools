@@ -14,7 +14,7 @@ const saved = (page: Page, text: string) =>
 async function lessonWith(page: Page, title: string, text: string): Promise<string> {
   await page.goto('/');
   await newLesson(page, title);
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await expect(note(page)).toBeFocused();
   await page.keyboard.type(text);
   await saved(page, text);
@@ -71,7 +71,7 @@ test('a link made with [[ opens its target, follows a rename and breaks visibly 
   ).toHaveText([/Lazarus/]);
 
   // A rename shows in the chip.
-  await page.getByRole('textbox', { name: 'Title' }).fill('One Flock');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).fill('One Flock');
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
   await page.goto(lazarus);
   await expect(page.getByRole('link', { name: 'Link to lesson One Flock. Open.' })).toBeVisible();

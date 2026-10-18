@@ -4,7 +4,14 @@ import { ArrowLeft, Printer } from 'lucide-react';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { outline } from '@/components/sections/outline.ts';
 import type { SeriesForExport } from '@/export/load.ts';
-import { headerLines, type LessonForExport, scriptureCredit, tagLabel } from '@/export/markdown.ts';
+import {
+  headerLines,
+  type LessonForExport,
+  scriptureCredit,
+  sectionMoment,
+  sourceOf,
+  tagLabel,
+} from '@/export/markdown.ts';
 import { shortDateWithYear } from '@/lib/dates.ts';
 import { count, SERIES_KIND_LABELS } from '@/lib/labels.ts';
 import type { QuestionView } from '@/data/question-status.ts';
@@ -75,6 +82,7 @@ export function LessonDocument({ data, level = 1 }: { data: LessonForExport; lev
   const Sub = level === 1 ? 'h2' : 'h3';
   const headingLevel = level === 1 ? 2 : 3;
   const rows = outline(data.sections);
+  const source = sourceOf(data.lesson);
 
   return (
     <article className="flex flex-col gap-4 leading-relaxed">
@@ -89,10 +97,25 @@ export function LessonDocument({ data, level = 1 }: { data: LessonForExport; lev
             {line}
           </p>
         ))}
+        {source && (
+          // The link written out, so a printed page still says where the source is.
+          <p className="font-sans text-sm break-words text-neutral-600">
+            {source.words}
+            {source.url && (
+              <>
+                {' · '}
+                <a href={source.url} className="underline">
+                  {source.url}
+                </a>
+              </>
+            )}
+          </p>
+        )}
       </header>
 
       {rows.map((row) => {
         const tags = data.sectionTags.get(row.item.id) ?? [];
+        const moment = sectionMoment(row.item, data.lesson);
         return (
           <section
             key={row.item.id}
@@ -102,6 +125,12 @@ export function LessonDocument({ data, level = 1 }: { data: LessonForExport; lev
                 : 'ml-4 flex flex-col gap-3 border-l-2 border-neutral-300 pl-4 sm:ml-6'
             }
           >
+            {moment && (
+              // "[09:45]" or "[p. 112]" before the section's first line (M11-08).
+              <p className="-mb-3 font-sans text-sm text-neutral-600 tabular-nums">
+                [{moment.label}]
+              </p>
+            )}
             <PrintBody body={row.item.body} headingLevel={headingLevel} />
             {tags.length > 0 && (
               <p className="font-sans text-sm text-neutral-600 italic">

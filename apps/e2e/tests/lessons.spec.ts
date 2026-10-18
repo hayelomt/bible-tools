@@ -23,7 +23,7 @@ test.describe('on a phone', () => {
 
     // Leaving a new lesson before it has a title leaves nothing behind.
     await page.getByRole('button', { name: 'New lesson' }).click();
-    await expect(page.getByRole('textbox', { name: 'Title' })).toBeFocused();
+    await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toBeFocused();
     await page.getByRole('link', { name: 'Back' }).click();
     await expect(page.getByText('Your notes start here.')).toBeVisible();
     expect(await rows(page, 'lesson')).toEqual([]);
@@ -31,7 +31,9 @@ test.describe('on a phone', () => {
     await newLesson(page, 'The Good Shepherd');
     await expect(page).not.toHaveURL(/new=/);
     await page.reload();
-    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('The Good Shepherd');
+    await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
+      'The Good Shepherd',
+    );
     const [lesson] = await rows<{ kind: string; seriesId: null; date: string }>(page, 'lesson');
     expect(lesson).toMatchObject({ kind: 'sermon', seriesId: null });
     expect(lesson?.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -101,7 +103,7 @@ test.describe('on a phone', () => {
     await newSeries(page, 'John');
     await expect(page.getByText('No lessons in this series yet.')).toBeVisible();
     await page.getByRole('button', { name: 'New lesson in John' }).click();
-    await page.getByRole('textbox', { name: 'Title' }).fill('The Good Shepherd');
+    await page.getByRole('textbox', { name: 'Title', exact: true }).fill('The Good Shepherd');
     await expect(page.getByText('Saved', { exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Back' }).click();
     await newSeries(page, 'Acts');
@@ -136,7 +138,7 @@ test.describe('on a phone', () => {
   test('a series can be renamed, and deleting it keeps its lessons', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'New lesson' }).click();
-    await page.getByRole('textbox', { name: 'Title' }).fill('Morning study');
+    await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Morning study');
     await expect(page.getByText('Saved', { exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Back' }).click();
     await newSeries(page, 'Psalms');
@@ -171,7 +173,9 @@ test.describe('on a phone', () => {
     await page.getByRole('button', { name: 'Lesson actions' }).click();
     await page.getByRole('menuitem', { name: 'Delete lesson…' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
-    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('To delete');
+    await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
+      'To delete',
+    );
 
     const address = page.url();
     await page.getByRole('button', { name: 'Lesson actions' }).click();
@@ -191,7 +195,7 @@ test.describe('on a laptop', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Lessons');
     await page.keyboard.press('n');
-    await expect(page.getByRole('textbox', { name: 'Title' })).toBeFocused();
+    await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toBeFocused();
     await page.keyboard.type('Morning study');
     await expect(page.getByText('Saved', { exact: true })).toBeVisible();
 
@@ -206,7 +210,7 @@ test.describe('on a laptop', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Lessons');
     for (const n of [1, 2, 3, 4, 5, 6]) {
       await page.keyboard.press('n');
-      await page.getByRole('textbox', { name: 'Title' }).fill(`Lesson ${n}`);
+      await page.getByRole('textbox', { name: 'Title', exact: true }).fill(`Lesson ${n}`);
       await expect(page.getByText('Saved', { exact: true })).toBeVisible();
       await page.getByRole('link', { name: 'Back' }).click();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Lessons');

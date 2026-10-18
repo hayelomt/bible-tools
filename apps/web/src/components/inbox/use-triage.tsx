@@ -102,6 +102,8 @@ export function useTriage(items: readonly InboxItem[], onDone?: () => void) {
 
   return {
     open: setDialog,
+    /** The dialog open now, if any. */
+    dialog,
     dialogs,
     snooze: (until: string) => {
       onDone?.();

@@ -59,12 +59,17 @@ export function InboxList({
   fresh,
   selection = null,
   onSelect,
+  current = null,
+  onCurrent,
 }: {
   entries: InboxEntry[];
   fresh?: string | null;
   selection?: Selection | null;
   /** Holding an item (or a right click) starts selecting with it. */
   onSelect?: (id: string) => void;
+  /** The item the keys act on (M11-05), with the focus ring; focus on an item makes it current. */
+  current?: string | null;
+  onCurrent?: (id: string) => void;
 }) {
   const day = useToday();
   const ids = entries.flatMap((entry) => (entry.kind === 'item' ? [entry.item.id] : []));
@@ -81,6 +86,8 @@ export function InboxList({
               fresh={entry.item.id === fresh}
               selection={selection}
               onSelect={onSelect}
+              current={entry.item.id === current}
+              onCurrent={onCurrent}
             />
           </li>
         ) : (
@@ -128,6 +135,8 @@ function InboxRow({
   fresh,
   selection,
   onSelect,
+  current,
+  onCurrent,
 }: {
   item: InboxItem;
   tags: Tag[];
@@ -135,18 +144,24 @@ function InboxRow({
   fresh: boolean;
   selection: Selection | null;
   onSelect?: (id: string) => void;
+  current: boolean;
+  onCurrent?: (id: string) => void;
 }) {
   const label = inboxItemTitle(item);
   const triage = useTriage([item]);
   const selected = selection?.ids.has(item.id) ?? false;
   const checkId = useId();
-  const old = oldLabel(item, day);
 
   return (
     // While selecting, a tap on the item ticks it; the tick box is the way for the keyboard.
     // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <article
       aria-label={label}
+      // The keys' focus ring (M11-05): `j` `k` move it here; Tab goes to the item's buttons.
+      tabIndex={-1}
+      data-current={current || undefined}
+      data-inbox-item={item.id}
+      onFocus={() => onCurrent?.(item.id)}
       data-fresh={fresh || undefined}
       data-selected={selected || undefined}
       onContextMenu={(event) => {
@@ -163,7 +178,7 @@ function InboxRow({
         selection.toggle(item.id);
       }}
       className={cn(
-        'group/item -mx-2 flex gap-3 rounded-lg px-2 py-1 transition-colors duration-1000',
+        'group/item -mx-2 flex gap-3 rounded-lg px-2 py-1 transition-colors duration-1000 outline-none focus-visible:ring-2 focus-visible:ring-ring',
         fresh && 'bg-muted',
         selection && 'cursor-pointer',
         selected && 'bg-muted duration-0',
@@ -188,17 +203,7 @@ function InboxRow({
             ))}
           </p>
         )}
-        <p className="text-sm text-muted-foreground">
-          {[
-            ORIGIN_WORDS[item.origin],
-            sourceHost(item.sourceUrl),
-            receivedLabel(item.receivedAt),
-            // Muted words, never the destructive colour (wireframes/sermon.md).
-            old,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
+        <p className="text-sm text-muted-foreground">{itemMeta(item, day)}</p>
         {!selection && (
           <div className="flex items-center justify-between gap-2 pointer-fine:opacity-0 pointer-fine:group-focus-within/item:opacity-100 pointer-fine:group-hover/item:opacity-100 pointer-fine:has-aria-expanded:opacity-100">
             <Button variant="outline" size="sm" onClick={() => triage.open('send')}>
@@ -211,6 +216,19 @@ function InboxRow({
       {triage.dialogs}
     </article>
   );
+}
+
+/** "Shared · bible.com · 10:42 · 39 days old": how it came, when, and how long it's waited. */
+export function itemMeta(item: InboxItem, day: string): string {
+  return [
+    ORIGIN_WORDS[item.origin],
+    sourceHost(item.sourceUrl),
+    receivedLabel(item.receivedAt),
+    // Muted words, never the destructive colour (wireframes/sermon.md).
+    oldLabel(item, day),
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 /**

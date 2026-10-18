@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { NotFoundScreen } from '@/components/error-screen.tsx';
 import { importDay, importTitle, InboxList } from '@/components/inbox/inbox-list.tsx';
 import { InboxSelectionBar, useInboxSelection } from '@/components/inbox/selection-bar.tsx';
+import { useInboxKeys } from '@/components/inbox/triage-keys.tsx';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { ScreenActions, ScreenTitle } from '@/components/shell/slots.tsx';
 import {
@@ -44,6 +45,7 @@ function ImportScreen() {
   const day = useToday();
   const opened = useLiveQuery(() => importItems(importId, day), [importId, day]);
   const select = useInboxSelection(opened?.items ?? NO_ITEMS);
+  const keys = useInboxKeys(opened?.items ?? NO_ITEMS, select);
   useScreenReady('inbox-import', opened !== undefined);
   if (opened === undefined) return <ScreenSkeleton />;
   if (opened === null) {
@@ -78,7 +80,10 @@ function ImportScreen() {
             entries={opened.items.map((item) => ({ kind: 'item', item }))}
             selection={select.selection}
             onSelect={select.start}
+            current={keys.current}
+            onCurrent={keys.onCurrent}
           />
+          {keys.ui}
           {select.selection && (
             <>
               <div aria-hidden className="h-16" />

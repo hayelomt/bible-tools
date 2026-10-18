@@ -24,7 +24,7 @@ async function tagSection(page: Page, name: string, n = 0) {
 async function lessonWithNote(page: Page, title: string, text: string) {
   await page.goto('/');
   await newLesson(page, title);
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await page.keyboard.type(text);
   await page.keyboard.press('Escape');
 }
@@ -58,7 +58,9 @@ test.describe('on a phone', () => {
 
     // A section opens its lesson, scrolled to it and highlighted for a moment.
     await page.getByRole('link', { name: 'Apart from me you can do nothing.' }).click();
-    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Abiding in the vine');
+    await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
+      'Abiding in the vine',
+    );
     await expect(page.locator('[data-flash]')).toContainText('Apart from me');
     await expect(page.locator('[data-flash]')).toHaveCount(0, { timeout: 5000 });
   });

@@ -19,7 +19,9 @@ import { linkTitle } from '@/data/links.ts';
 import type { QuestionView } from '@/data/question-status.ts';
 import type { Commentary, CompiledNote } from '@/search/compile.ts';
 import { longDate } from '@/lib/dates.ts';
-import { count, SERIES_KIND_LABELS, KIND_LABELS } from '@/lib/labels.ts';
+import { count, SERIES_KIND_LABELS, KIND_LABELS, SOURCE_TYPE_LABELS } from '@/lib/labels.ts';
+import { momentUrl } from '@/lib/media-time.ts';
+import { offsetLabel, offsetSeconds, pageLabel } from '@/lib/source-time.ts';
 
 /**
  * Markdown export (F11, TECH-DESIGN §8.7, wireframes/export.md): a lesson, or a series with its
@@ -34,6 +36,9 @@ import { count, SERIES_KIND_LABELS, KIND_LABELS } from '@/lib/labels.ts';
  *   decided in M10-05): "[The Good Shepherd](2026-10-12-the-good-shepherd.md)". Lessons exported
  *   into one folder link to each other. A deleted target is its last title and "(deleted)".
  * - The translations quoted are credited at the end (decided 2026-10-14).
+ * - The lesson's source is a line of its header, its link in angle brackets; a section's time or
+ *   page starts it, "[09:45]" or "[p. 112]", the time linked to that moment where the source's link
+ *   can jump (F28, M11-08, decided 2026-10-19).
  */
 
 /** What the export knows of each link target it found, by id: null for one deleted here. */
@@ -154,7 +159,11 @@ function lessonBlocks(data: LessonForExport, level: number): string[] {
   const links = linkWriter(data.links ?? new Map());
 
   for (const row of outline(data.sections)) {
-    const body = toMarkdown(row.item.body, { headingLevel: level + 1, links }).trimEnd();
+    const body = withMoment(
+      row.item,
+      lesson,
+      toMarkdown(row.item.body, { headingLevel: level + 1, links }).trimEnd(),
+    );
     const tags = data.sectionTags.get(row.item.id) ?? [];
     const lines = [body, tags.length > 0 ? `*${tags.map(tagLabel).join(' · ')}*` : '']
       .filter(Boolean)
@@ -175,9 +184,66 @@ function lessonBlocks(data: LessonForExport, level: number): string[] {
   return blocks;
 }
 
+/** A link that can't end its Markdown early: brackets and spaces percent-encoded. */
+const safeHref = (url: string) =>
+  url.replaceAll(/[()<> ]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+
 /** The lesson's header lines, in one paragraph with hard breaks. */
 function header(data: LessonForExport): string {
-  return headerLines(data).map(escapeMarkdown).join('\\\n');
+  const lines = headerLines(data).map(escapeMarkdown);
+  const source = sourceOf(data.lesson);
+  if (source) {
+    const words = escapeMarkdown(source.words);
+    lines.push(source.url ? `${words} · <${safeHref(source.url)}>` : words);
+  }
+  return lines.join('\\\n');
+}
+
+type SourceFields = Pick<
+  Lesson,
+  'sourceType' | 'sourceTitle' | 'sourceAuthor' | 'sourceUrl' | 'sourceStartedAt'
+>;
+
+/**
+ * The lesson's source for the exports' header: "Sermon: Sunday service · Pastor Ann" and its
+ * link, which the print view and Markdown each write their own way; null without one.
+ */
+export function sourceOf(lesson: SourceFields): { words: string; url: string | null } | null {
+  const parts = [lesson.sourceTitle, lesson.sourceAuthor].filter(Boolean).join(' · ');
+  if (!parts && !lesson.sourceUrl) return null;
+  const type = lesson.sourceType ? SOURCE_TYPE_LABELS[lesson.sourceType] : 'Source';
+  return { words: parts ? `${type}: ${parts}` : type, url: lesson.sourceUrl };
+}
+
+/**
+ * A section's place in the source, as the exports mark it: "09:45" with the link to that moment
+ * where there is one, or "p. 112"; null for neither.
+ */
+export function sectionMoment(
+  section: Pick<Section, 'sourceAt' | 'sourcePage'>,
+  lesson: SourceFields,
+): { label: string; href: string | null } | null {
+  if (section.sourceAt && lesson.sourceStartedAt) {
+    const seconds = offsetSeconds(section.sourceAt, lesson.sourceStartedAt);
+    return {
+      label: offsetLabel(section.sourceAt, lesson.sourceStartedAt),
+      href: lesson.sourceUrl ? momentUrl(lesson.sourceUrl, seconds) : null,
+    };
+  }
+  return section.sourcePage ? { label: pageLabel(section.sourcePage), href: null } : null;
+}
+
+/**
+ * "[09:45](https://youtu.be/…?t=585) The door…" at the start of a section that opens with a
+ * paragraph; on a line of its own above a heading or a list. A bracket alone, with no link
+ * definition to match, shows as typed.
+ */
+function withMoment(section: Section, lesson: Lesson, body: string): string {
+  const moment = sectionMoment(section, lesson);
+  if (!moment) return body;
+  const mark = moment.href ? `[${moment.label}](${safeHref(moment.href)})` : `[${moment.label}]`;
+  if (!body) return mark;
+  return section.body.content[0]?.type === 'paragraph' ? `${mark} ${body}` : `${mark}\n\n${body}`;
 }
 
 /**

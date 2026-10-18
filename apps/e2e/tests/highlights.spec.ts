@@ -107,7 +107,7 @@ test('adds verses to a new lesson and to an existing one', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Open', exact: true }).click();
   await expect(page).toHaveURL(/\/lessons\/[\w-]+\?section=/);
-  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('John 10:14');
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue('John 10:14');
   await expect(page.getByText('Personal', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Known by my own')).toBeVisible();
 

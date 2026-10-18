@@ -56,6 +56,8 @@ export interface SectionItem extends OutlineItem {
   conflict: { of: string; device: string | null; time: string } | null;
   /** The moment in the lesson's source it was captured at (M11-01); null for none. */
   sourceAt: string | null;
+  /** Its page in a book (M11-07); null for none. */
+  sourcePage: string | null;
 }
 export type SectionRow = OutlineRow<SectionItem>;
 
@@ -93,6 +95,8 @@ export interface SectionListApi {
   lessonId: string;
   /** The lesson's `sourceStartedAt`, which captured sections' times count from. */
   sourceStartedAt: string | null;
+  /** The lesson's `sourceUrl`, which a section's time opens at that moment (M11-07). */
+  sourceUrl: string | null;
   /** Runs writes one after another, so a reply is never stored before its section. */
   enqueue: (write: () => Promise<unknown>) => void;
   /** A change is waiting to be stored (typing hasn't settled yet). */
@@ -144,6 +148,7 @@ export type SectionRequest =
 interface SectionListProps {
   lessonId: string;
   sourceStartedAt: string | null;
+  sourceUrl: string | null;
   /** Bumped to put the cursor in the first section (Enter in the title). */
   focusFirst: number;
   request?: SectionRequest;
@@ -158,6 +163,7 @@ interface SectionListProps {
 export function SectionList({
   lessonId,
   sourceStartedAt,
+  sourceUrl,
   focusFirst,
   request,
   onSavingChange,
@@ -228,6 +234,7 @@ export function SectionList({
           updatedAt: null,
           conflict: null,
           sourceAt: null,
+          sourcePage: null,
         })),
     ];
     return outline(items);
@@ -403,6 +410,7 @@ export function SectionList({
     return {
       lessonId,
       sourceStartedAt,
+      sourceUrl,
       enqueue,
       setDirty: (id, isDirty) =>
         setDirtyIds((ids) => {
@@ -564,7 +572,7 @@ export function SectionList({
         updateDrafts((ds) => ds.filter((d) => d.id !== id));
       },
     };
-  }, [lessonId, sourceStartedAt, addDraft, updateDrafts, wasDragged]);
+  }, [lessonId, sourceStartedAt, sourceUrl, addDraft, updateDrafts, wasDragged]);
   useLayoutEffect(() => {
     apiRef.current = api;
   });

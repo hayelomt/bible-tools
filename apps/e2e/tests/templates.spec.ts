@@ -16,7 +16,7 @@ test('a template makes its sections in order, which then edit, move and delete l
 }) => {
   await page.goto('/');
   await newLesson(page, 'Psalm 23');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
 
   // The empty first section offers a template until something is typed.
   await page.getByRole('button', { name: 'Start from a template' }).click();

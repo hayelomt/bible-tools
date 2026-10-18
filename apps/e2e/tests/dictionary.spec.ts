@@ -63,7 +63,7 @@ test('a lesson that cites KJV text has the dictionary, whatever the translation'
   // A BSB verse has nothing for it to explain.
   await page.goto('/');
   await newLesson(page, 'Hindered');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await page.keyboard.type('Paul was hindered, Rom 1:13');
   await page.keyboard.press('Enter');
   await expect(note(page)).toContainText('Romans 1:13 · BSB');
@@ -73,7 +73,7 @@ test('a lesson that cites KJV text has the dictionary, whatever the translation'
   await page.goto('/');
   await newLesson(page, 'Let hitherto');
   const lesson = page.url();
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await page.keyboard.type('Paul was let, Rom 1:13');
   await page.keyboard.press('Enter');
   await expect(note(page)).toContainText('Romans 1:13 · KJV');

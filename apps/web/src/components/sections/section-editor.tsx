@@ -12,12 +12,12 @@ import { SectionTags } from '@/components/tags/section-tags.tsx';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { forgetUnsaved, keepUnsaved } from '@/data/unsaved.ts';
 import { momentLabel } from '@/lib/dates.ts';
-import { offsetLabel } from '@/lib/source-time.ts';
 import { startVerseMatcher } from '@/verse-match/client.ts';
 import { SAVE_DELAY_MS } from '@/components/lesson/use-lesson-saver.ts';
 import { hasText, toBody } from './body.ts';
 import { sectionExtensions } from './extensions.ts';
 import { SectionHandle } from './section-handle.tsx';
+import { MomentDialog, SectionMoment } from './section-moment.tsx';
 import type { SectionListApi, SectionRow } from './section-list.tsx';
 
 /**
@@ -80,6 +80,8 @@ export const SectionEditor = memo(function SectionEditor({
     [setActivatorNodeRef, listeners],
   );
   const editTags = useCallback(() => setEditingTags(true), []);
+  const [editingMoment, setEditingMoment] = useState(false);
+  const editMoment = useCallback(() => setEditingMoment(true), []);
   const stored = useRef(item.stored);
   const pending = useRef<SectionBody | undefined>(undefined);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -286,13 +288,7 @@ export const SectionEditor = memo(function SectionEditor({
             Conflicted copy · {conflict.device ?? 'another device'} · {momentLabel(conflict.time)}
           </p>
         )}
-        {item.sourceAt && api.sourceStartedAt && (
-          // Its time in the source, from capture mode (M11-01); M11-07 makes it open the recording.
-          <span className="float-left mt-[3px] mr-2 text-sm text-muted-foreground tabular-nums">
-            {offsetLabel(item.sourceAt, api.sourceStartedAt)}
-            <span className="sr-only">: </span>
-          </span>
-        )}
+        <SectionMoment moment={item} startedAt={api.sourceStartedAt} url={api.sourceUrl} />
         <EditorContent editor={editor} />
         {offerTemplate && empty && (
           <button
@@ -342,10 +338,20 @@ export const SectionEditor = memo(function SectionEditor({
           drag={dragHold}
           hidden={slot !== undefined}
           onEditTags={editTags}
+          onEditMoment={editMoment}
         />
       ) : (
         // A draft has nothing to move or delete yet; the space keeps the text from shifting.
         <div aria-hidden className="w-8 shrink-0 pointer-coarse:w-11" />
+      )}
+      {item.stored && (
+        <MomentDialog
+          sectionId={id}
+          moment={item}
+          startedAt={api.sourceStartedAt}
+          open={editingMoment}
+          onOpenChange={setEditingMoment}
+        />
       )}
     </div>
   );

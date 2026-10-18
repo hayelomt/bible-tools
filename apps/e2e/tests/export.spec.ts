@@ -26,8 +26,8 @@ async function text(download: Download): Promise<string> {
 
 /** A lesson with a verse chip and a takeaway, in the series being looked at if there is one. */
 async function writeLesson(page: Page) {
-  await page.getByRole('textbox', { name: 'Title' }).fill('The Good Shepherd');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).fill('The Good Shepherd');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await expect(note(page)).toBeFocused();
   await page.keyboard.type('Jesus is the door John 10:9');
   await expect(page.getByRole('option', { name: /^John 10:9/ })).toBeVisible();

@@ -205,7 +205,10 @@ export function SnoozeMenu({
   );
 }
 
-/** Snooze → Pick a date: any day from tomorrow. */
+/**
+ * Snooze → Pick a date, and the `z` key: the menu's choices as buttons, then any day from
+ * tomorrow.
+ */
 export function SnoozeDateDialog({
   open,
   onOpenChange,
@@ -233,6 +236,22 @@ export function SnoozeDateDialog({
               It’s out of the inbox until then, on every device.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap gap-2">
+            {snoozeChoices(day).map((choice) => (
+              <Button
+                key={choice.label}
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  onSnooze(choice.until);
+                  onOpenChange(false);
+                }}
+              >
+                {choice.label}
+                <span className="text-muted-foreground">{shortDate(choice.until)}</span>
+              </Button>
+            ))}
+          </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor={id}>Day</Label>
             <Input

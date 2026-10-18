@@ -80,7 +80,7 @@ test('a question revisited from a second lesson is one thread, answered there an
   await page.getByRole('link', { name: 'Answer', exact: true }).click();
   const answer = page.locator('[data-section]').filter({ hasText: 'Who are the other sheep?' });
   await expect(answer.getByRole('heading', { level: 3 })).toHaveText('Who are the other sheep?');
-  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Lazarus');
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue('Lazarus');
   await expect(answer.getByRole('textbox')).toBeFocused();
   await page.keyboard.type('Gentiles, brought into one flock.');
   await expect

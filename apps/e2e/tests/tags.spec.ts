@@ -82,7 +82,7 @@ test.describe('on a laptop', () => {
 
     await page.goto('/');
     await newLesson(page, 'Second');
-    await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+    await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
     await page.keyboard.type('God keeps his promises');
     await page.keyboard.press('Escape');
     const handle = page.getByRole('button', { name: 'Section actions' });
@@ -153,7 +153,7 @@ test.describe('on a phone', () => {
     await page.goto('/');
     await newLesson(page, 'Abiding in the vine');
     await page.getByRole('button', { name: 'Details' }).click();
-    await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+    await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
     await page.keyboard.type('Apart from me you can do nothing.');
     await note(page).blur();
     await page.getByRole('button', { name: 'Section actions' }).tap();

@@ -1,4 +1,4 @@
-import type { Lesson, Series } from '@lamp/domain';
+import type { Lesson, Series, SourceType } from '@lamp/domain';
 
 /** Words for stored values (UX-PATTERNS "Words"). */
 
@@ -6,6 +6,14 @@ export const KIND_LABELS: Record<Lesson['kind'], string> = {
   sermon: 'Sermon',
   personal: 'Personal',
   group: 'Group',
+};
+
+/** A lesson's source type (F28), as Details and the exports name it. */
+export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
+  sermon: 'Sermon',
+  book: 'Book',
+  podcast: 'Podcast',
+  other: 'Other',
 };
 
 export const SERIES_KIND_LABELS: Record<Series['kind'], string> = {

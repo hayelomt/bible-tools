@@ -241,7 +241,9 @@ const TARGET = /^Forgiveness keeps no ledger/;
 
 /** The note opened from a result: the lesson, scrolled to it and highlighted. */
 async function expectTargetOpened(page: Page) {
-  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Seventy times seven');
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
+    'Seventy times seven',
+  );
   await expect(page.locator('[data-flash]')).toContainText('Forgiveness keeps no ledger');
   await expect(page.locator('[data-flash]')).toBeInViewport();
 }

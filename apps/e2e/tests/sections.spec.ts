@@ -36,7 +36,7 @@ const reply = (page: Page, n = 0) =>
 async function startLesson(page: Page) {
   await page.goto('/');
   await newLesson(page, 'The Good Shepherd');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await expect(note(page)).toBeFocused();
 }
 
@@ -281,7 +281,7 @@ test.describe('on a phone', () => {
     expect(sideways).toBe(0);
 
     // The toolbar goes when no section is being typed in.
-    await page.getByRole('textbox', { name: 'Title' }).click();
+    await page.getByRole('textbox', { name: 'Title', exact: true }).click();
     await expect(toolbar).toBeHidden();
   });
   test.describe('by touch', () => {

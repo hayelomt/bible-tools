@@ -73,7 +73,7 @@ test('memorises verses from the reader, lists them in the verse index, and remov
 test('memorises a verse from its chip, and reads it in context', async ({ page }) => {
   await page.goto('/');
   await newLesson(page, 'Sheep and shepherd');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await page.keyboard.type('Ps 23:1');
   await page.keyboard.press('Enter');
   await page

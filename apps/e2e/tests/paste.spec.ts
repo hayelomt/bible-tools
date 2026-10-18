@@ -56,7 +56,7 @@ async function paste(page: Page, text: string) {
 async function startLesson(page: Page) {
   await page.goto('/');
   await newLesson(page, 'Pasted');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await expect(note(page)).toBeFocused();
   await page.waitForFunction(
     () => performance.getEntriesByName('lamp:verse-match-ready').length > 0,

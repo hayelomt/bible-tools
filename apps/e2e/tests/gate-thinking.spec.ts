@@ -190,7 +190,9 @@ test('Romans 8 reads as one document across a year, and a revisited question as 
 
   // Answered in the new lesson, the latest the thread names.
   await page.getByRole('link', { name: 'Answer', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Hope in suffering');
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
+    'Hope in suffering',
+  );
   const answer = page.locator('[data-section]').filter({ hasText: QUESTION });
   await expect(answer.getByRole('textbox')).toBeFocused();
   await page.keyboard.type('It waits for the sons of God.');

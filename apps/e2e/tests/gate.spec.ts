@@ -75,7 +75,9 @@ const chip = (page: Page, name: string) =>
 
 /** The lesson as it reads on screen: its sections and reply, with their chips. */
 async function expectCapturedLesson(page: Page) {
-  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Life in the Spirit');
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
+    'Life in the Spirit',
+  );
   // The paragraph alone, without the verse text shown under it.
   await expect(note(page, 0).locator('p')).toHaveText(
     'No condemnation for those in Christ, Romans 8:1 · BSB right at the start',
@@ -112,7 +114,7 @@ test('a sermon captured offline reopens whole, with every change in the outbox',
   await page.goto('/');
   await expect(page.getByText('Your notes start here.')).toBeVisible();
   await newLesson(page, 'Life in the Spirit');
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await expect(note(page)).toBeFocused();
 
   // Three sections; the second has a reply. A chip in the first section and one in the reply.

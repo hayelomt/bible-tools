@@ -88,7 +88,9 @@ test('a verse read offline is highlighted, added to a new lesson and found by ve
   // The note opens in its lesson, with the verse chip and the note.
   await page.goto('/verses/ROM.8.28?show=notes');
   await entries.filter({ hasText: 'Even this season' }).getByRole('link').first().click();
-  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Romans 8:28');
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(
+    'Romans 8:28',
+  );
   await expect(page.getByText('Romans 8:28 · BSB').first()).toBeVisible();
   await expect(page.getByText('Even this season')).toBeVisible();
 

@@ -9,6 +9,7 @@ import { SeriesDialog } from '@/components/series/series-dialog.tsx';
 import { TagInput } from '@/components/tags/tag-input.tsx';
 import { allSeries } from '@/data/queries.ts';
 import { KIND_LABELS } from '@/lib/labels.ts';
+import { SourceFields } from './source-fields.tsx';
 import type { LessonSaver } from './use-lesson-saver.ts';
 
 /** Not a series id (those are UUIDs): choosing it opens the new-series dialog. */
@@ -28,7 +29,8 @@ interface LessonDetailsProps {
 
 /**
  * A lesson's details (wireframes/lessons.md "Details"): date, kind, speaker, church, main
- * passages, series and tags. Each saves as it changes; typed fields once typing settles.
+ * passages, series and tags, then its source (M11-06). Each saves as it changes; typed fields once
+ * typing settles.
  */
 export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
   const { values, save, flush } = saver;
@@ -145,6 +147,8 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
             <TagInput id={ids.tags} target={{ kind: 'lesson', id: lessonId }} />
           </>
         )}
+
+        <SourceFields saver={saver} labelClass={labelClass} />
       </div>
       <SeriesDialog
         open={creatingSeries}

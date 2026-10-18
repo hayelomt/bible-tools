@@ -7,7 +7,7 @@ const box = (page: Page) => page.getByRole('searchbox', { name: 'Search' });
 async function lessonWithNote(page: Page, title: string, type: (page: Page) => Promise<void>) {
   await page.goto('/');
   await newLesson(page, title);
-  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await type(page);
   await page.keyboard.press('Escape');
 }

@@ -8,6 +8,7 @@ import { ClipboardButton } from '@/components/inbox/clipboard-button.tsx';
 import { InboxList } from '@/components/inbox/inbox-list.tsx';
 import { InboxMenu } from '@/components/inbox/inbox-menu.tsx';
 import { InboxSelectionBar, useInboxSelection } from '@/components/inbox/selection-bar.tsx';
+import { useInboxKeys } from '@/components/inbox/triage-keys.tsx';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { inboxEntries, snoozedCount } from '@/data/actions/inbox.ts';
 import { useScreenReady } from '@/lib/screen-ready.ts';
@@ -44,6 +45,7 @@ function Inbox() {
     [entries],
   );
   const select = useInboxSelection(items);
+  const keys = useInboxKeys(items, select);
   const { added } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [fresh, setFresh] = useState<string | null>(added ?? null);
@@ -79,8 +81,11 @@ function Inbox() {
           fresh={fresh}
           selection={select.selection}
           onSelect={select.start}
+          current={keys.current}
+          onCurrent={keys.onCurrent}
         />
       )}
+      {keys.ui}
       {snoozed > 0 && <SnoozedRow count={snoozed} />}
       {select.selection && (
         <InboxSelectionBar

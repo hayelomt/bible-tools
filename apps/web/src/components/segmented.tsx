@@ -3,7 +3,8 @@ interface SegmentedProps<T extends string> {
   name: string;
   options: readonly T[];
   labels: Record<T, string>;
-  value: T;
+  /** Null picks none of them yet. */
+  value: T | null;
   onChange: (value: T) => void;
 }
 
