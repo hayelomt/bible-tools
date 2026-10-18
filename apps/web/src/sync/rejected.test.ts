@@ -213,3 +213,34 @@ describe('Dexie version 8', () => {
     await upgraded.delete();
   });
 });
+
+describe('Dexie version 9', () => {
+  it('adds splitFromId to stored questions and to queued question changes', async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(8).stores({
+      question: 'id, lessonId',
+      questionEntry: 'id, questionId, lessonId, sectionId',
+      outbox: '++seq, [entity+entityId]',
+    });
+    const row = {
+      id: id(1),
+      lessonId: id(9),
+      text: 'Who are the other sheep?',
+      createdAt: at(1),
+      updatedAt: at(1),
+      rev: 0,
+      deletedAt: null,
+    };
+    await old.table('question').put(row);
+    const { rev: _, ...sent } = row;
+    await old.table('outbox').add({ entity: 'question', entityId: id(1), op: 'upsert', row: sent });
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    expect(await upgraded.question.get(id(1))).toEqual({ ...row, splitFromId: null });
+    const [queued] = await upgraded.outbox.toArray();
+    expect(queued).toMatchObject({ row: { ...sent, splitFromId: null } });
+    await upgraded.delete();
+  });
+});

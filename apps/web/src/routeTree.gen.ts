@@ -26,6 +26,7 @@ import { Route as AppCompilePassageRouteImport } from './routes/_app/compile/$pa
 import { Route as AppInboxIndexRouteImport } from './routes/_app/inbox/index'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
+import { Route as AppQuestionsQuestionIdRouteImport } from './routes/_app/questions/$questionId'
 import { Route as AppReadIndexRouteImport } from './routes/_app/read/index'
 import { Route as AppReadChapterRouteImport } from './routes/_app/read/$chapter'
 import { Route as AppReviewIndexRouteImport } from './routes/_app/review/index'
@@ -124,6 +125,11 @@ const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
   path: '/lessons/$lessonId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppQuestionsQuestionIdRoute = AppQuestionsQuestionIdRouteImport.update({
+  id: '/questions/$questionId',
+  path: '/questions/$questionId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReadIndexRoute = AppReadIndexRouteImport.update({
   id: '/read/',
   path: '/read/',
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/dev/seed': typeof DevSeedRoute
   '/compile/$passage': typeof AppCompilePassageRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/questions/$questionId': typeof AppQuestionsQuestionIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
   '/review/memory': typeof AppReviewMemoryRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/dev/seed': typeof DevSeedRoute
   '/compile/$passage': typeof AppCompilePassageRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/questions/$questionId': typeof AppQuestionsQuestionIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
   '/review/memory': typeof AppReviewMemoryRoute
   '/series/$seriesId': typeof AppSeriesSeriesIdRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/compile/$passage': typeof AppCompilePassageRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/_app/questions/$questionId': typeof AppQuestionsQuestionIdRoute
   '/_app/read/$chapter': typeof AppReadChapterRoute
   '/_app/review/memory': typeof AppReviewMemoryRoute
   '/_app/series/$seriesId': typeof AppSeriesSeriesIdRoute
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/dev/seed'
     | '/compile/$passage'
     | '/lessons/$lessonId'
+    | '/questions/$questionId'
     | '/read/$chapter'
     | '/review/memory'
     | '/series/$seriesId'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/dev/seed'
     | '/compile/$passage'
     | '/lessons/$lessonId'
+    | '/questions/$questionId'
     | '/read/$chapter'
     | '/review/memory'
     | '/series/$seriesId'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/compile/$passage'
     | '/_app/lessons/$lessonId'
+    | '/_app/questions/$questionId'
     | '/_app/read/$chapter'
     | '/_app/review/memory'
     | '/_app/series/$seriesId'
@@ -518,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLessonsLessonIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/questions/$questionId': {
+      id: '/_app/questions/$questionId'
+      path: '/questions/$questionId'
+      fullPath: '/questions/$questionId'
+      preLoaderRoute: typeof AppQuestionsQuestionIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/read/': {
       id: '/_app/read/'
       path: '/read'
@@ -632,6 +651,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppCompilePassageRoute: typeof AppCompilePassageRoute
   AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
+  AppQuestionsQuestionIdRoute: typeof AppQuestionsQuestionIdRoute
   AppReadChapterRoute: typeof AppReadChapterRoute
   AppReviewMemoryRoute: typeof AppReviewMemoryRoute
   AppSeriesSeriesIdRoute: typeof AppSeriesSeriesIdRoute
@@ -661,6 +681,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppCompilePassageRoute: AppCompilePassageRoute,
   AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
+  AppQuestionsQuestionIdRoute: AppQuestionsQuestionIdRoute,
   AppReadChapterRoute: AppReadChapterRoute,
   AppReviewMemoryRoute: AppReviewMemoryRoute,
   AppSeriesSeriesIdRoute: AppSeriesSeriesIdRoute,

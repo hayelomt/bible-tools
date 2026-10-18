@@ -5,6 +5,7 @@ import type { SectionBody } from '@lamp/domain';
 import { resolveFocusPosition } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { cn } from 'cn';
+import { ChevronRight } from 'lucide-react';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SectionLinkedFrom } from '@/components/links/linked-from.tsx';
 import { SectionTags } from '@/components/tags/section-tags.tsx';
@@ -40,6 +41,8 @@ interface SectionEditorProps {
    * can't land there), or it's one of its replies, folded away until the drop.
    */
   drag: { slot: 0 | 1 | null } | 'folded' | undefined;
+  /** The only section, still a draft: it offers a template until something is typed (F25). */
+  offerTemplate?: boolean;
 }
 
 const LABELS = { 0: 'Note', 1: 'Reply' } as const;
@@ -59,6 +62,7 @@ export const SectionEditor = memo(function SectionEditor({
   flash = false,
   sortable,
   drag,
+  offerTemplate = false,
 }: SectionEditorProps) {
   const { item, level } = row;
   const id = item.id;
@@ -68,6 +72,7 @@ export const SectionEditor = memo(function SectionEditor({
   });
   const handle = useRef<HTMLButtonElement>(null);
   const [editingTags, setEditingTags] = useState(false);
+  const [empty, setEmpty] = useState(true);
   // Kept the same across renders, so the handle (and its menu) only renders when they change.
   const dragHold = useMemo(
     () => ({ ref: setActivatorNodeRef, listeners }),
@@ -164,6 +169,7 @@ export const SectionEditor = memo(function SectionEditor({
     content: item.body,
     editorProps,
     onUpdate: ({ editor: e }) => {
+      setEmpty(e.isEmpty);
       pending.current = toBody(e.getJSON());
       apiRef.current.setDirty(id, true);
       clearTimeout(timer.current);
@@ -278,6 +284,16 @@ export const SectionEditor = memo(function SectionEditor({
           </p>
         )}
         <EditorContent editor={editor} />
+        {offerTemplate && empty && (
+          <button
+            type="button"
+            onClick={() => api.pickTemplate(null)}
+            className="-mx-1 flex items-center gap-0.5 rounded-md px-1 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+          >
+            Start from a template
+            <ChevronRight aria-hidden className="size-4" />
+          </button>
+        )}
         {item.stored && (
           <SectionLinkedFrom sectionId={id}>
             <SectionTags

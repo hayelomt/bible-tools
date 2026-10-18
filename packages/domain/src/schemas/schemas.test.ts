@@ -88,6 +88,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     ...meta(8),
     lessonId: id(2),
     text: 'What is foreknowledge?',
+    splitFromId: null,
   },
   highlight: { ...meta(9), ref: ROM_8_28, colour: 'yellow', note: null, promotedSectionId: id(3) },
   memoryItem: {

@@ -14,7 +14,7 @@ import { LessonDictionary } from './lesson-dictionary.tsx';
 import { LessonMenu } from './lesson-menu.tsx';
 import { PanelHeading } from './panel-heading.tsx';
 import { LessonLinkedFrom } from '@/components/links/linked-from.tsx';
-import { Questions } from './questions.tsx';
+import { Questions, type QuestionsApi } from './questions.tsx';
 import { type PanelApi, Takeaways } from './takeaways.tsx';
 import { useLessonSaver } from './use-lesson-saver.ts';
 
@@ -29,8 +29,11 @@ interface LessonEditorProps {
   seriesId?: string;
   /** A section, takeaway or question to scroll to and highlight as the lesson opens. */
   reveal?: { section?: string; takeaway?: string; question?: string };
-  /** A question to answer in a new section as the lesson opens (the review queue's Answer). */
-  answer?: string;
+  /**
+   * A question to answer in a new section as the lesson opens (the review queue's Answer, and the
+   * question thread's Answer and Add a partial answer).
+   */
+  answer?: { questionId: string; partial: boolean } | '';
 }
 
 /** What a new lesson starts with (wireframes/lessons.md): today, a sermon, no series. */
@@ -61,7 +64,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
   const [focusFirst, setFocusFirst] = useState(0);
   // Asks of the section list: show a section, or answer a question in a new one.
   const [request, setRequest] = useState<SectionRequest | undefined>(() => {
-    if (answer) return { kind: 'answer', questionId: answer, seq: 1 };
+    if (answer) return { kind: 'answer', ...answer, seq: 1 };
     return reveal?.section ? { kind: 'reveal', sectionId: reveal.section, seq: 1 } : undefined;
   });
   // A link to a section of this lesson, followed from the lesson itself, shows it too.
@@ -73,7 +76,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
     }
   }
   const takeaways = useRef<PanelApi>(null);
-  const questions = useRef<PanelApi>(null);
+  const questions = useRef<QuestionsApi>(null);
   const wide = useMediaQuery(WIDE);
   const titleId = useId();
   const errorId = useId();
@@ -92,7 +95,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
         hideWhenEmpty={!wide}
         reveal={reveal?.question}
         onAnswer={(questionId) =>
-          setRequest({ kind: 'answer', questionId, seq: (request?.seq ?? 0) + 1 })
+          setRequest({ kind: 'answer', questionId, partial: false, seq: (request?.seq ?? 0) + 1 })
         }
         onShowAnswer={(sectionId) =>
           setRequest({ kind: 'reveal', sectionId, seq: (request?.seq ?? 0) + 1 })
@@ -223,6 +226,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
           <AddButton
             onAddTakeaway={() => takeaways.current?.add()}
             onAddQuestion={() => questions.current?.add()}
+            onRevisitQuestion={() => questions.current?.revisit()}
           />
         </>
       )}

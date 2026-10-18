@@ -91,6 +91,7 @@ describe('lessons', () => {
       const question = await w.create('question', {
         lessonId: id,
         text: 'Who are the other sheep?',
+        splitFromId: null,
       });
       await w.create('questionEntry', {
         questionId: question.id,

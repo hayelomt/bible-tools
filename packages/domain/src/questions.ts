@@ -39,3 +39,33 @@ export function questionStatus(
       return 'open';
   }
 }
+
+type ThreadEntry = Pick<QuestionEntry, 'createdAt' | 'id' | 'deletedAt' | 'kind'>;
+
+/**
+ * Whether an open question is partly answered (wireframes/thinking.md "Question thread"): it has
+ * a partial answer since it was last answered or reopened. It stays open in Review.
+ */
+export function partlyAnswered(entries: readonly ThreadEntry[]): boolean {
+  const thread = threadOf(entries);
+  const since = thread.findLastIndex((e) => e.kind === 'answered' || e.kind === 'reopened');
+  return thread.slice(since + 1).some((e) => e.kind === 'partial');
+}
+
+/** What a question's thread adds up to, for "Asked 3 times since March · 1 partial answer". */
+export interface Lineage {
+  /** Asked and revisited entries: each time the question came up. */
+  asked: number;
+  partial: number;
+  /** When the thread starts: its first entry's `createdAt`, or null for an empty thread. */
+  since: string | null;
+}
+
+export function lineageOf(entries: readonly ThreadEntry[]): Lineage {
+  const thread = threadOf(entries);
+  return {
+    asked: thread.filter((e) => e.kind === 'asked' || e.kind === 'revisited').length,
+    partial: thread.filter((e) => e.kind === 'partial').length,
+    since: thread[0]?.createdAt ?? null,
+  };
+}

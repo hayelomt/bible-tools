@@ -1,4 +1,5 @@
 import {
+  partlyAnswered,
   type Question,
   type QuestionEntry,
   questionStatus,
@@ -19,14 +20,20 @@ import {
  * (F5: "answered when the section has a body").
  */
 export function hasAnswer(body: SectionBody): boolean {
+  return toPlainText(answerPart(body)).trim().length > 0;
+}
+
+/** An answer section's body below its heading. */
+export function answerPart(body: SectionBody): SectionBody {
   const [first, ...rest] = body.content;
-  const answer = first?.type === 'heading' ? rest : body.content;
-  return toPlainText({ type: 'doc', content: answer }).trim().length > 0;
+  return { type: 'doc', content: first?.type === 'heading' ? rest : body.content };
 }
 
 /** A question with what its entries give it (F24, §17.5). */
 export interface QuestionView extends Question {
   status: QuestionStatus;
+  /** Open, with a partial answer since it was last answered or reopened: "Partly answered". */
+  partial: boolean;
   /** The section of its latest answer, while that section is there: "Go to answer". */
   answerSectionId: string | null;
   /** Its thread, oldest first. */
@@ -53,5 +60,6 @@ export function viewOf(question: Question, { entries, sections }: StatusRows): Q
   const answered = thread.findLast((entry) => entry.kind === 'answered' && entry.sectionId);
   const answerSectionId =
     answered?.sectionId && sections.has(answered.sectionId) ? answered.sectionId : null;
-  return { ...question, status, answerSectionId, entries: thread };
+  const partial = status === 'open' && partlyAnswered(thread);
+  return { ...question, status, partial, answerSectionId, entries: thread };
 }

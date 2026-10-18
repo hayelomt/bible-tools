@@ -2,10 +2,16 @@ import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createLesson, deleteLesson, type LessonFields } from './actions/lessons.ts';
 import { gradeMemoryItem, memorise } from './actions/memory.ts';
-import { addQuestion, parkQuestion, promoteQuestion } from './actions/questions.ts';
+import {
+  addQuestion,
+  parkQuestion,
+  promoteQuestion,
+  revisitQuestion,
+} from './actions/questions.ts';
 import { updateSettings } from './actions/settings.ts';
 import { createTakeaway, removeTakeaway } from './actions/takeaways.ts';
 import { LampDb, SETTINGS_KEY } from './db.ts';
+import { lineageSummary } from './question-thread.ts';
 import { openQuestions, recentTakeaways, reviewCount } from './review.ts';
 import { ensureDevice } from './setup.ts';
 
@@ -64,6 +70,35 @@ describe('openQuestions', () => {
 
     await deleteLesson(vine.id, db);
     expect(await texts()).toEqual([sheep.text, thief.text]);
+  });
+});
+
+describe('the lineage summary in the queue (M10-11)', () => {
+  it('matches the question’s thread', async () => {
+    const shepherd = await lessonOn('The Good Shepherd', '2026-03-02');
+    const lazarus = await lessonOn('Lazarus', '2026-04-06');
+    const vine = await lessonOn('Abiding in the vine', '2026-05-04');
+    const sheep = await addQuestion(shepherd.id, 'Who are the other sheep?', db);
+    await revisitQuestion(sheep.id, lazarus.id, db);
+    await revisitQuestion(sheep.id, vine.id, db);
+    await promoteQuestion(sheep.id, { lessonId: vine.id, partial: true }, db);
+    const door = await addQuestion(shepherd.id, 'What is the door?', db);
+    // The thread starts in March, whenever the test runs.
+    const march = `${new Date().getFullYear()}-03-02T12:00:00.000Z`;
+    await db.questionEntry
+      .where('questionId')
+      .equals(sheep.id)
+      .modify((e) => {
+        if (e.kind === 'asked') e.createdAt = march;
+      });
+
+    const queue = await openQuestions(db);
+    const summaries = new Map(
+      queue.map(({ question }) => [question.id, lineageSummary(question.entries)]),
+    );
+    expect(summaries.get(sheep.id)).toBe('Asked 3 times since March · 1 partial answer');
+    expect(summaries.get(door.id)).toBeNull();
+    expect(queue.find((q) => q.question.id === sheep.id)?.question.partial).toBe(true);
   });
 });
 

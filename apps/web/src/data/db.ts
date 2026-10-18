@@ -198,11 +198,25 @@ export class LampDb extends Dexie {
         link: 'id, fromSectionId, fromLessonId, targetId',
       })
       .upgrade(threadsFromStatus);
+    // `question.splitFromId` added (F24, M10-10), for queued question changes too: the server's
+    // schema needs it. Not queued itself, like version 7.
+    this.version(9).upgrade(async (tx) => {
+      await tx.table('question').toCollection().modify(unsplit);
+      await tx
+        .table('outbox')
+        .filter((entry: OutboxEntry) => entry.entity === 'question' && entry.op === 'upsert')
+        .modify((entry: OutboxEntry) => unsplit((entry as { row: Partial<Question> }).row));
+    });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
     return this.table(entity);
   }
+}
+
+/** Version 9's `splitFromId`, on a stored or queued question. */
+function unsplit(question: Partial<Question>) {
+  question.splitFromId ??= null;
 }
 
 /** Version 7's new settings at their defaults, on a stored or queued settings row. */

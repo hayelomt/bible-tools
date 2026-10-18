@@ -29,9 +29,9 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
   },
   {
     minClientVersion: '0.3.0',
-    fingerprint: '7d8d0cbd',
+    fingerprint: 'de0d5635',
     change:
-      'M10 (thinking layer): the `noteLink` body node; question entries, with `question.status` and `answerSectionId` out of the wire format',
+      'M10 (thinking layer): the `noteLink` body node; question entries, with `question.status` and `answerSectionId` out of the wire format; `question.splitFromId`',
   },
 ];
 

@@ -20,6 +20,8 @@ interface LessonSearch {
   question?: string;
   /** A question to answer in a new section as the lesson opens (the review queue's Answer). */
   answer?: string;
+  /** With `answer`: a partial answer (the question thread's "Add a partial answer"). */
+  partial?: true;
 }
 
 export const Route = createFileRoute('/_app/lessons/$lessonId')({
@@ -31,6 +33,7 @@ export const Route = createFileRoute('/_app/lessons/$lessonId')({
     takeaway: typeof search.takeaway === 'string' ? search.takeaway : undefined,
     question: typeof search.question === 'string' ? search.question : undefined,
     answer: typeof search.answer === 'string' ? search.answer : undefined,
+    partial: search.partial === true ? true : undefined,
   }),
   component: LessonScreen,
 });
@@ -53,7 +56,10 @@ function LessonScreen() {
   // the lesson as it is.
   useEffect(() => {
     if (lesson && search.answer) {
-      void navigate({ search: (prev) => ({ ...prev, answer: undefined }), replace: true });
+      void navigate({
+        search: (prev) => ({ ...prev, answer: undefined, partial: undefined }),
+        replace: true,
+      });
     }
   }, [lesson, search.answer, navigate]);
 
@@ -76,7 +82,7 @@ function LessonScreen() {
       lesson={lesson}
       seriesId={search.seriesId}
       reveal={search}
-      answer={search.answer}
+      answer={search.answer && { questionId: search.answer, partial: search.partial === true }}
     />
   );
 }

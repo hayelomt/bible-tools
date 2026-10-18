@@ -58,7 +58,22 @@ export {
   type SeveralPassages,
 } from './compile.ts';
 export { type LinkEntry, linksFor } from './links.ts';
-export { latestEntry, questionStatus, threadOf } from './questions.ts';
+export {
+  latestEntry,
+  type Lineage,
+  lineageOf,
+  partlyAnswered,
+  questionStatus,
+  threadOf,
+} from './questions.ts';
+export {
+  BUILT_IN_TEMPLATES,
+  type BuiltInTemplate,
+  headedBody,
+  type TemplateSection,
+  templateStructureSchema,
+  templateSummary,
+} from './templates.ts';
 export { newId } from './ids.ts';
 export { SEED_TAGS } from './seed-tags.ts';
 export {

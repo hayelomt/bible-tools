@@ -1,7 +1,7 @@
 import { DndContext, DragOverlay, type DropAnimation } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { emptyBody, keyBetween, newId, type SectionBody } from '@lamp/domain';
+import { type BuiltInTemplate, emptyBody, keyBetween, newId, type SectionBody } from '@lamp/domain';
 import { toast } from '@lamp/ui/components/sonner';
 import type { Editor } from '@tiptap/core';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -9,6 +9,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
 import { promoteQuestion } from '@/data/actions/questions.ts';
+import { applyTemplate, removeApplied } from '@/data/actions/templates.ts';
+import { TemplatePicker } from '@/components/templates/template-picker.tsx';
+import { count } from '@/lib/labels.ts';
 import { useAutoPreview } from '@/components/verses/verse-preview.ts';
 import { PasteChipsPrompt } from '@/components/verses/paste-prompt.tsx';
 import { VerseViewer } from '@/components/verses/verse-viewer.tsx';
@@ -68,8 +71,13 @@ const MORE_SECTIONS = 4;
 interface ListApi extends SectionListApi {
   drop: (id: string, drop: Drop) => void;
   confirmRemove: (id: string) => void;
-  /** "Answer in a section": the question's section at the end, with the cursor under its heading. */
-  answer: (questionId: string) => void;
+  /**
+   * "Answer in a section", or a partial answer: the question's section at the end, with the cursor
+   * under its heading.
+   */
+  answer: (questionId: string, partial: boolean) => void;
+  /** Applies a template where `pickTemplate` asked for it (F25). */
+  applyTemplate: (template: BuiltInTemplate, after: string | null) => void;
 }
 
 /** A move shown before it's stored; `storedAt` is the row's `updatedAt` once its write is done. */
@@ -106,6 +114,11 @@ export interface SectionListApi {
   reply: (id: string) => void;
   /** Deletes at once with an Undo toast, or asks first when the section has replies. */
   remove: (id: string) => void;
+  /**
+   * Opens the template picker (F25): for the empty first section (null), or to add a template's
+   * sections after `id`'s section (its menu's "Add a template…").
+   */
+  pickTemplate: (id: string | null) => void;
   /** "Keep this instead" on a conflicted copy: its text replaces its section's, and it goes. */
   keepCopy: (id: string) => void;
   /** Whether the press that just ended was a drag, not a click. */
@@ -121,7 +134,7 @@ export interface SectionListApi {
  * question in a new section, or show a section (scrolled to and briefly highlighted).
  */
 export type SectionRequest =
-  | { kind: 'answer'; questionId: string; seq: number }
+  | { kind: 'answer'; questionId: string; partial: boolean; seq: number }
   | { kind: 'reveal'; sectionId: string; seq: number };
 
 interface SectionListProps {
@@ -151,6 +164,8 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
   // The section with replies whose delete is being asked about.
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  // Where the template picker adds: after a section, or null for the empty first section.
+  const [templateAt, setTemplateAt] = useState<{ after: string | null } | null>(null);
   // How many sections are mounted so far (`FIRST_SECTIONS`); all of them once the rest have come.
   const [mounted, setMounted] = useState(FIRST_SECTIONS);
 
@@ -252,7 +267,7 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
     if (!request || !stored || request.seq === handled.current) return;
     handled.current = request.seq;
     if (request.kind === 'answer') {
-      apiRef.current?.answer(request.questionId);
+      apiRef.current?.answer(request.questionId, request.partial);
       return;
     }
     const element = listRef.current?.querySelector(`[data-section="${request.sectionId}"]`);
@@ -429,7 +444,7 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
         else deleteNow(id, false);
       },
       confirmRemove: (id) => deleteNow(id, true),
-      answer: (questionId) => {
+      answer: (questionId, partial) => {
         // The answer goes where the empty section at the end is, which moves below it. One with
         // text being stored stays above the answer instead.
         const trailing = trailingDraft(rowsRef.current);
@@ -445,10 +460,40 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
         }
         const id = newId();
         enqueue(async () => {
-          // A question answered before gets its section back rather than a second one.
-          const section = await promoteQuestion(questionId, { id, orderKey });
+          // A question answered here before gets its section back rather than a second one.
+          const section = await promoteQuestion(questionId, { id, orderKey, lessonId, partial });
           created.current.add(section.id);
           focusAt(section.id, 'end');
+        });
+      },
+      pickTemplate: (id) => setTemplateAt({ after: id }),
+      applyTemplate: (template, after) => {
+        const all = rowsRef.current;
+        const tops = all.filter((r) => r.level === 0);
+        // After the section's top-level section and its replies, or, for the empty first section,
+        // where it is: it stays below them, ready to type, as the lesson's end.
+        const row = after ? rowOf(after) : undefined;
+        const top = row?.parent ? rowOf(row.parent) : row;
+        const previous = top ?? tops.filter((r) => r.item.stored).at(-1);
+        const next = top ? tops[tops.indexOf(top) + 1] : trailingDraft(all);
+        const from = previous?.item.orderKey ?? null;
+        // Order keys are ASCII, so comparing them as strings is their byte order.
+        const nextKey = next?.item.orderKey ?? null;
+        const to = from !== null && nextKey !== null && nextKey <= from ? null : nextKey;
+        const firstId = newId();
+        enqueue(async () => {
+          const ids = await applyTemplate(lessonId, template.structure, {
+            after: from,
+            before: to,
+            firstId,
+          });
+          for (const id of ids) created.current.add(id);
+          focusAt(firstId, 'end');
+          if (after === null) return;
+          toast(`Added ${count(ids.length, `${template.name} section`)}.`, {
+            duration: 10_000,
+            action: { label: 'Undo', onClick: () => enqueue(() => removeApplied(ids)) },
+          });
         });
       },
       keepCopy: (id) => {
@@ -531,6 +576,7 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
                 focus={focus?.id === row.item.id ? focus : undefined}
                 flash={flash === row.item.id}
                 sortable={sortable.includes(row.item.id)}
+                offerTemplate={rows.length === 1 && !row.item.stored}
                 drag={
                   drag?.id === row.item.id
                     ? { slot: drag.drop?.level ?? null }
@@ -553,6 +599,16 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
           )}
         </DragOverlay>
       </DndContext>
+      <TemplatePicker
+        open={templateAt !== null}
+        onOpenChange={(open) => !open && setTemplateAt(null)}
+        adding={templateAt?.after != null}
+        onPick={(template) => {
+          const after = templateAt?.after ?? null;
+          setTemplateAt(null);
+          api.applyTemplate(template, after);
+        }}
+      />
       {toDelete && (
         <ConfirmDialog
           open

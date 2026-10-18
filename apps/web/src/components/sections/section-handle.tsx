@@ -79,6 +79,9 @@ export const SectionHandle = memo(function SectionHandle({
             <>
               <DropdownMenuItem onClick={() => api.reply(id)}>Reply</DropdownMenuItem>
               <DropdownMenuItem onClick={onEditTags}>Tags</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => api.pickTemplate(id)}>
+                Add a template…
+              </DropdownMenuItem>
               <DropdownMenuItem disabled={!can.moveUp} onClick={() => api.moveUp(id, 'handle')}>
                 Move up
               </DropdownMenuItem>

@@ -215,7 +215,12 @@ describe('POST /api/sync/push', () => {
   it('stores a question entry, which pulls without the question’s old status', async () => {
     const account = await signUp();
     const lesson = lessonRow();
-    const question = { ...synced(), lessonId: lesson.id, text: 'Who are the other sheep?' };
+    const question = {
+      ...synced(),
+      lessonId: lesson.id,
+      text: 'Who are the other sheep?',
+      splitFromId: null,
+    };
     const entry = {
       ...synced(),
       questionId: question.id,
@@ -247,7 +252,13 @@ describe('POST /api/sync/push', () => {
   it('refuses a question with its old status', async () => {
     const account = await signUp();
     const lesson = lessonRow();
-    const question = { ...synced(), lessonId: lesson.id, text: 'Why?', status: 'open' };
+    const question = {
+      ...synced(),
+      lessonId: lesson.id,
+      text: 'Why?',
+      splitFromId: null,
+      status: 'open',
+    };
     const [, result] = await pushOk(account, [
       upsert('lesson', lesson),
       upsert('question', question),

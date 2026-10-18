@@ -79,6 +79,7 @@ test.describe('on a phone', () => {
     await takeaways(page).last().press('Enter');
     await expect(takeaways(page)).toHaveCount(3);
     await page.getByRole('button', { name: 'Add question' }).click();
+    await page.getByRole('menuitem', { name: 'New question' }).click();
     await expect(page.getByRole('textbox', { name: 'New question' })).toBeFocused();
     await expect(takeaways(page)).toHaveCount(2);
   });

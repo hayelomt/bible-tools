@@ -284,6 +284,7 @@ model Question {
   text            String
   status          String    @default("open")
   answerSectionId String?   @map("answer_section_id") @db.Uuid
+  splitFromId     String?   @map("split_from_id") @db.Uuid
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
   rev             BigInt    @default(0)
@@ -292,6 +293,8 @@ model Question {
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson        Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   answerSection Section?        @relation(fields: [answerSectionId], references: [id], onDelete: SetNull)
+  splitFrom     Question?       @relation("QuestionSplit", fields: [splitFromId], references: [id], onDelete: SetNull)
+  splits        Question[]      @relation("QuestionSplit")
   entries       QuestionEntry[]
 
   @@index([userId, rev])

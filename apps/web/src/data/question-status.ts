@@ -8,7 +8,7 @@ import {
 import { db as appDb, type LampDb } from './db.ts';
 import { type QuestionView, type StatusRows, viewOf } from './question-view.ts';
 
-export { hasAnswer, type QuestionView, viewOf } from './question-view.ts';
+export { answerPart, hasAnswer, type QuestionView, viewOf } from './question-view.ts';
 
 /** The latest live answer section a question's entries name, for "Answer in a section". */
 export async function answerSectionOf(

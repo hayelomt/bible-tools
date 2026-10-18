@@ -74,7 +74,7 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
   takeaway: { model: model((tx) => tx.takeaway), refs: { lessonId: 'lesson' }, times: SYNC_TIMES },
   question: {
     model: model((tx) => tx.question),
-    refs: { lessonId: 'lesson' },
+    refs: { lessonId: 'lesson', splitFromId: 'question' },
     times: SYNC_TIMES,
     // Its entries hold these since M10 (§17.5); the next release drops them.
     retired: ['status', 'answerSectionId'],

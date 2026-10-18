@@ -125,6 +125,8 @@ export const questionSchema = z.strictObject({
   ...synced,
   lessonId: idSchema,
   text: lineSchema(2000),
+  /** The question this one was split from (F24, M10-10): "Split from … on …". */
+  splitFromId: idSchema.nullable(),
 });
 
 /** One thing that happened to a question, in a lesson (F24, §17.5). */

@@ -8,36 +8,40 @@ import {
 } from '@lamp/ui/components/dropdown-menu';
 import { Input } from '@lamp/ui/components/input';
 import { toast } from '@lamp/ui/components/sonner';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChevronRight, Circle, CircleCheck, CirclePause, EllipsisVertical } from 'lucide-react';
+import { ChevronRight, EllipsisVertical, RefreshCw } from 'lucide-react';
 import { type Ref, useId, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
+import { entryDate, entryToast, statusShown } from '@/components/questions/labels.ts';
+import { QuestionPicker } from '@/components/questions/question-picker.tsx';
 import {
   addQuestion,
   parkQuestion,
+  removeFromLesson,
   removeQuestion,
   reopenQuestion,
+  restoreEntries,
   restoreQuestion,
-  undoEntry,
+  revisitQuestion,
   updateQuestion,
 } from '@/data/actions/questions.ts';
-import { lessonQuestions } from '@/data/queries.ts';
-import type { QuestionView } from '@/data/question-status.ts';
+import { type LessonQuestion, lessonQuestions } from '@/data/queries.ts';
+import { shortDate } from '@/lib/dates.ts';
+import { count } from '@/lib/labels.ts';
 import { runWrite } from '@/lib/run-write.ts';
 import { useReveal } from '@/lib/use-reveal.ts';
 import { PanelHeading } from './panel-heading.tsx';
 import type { PanelApi } from './takeaways.tsx';
 
-/** Colour is never the only signal (UX-PATTERNS): each status has an icon and a name. */
-const STATUS = {
-  open: { icon: Circle, label: 'Open' },
-  answered: { icon: CircleCheck, label: 'Answered' },
-  parked: { icon: CirclePause, label: 'Parked' },
-} as const;
+/** The panel's side of the lesson's + button: a new question, or one revisited here. */
+export interface QuestionsApi extends PanelApi {
+  revisit: () => void;
+}
 
 interface QuestionsProps {
   lessonId: string;
-  ref?: Ref<PanelApi>;
+  ref?: Ref<QuestionsApi>;
   /** On a phone the list shows only once there's a question; the + button adds the first. */
   hideWhenEmpty?: boolean;
   /** A question to scroll to and highlight (a search result). */
@@ -51,7 +55,8 @@ interface QuestionsProps {
 /**
  * A lesson's open questions (F5, wireframes/lessons.md "Takeaways and questions"): open,
  * answered or parked. A question is answered in a section of the lesson, and turns answered as
- * soon as that section has text.
+ * soon as that section has text. A question from another lesson can be revisited here (F24): it
+ * shows with ↻, and its thread has an entry in this lesson rather than a copy.
  */
 export function Questions({
   lessonId,
@@ -63,14 +68,47 @@ export function Questions({
 }: QuestionsProps) {
   const questions = useLiveQuery(() => lessonQuestions(lessonId), [lessonId]);
   const [adding, setAdding] = useState(false);
+  const [revisiting, setRevisiting] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const headingId = useId();
-  useImperativeHandle(ref, () => ({ add: () => setAdding(true) }), []);
+  useImperativeHandle(
+    ref,
+    () => ({ add: () => setAdding(true), revisit: () => setRevisiting(true) }),
+    [],
+  );
 
-  if (!questions || (hideWhenEmpty && questions.length === 0 && !adding)) return null;
+  // Open questions from other lessons, not already here.
+  const here = new Set(questions?.map((q) => q.id));
+  const picker = (
+    <QuestionPicker
+      open={revisiting}
+      onOpenChange={setRevisiting}
+      title="Revisit a question"
+      description="An open question from another lesson. It shows here too, and its thread notes that it came up again."
+      submit="Revisit"
+      offers={(c) => c.question.status === 'open' && !here.has(c.question.id)}
+      empty="No open questions in other lessons."
+      onPick={({ question }) => {
+        setRevisiting(false);
+        runWrite(revisitQuestion(question.id, lessonId), 'a question');
+      }}
+    />
+  );
+
+  if (!questions || (hideWhenEmpty && questions.length === 0 && !adding)) return picker;
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-1">
-      <PanelHeading id={headingId} add={{ label: 'Add question', onClick: () => setAdding(true) }}>
+      {picker}
+      <PanelHeading
+        id={headingId}
+        add={{
+          label: 'Add question',
+          menu: [
+            { label: 'New question', onClick: () => setAdding(true) },
+            { label: 'Revisit a question…', onClick: () => setRevisiting(true) },
+          ],
+        }}
+      >
         Questions
       </PanelHeading>
       {questions.length === 0 && !adding && (
@@ -98,6 +136,7 @@ export function Questions({
             ) : (
               <QuestionRow
                 key={question.id}
+                lessonId={lessonId}
                 question={question}
                 reveal={question.id === reveal}
                 onAnswer={() => onAnswer(question.id)}
@@ -122,24 +161,57 @@ export function Questions({
 }
 
 interface QuestionRowProps {
-  question: QuestionView;
+  lessonId: string;
+  question: LessonQuestion;
   reveal: boolean;
   onAnswer: () => void;
   onShowAnswer: (sectionId: string) => void;
   onEdit: () => void;
 }
 
-function QuestionRow({ question, reveal, onAnswer, onShowAnswer, onEdit }: QuestionRowProps) {
+function QuestionRow({
+  lessonId,
+  question,
+  reveal,
+  onAnswer,
+  onShowAnswer,
+  onEdit,
+}: QuestionRowProps) {
+  const navigate = useNavigate();
   const { ref: revealRef, flash } = useReveal<HTMLLIElement>(reveal);
-  const { icon: Icon, label } = STATUS[question.status];
+  const status = statusShown(question);
+  const Icon = question.revisited ? RefreshCw : status.icon;
   const answer = question.status === 'answered' ? question.answerSectionId : null;
+
+  /** The answer, here or in the lesson it was written in. */
+  function showAnswer(sectionId: string) {
+    if (!question.answerLessonId || question.answerLessonId === lessonId) {
+      onShowAnswer(sectionId);
+      return;
+    }
+    void navigate({
+      to: '/lessons/$lessonId',
+      params: { lessonId: question.answerLessonId },
+      search: { section: sectionId },
+    });
+  }
 
   function park() {
     runWrite(
-      parkQuestion(question.id).then((entry) =>
-        toast('Question parked.', {
+      parkQuestion(question.id).then((entry) => entryToast('Question parked.', entry.id)),
+      'a question',
+    );
+  }
+
+  function removeHere() {
+    runWrite(
+      removeFromLesson(question.id, lessonId).then((entries) =>
+        toast('Question removed from this lesson.', {
           duration: 10_000,
-          action: { label: 'Undo', onClick: () => runWrite(undoEntry(entry.id), 'a question') },
+          action: {
+            label: 'Undo',
+            onClick: () => runWrite(restoreEntries(entries), 'a question'),
+          },
         }),
       ),
       'a question',
@@ -179,15 +251,24 @@ function QuestionRow({ question, reveal, onAnswer, onShowAnswer, onEdit }: Quest
         )}
       />
       <span className="min-w-0 flex-1 py-0.5 leading-6 break-words">
-        <span className="sr-only">{label}: </span>
+        <span className="sr-only">
+          {question.revisited ? `Revisited here, ${status.label.toLowerCase()}` : status.label}
+          :{' '}
+        </span>
         {question.text}
+        {question.revisited && (
+          <span className="block text-sm text-muted-foreground">
+            first asked {firstAsked(question)} ·{' '}
+            {count(question.entries.length, 'entry', 'entries')}
+          </span>
+        )}
       </span>
       {answer && (
         <Button
           variant="ghost"
           size="icon-sm"
           aria-label="Go to answer"
-          onClick={() => onShowAnswer(answer)}
+          onClick={() => showAnswer(answer)}
         >
           <ChevronRight />
         </Button>
@@ -200,10 +281,15 @@ function QuestionRow({ question, reveal, onAnswer, onShowAnswer, onEdit }: Quest
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           {answer ? (
-            <DropdownMenuItem onClick={() => onShowAnswer(answer)}>Go to answer</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => showAnswer(answer)}>Go to answer</DropdownMenuItem>
           ) : (
             <DropdownMenuItem onClick={onAnswer}>Answer in a section</DropdownMenuItem>
           )}
+          <DropdownMenuItem
+            render={<Link to="/questions/$questionId" params={{ questionId: question.id }} />}
+          >
+            Thread
+          </DropdownMenuItem>
           {question.status === 'open' && <DropdownMenuItem onClick={park}>Park</DropdownMenuItem>}
           {question.status === 'parked' && (
             <DropdownMenuItem onClick={() => runWrite(reopenQuestion(question.id), 'a question')}>
@@ -212,13 +298,25 @@ function QuestionRow({ question, reveal, onAnswer, onShowAnswer, onEdit }: Quest
           )}
           <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={remove}>
-            Delete
-          </DropdownMenuItem>
+          {question.revisited ? (
+            <DropdownMenuItem variant="destructive" onClick={removeHere}>
+              Remove from this lesson
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem variant="destructive" onClick={remove}>
+              Delete
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </li>
   );
+}
+
+/** When the question was first asked: its first entry's day, "Sun 2 Mar". */
+function firstAsked(question: LessonQuestion): string {
+  const first = question.entries[0];
+  return first ? entryDate(first.createdAt) : shortDate(question.createdAt.slice(0, 10));
 }
 
 interface QuestionFieldProps {

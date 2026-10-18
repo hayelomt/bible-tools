@@ -40,6 +40,14 @@ export function shortDate(date: string, now = new Date()): string {
   return withoutCommas(format.format(asUtc(date)));
 }
 
+const MONTH = new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' });
+
+/** "March", with the year added when it isn't this year's: "March 2025". */
+export function monthLabel(date: string, now = new Date()): string {
+  const month = MONTH.format(asUtc(date));
+  return date.startsWith(String(now.getFullYear())) ? month : `${month} ${date.slice(0, 4)}`;
+}
+
 /** "Sun 12 Oct 2026", always with the year: for a printed page, which outlives the year. */
 export function shortDateWithYear(date: string): string {
   return withoutCommas(SHORT_WITH_YEAR.format(asUtc(date)));

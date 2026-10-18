@@ -233,7 +233,9 @@ is lost or copied. `[ Cancel ] [ Split ]`.
 flock, one shepherd?"? Their 6 entries become one thread, in date order." `[ Cancel ] [ Merge ]`.
 
 **In Review** (M10-11), each question row shows its summary under the text: "Asked 3 times since
-March · 1 partial answer".
+March · 1 partial answer". A question asked once with nothing since has none. The question's text opens
+its thread. Built: "Partly answered" lasts from a partial answer until the question is answered or
+reopened (decision 81).
 
 ## Template picker (M10-12 to M10-14)
 

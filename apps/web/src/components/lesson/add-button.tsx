@@ -11,6 +11,7 @@ import { useTyping } from '@/lib/is-typing.ts';
 interface AddButtonProps {
   onAddTakeaway: () => void;
   onAddQuestion: () => void;
+  onRevisitQuestion: () => void;
 }
 
 /**
@@ -18,7 +19,7 @@ interface AddButtonProps {
  * until there's one. It floats above the bottom bar, and goes while something is being typed, so
  * it never covers the text or the editing toolbar.
  */
-export function AddButton({ onAddTakeaway, onAddQuestion }: AddButtonProps) {
+export function AddButton({ onAddTakeaway, onAddQuestion, onRevisitQuestion }: AddButtonProps) {
   const typing = useTyping();
   if (typing) return null;
   return (
@@ -35,9 +36,10 @@ export function AddButton({ onAddTakeaway, onAddQuestion }: AddButtonProps) {
         <Plus aria-hidden />
       </DropdownMenuTrigger>
       {/* The cursor goes into the new takeaway or question, not back to the button. */}
-      <DropdownMenuContent side="top" align="end" finalFocus={false} className="w-44">
+      <DropdownMenuContent side="top" align="end" finalFocus={false} className="w-52">
         <DropdownMenuItem onClick={onAddTakeaway}>Add takeaway</DropdownMenuItem>
         <DropdownMenuItem onClick={onAddQuestion}>Add question</DropdownMenuItem>
+        <DropdownMenuItem onClick={onRevisitQuestion}>Revisit a question…</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

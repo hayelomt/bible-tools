@@ -1,6 +1,7 @@
 import {
   compareOrder,
   type Lesson,
+  type Question,
   type Section,
   type Series,
   type Tag,
@@ -16,6 +17,13 @@ import { type QuestionView, questionViews } from './question-status.ts';
  */
 
 const notDeleted = (row: { deletedAt: string | null }) => row.deletedAt === null;
+
+/** A lesson's question: its own, or one revisited in it (F24), shown with ↻. */
+export interface LessonQuestion extends QuestionView {
+  revisited: boolean;
+  /** The lesson its answer section is in, which may be another one it was revisited in. */
+  answerLessonId: string | null;
+}
 
 /**
  * Lessons by date, oldest first; lessons on the same day in the order they were made (UUIDv7 ids
@@ -224,11 +232,41 @@ export async function lessonTakeaways(lessonId: string, db: LampDb = appDb): Pro
   return rows.toSorted(byCreation);
 }
 
-/** A lesson's questions (F5), oldest first, with their status (F24). */
+/**
+ * A lesson's questions (F5), with their status (F24): its own, and those revisited in it, in the
+ * order they came to it.
+ */
 export async function lessonQuestions(
   lessonId: string,
   db: LampDb = appDb,
-): Promise<QuestionView[]> {
-  const rows = await db.question.where('lessonId').equals(lessonId).filter(notDeleted).toArray();
-  return questionViews(rows.toSorted(byCreation), db);
+): Promise<LessonQuestion[]> {
+  const own = await db.question.where('lessonId').equals(lessonId).filter(notDeleted).toArray();
+  // Questions revisited here (F24): their entries made in this lesson, and when it came here.
+  const here = await db.questionEntry
+    .where('lessonId')
+    .equals(lessonId)
+    .filter(notDeleted)
+    .toArray();
+  const arrived = new Map<string, string>();
+  for (const entry of here) {
+    const at = arrived.get(entry.questionId);
+    if (at === undefined || entry.createdAt < at) arrived.set(entry.questionId, entry.createdAt);
+  }
+  const ownIds = new Set(own.map((q) => q.id));
+  const visiting = (
+    await db.question.bulkGet([...arrived.keys()].filter((id) => !ownIds.has(id)))
+  ).filter((q): q is Question => !!q && q.deletedAt === null);
+  const views = await questionViews([...own, ...visiting], db);
+  const answers = await db.section.bulkGet(views.flatMap((v) => v.answerSectionId ?? []));
+  const answerLesson = new Map(answers.flatMap((s) => (s ? [[s.id, s.lessonId]] : [])));
+  const since = (q: Question) => (ownIds.has(q.id) ? q.createdAt : arrived.get(q.id)!);
+  return views
+    .map((view) => ({
+      ...view,
+      revisited: !ownIds.has(view.id),
+      answerLessonId: view.answerSectionId
+        ? (answerLesson.get(view.answerSectionId) ?? null)
+        : null,
+    }))
+    .toSorted((a, b) => since(a).localeCompare(since(b)) || a.id.localeCompare(b.id));
 }

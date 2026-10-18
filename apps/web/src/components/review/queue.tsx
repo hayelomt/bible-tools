@@ -1,9 +1,10 @@
 import { Button, buttonVariants } from '@lamp/ui/components/button';
-import { toast } from '@lamp/ui/components/sonner';
 import { Link } from '@tanstack/react-router';
 import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import { parkQuestion, undoEntry } from '@/data/actions/questions.ts';
+import { entryToast } from '@/components/questions/labels.ts';
+import { parkQuestion } from '@/data/actions/questions.ts';
+import { lineageSummary } from '@/data/question-thread.ts';
 import type { QuestionInQueue, TakeawayInQueue } from '@/data/review.ts';
 import { shortDate } from '@/lib/dates.ts';
 import { runWrite } from '@/lib/run-write.ts';
@@ -37,14 +38,11 @@ export function OpenQuestions({ questions }: { questions: QuestionInQueue[] }) {
 }
 
 function QuestionRow({ entry: { question, lesson } }: { entry: QuestionInQueue }) {
+  const summary = lineageSummary(question.entries);
+
   function park() {
     runWrite(
-      parkQuestion(question.id).then((parked) =>
-        toast('Question parked.', {
-          duration: 10_000,
-          action: { label: 'Undo', onClick: () => runWrite(undoEntry(parked.id), 'a question') },
-        }),
-      ),
+      parkQuestion(question.id).then((parked) => entryToast('Question parked.', parked.id)),
       'a question',
     );
   }
@@ -52,7 +50,17 @@ function QuestionRow({ entry: { question, lesson } }: { entry: QuestionInQueue }
   return (
     <li className="flex flex-col gap-2 py-3 first:pt-0">
       <div>
-        <p className="break-words">{question.text}</p>
+        {/* The question opens its thread (F24). */}
+        <p className="break-words">
+          <Link
+            to="/questions/$questionId"
+            params={{ questionId: question.id }}
+            className="rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            {question.text}
+          </Link>
+        </p>
+        {summary && <p className="text-sm text-muted-foreground">{summary}</p>}
         <p className="text-sm text-muted-foreground">
           {lesson.title} · {shortDate(lesson.date)}
         </p>

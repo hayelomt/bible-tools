@@ -41,7 +41,7 @@ const REFS: Readonly<Record<RowEntity, Readonly<Record<string, RowEntity>>>> = {
   sectionTag: { tagId: 'tag', sectionId: 'section' },
   lessonTag: { tagId: 'tag', lessonId: 'lesson' },
   takeaway: { lessonId: 'lesson' },
-  question: { lessonId: 'lesson' },
+  question: { lessonId: 'lesson', splitFromId: 'question' },
   highlight: { promotedSectionId: 'section' },
   memoryItem: {},
   inboxItem: { placedInSectionId: 'section' },
@@ -53,6 +53,7 @@ const OPTIONAL_REFS = new Set([
   'highlight.promotedSectionId',
   'inboxItem.placedInSectionId',
   'questionEntry.sectionId',
+  'question.splitFromId',
 ]);
 
 type AnyRow = EntityRow<RowEntity> & Record<string, unknown>;

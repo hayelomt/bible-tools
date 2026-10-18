@@ -209,6 +209,7 @@ function seedMonth(tagIds: Map<string, string>): Seed {
       ...synced(),
       lessonId: lesson.id,
       text: plan.question,
+      splitFromId: null,
     });
     seed.question.push(question);
     seed.questionEntry.push(
