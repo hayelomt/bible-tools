@@ -87,6 +87,11 @@ describe('promoting a highlight', () => {
     kind: 'sermon' as const,
     speaker: null,
     church: null,
+    sourceType: null,
+    sourceTitle: null,
+    sourceAuthor: null,
+    sourceUrl: null,
+    sourceStartedAt: null,
     mainPassages: [],
   };
 
@@ -100,6 +105,8 @@ describe('promoting a highlight', () => {
         body: { type: 'doc', content: [{ type: 'paragraph' }] },
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );

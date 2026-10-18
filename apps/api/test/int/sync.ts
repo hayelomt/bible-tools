@@ -42,6 +42,11 @@ export const lessonRow = (fields: object = {}): Row => ({
   kind: 'sermon',
   speaker: null,
   church: null,
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
   mainPassages: [ROMANS_8],
   ...fields,
 });
@@ -90,6 +95,8 @@ export const sectionRow = (lessonId: string, fields: object = {}): Row => ({
   body: bodyCiting(ROMANS_8_28),
   conflictOf: null,
   conflictDevice: null,
+  sourceAt: null,
+  sourcePage: null,
   ...fields,
 });
 

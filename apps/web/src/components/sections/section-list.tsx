@@ -54,6 +54,8 @@ export interface SectionItem extends OutlineItem {
   updatedAt: string | null;
   /** A conflicted copy's label (§6.4): the device that wrote it and when; null for any other. */
   conflict: { of: string; device: string | null; time: string } | null;
+  /** The moment in the lesson's source it was captured at (M11-01); null for none. */
+  sourceAt: string | null;
 }
 export type SectionRow = OutlineRow<SectionItem>;
 
@@ -89,6 +91,8 @@ interface Move {
 /** What a section row asks of the list. */
 export interface SectionListApi {
   lessonId: string;
+  /** The lesson's `sourceStartedAt`, which captured sections' times count from. */
+  sourceStartedAt: string | null;
   /** Runs writes one after another, so a reply is never stored before its section. */
   enqueue: (write: () => Promise<unknown>) => void;
   /** A change is waiting to be stored (typing hasn't settled yet). */
@@ -139,6 +143,7 @@ export type SectionRequest =
 
 interface SectionListProps {
   lessonId: string;
+  sourceStartedAt: string | null;
   /** Bumped to put the cursor in the first section (Enter in the title). */
   focusFirst: number;
   request?: SectionRequest;
@@ -150,7 +155,13 @@ interface SectionListProps {
  * row. New sections are drafts until they have text, like a new lesson. Tab, Shift+Tab, Enter and
  * Backspace move between sections and change the level, and the toolbar does the same by touch.
  */
-export function SectionList({ lessonId, focusFirst, request, onSavingChange }: SectionListProps) {
+export function SectionList({
+  lessonId,
+  sourceStartedAt,
+  focusFirst,
+  request,
+  onSavingChange,
+}: SectionListProps) {
   const stored = useLiveQuery(() => lessonSections(lessonId), [lessonId]);
   useAutoPreview();
   const [drafts, setDrafts] = useState<OutlineItem[]>([]);
@@ -210,7 +221,14 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
         })),
       ...drafts
         .filter((d) => !storedById.has(d.id))
-        .map((d) => ({ ...d, body: emptyBody(), stored: false, updatedAt: null, conflict: null })),
+        .map((d) => ({
+          ...d,
+          body: emptyBody(),
+          stored: false,
+          updatedAt: null,
+          conflict: null,
+          sourceAt: null,
+        })),
     ];
     return outline(items);
   }, [stored, storedById, drafts, moves, removed]);
@@ -384,6 +402,7 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
 
     return {
       lessonId,
+      sourceStartedAt,
       enqueue,
       setDirty: (id, isDirty) =>
         setDirtyIds((ids) => {
@@ -545,7 +564,7 @@ export function SectionList({ lessonId, focusFirst, request, onSavingChange }: S
         updateDrafts((ds) => ds.filter((d) => d.id !== id));
       },
     };
-  }, [lessonId, addDraft, updateDrafts, wasDragged]);
+  }, [lessonId, sourceStartedAt, addDraft, updateDrafts, wasDragged]);
   useLayoutEffect(() => {
     apiRef.current = api;
   });

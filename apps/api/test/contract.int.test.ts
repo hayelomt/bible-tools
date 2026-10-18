@@ -31,6 +31,7 @@ const ENTITY_TABLES: Record<EntityName, string> = {
   highlight: 'highlight',
   memoryItem: 'memory_item',
   inboxItem: 'inbox_item',
+  inboxItemTag: 'inbox_item_tag',
   questionEntry: 'question_entry',
   template: 'template',
 };

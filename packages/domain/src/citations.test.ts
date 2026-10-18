@@ -25,6 +25,11 @@ const lesson: Lesson = {
   kind: 'sermon',
   speaker: null,
   church: null,
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
   mainPassages: [ROM_8_28, JHN_3],
 };
 
@@ -49,6 +54,8 @@ const section: Section = {
   body: chipBody(JHN_3, ROM_8_28, JHN_3),
   conflictOf: null,
   conflictDevice: null,
+  sourceAt: null,
+  sourcePage: null,
 };
 
 describe('newId', () => {

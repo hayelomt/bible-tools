@@ -161,7 +161,15 @@ async function fillAccount(userId: string): Promise<void> {
     }),
     p.highlight.create({ data: { userId, ref: {}, colour: 'yellow' } }),
     p.memoryItem.create({ data: { userId, ref: {} } }),
-    p.inboxItem.create({ data: { userId, origin: 'share', receivedAt: new Date(), text: 't' } }),
+    p.inboxItem.create({
+      data: {
+        userId,
+        origin: 'share',
+        receivedAt: new Date(),
+        text: 't',
+        tags: { create: { userId, tagId: tag.id } },
+      },
+    }),
     p.template.create({ data: { userId, name: 'Notes', structure: [{ title: 'Main point' }] } }),
     p.citation.create({
       data: {

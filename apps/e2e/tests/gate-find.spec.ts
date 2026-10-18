@@ -178,6 +178,11 @@ function seedMonth(tagIds: Map<string, string>): Seed {
       kind: plan.title.startsWith('Small group') ? 'group' : 'sermon',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: plan.main ? [verseRef(plan.main)] : [],
     });
     seed.lesson.push(lesson);
@@ -192,6 +197,8 @@ function seedMonth(tagIds: Map<string, string>): Seed {
         body,
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       });
       seed.section.push(section);
       if (tag) {

@@ -28,6 +28,11 @@ beforeEach(async () => {
       kind: 'sermon',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: [],
     },
     db,
@@ -61,7 +66,14 @@ describe('unsaved section text', () => {
   it('applies kept text only to the row it was typed on', async () => {
     const { base: _, ...fields } = draft();
     const row = await createSection(
-      { ...fields, body: emptyBody(), conflictOf: null, conflictDevice: null },
+      {
+        ...fields,
+        body: emptyBody(),
+        conflictOf: null,
+        conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
+      },
       db,
     );
     keepUnsaved(draft({ base: row.updatedAt, body: text('Lost write') }), storage);

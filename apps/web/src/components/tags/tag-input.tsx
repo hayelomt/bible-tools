@@ -22,7 +22,11 @@ import { TagPageLink } from './tag-page-link.tsx';
 interface TagInputProps {
   /** The text field's id, for its `<label>`. */
   id: string;
-  target: TagTarget;
+  /**
+   * What the tags go on, shown as chips above the field. Or, with `onPick` instead, the field only
+   * picks a tag by name, for several items at once (the Inbox's Tag, M11-02).
+   */
+  target: TagTarget | { onPick: (name: string) => void };
   /** Puts the cursor in the field when it appears (the section menu's Tags). */
   focusOnMount?: boolean;
   /** Escape with no list open: the section's tag row closes. */
@@ -60,7 +64,12 @@ export function untag(link: TagLink, name: string) {
  */
 export function TagInput({ id, target, focusOnMount = false, onEscape }: TagInputProps) {
   const tags = useLiveQuery(() => allTags(), []);
-  const applied = useLiveQuery(() => tagsOf(target), [target.kind, target.id]);
+  const on = 'onPick' in target ? null : target;
+  const applied = useLiveQuery(async () => (on ? tagsOf(on) : []), [on?.kind, on?.id]);
+  function add(name: string) {
+    if (on) run(addTag(on, name));
+    else if ('onPick' in target) target.onPick(name);
+  }
   const [text, setText] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -113,7 +122,7 @@ export function TagInput({ id, target, focusOnMount = false, onEscape }: TagInpu
   }
 
   function pick(option: Option) {
-    run(addTag(target, option.name));
+    add(option.name);
     reset();
   }
 
@@ -133,7 +142,7 @@ export function TagInput({ id, target, focusOnMount = false, onEscape }: TagInpu
         const picked = options[Math.min(active, options.length - 1)];
         if (showList && picked) return pick(picked);
         // Typed before the tags were read: `addTag` still finds the name in any case.
-        if (!tags && normaliseTagName(text)) run(addTag(target, text));
+        if (!tags && normaliseTagName(text)) add(text);
         // Otherwise it's already on the item, with nothing to add.
         if (!tags || alreadyOn) reset();
         return;

@@ -129,6 +129,7 @@ export const PARENT_COLUMNS: Readonly<Record<EntityName, readonly string[]>> = {
   memoryItem: [],
   // The section an item was placed in isn't its parent: the item is done with once placed.
   inboxItem: [],
+  inboxItemTag: ['tagId', 'inboxItemId'],
   // An edit kept on an entry brings back the question it's in, and the lesson it happened in.
   questionEntry: ['questionId', 'lessonId'],
   template: [],
@@ -153,6 +154,9 @@ export function conflictedCopy(
     body: copy.body,
     conflictOf: section.id,
     conflictDevice: copy.device,
+    // The same moment in the source as the section it was copied from.
+    sourceAt: section.sourceAt,
+    sourcePage: section.sourcePage,
     createdAt: copy.time,
     updatedAt: copy.time,
     deletedAt: null,

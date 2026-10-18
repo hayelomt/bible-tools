@@ -19,6 +19,8 @@ export interface UnsavedSection {
   body: SectionBody;
   /** The stored row's `updatedAt` the text was typed on; null for a draft. */
   base: string | null;
+  /** A section captured live (M11-01): when it started. Missing in text kept before M11. */
+  sourceAt?: string | null;
 }
 
 type Journal = Record<string, UnsavedSection>;
@@ -71,8 +73,11 @@ export async function restoreUnsaved(db: LampDb, storage: Storage = localStorage
       } else if (entry.base === null) {
         const lesson = await db.lesson.get(entry.lessonId);
         if (lesson && lesson.deletedAt === null) {
-          const { base: _, ...fields } = entry;
-          await createSection({ ...fields, conflictOf: null, conflictDevice: null }, db);
+          const { base: _, sourceAt = null, ...fields } = entry;
+          await createSection(
+            { ...fields, conflictOf: null, conflictDevice: null, sourceAt, sourcePage: null },
+            db,
+          );
         }
       }
     } catch (error) {

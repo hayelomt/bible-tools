@@ -35,6 +35,11 @@ const lessonOn = (title: string, date: string) => {
     kind: 'sermon',
     speaker: null,
     church: null,
+    sourceType: null,
+    sourceTitle: null,
+    sourceAuthor: null,
+    sourceUrl: null,
+    sourceStartedAt: null,
     mainPassages: [],
   };
   return createLesson(fields, db);

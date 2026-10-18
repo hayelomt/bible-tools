@@ -1,6 +1,8 @@
 import type { Lesson } from '@lamp/domain';
 import { cn } from 'cn';
-import { Check, ChevronDown } from 'lucide-react';
+import { buttonVariants } from '@lamp/ui/components/button';
+import { Link } from '@tanstack/react-router';
+import { Check, ChevronDown, CircleDot } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { type SectionRequest, SectionList } from '@/components/sections/section-list.tsx';
 import { ScreenActions, ScreenTitle, SidePanel } from '@/components/shell/slots.tsx';
@@ -45,6 +47,11 @@ function newLesson(seriesId?: string): LessonFields {
     kind: 'sermon',
     speaker: null,
     church: null,
+    sourceType: null,
+    sourceTitle: null,
+    sourceAuthor: null,
+    sourceUrl: null,
+    sourceStartedAt: null,
     mainPassages: [],
   };
 }
@@ -121,6 +128,18 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
             </>
           )}
         </output>
+        {lesson && (
+          // Capture mode (F26, M11-01), one tap from the lesson.
+          <Link
+            to="/lessons/$lessonId/capture"
+            params={{ lessonId: id }}
+            data-slot="button"
+            className={buttonVariants({ variant: 'ghost', size: 'sm', className: 'gap-1.5' })}
+          >
+            <CircleDot aria-hidden className="text-destructive" />
+            Capture
+          </Link>
+        )}
         {lesson && <LessonMenu lesson={lesson} />}
       </ScreenActions>
 
@@ -213,6 +232,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
         <div className="mt-4">
           <SectionList
             lessonId={id}
+            sourceStartedAt={lesson.sourceStartedAt}
             focusFirst={focusFirst}
             request={request}
             onSavingChange={setSectionsSaving}

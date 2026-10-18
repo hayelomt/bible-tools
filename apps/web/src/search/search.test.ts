@@ -56,6 +56,11 @@ const lessonFields = (title: string, date: string, mainPassages: Passage[] = [])
   kind: 'sermon',
   speaker: null,
   church: null,
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
   mainPassages: mainPassages.map((p) => verse(p).attrs),
 });
 const ROM_8_28: Passage = { book: 'ROM', chapter: 8, verseStart: 28 };
@@ -76,6 +81,8 @@ async function section(name: string, lessonId: string, content: SectionBody, par
       body: content,
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     },
     db,
   );

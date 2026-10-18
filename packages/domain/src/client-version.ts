@@ -33,6 +33,12 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
     change:
       'M10 (thinking layer): the `noteLink` body node; question entries, with `question.status` and `answerSectionId` out of the wire format; `question.splitFromId`; the template entity and the `defaultTemplates` setting; `lesson.source` renamed `kind`',
   },
+  {
+    minClientVersion: '0.4.0',
+    fingerprint: '9bfde215',
+    change:
+      'M11 (sermon workflow): the lesson source columns; `section.sourceAt` and `sourcePage`; inbox item tags',
+  },
 ];
 
 /**

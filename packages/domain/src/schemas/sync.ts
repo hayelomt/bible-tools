@@ -97,6 +97,7 @@ export const changeSchema = z.discriminatedUnion('entity', [
   changeOf('highlight', ENTITY_SCHEMAS.highlight.omit({ rev: true })),
   changeOf('memoryItem', ENTITY_SCHEMAS.memoryItem.omit({ rev: true })),
   changeOf('inboxItem', inboxItemChangeRow),
+  changeOf('inboxItemTag', ENTITY_SCHEMAS.inboxItemTag.omit({ rev: true })),
   changeOf('questionEntry', ENTITY_SCHEMAS.questionEntry.omit({ rev: true })),
   changeOf('template', ENTITY_SCHEMAS.template.omit({ rev: true })),
 ]);
@@ -199,6 +200,7 @@ export const pulledRowSchema = z.discriminatedUnion('entity', [
   pulledRowOf('highlight'),
   pulledRowOf('memoryItem'),
   pulledRowOf('inboxItem'),
+  pulledRowOf('inboxItemTag'),
   pulledRowOf('questionEntry'),
   pulledRowOf('template'),
 ]);

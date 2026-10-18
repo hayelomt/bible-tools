@@ -50,6 +50,7 @@ const NOUNS: Record<EntityName, string> = {
   highlight: 'Highlight',
   memoryItem: 'Memory verse',
   inboxItem: 'Inbox item',
+  inboxItemTag: 'Tag on an inbox item',
   questionEntry: 'Change to a question',
   template: 'Template',
 };
@@ -127,7 +128,10 @@ async function describe(db: LampDb, entry: OutboxEntry): Promise<RejectedChange>
       };
     }
     case 'inboxItem':
-      return { ...base, what: 'An inbox item', target: { kind: 'inbox' } };
+    case 'inboxItemTag': {
+      const what = entry.entity === 'inboxItem' ? 'An inbox item' : 'A tag on an inbox item';
+      return { ...base, what, target: { kind: 'inbox' } };
+    }
     case 'template':
       return { ...base, what: named(noun, field('name')), target: { kind: 'settings' } };
     case 'highlight':

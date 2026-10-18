@@ -42,6 +42,8 @@ export const COLOR_MODES = ['light', 'dark', 'system'] as const;
 export const USER_ROLES = ['user', 'admin'] as const;
 /** How an inbox item arrived (§17.2): shared, pasted or typed into the add box, imported, captured. */
 export const INBOX_ORIGINS = ['share', 'paste', 'typed', 'import', 'capture'] as const;
+/** What a lesson's source is (F28, §17.7). */
+export const SOURCE_TYPES = ['sermon', 'book', 'podcast', 'other'] as const;
 
 /** Fields every synced row carries (§5.1). */
 const synced = {
@@ -92,6 +94,9 @@ export const seriesSchema = z.strictObject({
   kind: z.enum(SERIES_KINDS),
 });
 
+/** An http or https address, as shared from another app or a lesson's source. */
+const webUrlSchema = z.url({ protocol: /^https?$/ }).max(2048);
+
 export const lessonSchema = z.strictObject({
   ...synced,
   seriesId: idSchema.nullable(),
@@ -101,6 +106,13 @@ export const lessonSchema = z.strictObject({
   speaker: lineSchema(200).nullable(),
   church: lineSchema(200).nullable(),
   mainPassages: z.array(verseRefSchema).max(20),
+  /** The source (F28, §17.7): columns rather than an entity, since a lesson has at most one. */
+  sourceType: z.enum(SOURCE_TYPES).nullable(),
+  sourceTitle: lineSchema(200).nullable(),
+  sourceAuthor: lineSchema(200).nullable(),
+  sourceUrl: webUrlSchema.nullable(),
+  /** When the recording starts: section times count from it. */
+  sourceStartedAt: timestampSchema.nullable(),
 });
 
 export const sectionSchema = z.strictObject({
@@ -113,6 +125,10 @@ export const sectionSchema = z.strictObject({
   conflictOf: idSchema.nullable(),
   /** The device that wrote a conflicted copy's body, for its label (§6.4); null when unknown. */
   conflictDevice: lineSchema(100).nullable(),
+  /** The moment in the lesson's source (F28, §17.7): capture mode stamps it. */
+  sourceAt: timestampSchema.nullable(),
+  /** A page in a book, as typed ("112"). */
+  sourcePage: lineSchema(20).nullable(),
 });
 
 export const tagSchema = z.strictObject({
@@ -180,9 +196,6 @@ export const memoryItemSchema = z.strictObject({
   reviewCount: z.int().min(0),
 });
 
-/** An http or https address, as shared from another app. */
-const webUrlSchema = z.url({ protocol: /^https?$/ }).max(2048);
-
 /**
  * A verse or a note waiting to be put in a lesson (F17, §17.2). Not indexed until it's placed.
  * The fields without the check that it holds something, since a refined object can't be `omit`ted
@@ -206,6 +219,13 @@ export const inboxItemFields = z.strictObject({
   snoozedUntil: dateSchema.nullable(),
   /** The section it was put in; cleared again by Undo. */
   placedInSectionId: idSchema.nullable(),
+});
+
+/** A tag on an inbox item (F27, §17.2); placing the item moves it onto the section. */
+export const inboxItemTagSchema = z.strictObject({
+  ...synced,
+  tagId: idSchema,
+  inboxItemId: idSchema,
 });
 
 /** An inbox item holds a chip, some text, or both (the table's CHECK). */
@@ -261,6 +281,7 @@ export const ENTITY_SCHEMAS = {
   highlight: highlightSchema,
   memoryItem: memoryItemSchema,
   inboxItem: inboxItemSchema,
+  inboxItemTag: inboxItemTagSchema,
   questionEntry: questionEntrySchema,
   template: templateSchema,
 } as const;
@@ -288,5 +309,7 @@ export type Highlight = z.infer<typeof highlightSchema>;
 export type MemoryItem = z.infer<typeof memoryItemSchema>;
 export type InboxItem = z.infer<typeof inboxItemSchema>;
 export type InboxOrigin = (typeof INBOX_ORIGINS)[number];
+export type InboxItemTag = z.infer<typeof inboxItemTagSchema>;
+export type SourceType = (typeof SOURCE_TYPES)[number];
 export type Citation = z.infer<typeof citationSchema>;
 export type EntityRow<E extends EntityName = EntityName> = z.infer<(typeof ENTITY_SCHEMAS)[E]>;

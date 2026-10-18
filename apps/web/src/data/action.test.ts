@@ -38,6 +38,11 @@ const LESSON = {
   kind: 'sermon' as const,
   speaker: null,
   church: null,
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
   mainPassages: [ROM_8_28],
 };
 
@@ -130,6 +135,8 @@ describe('action', () => {
         body: withChip(ROM_8_28),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       });
     });
     await action(db, (w) => w.update('section', section.id, { body: withChip(JHN_10_9) }));
@@ -216,6 +223,8 @@ describe('action', () => {
           body: withChip(JHN_10_9),
           conflictOf: null,
           conflictDevice: null,
+          sourceAt: null,
+          sourcePage: null,
         });
         await w.updateSettings({ colorMode: 'light' });
         throw new Error('the tab died');

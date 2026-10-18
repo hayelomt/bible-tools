@@ -7,6 +7,7 @@ import { queuedFor } from './outbox.ts';
 const LINKS = [
   { entity: 'sectionTag', owner: 'sectionId' },
   { entity: 'lessonTag', owner: 'lessonId' },
+  { entity: 'inboxItemTag', owner: 'inboxItemId' },
 ] as const;
 
 /**

@@ -41,6 +41,11 @@ beforeEach(async () => {
       kind: 'personal',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: [],
     },
     db,
@@ -69,6 +74,11 @@ const LESSON = {
   kind: 'group' as const,
   speaker: null,
   church: null,
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
   mainPassages: [],
 };
 
@@ -99,6 +109,8 @@ describe('applyTemplate', () => {
         body: headedBody('Before'),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );
@@ -110,6 +122,8 @@ describe('applyTemplate', () => {
         body: headedBody('After'),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );
@@ -226,6 +240,8 @@ describe('the user’s own templates (M10-13)', () => {
         body: paragraph('Unheaded', true),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );

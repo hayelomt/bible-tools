@@ -12,6 +12,7 @@ import { SectionTags } from '@/components/tags/section-tags.tsx';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { forgetUnsaved, keepUnsaved } from '@/data/unsaved.ts';
 import { momentLabel } from '@/lib/dates.ts';
+import { offsetLabel } from '@/lib/source-time.ts';
 import { startVerseMatcher } from '@/verse-match/client.ts';
 import { SAVE_DELAY_MS } from '@/components/lesson/use-lesson-saver.ts';
 import { hasText, toBody } from './body.ts';
@@ -122,6 +123,8 @@ export const SectionEditor = memo(function SectionEditor({
             body,
             conflictOf: null,
             conflictDevice: null,
+            sourceAt: null,
+            sourcePage: null,
           });
           stored.current = true;
           list.markStored(id);
@@ -282,6 +285,13 @@ export const SectionEditor = memo(function SectionEditor({
           <p id={labelId} className="mb-1 text-sm text-muted-foreground">
             Conflicted copy · {conflict.device ?? 'another device'} · {momentLabel(conflict.time)}
           </p>
+        )}
+        {item.sourceAt && api.sourceStartedAt && (
+          // Its time in the source, from capture mode (M11-01); M11-07 makes it open the recording.
+          <span className="float-left mt-[3px] mr-2 text-sm text-muted-foreground tabular-nums">
+            {offsetLabel(item.sourceAt, api.sourceStartedAt)}
+            <span className="sr-only">: </span>
+          </span>
         )}
         <EditorContent editor={editor} />
         {offerTemplate && empty && (

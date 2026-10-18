@@ -104,6 +104,21 @@ describe('tag links', () => {
     await prisma.lessonTag.create({ data: link });
     await expect(prisma.lessonTag.create({ data: link })).rejects.toMatchObject({ code: 'P2002' });
   });
+
+  it('allow one live link per inbox item and tag', async () => {
+    const { id: userId } = await newUser();
+    const item = await prisma.inboxItem.create({
+      data: { userId, origin: 'typed', receivedAt: new Date(), text: 'x' },
+    });
+    const tag = await prisma.tag.create({ data: { userId, name: 'grace' } });
+    const link = { userId, inboxItemId: item.id, tagId: tag.id };
+    const first = await prisma.inboxItemTag.create({ data: link });
+    await expect(prisma.inboxItemTag.create({ data: link })).rejects.toMatchObject({
+      code: 'P2002',
+    });
+    await prisma.inboxItemTag.update({ where: { id: first.id }, data: { deletedAt: new Date() } });
+    await expect(prisma.inboxItemTag.create({ data: link })).resolves.toBeDefined();
+  });
 });
 
 describe('check constraints', () => {
@@ -127,6 +142,11 @@ describe('check constraints', () => {
     await expect(
       prisma.lesson.create({ data: { userId, title: 'x', date: new Date(), kind: 'podcast' } }),
     ).rejects.toThrow(/lesson_kind_check/);
+    await expect(
+      prisma.lesson.create({
+        data: { userId, title: 'x', date: new Date(), sourceType: 'video' },
+      }),
+    ).rejects.toThrow(/lesson_source_type_check/);
     await expect(
       prisma.template.create({ data: { userId, name: 'x', structure: { title: 'x' } } }),
     ).rejects.toThrow(/template_structure_check/);
@@ -238,7 +258,13 @@ describe('deletes', () => {
       prisma.highlight.create({ data: { userId, ref: {}, colour: 'yellow' } }),
       prisma.memoryItem.create({ data: { userId, ref: {} } }),
       prisma.inboxItem.create({
-        data: { userId, origin: 'share', receivedAt: new Date(), text: 't' },
+        data: {
+          userId,
+          origin: 'share',
+          receivedAt: new Date(),
+          text: 't',
+          tags: { create: { userId, tagId: tag.id } },
+        },
       }),
       prisma.citation.create({
         data: {
@@ -280,6 +306,7 @@ describe('deletes', () => {
       prisma.highlight.count({ where }),
       prisma.memoryItem.count({ where }),
       prisma.inboxItem.count({ where }),
+      prisma.inboxItemTag.count({ where }),
       prisma.citation.count({ where }),
       prisma.syncChange.count({ where }),
       prisma.device.count({ where }),
@@ -422,6 +449,8 @@ describe('deletes', () => {
     await expect(prisma.section.findUnique({ where: { id: copy.id } })).resolves.toMatchObject({
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     });
   });
 });

@@ -69,6 +69,8 @@ function seedYear(): Seed {
       body: noteBody(note),
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     });
     seed.section.push(row);
     return row;
@@ -84,6 +86,11 @@ function seedYear(): Seed {
       kind: 'sermon',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: [],
     });
     seed.lesson.push(lesson);

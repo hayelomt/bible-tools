@@ -131,6 +131,8 @@ export function promoteQuestion(
       body: answerBody(question.text),
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     });
     // A parked question being answered is open again until the answer is written.
     await addEntry(w, question, partial ? 'partial' : 'answered', {

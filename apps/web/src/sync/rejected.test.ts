@@ -41,6 +41,11 @@ describe('refused changes in the sync panel (§6.2)', () => {
         kind: 'sermon',
         speaker: null,
         church: null,
+        sourceType: null,
+        sourceTitle: null,
+        sourceAuthor: null,
+        sourceUrl: null,
+        sourceStartedAt: null,
         mainPassages: [],
       });
       const note = await w.create('section', {
@@ -50,6 +55,8 @@ describe('refused changes in the sync panel (§6.2)', () => {
         body: body('Jesus is the door'),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       });
       const shepherds = await w.create('tag', { name: 'Shepherds', isSeeded: false });
       return { lesson: created, section: note, tag: shepherds };
@@ -281,7 +288,8 @@ describe('Dexie version 10', () => {
 
     const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
     const { source: _source, ...rest } = lesson;
-    expect(await upgraded.lesson.get(id(1))).toEqual({ ...rest, kind: 'personal' });
+    // Version 11 adds the source columns.
+    expect(await upgraded.lesson.get(id(1))).toEqual({ ...rest, kind: 'personal', ...NO_SOURCE });
     const none = { sermon: null, personal: null, group: null };
     expect(await upgraded.userSettings.get('settings')).toEqual({
       ...settings,
@@ -297,6 +305,69 @@ describe('Dexie version 10', () => {
     expect(removed).toMatchObject({ entity: 'lesson', op: 'delete' });
     expect(queuedSettings).toMatchObject({ row: { defaultTemplates: none } });
     expect(await upgraded.template.count()).toBe(0);
+    await upgraded.delete();
+  });
+});
+
+const NO_SOURCE = {
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
+};
+
+describe('Dexie version 11', () => {
+  it('adds the source columns to lessons and sections, stored and queued, and inbox item tags', async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(10).stores({
+      lesson: 'id, seriesId, date',
+      section: 'id, lessonId, parentId, conflictOf',
+      outbox: '++seq, [entity+entityId]',
+    });
+    const meta = { createdAt: at(1), updatedAt: at(1), rev: 0, deletedAt: null };
+    const lesson = {
+      ...meta,
+      id: id(1),
+      seriesId: null,
+      title: 'Psalm 23',
+      date: '2026-10-04',
+      kind: 'sermon',
+      speaker: null,
+      church: null,
+      mainPassages: [],
+    };
+    const section = {
+      ...meta,
+      id: id(2),
+      lessonId: id(1),
+      parentId: null,
+      orderKey: 'a0',
+      body: { type: 'doc', content: [] },
+      conflictOf: null,
+      conflictDevice: null,
+    };
+    await old.table('lesson').put(lesson);
+    await old.table('section').put(section);
+    const { rev: _l, ...sentLesson } = lesson;
+    const { rev: _s, ...sentSection } = section;
+    await old.table('outbox').bulkAdd([
+      { entity: 'lesson', entityId: id(1), op: 'upsert', row: sentLesson },
+      { entity: 'section', entityId: id(2), op: 'upsert', row: sentSection },
+      { entity: 'section', entityId: id(3), op: 'delete' },
+    ]);
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    const moment = { sourceAt: null, sourcePage: null };
+    expect(await upgraded.lesson.get(id(1))).toEqual({ ...lesson, ...NO_SOURCE });
+    expect(await upgraded.section.get(id(2))).toEqual({ ...section, ...moment });
+    const [queuedLesson, queuedSection, removed] = await upgraded.outbox.toArray();
+    expect(queuedLesson).toMatchObject({ row: { ...sentLesson, ...NO_SOURCE } });
+    expect(queuedSection).toMatchObject({ row: { ...sentSection, ...moment } });
+    expect(removed).not.toHaveProperty('row');
+    expect(await upgraded.inboxItemTag.count()).toBe(0);
     await upgraded.delete();
   });
 });

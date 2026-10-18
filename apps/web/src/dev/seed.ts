@@ -375,6 +375,8 @@ async function writeNotes(
         body: noteBody(note.text),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );
@@ -409,6 +411,11 @@ export async function seedDemo(db: LampDb): Promise<void> {
         kind: plan.kind,
         speaker: plan.speaker ?? null,
         church: plan.church ?? null,
+        sourceType: null,
+        sourceTitle: null,
+        sourceAuthor: null,
+        sourceUrl: null,
+        sourceStartedAt: null,
         mainPassages: (plan.main ?? []).map(verseRef),
       },
       db,
@@ -450,6 +457,11 @@ export async function seedBulk(db: LampDb, lessons = 50, sections = 100): Promis
         kind: 'sermon',
         speaker: null,
         church: null,
+        sourceType: null,
+        sourceTitle: null,
+        sourceAuthor: null,
+        sourceUrl: null,
+        sourceStartedAt: null,
         mainPassages: [],
       });
       const keys = keysBetween(null, null, sections);
@@ -464,6 +476,8 @@ export async function seedBulk(db: LampDb, lessons = 50, sections = 100): Promis
           ),
           conflictOf: null,
           conflictDevice: null,
+          sourceAt: null,
+          sourcePage: null,
         });
       }
     });

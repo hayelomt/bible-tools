@@ -45,6 +45,7 @@ const REFS: Readonly<Record<RowEntity, Readonly<Record<string, RowEntity>>>> = {
   highlight: { promotedSectionId: 'section' },
   memoryItem: {},
   inboxItem: { placedInSectionId: 'section' },
+  inboxItemTag: { tagId: 'tag', inboxItemId: 'inboxItem' },
   questionEntry: { questionId: 'question', lessonId: 'lesson', sectionId: 'section' },
   template: {},
 };

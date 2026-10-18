@@ -5,6 +5,7 @@ import type {
   EntityRow,
   Highlight,
   InboxItem,
+  InboxItemTag,
   Lesson,
   LessonTag,
   Link,
@@ -87,6 +88,7 @@ export class LampDb extends Dexie {
   highlight!: Table<Highlight, string>;
   memoryItem!: Table<MemoryItem, string>;
   inboxItem!: Table<InboxItem, string>;
+  inboxItemTag!: Table<InboxItemTag, string>;
   questionEntry!: Table<QuestionEntry, string>;
   template!: Table<Template, string>;
   /** One row, under `SETTINGS_KEY`. */
@@ -228,11 +230,43 @@ export class LampDb extends Dexie {
             change.changed = change.changed?.map((f) => (f === 'source' ? 'kind' : f));
           });
       });
+    // M11: tags on inbox items (F27, §17.2), found by tag and by item; a lesson's source and a
+    // section's moment in it (F28, §17.7), null in stored rows and queued changes, which the
+    // server's schema needs. Not queued themselves, like version 7.
+    this.version(11)
+      .stores({ inboxItemTag: 'id, tagId, inboxItemId' })
+      .upgrade(async (tx) => {
+        await tx.table('lesson').toCollection().modify(withoutSource);
+        await tx.table('section').toCollection().modify(withoutMoment);
+        await tx
+          .table('outbox')
+          .filter((entry: OutboxEntry) => entry.op === 'upsert')
+          .modify((entry: OutboxEntry) => {
+            const row = (entry as { row?: object }).row;
+            if (entry.entity === 'lesson' && row) withoutSource(row);
+            if (entry.entity === 'section' && row) withoutMoment(row);
+          });
+      });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
     return this.table(entity);
   }
+}
+
+/** Version 11's source columns, none, on a stored or queued lesson. */
+function withoutSource(lesson: Partial<Lesson>) {
+  lesson.sourceType ??= null;
+  lesson.sourceTitle ??= null;
+  lesson.sourceAuthor ??= null;
+  lesson.sourceUrl ??= null;
+  lesson.sourceStartedAt ??= null;
+}
+
+/** Version 11's `sourceAt` and `sourcePage`, none, on a stored or queued section. */
+function withoutMoment(section: Partial<Section>) {
+  section.sourceAt ??= null;
+  section.sourcePage ??= null;
 }
 
 /** A lesson as stored before version 10. */

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as CaptureRouteImport } from './routes/_capture'
 import { Route as PrintRouteImport } from './routes/_print'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppSplatRouteImport } from './routes/_app/$'
@@ -24,6 +25,7 @@ import { Route as AppVerifyEmailRouteImport } from './routes/_app/verify-email'
 import { Route as DevSeedRouteImport } from './routes/dev.seed'
 import { Route as AppCompilePassageRouteImport } from './routes/_app/compile/$passage'
 import { Route as AppInboxIndexRouteImport } from './routes/_app/inbox/index'
+import { Route as AppInboxSnoozedRouteImport } from './routes/_app/inbox/snoozed'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app/lessons/index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app/lessons/$lessonId'
 import { Route as AppQuestionsQuestionIdRouteImport } from './routes/_app/questions/$questionId'
@@ -42,11 +44,16 @@ import { Route as AppInboxImportImportIdRouteImport } from './routes/_app/inbox/
 import { Route as AppSettingsTemplatesIndexRouteImport } from './routes/_app/settings/templates/index'
 import { Route as AppSettingsTemplatesTemplateIdRouteImport } from './routes/_app/settings/templates/$templateId'
 import { Route as AppSettingsTemplatesNewRouteImport } from './routes/_app/settings/templates/new'
+import { Route as CaptureLessonsLessonIdCaptureRouteImport } from './routes/_capture/lessons/$lessonId.capture'
 import { Route as PrintLessonsLessonIdPrintRouteImport } from './routes/_print/lessons/$lessonId.print'
 import { Route as PrintSeriesSeriesIdPrintRouteImport } from './routes/_print/series/$seriesId.print'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureRoute = CaptureRouteImport.update({
+  id: '/_capture',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrintRoute = PrintRouteImport.update({
@@ -116,6 +123,11 @@ const AppCompilePassageRoute = AppCompilePassageRouteImport.update({
 const AppInboxIndexRoute = AppInboxIndexRouteImport.update({
   id: '/inbox/',
   path: '/inbox/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInboxSnoozedRoute = AppInboxSnoozedRouteImport.update({
+  id: '/inbox/snoozed',
+  path: '/inbox/snoozed',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLessonsIndexRoute = AppLessonsIndexRouteImport.update({
@@ -210,6 +222,12 @@ const AppSettingsTemplatesNewRoute = AppSettingsTemplatesNewRouteImport.update({
   path: '/settings/templates/new',
   getParentRoute: () => AppRoute,
 } as any)
+const CaptureLessonsLessonIdCaptureRoute =
+  CaptureLessonsLessonIdCaptureRouteImport.update({
+    id: '/lessons/$lessonId/capture',
+    path: '/lessons/$lessonId/capture',
+    getParentRoute: () => CaptureRoute,
+  } as any)
 const PrintLessonsLessonIdPrintRoute =
   PrintLessonsLessonIdPrintRouteImport.update({
     id: '/lessons/$lessonId/print',
@@ -236,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof AppVerifyEmailRoute
   '/dev/seed': typeof DevSeedRoute
   '/compile/$passage': typeof AppCompilePassageRoute
+  '/inbox/snoozed': typeof AppInboxSnoozedRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/questions/$questionId': typeof AppQuestionsQuestionIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
@@ -254,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
+  '/lessons/$lessonId/capture': typeof CaptureLessonsLessonIdCaptureRoute
   '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
   '/settings/templates/': typeof AppSettingsTemplatesIndexRoute
@@ -271,6 +291,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof AppVerifyEmailRoute
   '/dev/seed': typeof DevSeedRoute
   '/compile/$passage': typeof AppCompilePassageRoute
+  '/inbox/snoozed': typeof AppInboxSnoozedRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/questions/$questionId': typeof AppQuestionsQuestionIdRoute
   '/read/$chapter': typeof AppReadChapterRoute
@@ -289,6 +310,7 @@ export interface FileRoutesByTo {
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
+  '/lessons/$lessonId/capture': typeof CaptureLessonsLessonIdCaptureRoute
   '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
   '/settings/templates': typeof AppSettingsTemplatesIndexRoute
@@ -296,6 +318,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_capture': typeof CaptureRouteWithChildren
   '/_print': typeof PrintRouteWithChildren
   '/_app/$': typeof AppSplatRoute
   '/_app/check-email': typeof AppCheckEmailRoute
@@ -309,6 +332,7 @@ export interface FileRoutesById {
   '/dev/seed': typeof DevSeedRoute
   '/_app/': typeof AppIndexRoute
   '/_app/compile/$passage': typeof AppCompilePassageRoute
+  '/_app/inbox/snoozed': typeof AppInboxSnoozedRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
   '/_app/questions/$questionId': typeof AppQuestionsQuestionIdRoute
   '/_app/read/$chapter': typeof AppReadChapterRoute
@@ -327,6 +351,7 @@ export interface FileRoutesById {
   '/_app/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/_app/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/_app/settings/templates/new': typeof AppSettingsTemplatesNewRoute
+  '/_capture/lessons/$lessonId/capture': typeof CaptureLessonsLessonIdCaptureRoute
   '/_print/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/_print/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
   '/_app/settings/templates/': typeof AppSettingsTemplatesIndexRoute
@@ -346,6 +371,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/dev/seed'
     | '/compile/$passage'
+    | '/inbox/snoozed'
     | '/lessons/$lessonId'
     | '/questions/$questionId'
     | '/read/$chapter'
@@ -364,6 +390,7 @@ export interface FileRouteTypes {
     | '/inbox/import/$importId'
     | '/settings/templates/$templateId'
     | '/settings/templates/new'
+    | '/lessons/$lessonId/capture'
     | '/lessons/$lessonId/print'
     | '/series/$seriesId/print'
     | '/settings/templates/'
@@ -381,6 +408,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/dev/seed'
     | '/compile/$passage'
+    | '/inbox/snoozed'
     | '/lessons/$lessonId'
     | '/questions/$questionId'
     | '/read/$chapter'
@@ -399,12 +427,14 @@ export interface FileRouteTypes {
     | '/inbox/import/$importId'
     | '/settings/templates/$templateId'
     | '/settings/templates/new'
+    | '/lessons/$lessonId/capture'
     | '/lessons/$lessonId/print'
     | '/series/$seriesId/print'
     | '/settings/templates'
   id:
     | '__root__'
     | '/_app'
+    | '/_capture'
     | '/_print'
     | '/_app/$'
     | '/_app/check-email'
@@ -418,6 +448,7 @@ export interface FileRouteTypes {
     | '/dev/seed'
     | '/_app/'
     | '/_app/compile/$passage'
+    | '/_app/inbox/snoozed'
     | '/_app/lessons/$lessonId'
     | '/_app/questions/$questionId'
     | '/_app/read/$chapter'
@@ -436,6 +467,7 @@ export interface FileRouteTypes {
     | '/_app/inbox/import/$importId'
     | '/_app/settings/templates/$templateId'
     | '/_app/settings/templates/new'
+    | '/_capture/lessons/$lessonId/capture'
     | '/_print/lessons/$lessonId/print'
     | '/_print/series/$seriesId/print'
     | '/_app/settings/templates/'
@@ -443,6 +475,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  CaptureRoute: typeof CaptureRouteWithChildren
   PrintRoute: typeof PrintRouteWithChildren
   DevSeedRoute: typeof DevSeedRoute
 }
@@ -454,6 +487,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_capture': {
+      id: '/_capture'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof CaptureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_print': {
@@ -552,6 +592,13 @@ declare module '@tanstack/react-router' {
       path: '/inbox'
       fullPath: '/inbox/'
       preLoaderRoute: typeof AppInboxIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/inbox/snoozed': {
+      id: '/_app/inbox/snoozed'
+      path: '/inbox/snoozed'
+      fullPath: '/inbox/snoozed'
+      preLoaderRoute: typeof AppInboxSnoozedRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/lessons/': {
@@ -680,6 +727,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsTemplatesNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_capture/lessons/$lessonId/capture': {
+      id: '/_capture/lessons/$lessonId/capture'
+      path: '/lessons/$lessonId/capture'
+      fullPath: '/lessons/$lessonId/capture'
+      preLoaderRoute: typeof CaptureLessonsLessonIdCaptureRouteImport
+      parentRoute: typeof CaptureRoute
+    }
     '/_print/lessons/$lessonId/print': {
       id: '/_print/lessons/$lessonId/print'
       path: '/lessons/$lessonId/print'
@@ -709,6 +763,7 @@ interface AppRouteChildren {
   AppVerifyEmailRoute: typeof AppVerifyEmailRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCompilePassageRoute: typeof AppCompilePassageRoute
+  AppInboxSnoozedRoute: typeof AppInboxSnoozedRoute
   AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
   AppQuestionsQuestionIdRoute: typeof AppQuestionsQuestionIdRoute
   AppReadChapterRoute: typeof AppReadChapterRoute
@@ -742,6 +797,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppVerifyEmailRoute: AppVerifyEmailRoute,
   AppIndexRoute: AppIndexRoute,
   AppCompilePassageRoute: AppCompilePassageRoute,
+  AppInboxSnoozedRoute: AppInboxSnoozedRoute,
   AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
   AppQuestionsQuestionIdRoute: AppQuestionsQuestionIdRoute,
   AppReadChapterRoute: AppReadChapterRoute,
@@ -765,6 +821,17 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface CaptureRouteChildren {
+  CaptureLessonsLessonIdCaptureRoute: typeof CaptureLessonsLessonIdCaptureRoute
+}
+
+const CaptureRouteChildren: CaptureRouteChildren = {
+  CaptureLessonsLessonIdCaptureRoute: CaptureLessonsLessonIdCaptureRoute,
+}
+
+const CaptureRouteWithChildren =
+  CaptureRoute._addFileChildren(CaptureRouteChildren)
+
 interface PrintRouteChildren {
   PrintLessonsLessonIdPrintRoute: typeof PrintLessonsLessonIdPrintRoute
   PrintSeriesSeriesIdPrintRoute: typeof PrintSeriesSeriesIdPrintRoute
@@ -779,6 +846,7 @@ const PrintRouteWithChildren = PrintRoute._addFileChildren(PrintRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  CaptureRoute: CaptureRouteWithChildren,
   PrintRoute: PrintRouteWithChildren,
   DevSeedRoute: DevSeedRoute,
 }

@@ -1,3 +1,4 @@
+import type { ParsedPassage, VerseRef } from '@lamp/domain';
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import { ReactRenderer } from '@tiptap/react';
@@ -14,6 +15,21 @@ export type PassageEntry = Extract<ReferenceEntry, { kind: 'passage' }>;
 export type VerseSuggestionProps = SuggestionProps<ReferenceEntry, PassageEntry>;
 
 const KEY = new PluginKey('verseSuggestion');
+
+/**
+ * A chip's attributes for a passage, in the active translation, with its text when the book is
+ * here. Still on its way, or not downloaded (offline), the chip goes in without its text, which
+ * `VerseSnapshots` adds when the book arrives.
+ */
+export function chipFor(ref: ParsedPassage): VerseRef {
+  const translation = activeTranslation();
+  const book = bookState(translation, ref.book);
+  return {
+    ...ref,
+    translation,
+    ...(book.status === 'ready' && { snapshotText: snapshotText(book.text, ref, translation) }),
+  };
+}
 /** An atom (a chip) in the text before the cursor; not a letter or digit, so a reference starts after it. */
 const LEAF = '￼';
 
@@ -49,17 +65,7 @@ export const VerseSuggestion = Extension.create({
         allow: ({ state }) => !pasteOffered(state),
         items: ({ query }) => referenceEntries(query),
         command: ({ editor, range, props: { ref } }) => {
-          const translation = activeTranslation();
-          const book = bookState(translation, ref.book);
-          const attrs = {
-            ...ref,
-            translation,
-            ...(book.status === 'ready' && {
-              snapshotText: snapshotText(book.text, ref, translation),
-            }),
-          };
-          // Still on its way, or not downloaded (offline): the chip goes in without its text,
-          // which `VerseSnapshots` adds when the book arrives.
+          const attrs = chipFor(ref);
           // A space follows the chip, so typing goes on; one that's already there is reused.
           const to =
             editor.state.doc.textBetween(range.to, range.to + 1) === ' ' ? range.to + 1 : range.to;

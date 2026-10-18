@@ -55,6 +55,8 @@ async function placeTemplate(
       body: headedBody(title),
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     });
     ids.push(section.id);
     const replyKeys = keysBetween(null, null, children.length);
@@ -66,6 +68,8 @@ async function placeTemplate(
         body: headedBody(child.title),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       });
     }
   }

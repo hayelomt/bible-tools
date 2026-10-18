@@ -31,6 +31,11 @@ const lessonOn = (title: string, date: string) =>
       kind: 'sermon',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: [],
     },
     db,
@@ -63,7 +68,16 @@ let order: string | null = null;
 const sectionIn = (lessonId: string, body: SectionBody) => {
   order = keyBetween(order, null);
   return createSection(
-    { lessonId, parentId: null, orderKey: order, body, conflictOf: null, conflictDevice: null },
+    {
+      lessonId,
+      parentId: null,
+      orderKey: order,
+      body,
+      conflictOf: null,
+      conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
+    },
     db,
   );
 };

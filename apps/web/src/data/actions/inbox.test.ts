@@ -19,12 +19,23 @@ import {
   inboxItemBody,
   inboxItemTitle,
   inboxItems,
+  inboxItemTags,
+  dismissInboxItems,
+  promoteInboxItem,
+  promoteText,
   restoreInboxItem,
   restoreInboxItems,
+  restoreSnoozes,
   sendToLesson,
+  snoozedCount,
+  snoozedItems,
+  snoozeInboxItems,
+  tagInboxItems,
   undoPlacement,
   undoShared,
+  untagInboxItems,
 } from './inbox.ts';
+import { tagsOf } from '../queries.ts';
 import { createLesson } from './lessons.ts';
 import { createSection, updateSection } from './sections.ts';
 
@@ -61,6 +72,11 @@ const lesson = (title = 'The Good Shepherd') =>
       kind: 'sermon',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: [],
     },
     db,
@@ -132,15 +148,17 @@ describe('sending an item to a lesson', () => {
         body: { type: 'doc', content: [paragraph('first')] },
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );
     const item = await addInboxItem({ origin: 'share', ref, text: 'From Sunday' }, db);
 
-    const placement = await sendToLesson(item.id, { lessonId: shepherd.id }, db);
-    expect(placement.section).toMatchObject({ lessonId: shepherd.id, parentId: null });
-    expect(placement.section.orderKey > 'a0').toBe(true);
-    expect(placement.section.body).toEqual({
+    const placement = await sendToLesson([item.id], { lessonId: shepherd.id }, db);
+    expect(placement.placed[0]!.section).toMatchObject({ lessonId: shepherd.id, parentId: null });
+    expect(placement.placed[0]!.section.orderKey > 'a0').toBe(true);
+    expect(placement.placed[0]!.section.body).toEqual({
       type: 'doc',
       content: [
         { type: 'paragraph', content: [{ type: 'verse', attrs: ref }] },
@@ -148,14 +166,16 @@ describe('sending an item to a lesson', () => {
       ],
     });
     expect(await db.inboxItem.get(item.id)).toMatchObject({
-      placedInSectionId: placement.section.id,
+      placedInSectionId: placement.placed[0]!.section.id,
     });
     expect(await inboxCount(DAY, db)).toBe(0);
     // The section is indexed as usual.
-    expect(await db.citation.where('sourceId').equals(placement.section.id).count()).toBe(1);
+    expect(
+      await db.citation.where('sourceId').equals(placement.placed[0]!.section.id).count(),
+    ).toBe(1);
 
     await undoPlacement(placement, db);
-    expect(await db.section.get(placement.section.id)).toMatchObject({
+    expect(await db.section.get(placement.placed[0]!.section.id)).toMatchObject({
       deletedAt: expect.any(String),
     });
     expect(await db.inboxItem.get(item.id)).toMatchObject({ placedInSectionId: null });
@@ -164,7 +184,7 @@ describe('sending an item to a lesson', () => {
 
   it('makes a new personal lesson titled from the item, which Undo removes too', async () => {
     const item = await addInboxItem({ origin: 'share', ref, text: null }, db);
-    const placement = await sendToLesson(item.id, { newLesson: { date: DAY } }, db);
+    const placement = await sendToLesson([item.id], { newLesson: { date: DAY } }, db);
     const { snapshotText: _text, ...passage } = ref;
     expect(placement.lesson).toMatchObject({
       title: 'Romans 8:28',
@@ -181,16 +201,196 @@ describe('sending an item to a lesson', () => {
   it('keeps a section edited since, and only brings the item back', async () => {
     const shepherd = await lesson();
     const item = await addInboxItem({ origin: 'typed', ref: null, text: 'hesed' }, db);
-    const placement = await sendToLesson(item.id, { lessonId: shepherd.id }, db);
+    const placement = await sendToLesson([item.id], { lessonId: shepherd.id }, db);
     await new Promise((resolve) => setTimeout(resolve, 2));
     await updateSection(
-      placement.section.id,
+      placement.placed[0]!.section.id,
       { body: { type: 'doc', content: [paragraph('hesed: steadfast love')] } },
       db,
     );
     await undoPlacement(placement, db);
-    expect(await db.section.get(placement.section.id)).toMatchObject({ deletedAt: null });
+    expect(await db.section.get(placement.placed[0]!.section.id)).toMatchObject({
+      deletedAt: null,
+    });
     expect(await inboxCount(DAY, db)).toBe(1);
+  });
+});
+
+/** Fifty items, received a minute apart, oldest first. */
+async function fifty() {
+  const items = [];
+  for (let i = 0; i < 50; i++) {
+    const receivedAt = new Date(Date.UTC(2026, 9, 16, 9, i)).toISOString();
+    items.push(
+      await addInboxItem({ origin: 'typed', ref: null, text: `note ${i}`, receivedAt }, db),
+    );
+  }
+  return items;
+}
+
+describe('triage (M11-02 to M11-04)', () => {
+  it('sends fifty items to a lesson in one action, in the order received, with one Undo', async () => {
+    const items = await fifty();
+    const shepherd = await lesson();
+    await db.outbox.clear();
+    const placement = await sendToLesson(
+      items.toReversed().map((item) => item.id),
+      { lessonId: shepherd.id },
+      db,
+    );
+    expect(placement.placed.map((p) => p.itemId)).toEqual(items.map((item) => item.id));
+    const sections = (await db.section.where('lessonId').equals(shepherd.id).toArray()).toSorted(
+      (a, b) => (a.orderKey < b.orderKey ? -1 : 1),
+    );
+    expect(sections.map((section) => section.body.content)).toEqual(
+      items.map((item) => [paragraph(item.text!)]),
+    );
+    expect(await inboxCount(DAY, db)).toBe(0);
+
+    await undoPlacement(placement, db);
+    expect(await inboxCount(DAY, db)).toBe(50);
+    expect(
+      await db.section
+        .where('lessonId')
+        .equals(shepherd.id)
+        .filter((s) => s.deletedAt === null)
+        .count(),
+    ).toBe(0);
+  });
+
+  it('makes a lesson from items, named as asked, and Undo removes it', async () => {
+    const [first, second] = await fifty();
+    const placement = await sendToLesson(
+      [second!.id, first!.id],
+      { newLesson: { date: DAY, title: 'Hesed' } },
+      db,
+    );
+    expect(placement.lesson).toMatchObject({ title: 'Hesed', kind: 'personal', date: DAY });
+    expect(placement.placed).toHaveLength(2);
+    await undoPlacement(placement, db);
+    expect(await db.lesson.get(placement.lesson.id)).toMatchObject({
+      deletedAt: expect.any(String),
+    });
+  });
+
+  it('dismisses fifty items in one action, and Undo brings back exactly those', async () => {
+    const items = await fifty();
+    const earlier = await addInboxItem(
+      { origin: 'typed', ref: null, text: 'dismissed before' },
+      db,
+    );
+    await dismissInboxItem(earlier.id, db);
+    const dismissed = await dismissInboxItems(
+      items.map((item) => item.id),
+      db,
+    );
+    expect(dismissed).toHaveLength(50);
+    expect(await inboxCount(DAY, db)).toBe(0);
+    await restoreInboxItems(dismissed, db);
+    expect(await inboxCount(DAY, db)).toBe(50);
+  });
+
+  it('tags items, once each; placing one takes its tags into the section', async () => {
+    const [a, b] = await fifty();
+    const first = await tagInboxItems([a!.id], 'Hesed', db);
+    const both = await tagInboxItems([a!.id, b!.id], 'hesed', db);
+    expect(both.tag.id).toBe(first.tag.id);
+    // The first had it already.
+    expect(both.links).toHaveLength(1);
+    expect((await inboxItemTags([a!.id, b!.id], db)).get(b!.id)?.map((t) => t.name)).toEqual([
+      'Hesed',
+    ]);
+
+    const shepherd = await lesson();
+    const placement = await sendToLesson([a!.id], { lessonId: shepherd.id }, db);
+    const { section } = placement.placed[0]!;
+    expect((await tagsOf({ kind: 'section', id: section.id }, db)).map((t) => t.tag.name)).toEqual([
+      'Hesed',
+    ]);
+    await undoPlacement(placement, db);
+    expect(await tagsOf({ kind: 'section', id: section.id }, db)).toEqual([]);
+
+    await untagInboxItems(both.links, db);
+    expect((await inboxItemTags([b!.id], db)).get(b!.id)).toBeUndefined();
+  });
+
+  it('makes a takeaway or a question from an item, placing the item, and Undo takes both', async () => {
+    const shepherd = await lesson();
+    const item = await addInboxItem(
+      { origin: 'share', ref, text: 'All things  work\ntogether' },
+      db,
+    );
+    expect(promoteText(item)).toBe('All things work together');
+    expect(promoteText({ ref, text: null })).toBe('Romans 8:28');
+
+    const asTakeaway = await promoteInboxItem(
+      item.id,
+      { lessonId: shepherd.id },
+      'takeaway',
+      'God works',
+      db,
+    );
+    expect(asTakeaway.promoted).toMatchObject({
+      kind: 'takeaway',
+      takeaway: { text: 'God works' },
+    });
+    expect(await db.inboxItem.get(item.id)).toMatchObject({
+      placedInSectionId: asTakeaway.placed[0]!.section.id,
+    });
+    // The chip stays cited, in its section.
+    expect(await db.citation.where('lessonId').equals(shepherd.id).count()).toBe(1);
+    await undoPlacement(asTakeaway, db);
+    expect(await db.takeaway.filter((t) => t.deletedAt === null).count()).toBe(0);
+    expect(await inboxCount(DAY, db)).toBe(1);
+
+    const asQuestion = await promoteInboxItem(
+      item.id,
+      { newLesson: { date: DAY } },
+      'question',
+      'Which things?',
+      db,
+    );
+    expect(asQuestion.promoted).toMatchObject({
+      kind: 'question',
+      question: { text: 'Which things?' },
+    });
+    const question =
+      asQuestion.promoted!.kind === 'question' ? asQuestion.promoted!.question : null;
+    expect(await db.questionEntry.where('questionId').equals(question!.id).toArray()).toMatchObject(
+      [{ kind: 'asked', lessonId: asQuestion.lesson.id }],
+    );
+    await undoPlacement(asQuestion, db);
+    expect(await db.question.get(question!.id)).toMatchObject({ deletedAt: expect.any(String) });
+    expect(await db.lesson.get(asQuestion.lesson.id)).toMatchObject({
+      deletedAt: expect.any(String),
+    });
+  });
+
+  it('snoozes items until a day, lists them, and wakes them; Undo puts the snooze back', async () => {
+    const [a, b] = await fifty();
+    const before = await snoozeInboxItems([a!.id, b!.id], '2026-10-19', db);
+    expect(before).toEqual([
+      { id: a!.id, snoozedUntil: null },
+      { id: b!.id, snoozedUntil: null },
+    ]);
+    expect(await inboxCount(DAY, db)).toBe(48);
+    expect(await snoozedCount(DAY, db)).toBe(2);
+    expect((await snoozedItems(DAY, db)).map((item) => item.id)).toEqual([b!.id, a!.id]);
+    // Back on its day.
+    expect(await inboxCount('2026-10-19', db)).toBe(50);
+    expect(await snoozedCount('2026-10-19', db)).toBe(0);
+
+    await snoozeInboxItems([a!.id], null, db);
+    expect(await snoozedCount(DAY, db)).toBe(1);
+    await restoreSnoozes(before, db);
+    expect(await snoozedCount(DAY, db)).toBe(0);
+  });
+
+  it('leaves out items placed or dismissed meanwhile, and refuses when none are left', async () => {
+    const [a, b] = await fifty();
+    await dismissInboxItem(a!.id, db);
+    expect(await dismissInboxItems([a!.id, b!.id], db)).toEqual([b!.id]);
+    await expect(dismissInboxItems([a!.id, b!.id], db)).rejects.toThrow('No inboxItem');
   });
 });
 
@@ -206,6 +406,8 @@ describe('appending an item to a section', () => {
         body: before,
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );
@@ -357,7 +559,7 @@ describe('an import in the inbox', () => {
     await typed('Mine', '2000-01-01T00:00:00.000Z');
     const { importId } = await importInboxItems(imported(), db);
     const [placed, dismissed] = (await importItems(importId, DAY, db))!.items;
-    await sendToLesson(placed!.id, { lessonId: (await lesson()).id }, db);
+    await sendToLesson([placed!.id], { lessonId: (await lesson()).id }, db);
     await dismissInboxItem(dismissed!.id, db);
     expect(await importLeftCount(importId, db)).toBe(6);
 

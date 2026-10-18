@@ -70,6 +70,11 @@ const ROWS: { [E in EntityName]: unknown } = {
     kind: 'sermon',
     speaker: 'Pastor A',
     church: null,
+    sourceType: 'sermon',
+    sourceTitle: 'Sunday service',
+    sourceAuthor: null,
+    sourceUrl: 'https://www.youtube.com/watch?v=abc',
+    sourceStartedAt: NOW,
     mainPassages: [ROM_8_28],
   },
   section: {
@@ -80,6 +85,8 @@ const ROWS: { [E in EntityName]: unknown } = {
     body: emptyBody(),
     conflictOf: null,
     conflictDevice: null,
+    sourceAt: NOW,
+    sourcePage: null,
   },
   tag: { ...meta(4), name: 'grace', isSeeded: true },
   sectionTag: { ...meta(5), tagId: id(4), sectionId: id(3) },
@@ -112,6 +119,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     snoozedUntil: '2026-10-20',
     placedInSectionId: id(3),
   },
+  inboxItemTag: { ...meta(14), tagId: id(4), inboxItemId: id(11) },
   questionEntry: {
     ...meta(12),
     questionId: id(8),
@@ -131,7 +139,7 @@ const ROWS: { [E in EntityName]: unknown } = {
 };
 
 describe('entity schemas', () => {
-  it('cover the 14 synced entities', () => {
+  it('cover the 15 synced entities', () => {
     expect(ENTITY_NAMES).toEqual(Object.keys(ROWS));
   });
 
@@ -192,6 +200,9 @@ describe('entity schemas', () => {
     ['an unknown origin', 'inboxItem', { origin: 'email' }],
     ['a source address that is not http', 'inboxItem', { sourceUrl: 'javascript:alert(1)' }],
     ['a snooze with a time', 'inboxItem', { snoozedUntil: '2026-10-20T00:00:00Z' }],
+    ['an unknown source type', 'lesson', { sourceType: 'video' }],
+    ['a source link that is not a web address', 'lesson', { sourceUrl: 'youtube' }],
+    ['a page over 20 characters', 'section', { sourcePage: 'x'.repeat(21) }],
     ['an unknown colour mode', 'userSettings', { colorMode: 'dim' }],
     ['a retired theme field', 'userSettings', { look: 'folio' }],
     ['a review window of 0 days', 'userSettings', { reviewWindowDays: 0 }],

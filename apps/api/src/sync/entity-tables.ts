@@ -53,14 +53,14 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
   lesson: {
     model: model((tx) => tx.lesson),
     refs: { seriesId: 'series' },
-    times: [...SYNC_TIMES, 'date'],
+    times: [...SYNC_TIMES, 'date', 'sourceStartedAt'],
     // Its `kind` since M10 (§17.7); the next release drops it.
     retired: ['source'],
   },
   section: {
     model: model((tx) => tx.section),
     refs: { lessonId: 'lesson', parentId: 'section', conflictOf: 'section' },
-    times: SYNC_TIMES,
+    times: [...SYNC_TIMES, 'sourceAt'],
   },
   tag: { model: model((tx) => tx.tag), refs: {}, times: SYNC_TIMES },
   sectionTag: {
@@ -96,6 +96,11 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
     refs: { placedInSectionId: 'section' },
     times: [...SYNC_TIMES, 'receivedAt', 'snoozedUntil'],
     nullableJson: ['ref'],
+  },
+  inboxItemTag: {
+    model: model((tx) => tx.inboxItemTag),
+    refs: { tagId: 'tag', inboxItemId: 'inboxItem' },
+    times: SYNC_TIMES,
   },
   questionEntry: {
     model: model((tx) => tx.questionEntry),

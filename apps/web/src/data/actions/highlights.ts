@@ -46,8 +46,11 @@ export function highlightBody(ref: VerseRef, note: string | null): SectionBody {
   };
 }
 
-/** Where a highlight goes: a lesson, or a new one dated `date` (the caller's today). */
-export type PromoteTarget = { lessonId: string } | { newLesson: { date: string } };
+/**
+ * Where a highlight or an inbox item goes: a lesson, or a new one dated `date` (the caller's
+ * today). Inbox items can name the new lesson ("Make a lesson", M11-03).
+ */
+export type PromoteTarget = { lessonId: string } | { newLesson: { date: string; title?: string } };
 
 /**
  * "Add to lesson" (F8, wireframes/reader.md): a top-level section at the end of the lesson with
@@ -83,6 +86,11 @@ export function promoteHighlight(
         kind: 'personal',
         speaker: null,
         church: null,
+        sourceType: null,
+        sourceTitle: null,
+        sourceAuthor: null,
+        sourceUrl: null,
+        sourceStartedAt: null,
         mainPassages: [passage],
       });
     }
@@ -93,6 +101,8 @@ export function promoteHighlight(
       body: highlightBody(highlight.ref, highlight.note),
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     });
     await w.update('highlight', id, { promotedSectionId: section.id });
     return { lesson, section };

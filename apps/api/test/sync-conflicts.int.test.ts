@@ -155,6 +155,8 @@ describe('a section body changed on both sides', () => {
       rev: 5n,
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     });
     expect(rows[1]).toMatchObject({
       body: bodyOf('typed on the laptop'),

@@ -58,6 +58,11 @@ const LESSON: LessonFields = {
   kind: 'sermon',
   speaker: null,
   church: null,
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
   mainPassages: [],
 };
 const ACCOUNT: MeResponse = {
@@ -231,6 +236,8 @@ describe('the outbox', () => {
         body: body('I'),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );
@@ -248,6 +255,8 @@ describe('the outbox', () => {
         body: body('2'),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );
@@ -485,6 +494,8 @@ describe('a pulled page', () => {
       body: body('Forgiveness keeps no ledger'),
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
       createdAt: NOW,
       updatedAt: NOW,
       deletedAt: null,
@@ -579,6 +590,8 @@ describe('the engine', () => {
         body: body('A'),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       other,
     );
@@ -908,6 +921,8 @@ describe('guests and devices (§6.6)', () => {
         body: body('P'),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );
@@ -933,6 +948,8 @@ describe('guests and devices (§6.6)', () => {
         },
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       },
       db,
     );

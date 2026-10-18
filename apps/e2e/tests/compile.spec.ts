@@ -60,6 +60,8 @@ function seed(plans: LessonPlan[]): Seed {
       body: noteBody(note),
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     });
     sections.push(row);
     return row;
@@ -73,6 +75,11 @@ function seed(plans: LessonPlan[]): Seed {
       kind: 'sermon',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: [],
     });
     lessons.push(lesson);

@@ -24,6 +24,11 @@ const lesson = (fields: Partial<LessonFields> = {}): LessonFields => ({
   kind: 'sermon',
   speaker: null,
   church: null,
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
   mainPassages: [],
   ...fields,
 });
@@ -84,6 +89,8 @@ describe('lessons', () => {
         body: emptyBody(),
         conflictOf: null,
         conflictDevice: null,
+        sourceAt: null,
+        sourcePage: null,
       });
       await w.create('sectionTag', { tagId: tag.id, sectionId: section.id });
       await w.create('lessonTag', { tagId: tag.id, lessonId: id });

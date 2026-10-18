@@ -28,6 +28,8 @@ const section = (fields: Partial<SyncRow<'section'>> = {}): SyncRow<'section'> =
   body: text('base'),
   conflictOf: null,
   conflictDevice: null,
+  sourceAt: null,
+  sourcePage: null,
   createdAt: EARLY,
   updatedAt: BASE,
   deletedAt: null,
@@ -274,8 +276,12 @@ describe('PARENT_COLUMNS', () => {
 });
 
 describe('conflictedCopy', () => {
-  it('is a sibling right after the section, pointing back at it', () => {
-    const original = section({ parentId: '0199e0a0-0000-7000-8000-00000000000d', orderKey: 'a0' });
+  it('is a sibling right after the section, pointing back at it, at the same moment', () => {
+    const original = section({
+      parentId: '0199e0a0-0000-7000-8000-00000000000d',
+      orderKey: 'a0',
+      sourceAt: BASE,
+    });
     const orderKey = keyBetween('a0', 'a1');
     const copy = conflictedCopy(
       original,
@@ -291,6 +297,8 @@ describe('conflictedCopy', () => {
       body: text('older'),
       conflictOf: original.id,
       conflictDevice: 'Firefox on macOS',
+      sourceAt: BASE,
+      sourcePage: null,
       createdAt: EARLY,
       updatedAt: EARLY,
       deletedAt: null,

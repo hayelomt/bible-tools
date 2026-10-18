@@ -46,6 +46,7 @@ model User {
   highlights      Highlight[]
   memoryItems     MemoryItem[]
   inboxItems      InboxItem[]
+  inboxItemTags   InboxItemTag[]
   questionEntries QuestionEntry[]
   templates       Template[]
   citations       Citation[]
@@ -134,23 +135,30 @@ model Series {
 // source: sermon | personal | group
 // mainPassages: VerseRef[] (domain schema)
 model Lesson {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  userId       String    @map("user_id") @db.Uuid
-  seriesId     String?   @map("series_id") @db.Uuid
-  title        String
-  date         DateTime  @db.Date
+  id              String    @id @default(uuid(7)) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  seriesId        String?   @map("series_id") @db.Uuid
+  title           String
+  date            DateTime  @db.Date
   // sermon | personal | group; `source` until M10 (§17.7)
-  kind         String    @default("sermon")
+  kind            String    @default("sermon")
   // Left the wire format in M10 for `kind`; stays, unwritten, for one release so a rollback still
   // works, and the next release drops it.
-  source       String    @default("sermon")
-  speaker      String?
-  church       String?
-  mainPassages Json      @default("[]") @map("main_passages")
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
-  rev          BigInt    @default(0)
-  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
+  source          String    @default("sermon")
+  speaker         String?
+  church          String?
+  mainPassages    Json      @default("[]") @map("main_passages")
+  // The source (F28, §17.7): sermon | book | podcast | other, a title, an author, an http(s) link,
+  // and when the recording starts, which section times count from
+  sourceType      String?   @map("source_type")
+  sourceTitle     String?   @map("source_title")
+  sourceAuthor    String?   @map("source_author")
+  sourceUrl       String?   @map("source_url")
+  sourceStartedAt DateTime? @map("source_started_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev             BigInt    @default(0)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   series          Series?         @relation(fields: [seriesId], references: [id], onDelete: SetNull)
@@ -179,6 +187,9 @@ model Section {
   conflictOf     String?   @map("conflict_of") @db.Uuid
   // The device that wrote a conflicted copy's body, for its label (§6.4).
   conflictDevice String?   @map("conflict_device")
+  // The moment in the lesson's source, stamped by capture mode, or a page in a book (§17.7).
+  sourceAt       DateTime? @map("source_at") @db.Timestamptz(3)
+  sourcePage     String?   @map("source_page")
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
   rev            BigInt    @default(0)
@@ -218,9 +229,10 @@ model Tag {
   rev       BigInt    @default(0)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sections SectionTag[]
-  lessons  LessonTag[]
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections   SectionTag[]
+  lessons    LessonTag[]
+  inboxItems InboxItemTag[]
 
   @@index([userId, rev])
   @@map("tag")
@@ -395,11 +407,34 @@ model InboxItem {
   rev               BigInt    @default(0)
   deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  placedInSection Section? @relation(fields: [placedInSectionId], references: [id], onDelete: SetNull)
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placedInSection Section?       @relation(fields: [placedInSectionId], references: [id], onDelete: SetNull)
+  tags            InboxItemTag[]
 
   @@index([userId, rev])
   @@map("inbox_item")
+}
+
+// A tag on an inbox item (F27, §17.2), one live link per item and tag like SectionTag. Placing
+// the item moves its tags onto the section.
+model InboxItemTag {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  tagId       String    @map("tag_id") @db.Uuid
+  inboxItemId String    @map("inbox_item_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev         BigInt    @default(0)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag       Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  inboxItem InboxItem @relation(fields: [inboxItemId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@index([tagId])
+  @@index([inboxItemId])
+  @@map("inbox_item_tag")
 }
 
 // Derived from the source row on every write and never pushed by the client.

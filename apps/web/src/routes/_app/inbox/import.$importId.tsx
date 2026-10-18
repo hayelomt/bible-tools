@@ -1,3 +1,4 @@
+import type { InboxItem } from '@lamp/domain';
 import { Button } from '@lamp/ui/components/button';
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { NotFoundScreen } from '@/components/error-screen.tsx';
 import { importDay, importTitle, InboxList } from '@/components/inbox/inbox-list.tsx';
+import { InboxSelectionBar, useInboxSelection } from '@/components/inbox/selection-bar.tsx';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { ScreenActions, ScreenTitle } from '@/components/shell/slots.tsx';
 import {
@@ -26,6 +28,8 @@ import { runWrite } from '@/lib/run-write.ts';
 import { useScreenReady } from '@/lib/screen-ready.ts';
 import { useToday } from '@/lib/use-today.ts';
 
+const NO_ITEMS: InboxItem[] = [];
+
 export const Route = createFileRoute('/_app/inbox/import/$importId')({
   staticData: { back: '/inbox' },
   component: ImportScreen,
@@ -33,12 +37,13 @@ export const Route = createFileRoute('/_app/inbox/import/$importId')({
 
 /**
  * One import's items (wireframes/interop.md "Inbox"), oldest first by their original dates, with
- * the inbox's actions; its `⋯` dismisses what's left of it (M9-12).
+ * the inbox's actions and selection (M11-02); its `⋯` dismisses what's left of it (M9-12).
  */
 function ImportScreen() {
   const { importId } = Route.useParams();
   const day = useToday();
   const opened = useLiveQuery(() => importItems(importId, day), [importId, day]);
+  const select = useInboxSelection(opened?.items ?? NO_ITEMS);
   useScreenReady('inbox-import', opened !== undefined);
   if (opened === undefined) return <ScreenSkeleton />;
   if (opened === null) {
@@ -62,9 +67,30 @@ function ImportScreen() {
       ) : (
         <>
           <ScreenActions>
+            {!select.selection && (
+              <Button variant="ghost" size="sm" onClick={() => select.start()}>
+                Select
+              </Button>
+            )}
             <ImportMenu importId={importId} importedAt={opened.importedAt} />
           </ScreenActions>
-          <InboxList entries={opened.items.map((item) => ({ kind: 'item', item }))} />
+          <InboxList
+            entries={opened.items.map((item) => ({ kind: 'item', item }))}
+            selection={select.selection}
+            onSelect={select.start}
+          />
+          {select.selection && (
+            <>
+              <div aria-hidden className="h-16" />
+              <InboxSelectionBar
+                selected={select.selected}
+                total={opened.items.length}
+                onSelectAll={select.selectAll}
+                onClear={select.clear}
+                onClose={select.stop}
+              />
+            </>
+          )}
         </>
       )}
     </div>

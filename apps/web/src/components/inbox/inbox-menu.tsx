@@ -12,13 +12,19 @@ import { YouVersionImport } from '@/components/import/youversion-import.tsx';
 import { ScreenActions } from '@/components/shell/slots.tsx';
 
 /**
- * The Inbox's `⋯` (wireframes/interop.md): Import from YouVersion (M9-11), the same panel as in
- * Settings → Import, in a dialog. Closing it leaves an import running.
+ * The Inbox's header: Select (M11-02), while there's something to select, and `⋯`
+ * (wireframes/interop.md) with Import from YouVersion (M9-11), the same panel as in Settings →
+ * Import, in a dialog. Closing it leaves an import running.
  */
-export function InboxMenu() {
+export function InboxMenu({ onSelect }: { onSelect?: () => void }) {
   const [importing, setImporting] = useState(false);
   return (
     <ScreenActions>
+      {onSelect && (
+        <Button variant="ghost" size="sm" onClick={onSelect}>
+          Select
+        </Button>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" size="icon" aria-label="Inbox actions" />}

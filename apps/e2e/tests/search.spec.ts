@@ -147,6 +147,11 @@ test('5,000 sections are indexed in under 1 s at a mid-range phone’s speed', a
         kind: 'sermon',
         speaker: null,
         church: null,
+        sourceType: null,
+        sourceTitle: null,
+        sourceAuthor: null,
+        sourceUrl: null,
+        sourceStartedAt: null,
         mainPassages: [],
         ...meta,
       });
@@ -168,6 +173,8 @@ test('5,000 sections are indexed in under 1 s at a mid-range phone’s speed', a
           },
           conflictOf: null,
           conflictDevice: null,
+          sourceAt: null,
+          sourcePage: null,
           ...meta,
         });
       }

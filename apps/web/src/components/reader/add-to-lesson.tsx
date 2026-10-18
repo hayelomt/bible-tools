@@ -58,13 +58,25 @@ interface LessonPickerProps {
   newLesson: string | null;
   submit: string;
   onPick: (choice: AddChoice) => void;
+  /** Fields above the lessons, such as the text of a takeaway to make (M11-03). */
+  children?: React.ReactNode;
+  /** The form can't be sent yet (a field is empty). */
+  disabled?: boolean;
 }
 
 /**
  * The form inside a dialog that picks a lesson: the most recent chosen to start with, so it's one
  * tap; a search once there are more than five.
  */
-export function LessonPicker({ title, description, newLesson, submit, onPick }: LessonPickerProps) {
+export function LessonPicker({
+  title,
+  description,
+  newLesson,
+  submit,
+  onPick,
+  children,
+  disabled = false,
+}: LessonPickerProps) {
   const lessons = useLiveQuery(() => allLessons(), []);
   const [query, setQuery] = useState('');
   const [chosen, setChosen] = useState<string | null>(null);
@@ -83,13 +95,14 @@ export function LessonPicker({ title, description, newLesson, submit, onPick }: 
       className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault();
-        if (choice) onPick(choice === 'new' ? 'new' : { lessonId: choice });
+        if (choice && !disabled) onPick(choice === 'new' ? 'new' : { lessonId: choice });
       }}
     >
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
+      {children}
       {lessons.length > RECENT && (
         <Input
           id={ids.search}
@@ -133,7 +146,7 @@ export function LessonPicker({ title, description, newLesson, submit, onPick }: 
       </fieldset>
       <DialogFooter>
         <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
-        <Button type="submit" disabled={!choice}>
+        <Button type="submit" disabled={!choice || disabled}>
           {submit}
         </Button>
       </DialogFooter>

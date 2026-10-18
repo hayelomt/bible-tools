@@ -2,27 +2,49 @@ import { normaliseTagName, type Tag, tagKey } from '@lamp/domain';
 import { action, RowNotFoundError, type Writer } from '../action.ts';
 import { db as appDb, type LampDb } from '../db.ts';
 
-/** What a tag is put on: a section or a whole lesson (F4). */
+/** What a tag is put on: a section, a whole lesson (F4), or an inbox item (F27). */
 export interface TagTarget {
-  kind: 'section' | 'lesson';
+  kind: 'section' | 'lesson' | 'inboxItem';
   id: string;
 }
 
 /** The join row that puts a tag on its target; Undo restores it by id. */
 export interface TagLink {
-  entity: 'sectionTag' | 'lessonTag';
+  entity: 'sectionTag' | 'lessonTag' | 'inboxItemTag';
   id: string;
+}
+
+/** Each target's join entity, and the column naming the target. */
+export const TAG_LINKS = {
+  section: { entity: 'sectionTag', owner: 'sectionId' },
+  lesson: { entity: 'lessonTag', owner: 'lessonId' },
+  inboxItem: { entity: 'inboxItemTag', owner: 'inboxItemId' },
+} as const satisfies Record<TagTarget['kind'], { entity: TagLink['entity']; owner: string }>;
+
+/** The live links on a target, any tag. */
+export function liveLinksOf(db: LampDb, target: TagTarget) {
+  const { entity, owner } = TAG_LINKS[target.kind];
+  return db
+    .rows(entity)
+    .where(owner)
+    .equals(target.id)
+    .filter((link) => link.deletedAt === null);
 }
 
 /** The live link between a target and a tag, if there is one. */
 async function liveLink(w: Writer, target: TagTarget, tagId: string): Promise<TagLink | undefined> {
-  const live = (link: { deletedAt: string | null; tagId: string }) =>
-    link.deletedAt === null && link.tagId === tagId;
-  const row =
-    target.kind === 'section'
-      ? await w.db.sectionTag.where('sectionId').equals(target.id).filter(live).first()
-      : await w.db.lessonTag.where('lessonId').equals(target.id).filter(live).first();
-  return row && { entity: target.kind === 'section' ? 'sectionTag' : 'lessonTag', id: row.id };
+  const row = await liveLinksOf(w.db, target)
+    .and((link) => link.tagId === tagId)
+    .first();
+  return row && { entity: TAG_LINKS[target.kind].entity, id: row.id };
+}
+
+/** The target a link row puts its tag on. */
+function targetOf(row: Record<string, unknown>): TagTarget {
+  for (const [kind, { owner }] of Object.entries(TAG_LINKS)) {
+    if (typeof row[owner] === 'string') return { kind: kind as TagTarget['kind'], id: row[owner] };
+  }
+  throw new Error('A tag link names no target');
 }
 
 /**
@@ -36,30 +58,46 @@ export function addTag(
   db: LampDb = appDb,
 ): Promise<{ tag: Tag; link: TagLink }> {
   return action(db, async (w) => {
-    const name = normaliseTagName(typed);
-    if (!name) throw new Error('A tag needs a name');
+    if (!normaliseTagName(typed)) throw new Error('A tag needs a name');
     const item = await w.db.rows(target.kind).get(target.id);
     if (!item || item.deletedAt !== null) throw new RowNotFoundError(target.kind, target.id);
-
-    const key = tagKey(name);
-    const tag =
-      (await w.db.tag.filter((t) => t.deletedAt === null && tagKey(t.name) === key).first()) ??
-      (await w.create('tag', { name, isSeeded: false }));
+    const tag = await tagNamed(w, typed);
 
     const existing = await liveLink(w, target, tag.id);
     if (existing) return { tag, link: existing };
-    const link: TagLink =
-      target.kind === 'section'
-        ? {
-            entity: 'sectionTag',
-            id: (await w.create('sectionTag', { tagId: tag.id, sectionId: target.id })).id,
-          }
-        : {
-            entity: 'lessonTag',
-            id: (await w.create('lessonTag', { tagId: tag.id, lessonId: target.id })).id,
-          };
-    return { tag, link };
+    return { tag, link: await linkTag(w, target, tag.id) };
   });
+}
+
+/** A new link putting the tag on the target. */
+export async function linkTag(w: Writer, target: TagTarget, tagId: string): Promise<TagLink> {
+  const { entity, owner } = TAG_LINKS[target.kind];
+  const fields = { tagId, [owner]: target.id } as never;
+  return { entity, id: (await w.create(entity, fields)).id };
+}
+
+/**
+ * Puts the tag on the target unless it's on already; the link made, or null. Placing an inbox
+ * item moves its tags onto the section this way (§17.2).
+ */
+export async function ensureTag(
+  w: Writer,
+  target: TagTarget,
+  tagId: string,
+): Promise<TagLink | null> {
+  if (await liveLink(w, target, tagId)) return null;
+  return linkTag(w, target, tagId);
+}
+
+/** The live tag of that name, in any case, or a new custom one. */
+export async function tagNamed(w: Writer, typed: string): Promise<Tag> {
+  const name = normaliseTagName(typed);
+  if (!name) throw new Error('A tag needs a name');
+  const key = tagKey(name);
+  return (
+    (await w.db.tag.filter((t) => t.deletedAt === null && tagKey(t.name) === key).first()) ??
+    w.create('tag', { name, isSeeded: false })
+  );
 }
 
 /** Takes a tag off its section or lesson. The tag itself stays, for other notes and autocomplete. */
@@ -72,11 +110,7 @@ export function restoreTag(link: TagLink, db: LampDb = appDb): Promise<void> {
   return action(db, async (w) => {
     const row = await w.db.rows(link.entity).get(link.id);
     if (!row) throw new RowNotFoundError(link.entity, link.id);
-    const target: TagTarget =
-      'sectionId' in row
-        ? { kind: 'section', id: row.sectionId }
-        : { kind: 'lesson', id: row.lessonId };
-    if (await liveLink(w, target, row.tagId)) return;
+    if (await liveLink(w, targetOf(row), row.tagId)) return;
     await w.restore(link.entity, link.id);
   });
 }
@@ -108,13 +142,13 @@ export function renameTag(id: string, typed: string, db: LampDb = appDb): Promis
 
 const live = (link: { deletedAt: string | null }) => link.deletedAt === null;
 
-/** Deletes a tag and takes it off every section and lesson (the tag page asks first). */
+/** Deletes a tag and takes it off every section, lesson and inbox item (the tag page asks first). */
 export function deleteTag(id: string, db: LampDb = appDb): Promise<void> {
   return action(db, async (w) => {
-    const sectionTags = await w.db.sectionTag.where('tagId').equals(id).filter(live).primaryKeys();
-    const lessonTags = await w.db.lessonTag.where('tagId').equals(id).filter(live).primaryKeys();
-    for (const link of sectionTags) await w.remove('sectionTag', link);
-    for (const link of lessonTags) await w.remove('lessonTag', link);
+    for (const { entity } of Object.values(TAG_LINKS)) {
+      const links = await w.db.rows(entity).where('tagId').equals(id).filter(live).primaryKeys();
+      for (const link of links) await w.remove(entity, link);
+    }
     await w.remove('tag', id);
   });
 }

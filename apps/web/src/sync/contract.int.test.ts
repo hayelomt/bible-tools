@@ -22,7 +22,16 @@ import {
   type LessonFields,
   updateLesson,
 } from '@/data/actions/lessons.ts';
-import { addInboxItem, dismissInboxItem, inboxItems, sendToLesson } from '@/data/actions/inbox.ts';
+import {
+  addInboxItem,
+  dismissInboxItem,
+  inboxItems,
+  inboxItemTags,
+  sendToLesson,
+  snoozedCount,
+  snoozeInboxItems,
+  tagInboxItems,
+} from '@/data/actions/inbox.ts';
 import {
   addQuestion,
   parkQuestion,
@@ -251,6 +260,11 @@ const LESSON: Omit<LessonFields, 'title'> = {
   kind: 'sermon',
   speaker: null,
   church: null,
+  sourceType: null,
+  sourceTitle: null,
+  sourceAuthor: null,
+  sourceUrl: null,
+  sourceStartedAt: null,
   mainPassages: [],
 };
 
@@ -261,6 +275,8 @@ const newSection = (lessonId: string, orderKey: string, text: string, parentId =
   body: body(text),
   conflictOf: null,
   conflictDevice: null,
+  sourceAt: null,
+  sourcePage: null,
 });
 
 /** Lets the clock move on, so the later of two edits is later by `updatedAt` too. */
@@ -383,7 +399,8 @@ describe('the inbox on two devices', () => {
     laptop.api.online = false;
     phone.api.online = false;
     const lesson = await createLesson({ ...LESSON, title: 'The Good Shepherd' }, laptop.db);
-    const { section } = await sendToLesson(shared.id, { lessonId: lesson.id }, laptop.db);
+    const placement = await sendToLesson([shared.id], { lessonId: lesson.id }, laptop.db);
+    const { section } = placement.placed[0]!;
     await dismissInboxItem(note.id, phone.db);
 
     await settle(laptop, phone);
@@ -395,6 +412,27 @@ describe('the inbox on two devices', () => {
     // The placed section is cited like any other; the item never was.
     expect(await phone.db.citation.where('sourceId').equals(section.id).count()).toBe(1);
     expect(await phone.db.citation.where('sourceId').anyOf(shared.id, note.id).count()).toBe(0);
+  });
+
+  it('snoozes and tags an item on one device, and the other hides it and shows the tag', async () => {
+    const { email, first: phone } = await signUp('Safari on iOS');
+    const item = await addInboxItem({ origin: 'typed', ref: null, text: 'hesed' }, phone.db);
+    await updateSettings({ reviewWindowDays: 7 }, phone.db);
+    await sync(phone);
+    const laptop = await signIn(email, 'Firefox on macOS');
+    await sync(laptop);
+
+    await snoozeInboxItems([item.id], '2026-10-26', laptop.db);
+    await tagInboxItems([item.id], 'word study', laptop.db);
+    await settle(laptop, phone);
+    await expectIdentical(email, laptop, phone);
+    // Hidden until its day on the other device too.
+    expect(await inboxItems('2026-10-19', phone.db)).toEqual([]);
+    expect(await snoozedCount('2026-10-19', phone.db)).toBe(1);
+    expect((await inboxItems('2026-10-26', phone.db)).map((i) => i.id)).toEqual([item.id]);
+    expect((await inboxItemTags([item.id], phone.db)).get(item.id)?.map((t) => t.name)).toEqual([
+      'word study',
+    ]);
   });
 });
 

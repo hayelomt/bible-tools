@@ -8,7 +8,7 @@ import {
   type Takeaway,
   type Template,
 } from '@lamp/domain';
-import type { TagLink, TagTarget } from './actions/tags.ts';
+import { liveLinksOf, TAG_LINKS, type TagLink, type TagTarget } from './actions/tags.ts';
 import { db as appDb, type LampDb } from './db.ts';
 import { type QuestionView, questionViews } from './question-status.ts';
 
@@ -141,11 +141,8 @@ export interface AppliedTag {
 
 /** The tags on a section or lesson, in the order they were added. */
 export async function tagsOf(target: TagTarget, db: LampDb = appDb): Promise<AppliedTag[]> {
-  const links =
-    target.kind === 'section'
-      ? await db.sectionTag.where('sectionId').equals(target.id).filter(notDeleted).toArray()
-      : await db.lessonTag.where('lessonId').equals(target.id).filter(notDeleted).toArray();
-  const entity = target.kind === 'section' ? 'sectionTag' : 'lessonTag';
+  const links = await liveLinksOf(db, target).toArray();
+  const { entity } = TAG_LINKS[target.kind];
   const tags = await db.tag.bulkGet(links.map((l) => l.tagId));
   return links
     .map((link, i) => ({ link, tag: tags[i] }))

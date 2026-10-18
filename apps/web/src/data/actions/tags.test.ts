@@ -32,6 +32,11 @@ beforeEach(async () => {
       kind: 'sermon',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: [],
     },
     db,
@@ -44,6 +49,8 @@ beforeEach(async () => {
       body: emptyBody(),
       conflictOf: null,
       conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
     },
     db,
   );
@@ -182,13 +189,27 @@ const newLesson = (title: string, date: string) =>
       kind: 'sermon',
       speaker: null,
       church: null,
+      sourceType: null,
+      sourceTitle: null,
+      sourceAuthor: null,
+      sourceUrl: null,
+      sourceStartedAt: null,
       mainPassages: [],
     },
     db,
   );
 const newSection = (lessonId: string, orderKey: string, parentId: string | null = null) =>
   createSection(
-    { lessonId, parentId, orderKey, body: emptyBody(), conflictOf: null, conflictDevice: null },
+    {
+      lessonId,
+      parentId,
+      orderKey,
+      body: emptyBody(),
+      conflictOf: null,
+      conflictDevice: null,
+      sourceAt: null,
+      sourcePage: null,
+    },
     db,
   );
 

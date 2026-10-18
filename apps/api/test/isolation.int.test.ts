@@ -129,6 +129,7 @@ function rowOf(entity: RowEntity, to: Rows): Row {
       return { ...synced(), name: 'Sermon notes', structure: [{ title: 'Main point' }] };
     case 'sectionTag':
     case 'lessonTag':
+    case 'inboxItemTag':
       return { ...synced(), ...refs };
   }
 }
