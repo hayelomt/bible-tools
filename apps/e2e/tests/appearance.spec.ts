@@ -31,6 +31,10 @@ test('every mode is stored, and applied before the first paint on reload', async
   for (const mode of ['Dark', 'Light', 'Auto']) {
     await page.goto('/settings');
     await page.getByRole('radio', { name: mode, exact: true }).click();
+    // The mirror is written once the setting is saved, a moment after the click.
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('lamp.theme')))
+      .toContain(`"${mode === 'Auto' ? 'system' : mode.toLowerCase()}"`);
 
     // With the app's scripts blocked, only the inline script in index.html can set the mode.
     await page.route('**/*.js', (route) => route.abort());

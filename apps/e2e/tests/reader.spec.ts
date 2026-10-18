@@ -102,11 +102,17 @@ test('reopens where it was left, after a reload and from the navigation', async 
   await expect(page).toHaveURL(/\/read\/JHN\.6$/);
   await expect.poll(() => verseTop(page, 20)).toBeLessThan(100);
 
-  // Scrolled on (John 6 is long enough to scroll verse 30 to the top), the place is kept as the page scrolls.
+  // Scrolled on (John 6 is long enough to scroll verse 30 to the top), the place is kept as the page
+  // scrolls: the first verse that starts on the top line, which may be a short one before 30.
   await verse(page, 30).evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - 8));
   await expect
-    .poll(() => page.evaluate(() => localStorage.getItem('lamp.readingPosition')))
-    .toBe(JSON.stringify({ book: 'JHN', chapter: 6, verse: 30 }));
+    .poll(async () => {
+      const kept = await page.evaluate(() => localStorage.getItem('lamp.readingPosition'));
+      const { book, chapter, verse: v } = JSON.parse(kept ?? '{}') as Record<string, unknown>;
+      if (book !== 'JHN' || chapter !== 6 || typeof v !== 'number' || v > 30) return false;
+      return Math.abs((await verseTop(page, v)) - (await verseTop(page, 30))) < 2;
+    })
+    .toBe(true);
 
   await page.reload();
   await expect(title(page)).toHaveText('John 6');
