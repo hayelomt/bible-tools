@@ -36,6 +36,7 @@ import { Route as AppSettingsOpenInRouteImport } from './routes/_app/settings/op
 import { Route as AppSettingsPasswordRouteImport } from './routes/_app/settings/password'
 import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
 import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
+import { Route as AppInboxImportImportIdRouteImport } from './routes/_app/inbox/import.$importId'
 import { Route as PrintLessonsLessonIdPrintRouteImport } from './routes/_print/lessons/$lessonId.print'
 import { Route as PrintSeriesSeriesIdPrintRouteImport } from './routes/_print/series/$seriesId.print'
 
@@ -172,6 +173,11 @@ const AppVersesPassageRoute = AppVersesPassageRouteImport.update({
   path: '/verses/$passage',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInboxImportImportIdRoute = AppInboxImportImportIdRouteImport.update({
+  id: '/inbox/import/$importId',
+  path: '/inbox/import/$importId',
+  getParentRoute: () => AppRoute,
+} as any)
 const PrintLessonsLessonIdPrintRoute =
   PrintLessonsLessonIdPrintRouteImport.update({
     id: '/lessons/$lessonId/print',
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/read/': typeof AppReadIndexRoute
   '/review/': typeof AppReviewIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
+  '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
 }
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/read': typeof AppReadIndexRoute
   '/review': typeof AppReviewIndexRoute
   '/settings': typeof AppSettingsIndexRoute
+  '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
 }
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/_app/read/': typeof AppReadIndexRoute
   '/_app/review/': typeof AppReviewIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
+  '/_app/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/_print/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/_print/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
 }
@@ -303,6 +312,7 @@ export interface FileRouteTypes {
     | '/read/'
     | '/review/'
     | '/settings/'
+    | '/inbox/import/$importId'
     | '/lessons/$lessonId/print'
     | '/series/$seriesId/print'
   fileRoutesByTo: FileRoutesByTo
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/read'
     | '/review'
     | '/settings'
+    | '/inbox/import/$importId'
     | '/lessons/$lessonId/print'
     | '/series/$seriesId/print'
   id:
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/_app/read/'
     | '/_app/review/'
     | '/_app/settings/'
+    | '/_app/inbox/import/$importId'
     | '/_print/lessons/$lessonId/print'
     | '/_print/series/$seriesId/print'
   fileRoutesById: FileRoutesById
@@ -564,6 +576,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVersesPassageRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/inbox/import/$importId': {
+      id: '/_app/inbox/import/$importId'
+      path: '/inbox/import/$importId'
+      fullPath: '/inbox/import/$importId'
+      preLoaderRoute: typeof AppInboxImportImportIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_print/lessons/$lessonId/print': {
       id: '/_print/lessons/$lessonId/print'
       path: '/lessons/$lessonId/print'
@@ -606,6 +625,7 @@ interface AppRouteChildren {
   AppReadIndexRoute: typeof AppReadIndexRoute
   AppReviewIndexRoute: typeof AppReviewIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+  AppInboxImportImportIdRoute: typeof AppInboxImportImportIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -633,6 +653,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReadIndexRoute: AppReadIndexRoute,
   AppReviewIndexRoute: AppReviewIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
+  AppInboxImportImportIdRoute: AppInboxImportImportIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

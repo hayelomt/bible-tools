@@ -6,7 +6,7 @@ import { ClipboardButton } from '@/components/inbox/clipboard-button.tsx';
 import { InboxList } from '@/components/inbox/inbox-list.tsx';
 import { InboxMenu } from '@/components/inbox/inbox-menu.tsx';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
-import { inboxItems } from '@/data/actions/inbox.ts';
+import { inboxEntries } from '@/data/actions/inbox.ts';
 import { useScreenReady } from '@/lib/screen-ready.ts';
 import { useToday } from '@/lib/use-today.ts';
 import { startVerseMatcher } from '@/verse-match/client.ts';
@@ -34,7 +34,7 @@ const FRESH_MS = 2000;
  */
 function Inbox() {
   const day = useToday();
-  const items = useLiveQuery(() => inboxItems(day), [day]);
+  const entries = useLiveQuery(() => inboxEntries(day), [day]);
   const { added } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [fresh, setFresh] = useState<string | null>(added ?? null);
@@ -49,7 +49,7 @@ function Inbox() {
     const timer = setTimeout(() => setFresh(null), FRESH_MS);
     return () => clearTimeout(timer);
   }, [fresh]);
-  useScreenReady('inbox', items !== undefined);
+  useScreenReady('inbox', entries !== undefined);
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,12 +58,12 @@ function Inbox() {
         <AddBox onAdded={setFresh} />
         <ClipboardButton />
       </div>
-      {items === undefined ? (
+      {entries === undefined ? (
         <ScreenSkeleton />
-      ) : items.length === 0 ? (
+      ) : entries.length === 0 ? (
         <Empty />
       ) : (
-        <InboxList items={items} fresh={fresh} />
+        <InboxList entries={entries} fresh={fresh} />
       )}
     </div>
   );

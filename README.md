@@ -28,8 +28,8 @@ used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
   Pasting into a note offers to turn the references and verses in it into chips, and each chip
   opens in Blue Letter Bible, YouVersion, Bible Hub or Logos.
 - **Import from YouVersion:** highlights and notes from YouVersion's data download land in the
-  Inbox (Settings → Import). The export's format isn't confirmed yet, so this may not read a real
-  file until it is.
+  Inbox (Settings → Import) as one row, which opens its items and can dismiss them all at once.
+  The export's format isn't confirmed yet, so this may not read a real file until it is.
 
 ### The weekly reminder, by browser
 

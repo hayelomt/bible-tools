@@ -16,12 +16,15 @@ import {
 } from '@lamp/ui/components/dropdown-menu';
 import { toast } from '@lamp/ui/components/sonner';
 import { cn } from 'cn';
-import { Ellipsis } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ChevronRight, Ellipsis } from 'lucide-react';
 import { useState } from 'react';
 import { AddToLesson, type AddChoice, LessonPicker } from '@/components/reader/add-to-lesson.tsx';
 import {
   appendToSection,
   dismissInboxItem,
+  type ImportGroup,
+  type InboxEntry,
   inboxItemTitle,
   type Placement,
   restoreInboxItem,
@@ -29,7 +32,8 @@ import {
   undoPlacement,
 } from '@/data/actions/inbox.ts';
 import { snapshotText, useBook } from '@/data/bible.ts';
-import { receivedLabel, today } from '@/lib/dates.ts';
+import { receivedLabel, shortDate, today } from '@/lib/dates.ts';
+import { count } from '@/lib/labels.ts';
 import { runWrite } from '@/lib/run-write.ts';
 import { AppendDialog } from './append-dialog.tsx';
 
@@ -42,16 +46,51 @@ const ORIGIN_WORDS: Record<InboxOrigin, string> = {
   capture: 'Captured',
 };
 
-/** The inbox's items, newest first (F17, wireframes/interop.md "Inbox"). */
-export function InboxList({ items, fresh }: { items: InboxItem[]; fresh?: string | null }) {
+/**
+ * The inbox's items, newest first (F17, wireframes/interop.md "Inbox"), an import as one row that
+ * opens its items (M9-12).
+ */
+export function InboxList({ entries, fresh }: { entries: InboxEntry[]; fresh?: string | null }) {
   return (
     <ul className="flex flex-col divide-y" aria-label="Waiting">
-      {items.map((item) => (
-        <li key={item.id} className="py-3 first:pt-0">
-          <InboxRow item={item} fresh={item.id === fresh} />
-        </li>
-      ))}
+      {entries.map((entry) =>
+        entry.kind === 'item' ? (
+          <li key={entry.item.id} className="py-3 first:pt-0">
+            <InboxRow item={entry.item} fresh={entry.item.id === fresh} />
+          </li>
+        ) : (
+          <li key={entry.group.importId} className="py-3 first:pt-0">
+            <ImportRow group={entry.group} />
+          </li>
+        ),
+      )}
     </ul>
+  );
+}
+
+/** The day an import ran, "Tue 14 Oct", today too: it names the import. */
+export const importDay = (importedAt: string) => shortDate(today(new Date(importedAt)));
+
+/** The heading of an import, on its row and its screen: "YouVersion import · Tue 14 Oct". */
+export const importTitle = (importedAt: string) => `YouVersion import · ${importDay(importedAt)}`;
+
+/** `YOUVERSION IMPORT · Tue 14 Oct` / `980 items ›` */
+function ImportRow({ group }: { group: ImportGroup }) {
+  return (
+    <Link
+      to="/inbox/import/$importId"
+      params={{ importId: group.importId }}
+      aria-label={`${importTitle(group.importedAt)}, ${count(group.count, 'item')}`}
+      className="-mx-2 flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+    >
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {importTitle(group.importedAt)}
+        </span>
+        <span>{count(group.count, 'item')}</span>
+      </span>
+      <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
+    </Link>
   );
 }
 

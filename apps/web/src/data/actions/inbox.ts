@@ -33,6 +33,61 @@ export async function inboxItems(day: string, db: LampDb = appDb): Promise<Inbox
   );
 }
 
+/** An import in the inbox (wireframes/interop.md): one row for all its waiting items. */
+export interface ImportGroup {
+  importId: string;
+  /** When the import ran: its items' `createdAt`, all written in one action. */
+  importedAt: string;
+  count: number;
+}
+
+export type InboxEntry = { kind: 'item'; item: InboxItem } | { kind: 'import'; group: ImportGroup };
+
+/**
+ * The inbox's list on `day`, newest first: each item by when it arrived, and each import as one
+ * row by when it ran, so a thousand highlights don't bury this week's shares.
+ */
+export async function inboxEntries(day: string, db: LampDb = appDb): Promise<InboxEntry[]> {
+  const entries: Array<InboxEntry & { at: string }> = [];
+  const groups = new Map<string, ImportGroup>();
+  for (const item of await inboxItems(day, db)) {
+    if (item.importId === null) {
+      entries.push({ kind: 'item', item, at: item.receivedAt });
+      continue;
+    }
+    const group = groups.get(item.importId);
+    if (group) {
+      group.count++;
+      continue;
+    }
+    const added = { importId: item.importId, importedAt: item.createdAt, count: 1 };
+    groups.set(item.importId, added);
+    entries.push({ kind: 'import', group: added, at: added.importedAt });
+  }
+  // Stable, so items keep `inboxItems`' order among themselves.
+  return entries.toSorted((a, b) => b.at.localeCompare(a.at)).map(({ at: _at, ...entry }) => entry);
+}
+
+/** One import's screen: when it ran, and its items waiting on `day`, oldest first by their dates. */
+export interface ImportItems {
+  importedAt: string;
+  items: InboxItem[];
+}
+
+/** An import's items; null for an import this device has never had. */
+export async function importItems(
+  importId: string,
+  day: string,
+  db: LampDb = appDb,
+): Promise<ImportItems | null> {
+  const all = await db.inboxItem.where('importId').equals(importId).toArray();
+  if (all.length === 0) return null;
+  const items = all
+    .filter((item) => isWaiting(item, day))
+    .toSorted((a, b) => a.receivedAt.localeCompare(b.receivedAt) || a.id.localeCompare(b.id));
+  return { importedAt: all[0]!.createdAt, items };
+}
+
 /** How many items wait on `day`: the Inbox tab's badge. */
 export function inboxCount(day: string, db: LampDb = appDb): Promise<number> {
   return db.inboxItem.filter((item) => isWaiting(item, day)).count();
@@ -268,6 +323,38 @@ export function dismissInboxItem(id: string, db: LampDb = appDb): Promise<void> 
 
 export function restoreInboxItem(id: string, db: LampDb = appDb): Promise<void> {
   return action(db, (w) => w.restore('inboxItem', id));
+}
+
+/** Not placed and not dismissed: what "Dismiss all from this import" takes, snoozed ones too. */
+const leftOver = (item: InboxItem) => item.deletedAt === null && item.placedInSectionId === null;
+
+/** How many items "Dismiss all from this import" would take, for its question. */
+export async function importLeftCount(importId: string, db: LampDb = appDb): Promise<number> {
+  return db.inboxItem.where('importId').equals(importId).filter(leftOver).count();
+}
+
+/**
+ * "Dismiss all from this import…" (M9-12): every item of the import not yet placed, in one action.
+ * Placed items stay in their lessons, and other items aren't touched. Returns the ids dismissed,
+ * for Undo.
+ */
+export function dismissImport(importId: string, db: LampDb = appDb): Promise<string[]> {
+  return action(db, async (w) => {
+    const items = await w.db.inboxItem
+      .where('importId')
+      .equals(importId)
+      .filter(leftOver)
+      .toArray();
+    for (const item of items) await w.remove('inboxItem', item.id);
+    return items.map((item) => item.id);
+  });
+}
+
+/** Undo for `dismissImport`: those items are back, and no others. */
+export function restoreInboxItems(ids: readonly string[], db: LampDb = appDb): Promise<void> {
+  return action(db, async (w) => {
+    for (const id of ids) await w.restore('inboxItem', id);
+  });
 }
 
 async function waitingItem(w: Writer, id: string): Promise<InboxItem> {

@@ -9,13 +9,18 @@ import {
   addInboxItem,
   addShared,
   appendToSection,
+  dismissImport,
   dismissInboxItem,
   importInboxItems,
+  importItems,
+  importLeftCount,
   inboxCount,
+  inboxEntries,
   inboxItemBody,
   inboxItemTitle,
   inboxItems,
   restoreInboxItem,
+  restoreInboxItems,
   sendToLesson,
   undoPlacement,
   undoShared,
@@ -319,5 +324,56 @@ describe('importInboxItems', () => {
     await dismissInboxItem(first!.id, db);
     expect(await importInboxItems(imported(), db)).toMatchObject({ added: 0, skipped: 9 });
     expect(await db.inboxItem.count()).toBe(8);
+  });
+});
+
+const typed = (text: string, receivedAt: string) =>
+  addInboxItem({ origin: 'typed', ref: null, text, receivedAt }, db);
+
+describe('an import in the inbox', () => {
+  it('is one row, placed by when it ran, and opens its items oldest first', async () => {
+    await typed('Older', '2000-01-01T00:00:00.000Z');
+    const { importId } = await importInboxItems(imported(), db);
+    await typed('Newer', '2099-01-01T00:00:00.000Z');
+    const entries = await inboxEntries(DAY, db);
+    expect(entries.map((e) => (e.kind === 'item' ? e.item.text : e.group.count))).toEqual([
+      'Newer',
+      8,
+      'Older',
+    ]);
+    // The badge still counts each item.
+    expect(await inboxCount(DAY, db)).toBe(10);
+
+    const opened = await importItems(importId, DAY, db);
+    const row = entries[1]!;
+    expect(row.kind === 'import' && row.group.importedAt).toBe(opened!.importedAt);
+    const dates = opened!.items.map((item) => item.receivedAt);
+    expect(dates).toEqual(dates.toSorted());
+    expect(dates).toHaveLength(8);
+    expect(await importItems('no-such-import', DAY, db)).toBeNull();
+  });
+
+  it('is dismissed all at once, leaving placed and other items, and Undo brings back the same', async () => {
+    await typed('Mine', '2000-01-01T00:00:00.000Z');
+    const { importId } = await importInboxItems(imported(), db);
+    const [placed, dismissed] = (await importItems(importId, DAY, db))!.items;
+    await sendToLesson(placed!.id, { lessonId: (await lesson()).id }, db);
+    await dismissInboxItem(dismissed!.id, db);
+    expect(await importLeftCount(importId, db)).toBe(6);
+
+    await db.outbox.clear();
+    const ids = await dismissImport(importId, db);
+    expect(ids).toHaveLength(6);
+    expect((await inboxEntries(DAY, db)).map((e) => e.kind === 'item' && e.item.text)).toEqual([
+      'Mine',
+    ]);
+    expect((await db.inboxItem.get(placed!.id))!.placedInSectionId).not.toBeNull();
+    expect(await db.outbox.count()).toBe(6);
+    expect(await importItems(importId, DAY, db)).toEqual(expect.objectContaining({ items: [] }));
+
+    await restoreInboxItems(ids, db);
+    expect((await importItems(importId, DAY, db))!.items).toHaveLength(6);
+    // The one dismissed alone stays dismissed.
+    expect((await db.inboxItem.get(dismissed!.id))!.deletedAt).not.toBeNull();
   });
 });

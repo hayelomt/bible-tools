@@ -185,3 +185,38 @@ build, on a Mac in Safari and on an iPhone.
 4. Close the dialog and reload: it doesn't open again. **Print** opens it.
 5. From a series' `⋯` → **Export series…** → **Print or save as PDF**: a title page listing the
    lessons, then each lesson starting on a new page.
+
+## Verses in from other apps, on real phones (M9-07, M9-14)
+
+Checks what E2E only imitates: the share sheet, the YouVersion app's real share and copy, the
+clipboard on a phone, and each "Open in…" target opening its own app or site. Use the installed
+app (Lamp added to the home screen) on an Android phone and an iPhone, each with the YouVersion app
+signed in, and Logos on one of them or on a laptop. Correct the README's share-sheet table from
+steps 1 and 3, and fix or log each problem as a task before M10 starts.
+
+1. **Android, share:** in YouVersion open John 10:11 in the BSB, tap the verse → Share. Lamp is in
+   the share sheet; pick it. Lamp opens on "Shared to Lamp" with **John 10:11 · BSB** and the
+   verse's text. With a lesson opened in the last 10 minutes, **Add to {lesson}** is first, and
+   puts it at the end of that lesson. Otherwise **Add to inbox** puts it at the top of the Inbox.
+2. **Android, share from another version:** the same with the NIV: the chip says
+   **John 10:11 · NIV**, and the text is YouVersion's.
+3. **iPhone, share:** in YouVersion, tap the verse → Share. Note whether Lamp is in the share sheet
+   (Safari doesn't offer web apps there). Then tap **Copy** instead.
+4. **iPhone, Add from clipboard:** in Lamp's Inbox, tap **Add from clipboard** (allow the paste if
+   iOS asks). The share screen shows **John 10:11 · BSB** with the copied text.
+5. **Paste into a note:** copy a verse in YouVersion again, open a lesson and paste into a note on
+   each phone. The text goes in as copied, and a prompt above the keyboard says
+   **John 10:11 · BSB** with **Make chip**. Make chip turns it into the chip; Undo (the keyboard's
+   undo, or shake on an iPhone) brings the paste back. Paste again and keep typing: the prompt
+   goes and the text stays.
+6. **Open in…:** tap the chip, then each target under OPEN IN. Each opens John 10:11 (or the
+   chapter where the target can't open one verse):
+   - Blue Letter Bible and Bible Hub open in the browser;
+   - YouVersion opens the app if it's installed, else bible.com, in the BSB;
+   - Logos opens the Logos app or its web reader.
+   Repeat with a range (`Rom 8:28-30`) and a chapter (`Ps 23`), and note any target that opens the
+   wrong place.
+7. **Import (once a real export has arrived):** Settings → Import → **Choose file…** with the file
+   from YouVersion. The count matches the highlights and notes in YouVersion; the Inbox shows one
+   **YouVersion import** row; its `⋯` → **Dismiss all from this import…** asks, and Undo brings
+   them back.

@@ -62,10 +62,16 @@ test('the export imports into the inbox, and a second import adds nothing', asyn
     snapshotText: 'I can do all this through him who gives me strength.',
   });
 
+  // In the inbox, the import is one row, which opens its items oldest first.
   await toast(page, 'Imported 8').getByRole('button', { name: 'Open inbox' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Inbox');
+  await expect(page.getByRole('article')).toHaveCount(0);
+  await page.getByRole('link', { name: /^YouVersion import · \w{3} \d+ \w{3}, 8 items$/ }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^YouVersion import · /);
   await expect(page.getByRole('article')).toHaveCount(8);
+  await expect(page.getByRole('article').first()).toContainText('Imported · ');
   await expect(page.getByRole('article', { name: 'Isaiah 40:31' })).toContainText('ESV');
+  await page.getByRole('link', { name: 'Back' }).click();
 
   // Again, from the Inbox's ⋯.
   await page.getByRole('button', { name: 'Inbox actions' }).click();
@@ -73,6 +79,43 @@ test('the export imports into the inbox, and a second import adds nothing', asyn
   await choose(page, FIXTURE);
   await expect(page.getByRole('dialog')).toContainText('Nothing new: all 9 were already imported.');
   expect(await rows(page, 'inboxItem')).toHaveLength(8);
+});
+
+test('an import is dismissed all at once, after asking, with Undo', async ({ page }) => {
+  await page.goto('/settings');
+  await choose(page, FIXTURE);
+  await expect(toast(page, 'Imported 8')).toBeVisible();
+  await page.goto('/inbox');
+  await page.getByRole('textbox', { name: 'Add a verse or a note' }).fill('My own note');
+  await page.keyboard.press('Enter');
+  await page.getByRole('link', { name: /^YouVersion import/ }).click();
+
+  // One goes to a lesson first; it stays there.
+  const john = page.getByRole('article', { name: 'John 3:16' });
+  await john.getByRole('button', { name: 'Send to lesson' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Add' }).click();
+  await expect(toast(page, 'Sent to John 3:16.')).toBeVisible();
+  await expect(page.getByRole('article')).toHaveCount(7);
+
+  await page.getByRole('button', { name: 'Import actions' }).click();
+  await page.getByRole('menuitem', { name: 'Dismiss all from this import…' }).click();
+  const ask = page.getByRole('dialog', { name: /^Dismiss 7 items from the YouVersion import of / });
+  await expect(ask).toContainText('Items you’ve already put in a lesson stay there.');
+  await expect(ask.getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await ask.getByRole('button', { name: 'Dismiss all 7' }).click();
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Inbox');
+  await expect(page.getByRole('link', { name: /^YouVersion import/ })).toHaveCount(0);
+  await expect(page.getByRole('article', { name: 'My own note' })).toBeVisible();
+  // Live: the one placed, and the note that wasn't imported.
+  const items = await rows<Item & { placedInSectionId: string | null }>(page, 'inboxItem');
+  expect(items).toHaveLength(2);
+  expect(items.find((item) => item.ref?.display === 'John 3:16')).toMatchObject({
+    placedInSectionId: expect.any(String),
+  });
+
+  await toast(page, 'Dismissed 7 items.').getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByRole('link', { name: /^YouVersion import · .*, 7 items$/ })).toBeVisible();
 });
 
 test('a file that isn’t an export says so and adds nothing', async ({ page }) => {
