@@ -57,6 +57,8 @@ export {
   isWholeBook,
   type SeveralPassages,
 } from './compile.ts';
+export { type LinkEntry, linksFor } from './links.ts';
+export { latestEntry, questionStatus, threadOf } from './questions.ts';
 export { newId } from './ids.ts';
 export { SEED_TAGS } from './seed-tags.ts';
 export {
@@ -111,9 +113,17 @@ export {
   emptyBody,
   type Heading,
   type InlineNode,
+  LINK_TARGET_TYPES,
+  linkedTargets,
+  type LinkTargetType,
+  type LinkWriter,
   type ListItem,
   type Mark,
+  type MarkdownOptions,
   MAX_BODY_DEPTH,
+  MAX_LINK_LABEL,
+  type NoteLinkAttrs,
+  type NoteLinkNode,
   type OrderedList,
   type Paragraph,
   type SectionBody,
@@ -200,11 +210,18 @@ export {
   lessonSchema,
   type LessonTag,
   lessonTagSchema,
+  type Link,
+  linkSchema,
   type MemoryItem,
   memoryItemSchema,
   type Question,
+  QUESTION_ENTRY_KINDS,
   QUESTION_STATUSES,
+  type QuestionEntry,
+  type QuestionEntryKind,
+  questionEntrySchema,
   questionSchema,
+  type QuestionStatus,
   type Section,
   sectionSchema,
   type SectionTag,

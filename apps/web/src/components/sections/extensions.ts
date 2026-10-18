@@ -3,6 +3,7 @@ import { type Editor, Extension, type Extensions, mergeAttributes, Node } from '
 import { Placeholder } from '@tiptap/extensions';
 import { Selection } from '@tiptap/pm/state';
 import { StarterKit } from '@tiptap/starter-kit';
+import { LinkSuggestion, NoteLink } from '@/components/links/note-link.ts';
 import { PasteChips } from '@/components/verses/paste-chips.ts';
 import { VerseChipKeys, verseChipView, VerseSnapshots } from '@/components/verses/verse-chip.ts';
 import { VersePreviews } from '@/components/verses/verse-preview.ts';
@@ -10,7 +11,7 @@ import { VerseSuggestion } from '@/components/verses/verse-suggestion.ts';
 
 /**
  * The editor for one section (TECH-DESIGN §8.3), set up to produce only what a section body allows
- * (§4.2): paragraphs, h3 headings, lists, quotes, bold, italic, links and verse chips.
+ * (§4.2): paragraphs, h3 headings, lists, quotes, bold, italic, links, verse chips and link chips.
  */
 
 /** What the section keys do beyond editing text; the list wires them to the other sections. */
@@ -199,6 +200,8 @@ export function sectionExtensions(options: {
     Placeholder.configure({ placeholder: ({ editor }) => options.placeholder(editor) }),
     Verse,
     VerseSuggestion,
+    NoteLink,
+    LinkSuggestion,
     VerseChipKeys,
     VerseSnapshots,
     VersePreviews,

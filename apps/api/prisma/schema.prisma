@@ -32,23 +32,25 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  sessions    Session[]
-  emailTokens EmailToken[]
-  settings    UserSettings?
-  series      Series[]
-  lessons     Lesson[]
-  sections    Section[]
-  tags        Tag[]
-  sectionTags SectionTag[]
-  lessonTags  LessonTag[]
-  takeaways   Takeaway[]
-  questions   Question[]
-  highlights  Highlight[]
-  memoryItems MemoryItem[]
-  inboxItems  InboxItem[]
-  citations   Citation[]
-  syncChanges SyncChange[]
-  devices     Device[]
+  sessions        Session[]
+  emailTokens     EmailToken[]
+  settings        UserSettings?
+  series          Series[]
+  lessons         Lesson[]
+  sections        Section[]
+  tags            Tag[]
+  sectionTags     SectionTag[]
+  lessonTags      LessonTag[]
+  takeaways       Takeaway[]
+  questions       Question[]
+  highlights      Highlight[]
+  memoryItems     MemoryItem[]
+  inboxItems      InboxItem[]
+  questionEntries QuestionEntry[]
+  citations       Citation[]
+  links           Link[]
+  syncChanges     SyncChange[]
+  devices         Device[]
 
   @@map("user")
 }
@@ -142,13 +144,15 @@ model Lesson {
   rev          BigInt    @default(0)
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  series    Series?     @relation(fields: [seriesId], references: [id], onDelete: SetNull)
-  sections  Section[]
-  tags      LessonTag[]
-  takeaways Takeaway[]
-  questions Question[]
-  citations Citation[]
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series          Series?         @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  sections        Section[]
+  tags            LessonTag[]
+  takeaways       Takeaway[]
+  questions       Question[]
+  citations       Citation[]
+  questionEntries QuestionEntry[]
+  links           Link[]
 
   @@index([userId, rev])
   @@index([seriesId])
@@ -177,16 +181,18 @@ model Section {
   bodyDevice     String?   @map("body_device")
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lesson             Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  parent             Section?     @relation("SectionTree", fields: [parentId], references: [id], onDelete: Cascade)
-  children           Section[]    @relation("SectionTree")
-  conflictSource     Section?     @relation("ConflictCopies", fields: [conflictOf], references: [id], onDelete: SetNull)
-  conflictCopies     Section[]    @relation("ConflictCopies")
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson             Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  parent             Section?        @relation("SectionTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children           Section[]       @relation("SectionTree")
+  conflictSource     Section?        @relation("ConflictCopies", fields: [conflictOf], references: [id], onDelete: SetNull)
+  conflictCopies     Section[]       @relation("ConflictCopies")
   tags               SectionTag[]
   answeredQuestions  Question[]
   promotedHighlights Highlight[]
   placedInboxItems   InboxItem[]
+  questionEntries    QuestionEntry[]
+  links              Link[]
 
   @@index([userId, rev])
   @@index([lessonId, parentId, orderKey])
@@ -269,6 +275,8 @@ model Takeaway {
 }
 
 // status: open | answered | parked
+// status and answerSectionId left the wire format in M10 (its entries hold them, §17.5); they
+// stay, unwritten, for one release so a rollback still works, and the next release drops them.
 model Question {
   id              String    @id @default(uuid(7)) @db.Uuid
   userId          String    @map("user_id") @db.Uuid
@@ -281,13 +289,38 @@ model Question {
   rev             BigInt    @default(0)
   deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lesson        Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  answerSection Section? @relation(fields: [answerSectionId], references: [id], onDelete: SetNull)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson        Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  answerSection Section?        @relation(fields: [answerSectionId], references: [id], onDelete: SetNull)
+  entries       QuestionEntry[]
 
   @@index([userId, rev])
   @@index([lessonId])
   @@map("question")
+}
+
+// One thing that happened to a question, in a lesson (TECH-DESIGN §17.5); its status follows the
+// latest. kind: asked | revisited | partial | answered | reopened | parked.
+model QuestionEntry {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  questionId String    @map("question_id") @db.Uuid
+  lessonId   String    @map("lesson_id") @db.Uuid
+  kind       String
+  sectionId  String?   @map("section_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev        BigInt    @default(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  lesson   Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  section  Section? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, rev])
+  @@index([questionId])
+  @@map("question_entry")
 }
 
 // ref: VerseRef; colour: yellow | green | blue | pink
@@ -377,6 +410,25 @@ model Citation {
   @@index([userId, startOrd, endOrd])
   @@index([sourceType, sourceId])
   @@map("citation")
+}
+
+// Derived from a section's link chips on every write, like Citation, and never pushed (§17.4).
+// targetType: lesson | section. targetId has no foreign key: a link can be broken.
+model Link {
+  id            String @id @default(uuid(7)) @db.Uuid
+  userId        String @map("user_id") @db.Uuid
+  fromSectionId String @map("from_section_id") @db.Uuid
+  fromLessonId  String @map("from_lesson_id") @db.Uuid
+  targetType    String @map("target_type")
+  targetId      String @map("target_id") @db.Uuid
+
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromSection Section @relation(fields: [fromSectionId], references: [id], onDelete: Cascade)
+  fromLesson  Lesson  @relation(fields: [fromLessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, targetId])
+  @@index([fromSectionId])
+  @@map("link")
 }
 
 // One row per pushed change (id = changeId), so a replayed change returns its stored result.

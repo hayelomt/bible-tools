@@ -2,6 +2,7 @@ import { SEED_TAGS } from '@lamp/domain';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LampDb, SETTINGS_KEY } from '@/data/db.ts';
+import { questionViews } from '@/data/question-status.ts';
 import { ensureDevice } from '@/data/setup.ts';
 import { verseIndex } from '@/search/results.ts';
 import { clearDevice, seedBulk, seedDemo } from './seed.ts';
@@ -24,7 +25,8 @@ describe('seedDemo', () => {
     expect(await db.series.count()).toBe(2);
     expect(await db.lesson.count()).toBe(10);
     expect(await db.section.filter((s) => s.parentId !== null).count()).toBeGreaterThan(3);
-    expect((await db.question.toArray()).map((q) => q.status).toSorted()).toEqual([
+    const questions = await questionViews(await db.question.toArray(), db);
+    expect(questions.map((q) => q.status).toSorted()).toEqual([
       'answered',
       'answered',
       'open',

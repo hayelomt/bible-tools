@@ -50,6 +50,7 @@ const NOUNS: Record<EntityName, string> = {
   highlight: 'Highlight',
   memoryItem: 'Memory verse',
   inboxItem: 'Inbox item',
+  questionEntry: 'Change to a question',
 };
 
 /** The outbox's refused changes, oldest first, described for the sync panel. */
@@ -112,6 +113,17 @@ async function describe(db: LampDb, entry: OutboxEntry): Promise<RejectedChange>
           ? { [entry.entity]: id }
           : {};
       return { ...base, what, target: lessonTarget(lesson.id, search) };
+    }
+    case 'questionEntry': {
+      const lessonId = field('lessonId');
+      const lesson = lessonId ? await db.lesson.get(lessonId) : undefined;
+      if (!lesson) return { ...base, what: noun, target: null };
+      const questionId = field('questionId');
+      return {
+        ...base,
+        what: `${noun} in "${lesson.title}"`,
+        target: lessonTarget(lesson.id, questionId ? { question: questionId } : {}),
+      };
     }
     case 'inboxItem':
       return { ...base, what: 'An inbox item', target: { kind: 'inbox' } };

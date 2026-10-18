@@ -87,6 +87,11 @@ function subscribe(listener: () => void) {
   return () => statusListeners.delete(listener);
 }
 
+/** Whether the index is ready now, for a caller that won't wait for it. */
+export function indexStatus(): IndexStatus {
+  return status;
+}
+
 export function useIndexStatus(): IndexStatus {
   return useSyncExternalStore(subscribe, () => status);
 }

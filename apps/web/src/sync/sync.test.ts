@@ -4,6 +4,7 @@ import {
   type EntityName,
   keysBetween,
   type MeResponse,
+  linkedTargets,
   newId,
   type PulledRow,
   type PullResponse,
@@ -761,6 +762,12 @@ describe('the engine', () => {
   });
 });
 
+/** A link chip to a row, as a body holds it. */
+const linkTo = (targetType: 'lesson' | 'section', targetId: string) => ({
+  type: 'noteLink' as const,
+  attrs: { targetType, targetId, label: 'P' },
+});
+
 describe('guests and devices (§6.6)', () => {
   const OTHER: MeResponse = { ...ACCOUNT, id: newId(), email: 'second@example.com' };
 
@@ -904,12 +911,26 @@ describe('guests and devices (§6.6)', () => {
       },
       db,
     );
+    // A link to its parent, which is copied, and one to a lesson that isn't (it stays broken).
+    const nowhere = newId();
     const child = await createSection(
       {
         lessonId: lesson.id,
         parentId: parent.id,
         orderKey: keys[0]!,
-        body: body('C'),
+        body: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                { type: 'text', text: 'C ' },
+                linkTo('section', parent.id),
+                linkTo('lesson', nowhere),
+              ],
+            },
+          ],
+        },
         conflictOf: null,
         conflictDevice: null,
       },
@@ -946,11 +967,21 @@ describe('guests and devices (§6.6)', () => {
     expect(sections.every((s) => s.lessonId === newLesson)).toBe(true);
     const copiedChild = sections.find((s) => s.parentId !== null)!;
     expect(sections.find((s) => s.id === copiedChild.parentId)!.body).toEqual(body('P'));
+    expect(linkedTargets(copiedChild.body as SectionBody).map((l) => l.targetId)).toEqual([
+      copiedChild.parentId,
+      nowhere,
+    ]);
+    expect((await db.link.toArray()).map((l) => l.targetId).toSorted()).toEqual(
+      [copiedChild.parentId, nowhere].toSorted(),
+    );
     const [copiedQuestion] = second.all('question');
     expect(copiedQuestion).toMatchObject({ lessonId: newLesson });
-    expect(sections.find((s) => s.id === copiedQuestion!.answerSectionId)!.body).toEqual(
-      answer.body,
-    );
+    const entries = second.all('questionEntry');
+    expect(entries.map((e) => [e.kind, e.questionId, e.lessonId])).toEqual([
+      ['asked', copiedQuestion!.id, newLesson],
+      ['answered', copiedQuestion!.id, newLesson],
+    ]);
+    expect(sections.find((s) => s.id === entries[1]!.sectionId)!.body).toEqual(answer.body);
     const kindness = second.all('tag').find((tag) => tag.name === 'KINDNESS')!;
     expect(second.all('sectionTag')).toEqual([
       expect.objectContaining({ tagId: kindness.id, sectionId: copiedChild.id }),

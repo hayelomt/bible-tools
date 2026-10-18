@@ -1,17 +1,17 @@
-import { type Question, type Section, type SectionBody, toPlainText } from '@lamp/domain';
+import {
+  type Question,
+  type QuestionEntry,
+  type QuestionEntryKind,
+  type Section,
+  type SectionBody,
+  threadOf,
+} from '@lamp/domain';
 import { action, RowNotFoundError, type Writer } from '../action.ts';
 import { db as appDb, type LampDb } from '../db.ts';
+import { answerSectionOf, hasAnswer } from '../question-status.ts';
 import { endOfLesson } from './section-order.ts';
 
-/**
- * Whether an answer section has an answer: text beyond the heading it was given, the question
- * (F5: "answered when the section has a body").
- */
-export function hasAnswer(body: SectionBody): boolean {
-  const [first, ...rest] = body.content;
-  const answer = first?.type === 'heading' ? rest : body.content;
-  return toPlainText({ type: 'doc', content: answer }).trim().length > 0;
-}
+export { hasAnswer };
 
 /** A new answer section's body: the question as its heading, and an empty line to write in. */
 export function answerBody(question: string): SectionBody {
@@ -24,58 +24,68 @@ export function answerBody(question: string): SectionBody {
   };
 }
 
-/**
- * The status a question's answer gives it: answered while its section is there and has an answer,
- * open otherwise. A parked question stays parked; the user parked it.
- */
-async function answeredStatus(w: Writer, question: Question): Promise<Question['status']> {
-  if (question.status === 'parked') return 'parked';
-  const section = question.answerSectionId
-    ? await w.db.section.get(question.answerSectionId)
-    : undefined;
-  return section && section.deletedAt === null && hasAnswer(section.body) ? 'answered' : 'open';
+async function liveQuestion(w: Writer, id: string): Promise<Question> {
+  const question = await w.db.question.get(id);
+  if (!question || question.deletedAt !== null) throw new RowNotFoundError('question', id);
+  return question;
 }
 
 /**
- * Brings the questions answered in `sections` up to date, after those sections were written,
- * deleted or restored. Called inside the section actions, so the status changes in the same
- * transaction as the text.
+ * Adds an entry to a question's thread (F24, §17.5), in its own lesson unless `lessonId` says
+ * otherwise. The latest entry gives the question its status.
  */
-export async function syncAnswers(w: Writer, sections: readonly Section[]): Promise<void> {
-  for (const section of sections) {
-    const questions = await w.db.question
-      .where('lessonId')
-      .equals(section.lessonId)
-      .filter((q) => q.deletedAt === null && q.answerSectionId === section.id)
-      .toArray();
-    for (const question of questions) {
-      const status = await answeredStatus(w, question);
-      if (status !== question.status) await w.update('question', question.id, { status });
-    }
-  }
+function addEntry(
+  w: Writer,
+  question: Question,
+  kind: QuestionEntryKind,
+  {
+    sectionId = null,
+    lessonId = question.lessonId,
+  }: { sectionId?: string | null; lessonId?: string } = {},
+): Promise<QuestionEntry> {
+  return w.create('questionEntry', { questionId: question.id, lessonId, kind, sectionId });
 }
 
+/** A new question, and its thread's first entry: asked, in this lesson. */
 export function addQuestion(lessonId: string, text: string, db: LampDb = appDb): Promise<Question> {
-  return action(db, (w) =>
-    w.create('question', { lessonId, text, status: 'open', answerSectionId: null }),
-  );
+  return action(db, async (w) => {
+    const question = await w.create('question', { lessonId, text });
+    await addEntry(w, question, 'asked');
+    return question;
+  });
 }
 
 export function updateQuestion(id: string, text: string, db: LampDb = appDb): Promise<Question> {
   return action(db, (w) => w.update('question', id, { text }));
 }
 
+/** Parks a question: a parked entry, which Undo takes back out (`undoEntry`). */
+export function parkQuestion(id: string, db: LampDb = appDb): Promise<QuestionEntry> {
+  return action(db, async (w) => addEntry(w, await liveQuestion(w, id), 'parked'));
+}
+
 /**
- * Parks a question, or reopens a parked one. Reopening gives back the status its answer gives it,
- * so a question parked after it was answered is answered again.
+ * Reopens a question. A parked one gets back what it had before it was parked: answered again in
+ * the same section, if that's where it was, and reopened otherwise. An answered one is reopened,
+ * and back in Review.
  */
-export function setParked(id: string, parked: boolean, db: LampDb = appDb): Promise<Question> {
+export function reopenQuestion(id: string, db: LampDb = appDb): Promise<QuestionEntry> {
   return action(db, async (w) => {
-    const question = await w.db.question.get(id);
-    if (!question || question.deletedAt !== null) throw new RowNotFoundError('question', id);
-    const status = parked ? 'parked' : await answeredStatus(w, { ...question, status: 'open' });
-    return w.update('question', id, { status });
+    const question = await liveQuestion(w, id);
+    const thread = threadOf(await w.db.questionEntry.where('questionId').equals(id).toArray());
+    if (thread.at(-1)?.kind !== 'parked') return addEntry(w, question, 'reopened');
+    const before = thread.findLast((e) => e.kind !== 'parked');
+    const answer = before?.kind === 'answered' && before.sectionId ? before.sectionId : null;
+    const section = answer ? await w.db.section.get(answer) : undefined;
+    return section && section.deletedAt === null
+      ? addEntry(w, question, 'answered', { sectionId: section.id })
+      : addEntry(w, question, 'reopened');
   });
+}
+
+/** Undo of an entry just added (Park): the thread is as it was before it. */
+export function undoEntry(entryId: string, db: LampDb = appDb): Promise<void> {
+  return action(db, (w) => w.remove('questionEntry', entryId));
 }
 
 /** Deletes at once; the list offers Undo. Its answer section stays: it's a note of its own. */
@@ -89,9 +99,10 @@ export function restoreQuestion(id: string, db: LampDb = appDb): Promise<void> {
 
 /**
  * "Answer in a section" (wireframes/lessons.md): a top-level section headed with the question,
- * linked from it by `answerSectionId`. The question stays open until the section has an answer
- * (`syncAnswers`). A question whose answer section is still there gets that one back instead of a
- * second. Without `at`, the section goes after the lesson's last top-level section.
+ * and an answered entry naming it. The question stays open until the section has an answer (its
+ * status follows the section's text). A question whose answer section is still there gets that
+ * one back instead of a second. Without `at`, the section goes after the lesson's last top-level
+ * section.
  */
 export function promoteQuestion(
   id: string,
@@ -99,12 +110,9 @@ export function promoteQuestion(
   db: LampDb = appDb,
 ): Promise<Section> {
   return action(db, async (w) => {
-    const question = await w.db.question.get(id);
-    if (!question || question.deletedAt !== null) throw new RowNotFoundError('question', id);
-    if (question.answerSectionId) {
-      const existing = await w.db.section.get(question.answerSectionId);
-      if (existing && existing.deletedAt === null) return existing;
-    }
+    const question = await liveQuestion(w, id);
+    const existing = await answerSectionOf(id, w.db);
+    if (existing) return existing;
 
     const orderKey = at?.orderKey ?? (await endOfLesson(w, question.lessonId));
     const section = await w.create('section', {
@@ -117,7 +125,7 @@ export function promoteQuestion(
       conflictDevice: null,
     });
     // A parked question being answered is open again until the answer is written.
-    await w.update('question', id, { answerSectionId: section.id, status: 'open' });
+    await addEntry(w, question, 'answered', { sectionId: section.id });
     return section;
   });
 }

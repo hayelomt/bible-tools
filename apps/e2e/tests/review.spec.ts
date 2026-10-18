@@ -4,9 +4,8 @@ import { newLesson, rows } from './helpers.ts';
 // The review queue (F9, M6-03): open questions with Answer, Park and Open lesson, the takeaways
 // of the last `reviewWindowDays`, the count on the Review tab, and "All caught up."
 
-interface StoredQuestion {
-  text: string;
-  status: string;
+interface StoredEntry {
+  kind: string;
 }
 
 const QUESTIONS = [
@@ -83,7 +82,7 @@ test('lists open questions and recent takeaways; Park and Answer work from the q
   await expect(page.getByRole('heading', { name: 'Open questions · 6' })).toBeVisible();
   await page.getByRole('button', { name: 'Park “Thief or hired hand?”' }).click();
   await expect
-    .poll(async () => (await rows<StoredQuestion>(page, 'question')).map((q) => q.status))
+    .poll(async () => (await rows<StoredEntry>(page, 'questionEntry')).map((e) => e.kind))
     .toContain('parked');
 
   // Answer: the lesson, with a section headed with the question and the cursor under it.
@@ -94,11 +93,8 @@ test('lists open questions and recent takeaways; Park and Answer work from the q
   await expect(answer.getByRole('textbox')).toBeFocused();
   await page.keyboard.type('Other flocks, one shepherd.');
   await expect
-    .poll(async () => {
-      const stored = await rows<StoredQuestion>(page, 'question');
-      return stored.find((q) => q.text === 'Who are the other sheep?')?.status;
-    })
-    .toBe('answered');
+    .poll(async () => JSON.stringify(await rows(page, 'section')))
+    .toContain('Other flocks, one shepherd.');
   await page.keyboard.press('Escape');
 
   // Back in the queue it's gone, and a reload of the lesson doesn't answer it again.

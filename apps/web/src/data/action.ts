@@ -3,6 +3,7 @@ import {
   ENTITY_SCHEMAS,
   type EntityRow,
   isCitingEntity,
+  linksFor,
   newId,
   type UserSettings,
 } from '@lamp/domain';
@@ -15,7 +16,10 @@ export type NewRow<E extends RowEntity> = Omit<EntityRow<E>, Meta> & { id?: stri
 export type RowPatch<E extends RowEntity> = Partial<Omit<EntityRow<E>, Meta>>;
 export type SettingsPatch = Partial<Omit<UserSettings, 'rev' | 'updatedAt'>>;
 
-/** What an action uses to change data. Every write also rebuilds citations and queues a change. */
+/**
+ * What an action uses to change data. Every write also rebuilds citations and links and queues a
+ * change.
+ */
 export interface Writer {
   /** For reads inside the action; they see the action's own writes. */
   readonly db: LampDb;
@@ -193,16 +197,30 @@ class TransactionWriter implements Writer {
   }
 }
 
-/** Rebuilds a row's citations (§8.4), inside the caller's transaction; a tombstone has none. */
+/**
+ * Rebuilds a row's citations (§8.4), and a section's links (§17.4), inside the caller's
+ * transaction; a tombstone has none.
+ */
 export async function reindex(
   db: LampDb,
   entity: RowEntity,
   row: EntityRow<RowEntity>,
 ): Promise<void> {
+  if (entity === 'section') {
+    await db.link.where('fromSectionId').equals(row.id).delete();
+    const links = linksFor(row as EntityRow<'section'>);
+    await db.link.bulkAdd(links.map((link) => ({ id: newId(), ...link })));
+  }
   if (!isCitingEntity(entity)) return;
   await db.citation.where('sourceId').equals(row.id).delete();
   const entries = citationsFor(entity, row as EntityRow<typeof entity>);
   await db.citation.bulkAdd(entries.map((entry) => ({ id: newId(), ...entry })));
+}
+
+/** Drops a row's derived index entries: its citations, and a section's links. */
+export async function unindex(db: LampDb, id: string): Promise<void> {
+  await db.citation.where('sourceId').equals(id).delete();
+  await db.link.where('fromSectionId').equals(id).delete();
 }
 
 /** The outbox's change union can't be narrowed from a generic entity, so writes assert it. */

@@ -6,6 +6,7 @@ import {
   precacheAndRoute,
 } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
+import type { QuestionEntry, Section } from '@lamp/domain';
 import { REMINDER_TAG, weeklyReminder } from './data/reminder.ts';
 import { countWaiting, type QueueRows } from './data/review-count.ts';
 import { today } from './lib/dates.ts';
@@ -76,16 +77,50 @@ async function readQueue(): Promise<QueueRows> {
   open.addEventListener('upgradeneeded', () => open.transaction?.abort());
   const db = await settled(open);
   try {
-    const tx = db.transaction(['question', 'lesson', 'memoryItem']);
-    const [questions, lessons, items] = await Promise.all([
+    // A database the page hasn't upgraded to M10 yet has statuses on its questions instead.
+    const threads = db.objectStoreNames.contains('questionEntry');
+    const stores = ['question', 'lesson', 'memoryItem', 'section'];
+    const tx = db.transaction(threads ? [...stores, 'questionEntry'] : stores);
+    const [questions, lessons, items, stored] = await Promise.all([
       settled(tx.objectStore('question').getAll()),
       settled(tx.objectStore('lesson').getAll()),
       settled(tx.objectStore('memoryItem').getAll()),
+      threads ? settled(tx.objectStore('questionEntry').getAll()) : Promise.resolve([]),
     ]);
-    return { questions, lessons, items } as QueueRows;
+    const entries = threads ? (stored as QuestionEntry[]) : questions.flatMap(legacyEntries);
+    const sections = new Map<string, Section>();
+    for (const entry of entries) {
+      if (entry.kind !== 'answered' || !entry.sectionId) continue;
+      const section = (await settled(tx.objectStore('section').get(entry.sectionId))) as
+        Section | undefined;
+      if (section && section.deletedAt === null) sections.set(section.id, section);
+    }
+    return { questions, lessons, items, entries, sections } as QueueRows;
   } finally {
     db.close();
   }
+}
+
+/** A question stored before M10 (Dexie version 8), as the one entry its status amounts to. */
+function legacyEntries(question: {
+  id: string;
+  createdAt: string;
+  status?: string;
+  answerSectionId?: string | null;
+}): QuestionEntry[] {
+  const kind =
+    question.status === 'parked' ? 'parked' : question.answerSectionId ? 'answered' : null;
+  if (!kind) return [];
+  return [
+    {
+      id: question.id,
+      questionId: question.id,
+      kind,
+      sectionId: kind === 'answered' ? (question.answerSectionId ?? null) : null,
+      createdAt: question.createdAt,
+      deletedAt: null,
+    } as QuestionEntry,
+  ];
 }
 
 function settled<T>(req: IDBRequest<T>): Promise<T> {

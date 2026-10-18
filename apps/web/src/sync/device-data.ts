@@ -1,4 +1,12 @@
-import { ENTITY_NAMES, type EntityRow, newId, SEED_TAGS } from '@lamp/domain';
+import {
+  ENTITY_NAMES,
+  type EntityRow,
+  type InlineNode,
+  newId,
+  type Section,
+  type SectionBody,
+  SEED_TAGS,
+} from '@lamp/domain';
 import { reindex } from '@/data/action.ts';
 import { emitRowsChanged, type RowRef } from '@/data/changes.ts';
 import {
@@ -33,17 +41,18 @@ const REFS: Readonly<Record<RowEntity, Readonly<Record<string, RowEntity>>>> = {
   sectionTag: { tagId: 'tag', sectionId: 'section' },
   lessonTag: { tagId: 'tag', lessonId: 'lesson' },
   takeaway: { lessonId: 'lesson' },
-  question: { lessonId: 'lesson', answerSectionId: 'section' },
+  question: { lessonId: 'lesson' },
   highlight: { promotedSectionId: 'section' },
   memoryItem: {},
   inboxItem: { placedInSectionId: 'section' },
+  questionEntry: { questionId: 'question', lessonId: 'lesson', sectionId: 'section' },
 };
 const OPTIONAL_REFS = new Set([
-  'seriesId',
-  'conflictOf',
-  'answerSectionId',
-  'promotedSectionId',
-  'placedInSectionId',
+  'lesson.seriesId',
+  'section.conflictOf',
+  'highlight.promotedSectionId',
+  'inboxItem.placedInSectionId',
+  'questionEntry.sectionId',
 ]);
 
 type AnyRow = EntityRow<RowEntity> & Record<string, unknown>;
@@ -90,6 +99,7 @@ export async function removeNotes(db: LampDb, owner: Owner | null): Promise<void
       await db.rows(entity).clear();
     }
     await db.citation.clear();
+    await db.link.clear();
     await db.outbox.clear();
     await resetSettings(db);
     const now = new Date().toISOString();
@@ -136,7 +146,9 @@ export async function copyNotes(db: LampDb, owner: Owner): Promise<void> {
           if (kept.has(row.id)) continue;
           const missing = Object.keys(REFS[entity]).some(
             (column) =>
-              !OPTIONAL_REFS.has(column) && row[column] != null && !kept.has(row[column] as string),
+              !OPTIONAL_REFS.has(`${entity}.${column}`) &&
+              row[column] != null &&
+              !kept.has(row[column] as string),
           );
           if (missing) continue;
           kept.add(row.id);
@@ -155,12 +167,15 @@ export async function copyNotes(db: LampDb, owner: Owner): Promise<void> {
           const id = row[column] as string | null | undefined;
           if (id != null) copy[column] = ids.get(id) ?? null;
         }
+        // Links in a body point at the copies too; one to a row that isn't copied stays broken.
+        if (entity === 'section') copy.body = relinked((row as Section).body, ids);
         copies.push([entity, copy]);
       }
     }
 
     for (const entity of ROW_ENTITIES) await db.rows(entity).clear();
     await db.citation.clear();
+    await db.link.clear();
     await db.outbox.clear();
     for (const [entity, copy] of copies) {
       await queueCreate(db, entity, copy);
@@ -172,7 +187,27 @@ export async function copyNotes(db: LampDb, owner: Owner): Promise<void> {
   emitRowsChanged(changed);
 }
 
-/** Stores a row with its citations, and queues its create. */
+/** A body with each link chip's target swapped for its copy, where it has one. */
+function relinked(body: SectionBody, ids: ReadonlyMap<string, string>): SectionBody {
+  const inline = (nodes: InlineNode[]) =>
+    nodes.map((node) =>
+      node.type === 'noteLink' && ids.has(node.attrs.targetId)
+        ? { ...node, attrs: { ...node.attrs, targetId: ids.get(node.attrs.targetId)! } }
+        : node,
+    );
+  const walk = <T>(value: T): T => {
+    if (Array.isArray(value)) return value.map(walk) as T;
+    if (typeof value !== 'object' || value === null) return value;
+    const node = value as { type?: string; content?: unknown[] };
+    if ((node.type === 'paragraph' || node.type === 'heading') && node.content) {
+      return { ...node, content: inline(node.content as InlineNode[]) } as T;
+    }
+    return node.content ? ({ ...node, content: walk(node.content) } as T) : value;
+  };
+  return walk(body);
+}
+
+/** Stores a row with its citations and links, and queues its create. */
 async function queueCreate(db: LampDb, entity: RowEntity, row: AnyRow): Promise<void> {
   await db.rows(entity).put(row as never);
   await reindex(db, entity, row);

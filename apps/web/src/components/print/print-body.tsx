@@ -8,6 +8,7 @@ import {
   type VerseRef,
 } from '@lamp/domain';
 import type { ReactNode } from 'react';
+import { PrintedLink } from '@/components/links/read-only-link.tsx';
 
 /**
  * A section body as a printed page shows it (F11, wireframes/export.md "Print view"), the way the
@@ -94,15 +95,20 @@ function verseLabel(ref: VerseRef): string {
 }
 
 function Inline({ nodes }: { nodes: readonly InlineNode[] }) {
-  return nodes.map((node, i) =>
-    node.type === 'verse' ? (
-      <span key={i} className="font-medium">
-        {verseLabel(node.attrs)}
-      </span>
-    ) : (
-      <Marked key={i} text={node.text} marks={node.marks ?? []} />
-    ),
-  );
+  return nodes.map((node, i) => {
+    switch (node.type) {
+      case 'verse':
+        return (
+          <span key={i} className="font-medium">
+            {verseLabel(node.attrs)}
+          </span>
+        );
+      case 'noteLink':
+        return <PrintedLink key={i} link={node.attrs} />;
+      case 'text':
+        return <Marked key={i} text={node.text} marks={node.marks ?? []} />;
+    }
+  });
 }
 
 export function Marked({ text, marks }: { text: string; marks: readonly Mark[] }): ReactNode {

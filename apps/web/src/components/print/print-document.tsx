@@ -1,4 +1,3 @@
-import type { Question } from '@lamp/domain';
 import { Button, buttonVariants } from '@lamp/ui/components/button';
 import { Link, type LinkProps } from '@tanstack/react-router';
 import { ArrowLeft, Printer } from 'lucide-react';
@@ -8,6 +7,7 @@ import type { SeriesForExport } from '@/export/load.ts';
 import { headerLines, type LessonForExport, scriptureCredit, tagLabel } from '@/export/markdown.ts';
 import { shortDateWithYear } from '@/lib/dates.ts';
 import { count, SERIES_KIND_LABELS } from '@/lib/labels.ts';
+import type { QuestionView } from '@/data/question-status.ts';
 import { PrintBody } from './print-body.tsx';
 import './print.css';
 
@@ -139,7 +139,7 @@ export function LessonDocument({ data, level = 1 }: { data: LessonForExport; lev
 }
 
 /** "☑ Who are the other sheep?" when answered; "☐" when open, or parked and marked so. */
-function QuestionLine({ question }: { question: Question }) {
+function QuestionLine({ question }: { question: QuestionView }) {
   const answered = question.status === 'answered';
   return (
     <li className="flex gap-2 break-words">

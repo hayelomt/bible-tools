@@ -8,6 +8,7 @@ import {
   type EntityRow,
   isCitingEntity,
   keyBetween,
+  linksFor,
   newId,
   type Outcome,
   type SectionBody,
@@ -156,7 +157,7 @@ export class PushService {
       if (problem) return reject(changeId, SyncErrorCode.REFERENCE_NOT_FOUND, problem);
     }
 
-    const server = current ? toRow<RowEntity>(current) : null;
+    const server = current ? toRow<RowEntity>(entity, current) : null;
     const serverRev = Number(current?.rev ?? 0);
     let outcome: Outcome<SyncRow<RowEntity>>;
     if (change.op === 'upsert') {
@@ -207,7 +208,7 @@ export class PushService {
   ): Promise<PushResult> {
     const current = await tx.userSettings.findUnique({ where: { userId } });
     const outcome = resolveUpsert({
-      server: current ? toRow<'userSettings'>(current) : null,
+      server: current ? toRow('userSettings', current) : null,
       serverRev: Number(current?.rev ?? 0),
       baseRev,
       incoming: change.row,
@@ -219,7 +220,7 @@ export class PushService {
     return resultOf(change.changeId, rev, outcome.resolution);
   }
 
-  /** Stores a row at `rev`, written by `device`, and rebuilds its citations. */
+  /** Stores a row at `rev`, written by `device`, and rebuilds its citations and links. */
   private async writeRow(
     tx: Tx,
     userId: string,
@@ -240,6 +241,7 @@ export class PushService {
     if (current) await model.update({ where: { id: row.id }, data });
     else await model.create({ data: { ...data, id, userId } });
     if (isCitingEntity(entity)) await this.reindex(tx, userId, entity, row);
+    if (entity === 'section') await this.relink(tx, userId, row as SyncRow<'section'>);
   }
 
   /** Saves a body that lost as a new sibling right after the section (§6.4); returns its id. */
@@ -287,8 +289,11 @@ export class PushService {
       const parent = await model.findUnique({ where: { id } });
       if (!parent || parent.deletedAt === null) continue;
       await model.update({ where: { id }, data: { deletedAt: null, rev } });
-      const parentRow = { ...toRow<RowEntity>(parent), deletedAt: null };
+      const parentRow = { ...toRow<RowEntity>(target, parent), deletedAt: null };
       if (isCitingEntity(target)) await this.reindex(tx, parent.userId, target, parentRow);
+      if (target === 'section') {
+        await this.relink(tx, parent.userId, parentRow as SyncRow<'section'>);
+      }
       await this.restoreParents(tx, target, parentRow, rev);
       restored = true;
     }
@@ -333,6 +338,15 @@ export class PushService {
     const entries = citationsFor(entity, { ...row, rev: 0 } as EntityRow<CitingEntity>);
     if (entries.length > 0) {
       await tx.citation.createMany({ data: entries.map((entry) => ({ ...entry, userId })) });
+    }
+  }
+
+  /** Rebuilds a section's links with the same function the device uses (§17.4). */
+  private async relink(tx: Tx, userId: string, section: SyncRow<'section'>): Promise<void> {
+    await tx.link.deleteMany({ where: { userId, fromSectionId: section.id } });
+    const entries = linksFor(section);
+    if (entries.length > 0) {
+      await tx.link.createMany({ data: entries.map((entry) => ({ ...entry, userId })) });
     }
   }
 

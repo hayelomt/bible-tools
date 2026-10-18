@@ -22,8 +22,9 @@ export function updateLesson(
 }
 
 /**
- * Deletes a lesson with everything in it: sections and their tags, the lesson's tags, takeaways
- * and questions (TECH-DESIGN §5.2 cascades the same way on the server). All tombstones, so they sync.
+ * Deletes a lesson with everything in it: sections and their tags, the lesson's tags, takeaways,
+ * questions, and the question entries made in it, such as a revisit of another lesson's question
+ * (TECH-DESIGN §5.2 cascades the same way on the server). All tombstones, so they sync.
  */
 export function deleteLesson(id: string, db: LampDb = appDb): Promise<void> {
   return action(db, async (w) => {
@@ -33,11 +34,13 @@ export function deleteLesson(id: string, db: LampDb = appDb): Promise<void> {
     const lessonTags = live(await w.db.lessonTag.where('lessonId').equals(id).toArray());
     const takeaways = live(await w.db.takeaway.where('lessonId').equals(id).toArray());
     const questions = live(await w.db.question.where('lessonId').equals(id).toArray());
+    const entries = live(await w.db.questionEntry.where('lessonId').equals(id).toArray());
 
     for (const t of sectionTags) await w.remove('sectionTag', t.id);
     for (const s of sections) await w.remove('section', s.id);
     for (const t of lessonTags) await w.remove('lessonTag', t.id);
     for (const t of takeaways) await w.remove('takeaway', t.id);
+    for (const e of entries) await w.remove('questionEntry', e.id);
     for (const q of questions) await w.remove('question', q.id);
     await w.remove('lesson', id);
   });

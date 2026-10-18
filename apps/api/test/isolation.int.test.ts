@@ -16,6 +16,7 @@ import { type Client, createClient, sessionCookie } from './int/http.js';
 import { runEmail } from './int/mail.js';
 import {
   type Account,
+  bodyLinking,
   CLIENT_VERSION,
   DEVICE_ID,
   JOHN_3_16,
@@ -87,7 +88,11 @@ function rowOf(entity: RowEntity, to: Rows): Row {
     case 'lesson':
       return lessonRow(refs);
     case 'section':
-      return sectionRow(refs.lessonId as string, refs);
+      // A link to its own lesson, so the derived link table has a row too.
+      return sectionRow(refs.lessonId as string, {
+        body: bodyLinking('lesson', refs.lessonId as string),
+        ...refs,
+      });
     case 'tag':
       return tagRow('grace');
     case 'highlight':
@@ -117,7 +122,9 @@ function rowOf(entity: RowEntity, to: Rows): Row {
     case 'takeaway':
       return { ...synced(), text: 'Hold fast', ...refs };
     case 'question':
-      return { ...synced(), text: 'Why?', status: 'open', ...refs };
+      return { ...synced(), text: 'Why?', ...refs };
+    case 'questionEntry':
+      return { ...synced(), kind: 'answered', ...refs };
     case 'sectionTag':
     case 'lessonTag':
       return { ...synced(), ...refs };

@@ -1,4 +1,3 @@
-import type { Question } from '@lamp/domain';
 import { Button } from '@lamp/ui/components/button';
 import {
   DropdownMenu,
@@ -15,12 +14,15 @@ import { ChevronRight, Circle, CircleCheck, CirclePause, EllipsisVertical } from
 import { type Ref, useId, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import {
   addQuestion,
+  parkQuestion,
   removeQuestion,
+  reopenQuestion,
   restoreQuestion,
-  setParked,
+  undoEntry,
   updateQuestion,
 } from '@/data/actions/questions.ts';
 import { lessonQuestions } from '@/data/queries.ts';
+import type { QuestionView } from '@/data/question-status.ts';
 import { runWrite } from '@/lib/run-write.ts';
 import { useReveal } from '@/lib/use-reveal.ts';
 import { PanelHeading } from './panel-heading.tsx';
@@ -120,7 +122,7 @@ export function Questions({
 }
 
 interface QuestionRowProps {
-  question: Question;
+  question: QuestionView;
   reveal: boolean;
   onAnswer: () => void;
   onShowAnswer: (sectionId: string) => void;
@@ -134,13 +136,10 @@ function QuestionRow({ question, reveal, onAnswer, onShowAnswer, onEdit }: Quest
 
   function park() {
     runWrite(
-      setParked(question.id, true).then(() =>
+      parkQuestion(question.id).then((entry) =>
         toast('Question parked.', {
           duration: 10_000,
-          action: {
-            label: 'Undo',
-            onClick: () => runWrite(setParked(question.id, false), 'a question'),
-          },
+          action: { label: 'Undo', onClick: () => runWrite(undoEntry(entry.id), 'a question') },
         }),
       ),
       'a question',
@@ -207,7 +206,7 @@ function QuestionRow({ question, reveal, onAnswer, onShowAnswer, onEdit }: Quest
           )}
           {question.status === 'open' && <DropdownMenuItem onClick={park}>Park</DropdownMenuItem>}
           {question.status === 'parked' && (
-            <DropdownMenuItem onClick={() => runWrite(setParked(question.id, false), 'a question')}>
+            <DropdownMenuItem onClick={() => runWrite(reopenQuestion(question.id), 'a question')}>
               Reopen
             </DropdownMenuItem>
           )}

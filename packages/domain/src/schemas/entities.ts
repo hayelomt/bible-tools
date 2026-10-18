@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BOOK_CODES } from '../books.ts';
-import { bodySchema } from '../doc.ts';
+import { bodySchema, LINK_TARGET_TYPES } from '../doc.ts';
 import { OPEN_IN_TARGETS } from '../open-in.ts';
 import { isOrderKey } from '../order.ts';
 import { TRANSLATIONS } from '../verse-ref.ts';
@@ -23,7 +23,17 @@ import { verseRefSchema } from './verse-ref.ts';
 
 export const SERIES_KINDS = ['sermon_series', 'book_study', 'custom'] as const;
 export const LESSON_SOURCES = ['sermon', 'personal', 'group'] as const;
+/** A question's status, derived from its entries (`questionStatus`, §17.5). */
 export const QUESTION_STATUSES = ['open', 'answered', 'parked'] as const;
+/** What happened to a question, one entry each (F24, §17.5). */
+export const QUESTION_ENTRY_KINDS = [
+  'asked',
+  'revisited',
+  'partial',
+  'answered',
+  'reopened',
+  'parked',
+] as const;
 export const HIGHLIGHT_COLOURS = ['yellow', 'green', 'blue', 'pink'] as const;
 export const CITATION_SOURCE_TYPES = ['lesson', 'section', 'highlight', 'memory_item'] as const;
 export const COLOR_MODES = ['light', 'dark', 'system'] as const;
@@ -107,12 +117,25 @@ export const takeawaySchema = z.strictObject({
   text: lineSchema(2000),
 });
 
+/**
+ * A question (F5). Its status and answer are its entries (`questionEntrySchema`); `status` and
+ * `answerSectionId` left the wire format in M10 and stay in the database, unwritten, for a release.
+ */
 export const questionSchema = z.strictObject({
   ...synced,
   lessonId: idSchema,
   text: lineSchema(2000),
-  status: z.enum(QUESTION_STATUSES),
-  answerSectionId: idSchema.nullable(),
+});
+
+/** One thing that happened to a question, in a lesson (F24, §17.5). */
+export const questionEntrySchema = z.strictObject({
+  ...synced,
+  questionId: idSchema,
+  /** The lesson it happened in: the question's own, or the one it was revisited from. */
+  lessonId: idSchema,
+  kind: z.enum(QUESTION_ENTRY_KINDS),
+  /** The section holding a partial or full answer. */
+  sectionId: idSchema.nullable(),
 });
 
 export const highlightSchema = z.strictObject({
@@ -188,6 +211,19 @@ export const citationSchema = z.strictObject({
   endOrd: z.int().min(0),
 });
 
+/**
+ * A row of the derived link index (F23, §17.4): a link chip in a section body. Built from the
+ * section on the device and on the server, never pushed. `targetId` names no row for certain: a
+ * link can be broken.
+ */
+export const linkSchema = z.strictObject({
+  id: idSchema,
+  fromSectionId: idSchema,
+  fromLessonId: idSchema,
+  targetType: z.enum(LINK_TARGET_TYPES),
+  targetId: idSchema,
+});
+
 /** The synced entities, by the name used in sync changes and device tables. */
 export const ENTITY_SCHEMAS = {
   userSettings: userSettingsSchema,
@@ -202,6 +238,7 @@ export const ENTITY_SCHEMAS = {
   highlight: highlightSchema,
   memoryItem: memoryItemSchema,
   inboxItem: inboxItemSchema,
+  questionEntry: questionEntrySchema,
 } as const;
 
 export type EntityName = keyof typeof ENTITY_SCHEMAS;
@@ -216,6 +253,10 @@ export type SectionTag = z.infer<typeof sectionTagSchema>;
 export type LessonTag = z.infer<typeof lessonTagSchema>;
 export type Takeaway = z.infer<typeof takeawaySchema>;
 export type Question = z.infer<typeof questionSchema>;
+export type QuestionStatus = (typeof QUESTION_STATUSES)[number];
+export type QuestionEntry = z.infer<typeof questionEntrySchema>;
+export type QuestionEntryKind = (typeof QUESTION_ENTRY_KINDS)[number];
+export type Link = z.infer<typeof linkSchema>;
 export type Highlight = z.infer<typeof highlightSchema>;
 export type MemoryItem = z.infer<typeof memoryItemSchema>;
 export type InboxItem = z.infer<typeof inboxItemSchema>;

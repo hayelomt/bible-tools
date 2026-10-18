@@ -59,6 +59,24 @@ export const bodyCiting = (...refs: object[]) => ({
   ],
 });
 
+/** A body with a link chip to a lesson or section (F23). */
+export const bodyLinking = (
+  targetType: 'lesson' | 'section',
+  targetId: string,
+  label = 'Shepherd',
+) => ({
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Same idea as ' },
+        { type: 'noteLink', attrs: { targetType, targetId, label } },
+      ],
+    },
+  ],
+});
+
 export const bodyOf = (text: string) => ({
   type: 'doc',
   content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],

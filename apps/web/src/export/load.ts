@@ -1,4 +1,11 @@
-import { isWholeBook, type Lesson, type Passage, type Series } from '@lamp/domain';
+import {
+  isWholeBook,
+  type Lesson,
+  linkedTargets,
+  type Passage,
+  type Section,
+  type Series,
+} from '@lamp/domain';
 import { db as appDb, type LampDb } from '@/data/db.ts';
 import {
   lessonById,
@@ -15,6 +22,7 @@ import {
   fileName,
   type LessonForExport,
   lessonMarkdown,
+  type LinkTargets,
   seriesMarkdown,
 } from './markdown.ts';
 
@@ -46,7 +54,35 @@ async function lessonData(lesson: Lesson, db: LampDb): Promise<LessonForExport> 
     tags: tags.map((t) => t.tag.name),
     takeaways,
     questions,
+    links: await linkTargets(sections, db),
   };
+}
+
+/**
+ * The targets of the link chips in these sections, as they are on this device: a live lesson, or
+ * a section with its lesson; null for one deleted here. One not on this device is left out.
+ */
+export async function linkTargets(
+  sections: readonly Section[],
+  db: LampDb = appDb,
+): Promise<LinkTargets> {
+  const links = sections.flatMap((s) => linkedTargets(s.body));
+  const targets = new Map<string, { lesson: Lesson; section?: Section } | null>();
+  for (const { targetType, targetId } of links) {
+    if (targets.has(targetId)) continue;
+    const section = targetType === 'section' ? await db.section.get(targetId) : undefined;
+    const lesson = await db.lesson.get(section ? section.lessonId : targetId);
+    if (targetType === 'section' && !section) continue;
+    if (!lesson) {
+      if (!section) continue;
+      targets.set(targetId, null);
+    } else if (lesson.deletedAt !== null || (section && section.deletedAt !== null)) {
+      targets.set(targetId, null);
+    } else {
+      targets.set(targetId, section ? { lesson, section } : { lesson });
+    }
+  }
+  return targets;
 }
 
 /** A series with its lessons' rows, for an export. */
@@ -99,8 +135,10 @@ export async function exportSeries(id: string, db: LampDb = appDb): Promise<Expo
 /** The compile view of `scope` as Markdown (M10-04): "commentary-on-romans-8.md". */
 export async function exportCommentary(scope: Passage, db: LampDb = appDb): Promise<Exported> {
   const title = scopeTitle(scope);
+  const data = await commentary(scope, db);
+  const sections = data.groups.flatMap((g) => g.entries.map((e) => e.item.section));
   return {
     fileName: fileName(`Commentary on ${title}`),
-    markdown: commentaryMarkdown(title, await commentary(scope, db), isWholeBook(scope)),
+    markdown: commentaryMarkdown(title, data, isWholeBook(scope), await linkTargets(sections, db)),
   };
 }

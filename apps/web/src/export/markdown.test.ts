@@ -2,7 +2,8 @@ import { compileScopes, keyBetween, type SectionBody, type VerseRef } from '@lam
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createLesson } from '@/data/actions/lessons.ts';
-import { addQuestion, setParked } from '@/data/actions/questions.ts';
+import { action } from '@/data/action.ts';
+import { addQuestion, parkQuestion } from '@/data/actions/questions.ts';
 import { createSection } from '@/data/actions/sections.ts';
 import { createSeries } from '@/data/actions/series.ts';
 import { addTag } from '@/data/actions/tags.ts';
@@ -120,7 +121,7 @@ async function goodShepherd(seriesId: string | null) {
     },
     db,
   );
-  await createSection(
+  const otherSheep = await createSection(
     {
       lessonId: lesson.id,
       parentId: null,
@@ -137,11 +138,19 @@ async function goodShepherd(seriesId: string | null) {
 
   await createTakeaway({ lessonId: lesson.id, text: 'He knows his sheep by name.' }, db);
   await createTakeaway({ lessonId: lesson.id, text: '# Not a heading' }, db);
+  // Answered in the section above, which has an answer under its heading.
   const answered = await addQuestion(lesson.id, 'Who are the “other sheep”?', db);
-  await db.question.update(answered.id, { status: 'answered' });
+  await action(db, (w) =>
+    w.create('questionEntry', {
+      questionId: answered.id,
+      lessonId: lesson.id,
+      kind: 'answered',
+      sectionId: otherSheep.id,
+    }),
+  );
   await addQuestion(lesson.id, 'What is the door?', db);
   const parked = await addQuestion(lesson.id, 'Thief vs hired hand?', db);
-  await setParked(parked.id, true, db);
+  await parkQuestion(parked.id, db);
   return lesson;
 }
 

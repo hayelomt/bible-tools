@@ -1,6 +1,7 @@
-import { daysBetween, type Lesson, type Question, type Takeaway } from '@lamp/domain';
+import { daysBetween, type Lesson, type Takeaway } from '@lamp/domain';
 import { today as todayOn } from '@/lib/dates.ts';
 import { db as appDb, type LampDb } from './db.ts';
+import { type QuestionView, statusRows, viewOf } from './question-status.ts';
 import { countWaiting, type ReviewCount } from './review-count.ts';
 
 /**
@@ -9,7 +10,7 @@ import { countWaiting, type ReviewCount } from './review-count.ts';
  */
 
 export interface QuestionInQueue {
-  question: Question;
+  question: QuestionView;
   lesson: Lesson;
 }
 
@@ -28,19 +29,20 @@ async function liveLessons(ids: Iterable<string>, db: LampDb): Promise<Map<strin
 
 /** Every open question, newest lesson first, then in the order asked. Parked ones stay away. */
 export async function openQuestions(db: LampDb = appDb): Promise<QuestionInQueue[]> {
-  const questions = await db.question
-    .where('status')
-    .equals('open')
-    .filter((q) => q.deletedAt === null)
-    .toArray();
+  const questions = await db.question.filter((q) => q.deletedAt === null).toArray();
   const lessons = await liveLessons(
     questions.map((q) => q.lessonId),
     db,
   );
-  return questions
-    .flatMap((question) => {
-      const lesson = lessons.get(question.lessonId);
-      return lesson ? [{ question, lesson }] : [];
+  const mine = questions.filter((q) => lessons.has(q.lessonId));
+  const status = await statusRows(
+    mine.map((q) => q.id),
+    db,
+  );
+  return mine
+    .flatMap((row) => {
+      const question = viewOf(row, status);
+      return question.status === 'open' ? [{ question, lesson: lessons.get(row.lessonId)! }] : [];
     })
     .toSorted(
       (a, b) =>
@@ -84,12 +86,16 @@ export async function recentTakeaways(
 /** What waits in the queue on `today`: the Review tab's count (`countWaiting`). */
 export async function reviewCount(today: string, db: LampDb = appDb): Promise<ReviewCount> {
   const [questions, items] = await Promise.all([
-    db.question.where('status').equals('open').toArray(),
+    db.question.filter((q) => q.deletedAt === null).toArray(),
     db.memoryItem.toArray(),
   ]);
   const lessons = await liveLessons(
     questions.map((q) => q.lessonId),
     db,
   );
-  return countWaiting({ questions, lessons: [...lessons.values()], items }, today);
+  const status = await statusRows(
+    questions.map((q) => q.id),
+    db,
+  );
+  return countWaiting({ questions, lessons: [...lessons.values()], items, ...status }, today);
 }

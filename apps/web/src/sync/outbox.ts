@@ -1,4 +1,5 @@
 import { type Change, type EntityName, MAX_CHANGES_PER_PUSH, type PushResult } from '@lamp/domain';
+import { unindex } from '@/data/action.ts';
 import { emitRowsChanged } from '@/data/changes.ts';
 import {
   type LampDb,
@@ -168,7 +169,7 @@ export async function discardRejected(db: LampDb, seq: number): Promise<void> {
     // Settings at rev 0 are this device's defaults; they stay.
     if (entry.entity === 'userSettings') return null;
     await db.rows(entry.entity).delete(entry.entityId);
-    await db.citation.where('sourceId').equals(entry.entityId).delete();
+    await unindex(db, entry.entityId);
     return { entity: entry.entity as RowEntity, id: entry.entityId };
   });
   if (removed) emitRowsChanged([removed]);

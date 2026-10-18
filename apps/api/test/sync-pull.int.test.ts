@@ -386,9 +386,9 @@ describe('who may pull', () => {
   });
 
   it('answers 426 to an app too old for a body in a newer format, rather than sending the row', async () => {
-    // A body the release raising the minimum can write (F23's `noteLink` node), stored as that
-    // release would store it. An app before it parses pull pages strictly, so the row would fail
-    // its whole page, and every pull after it (TECH-DESIGN §6.7).
+    // A body the release raising the minimum writes (F23's `noteLink` node, M10). An app before it
+    // parses pull pages strictly, so the row would fail its whole page, and every pull after it
+    // (TECH-DESIGN §6.7).
     const lesson = lessonRow();
     const section = sectionRow(lesson.id);
     await sync.pushOk(client, account, [upsert('lesson', lesson), upsert('section', section)]);
@@ -400,15 +400,15 @@ describe('who may pull', () => {
       where: { id: String(section.id) },
       data: { body: { type: 'doc', content: [{ type: 'paragraph', content: [link] }] } },
     });
-    min.version = '0.2.0';
+    min.version = '0.3.0';
 
-    const old = await pullRequest(0, { clientVersion: '0.1.9' }).expect(426);
+    const old = await pullRequest(0, { clientVersion: '0.2.9' }).expect(426);
     expect(errorCode(old)).toBe('UPGRADE_REQUIRED');
     expect(JSON.stringify(old.body)).not.toContain('noteLink');
 
-    const current = await pullRequest(0, { clientVersion: '0.2.0' }).expect(200);
+    const current = await pullRequest(0, { clientVersion: '0.3.0' }).expect(200);
     expect(JSON.stringify(current.body)).toContain('noteLink');
-    expect(pullResponseSchema.safeParse(current.body).success).toBe(false);
+    expect(pullResponseSchema.safeParse(current.body).success).toBe(true);
   });
 
   it('refuses a version that is not major.minor.patch', async () => {

@@ -1,14 +1,7 @@
-import type {
-  Lesson,
-  Question,
-  Section,
-  SectionBody,
-  Series,
-  Takeaway,
-  VerseRef,
-} from '@lamp/domain';
+import type { Lesson, Section, SectionBody, Series, Takeaway, VerseRef } from '@lamp/domain';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { QuestionView } from '@/data/question-status.ts';
 import type { LessonForExport } from '@/export/markdown.ts';
 import { Credit, LessonDocument, SeriesDocument } from './print-document.tsx';
 
@@ -28,8 +21,8 @@ const doc = (...content: SectionBody['content']): SectionBody => ({ type: 'doc',
 const section = (id: string, parentId: string | null, orderKey: string, body: SectionBody) =>
   ({ id, lessonId: 'l1', parentId, orderKey, body }) as Section;
 
-const question = (id: string, text: string, status: Question['status']) =>
-  ({ id, lessonId: 'l1', text, status }) as Question;
+const question = (id: string, text: string, status: QuestionView['status']) =>
+  ({ id, lessonId: 'l1', text, status }) as QuestionView;
 
 function goodShepherd(overrides: Partial<Lesson> = {}): LessonForExport {
   return {

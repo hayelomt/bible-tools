@@ -88,8 +88,6 @@ const ROWS: { [E in EntityName]: unknown } = {
     ...meta(8),
     lessonId: id(2),
     text: 'What is foreknowledge?',
-    status: 'open',
-    answerSectionId: null,
   },
   highlight: { ...meta(9), ref: ROM_8_28, colour: 'yellow', note: null, promotedSectionId: id(3) },
   memoryItem: {
@@ -112,10 +110,17 @@ const ROWS: { [E in EntityName]: unknown } = {
     snoozedUntil: '2026-10-20',
     placedInSectionId: id(3),
   },
+  questionEntry: {
+    ...meta(12),
+    questionId: id(8),
+    lessonId: id(2),
+    kind: 'answered',
+    sectionId: id(3),
+  },
 };
 
 describe('entity schemas', () => {
-  it('cover the 12 synced entities', () => {
+  it('cover the 13 synced entities', () => {
     expect(ENTITY_NAMES).toEqual(Object.keys(ROWS));
   });
 
@@ -158,7 +163,8 @@ describe('entity schemas', () => {
     ['an invalid order key', 'section', { orderKey: 'a00' }],
     ['an invalid body', 'section', { body: { type: 'doc', content: [] } }],
     ['a tag name over 50 characters', 'tag', { name: 'x'.repeat(51) }],
-    ['an unknown question status', 'question', { status: 'closed' }],
+    ['a question status, which its entries now give', 'question', { status: 'open' }],
+    ['an unknown question entry kind', 'questionEntry', { kind: 'closed' }],
     ['an unknown colour', 'highlight', { colour: 'red' }],
     ['an ease below 1.3', 'memoryItem', { ease: 1.2 }],
     ['a fractional interval', 'memoryItem', { interval: 1.5 }],

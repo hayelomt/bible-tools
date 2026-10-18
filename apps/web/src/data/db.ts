@@ -7,8 +7,11 @@ import type {
   InboxItem,
   Lesson,
   LessonTag,
+  Link,
   MemoryItem,
   Question,
+  QuestionEntry,
+  QuestionEntryKind,
   Section,
   SectionTag,
   Series,
@@ -16,8 +19,8 @@ import type {
   Takeaway,
   UserSettings,
 } from '@lamp/domain';
-import { OPEN_IN_TARGETS } from '@lamp/domain';
-import { Dexie, type DexieOptions, type Table } from 'dexie';
+import { newId, OPEN_IN_TARGETS } from '@lamp/domain';
+import { Dexie, type DexieOptions, type Table, type Transaction } from 'dexie';
 
 /** The entities stored one row per id; settings are one row per device. */
 export type RowEntity = Exclude<EntityName, 'userSettings'>;
@@ -66,8 +69,8 @@ export const SETTINGS_KEY = 'settings';
 
 /**
  * The device's copy of the user's notes (TECH-DESIGN §6.1): one table per synced entity, named as
- * in sync changes, with the same fields as the server minus `userId`; the derived `citation`
- * index; the `outbox` of changes waiting to be pushed; and `syncState`.
+ * in sync changes, with the same fields as the server minus `userId`; the derived `citation` and
+ * `link` indexes; the `outbox` of changes waiting to be pushed; and `syncState`.
  *
  * Screens read these tables with `useLiveQuery`. Only actions (`./action.ts`) write to them.
  */
@@ -83,9 +86,11 @@ export class LampDb extends Dexie {
   highlight!: Table<Highlight, string>;
   memoryItem!: Table<MemoryItem, string>;
   inboxItem!: Table<InboxItem, string>;
+  questionEntry!: Table<QuestionEntry, string>;
   /** One row, under `SETTINGS_KEY`. */
   userSettings!: Table<UserSettings, string>;
   citation!: Table<Citation, string>;
+  link!: Table<Link, string>;
   outbox!: Table<OutboxEntry, number>;
   syncState!: Table<SyncState, string>;
 
@@ -183,6 +188,16 @@ export class LampDb extends Dexie {
           if (row) withDefaults(row);
         });
     });
+    // M10: question entries (F24, §17.5), whose latest gives a question its status, and the link
+    // index (F23, §17.4), found by the section a link is in and the row it points at. A
+    // question's `status` and `answerSectionId` leave it, and its queued changes.
+    this.version(8)
+      .stores({
+        question: 'id, lessonId',
+        questionEntry: 'id, questionId, lessonId, sectionId',
+        link: 'id, fromSectionId, fromLessonId, targetId',
+      })
+      .upgrade(threadsFromStatus);
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
@@ -194,6 +209,95 @@ export class LampDb extends Dexie {
 function withDefaults(settings: Partial<UserSettings>) {
   settings.pasteChips ??= true;
   settings.openInTargets ??= [...OPEN_IN_TARGETS];
+}
+
+/** A question as stored before version 8. */
+type StatusQuestion = Question & { status?: string; answerSectionId?: string | null };
+
+/**
+ * Version 8: every question's status becomes entries, as the server's M10 migration does (§17.5):
+ * `asked` when it was made, `answered` once it has an answer section (when that section was made,
+ * so writing in it answers the question as before), and `parked` for a parked one. Only for
+ * questions the server never had (`rev` 0, a guest's or not yet synced), queued; the server's
+ * migration makes the rest, and they arrive in the pull. A synced question changed here since
+ * (park, reopen, answer) and not yet pushed gets one queued entry for its state now, after
+ * the server's. Then the two fields leave the stored questions and their queued changes.
+ */
+async function threadsFromStatus(tx: Transaction): Promise<void> {
+  const questions: StatusQuestion[] = await tx.table('question').toArray();
+  const outbox: OutboxEntry[] = await tx.table('outbox').toArray();
+  const changedHere = new Set(
+    outbox
+      .filter(
+        (entry) =>
+          entry.entity === 'question' &&
+          entry.op === 'upsert' &&
+          (!entry.changed ||
+            entry.changed.some((f) => (f as string) === 'status' || f === 'answerSectionId')),
+      )
+      .map((entry) => (entry as { entityId: string }).entityId),
+  );
+  const made = async (
+    question: StatusQuestion,
+    kind: QuestionEntryKind,
+    at: string,
+    sectionId: string | null = null,
+  ) => {
+    const row: QuestionEntry = {
+      id: newId(),
+      questionId: question.id,
+      lessonId: question.lessonId,
+      kind,
+      sectionId,
+      createdAt: at,
+      updatedAt: at,
+      rev: 0,
+      deletedAt: null,
+    };
+    await tx.table('questionEntry').add(row);
+    const { rev: _rev, ...sent } = row;
+    await tx.table('outbox').add({
+      changeId: newId(),
+      baseRev: 0,
+      clientTime: at,
+      entity: 'questionEntry',
+      entityId: row.id,
+      op: 'upsert',
+      row: sent,
+    });
+  };
+  for (const question of questions) {
+    const answer = question.answerSectionId
+      ? ((await tx.table('section').get(question.answerSectionId)) as Section | undefined)
+      : undefined;
+    if (question.rev === 0) {
+      await made(question, 'asked', question.createdAt);
+      if (answer) await made(question, 'answered', answer.createdAt, answer.id);
+      if (question.status === 'parked') await made(question, 'parked', question.updatedAt);
+    } else if (changedHere.has(question.id)) {
+      if (question.status === 'parked') await made(question, 'parked', question.updatedAt);
+      else if (answer) await made(question, 'answered', question.updatedAt, answer.id);
+      else await made(question, 'reopened', question.updatedAt);
+    }
+  }
+  await tx
+    .table('question')
+    .toCollection()
+    .modify((question: StatusQuestion) => {
+      delete question.status;
+      delete question.answerSectionId;
+    });
+  await tx
+    .table('outbox')
+    .filter((entry: OutboxEntry) => entry.entity === 'question' && entry.op === 'upsert')
+    .modify((entry: OutboxEntry) => {
+      const change = entry as unknown as { row: StatusQuestion; changed?: string[] };
+      delete change.row.status;
+      delete change.row.answerSectionId;
+      if (change.changed) {
+        change.changed = change.changed.filter((f) => f !== 'status' && f !== 'answerSectionId');
+      }
+    });
 }
 
 /** The app's database. Tests make their own with `new LampDb(name)`. */

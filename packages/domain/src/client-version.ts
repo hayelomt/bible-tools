@@ -27,6 +27,12 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
     change:
       'M9 (interop): the inbox item; chips from outside (`shared`, `pasted`, a version label); the `pasteChips` and `openInTargets` settings',
   },
+  {
+    minClientVersion: '0.3.0',
+    fingerprint: '7d8d0cbd',
+    change:
+      'M10 (thinking layer): the `noteLink` body node; question entries, with `question.status` and `answerSectionId` out of the wire format',
+  },
 ];
 
 /**

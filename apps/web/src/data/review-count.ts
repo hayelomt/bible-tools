@@ -1,4 +1,5 @@
 import { isDue, type Lesson, type MemoryItem, type Question } from '@lamp/domain';
+import { type StatusRows, viewOf } from './question-view.ts';
 
 /**
  * What waits in the review queue: open questions of live lessons and the verses due `today` (the
@@ -10,17 +11,20 @@ export interface ReviewCount {
   verses: number;
 }
 
-export interface QueueRows {
+export interface QueueRows extends StatusRows {
   questions: readonly Question[];
   lessons: readonly Lesson[];
   items: readonly MemoryItem[];
 }
 
-export function countWaiting({ questions, lessons, items }: QueueRows, today: string): ReviewCount {
+export function countWaiting(
+  { questions, lessons, items, ...status }: QueueRows,
+  today: string,
+): ReviewCount {
   const live = new Set(lessons.filter((l) => l.deletedAt === null).map((l) => l.id));
   return {
     questions: questions.filter(
-      (q) => q.deletedAt === null && q.status === 'open' && live.has(q.lessonId),
+      (q) => q.deletedAt === null && live.has(q.lessonId) && viewOf(q, status).status === 'open',
     ).length,
     verses: items.filter((item) => item.deletedAt === null && isDue(item, today)).length,
   };

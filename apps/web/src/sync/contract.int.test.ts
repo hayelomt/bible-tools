@@ -23,7 +23,12 @@ import {
   updateLesson,
 } from '@/data/actions/lessons.ts';
 import { addInboxItem, dismissInboxItem, inboxItems, sendToLesson } from '@/data/actions/inbox.ts';
-import { addQuestion } from '@/data/actions/questions.ts';
+import {
+  addQuestion,
+  parkQuestion,
+  promoteQuestion,
+  reopenQuestion,
+} from '@/data/actions/questions.ts';
 import {
   createSection,
   keepConflictedCopy,
@@ -34,6 +39,8 @@ import { updateSettings } from '@/data/actions/settings.ts';
 import { addTag, removeTag } from '@/data/actions/tags.ts';
 import { createTakeaway, updateTakeaway } from '@/data/actions/takeaways.ts';
 import { LampDb, type RowEntity, SETTINGS_KEY, SYNC_STATE_KEY } from '@/data/db.ts';
+import { linkedFrom } from '@/data/links.ts';
+import { questionViews } from '@/data/question-status.ts';
 import { ensureDevice } from '@/data/setup.ts';
 import { ApiRequestError, NetworkError } from '@/lib/api.ts';
 import { type SyncApi, SyncEngine } from './engine.ts';
@@ -195,8 +202,8 @@ async function settle(...all: Device[]): Promise<void> {
 const state = async (on: Device) => (await on.db.syncState.get(SYNC_STATE_KEY))!;
 
 /**
- * Everything a device holds that syncs: every row, tombstones too, and the citations derived from
- * them (their ids are the device's own).
+ * Everything a device holds that syncs: every row, tombstones too, and the citations and links
+ * derived from them (their ids are the device's own).
  */
 async function snapshot(on: Device) {
   const rows: Record<string, unknown> = {};
@@ -208,6 +215,9 @@ async function snapshot(on: Device) {
   rows.userSettings = await on.db.userSettings.get(SETTINGS_KEY);
   rows.citation = (await on.db.citation.toArray())
     .map(({ id: _id, ...citation }) => JSON.stringify(citation))
+    .toSorted();
+  rows.link = (await on.db.link.toArray())
+    .map(({ id: _id, ...link }) => JSON.stringify(link))
     .toSorted();
   return rows;
 }
@@ -383,6 +393,95 @@ describe('the inbox on two devices', () => {
     // The placed section is cited like any other; the item never was.
     expect(await phone.db.citation.where('sourceId').equals(section.id).count()).toBe(1);
     expect(await phone.db.citation.where('sourceId').anyOf(shared.id, note.id).count()).toBe(0);
+  });
+});
+
+describe('a question on two devices', () => {
+  it('keeps the entries each made offline, and both give it the same status', async () => {
+    const { email, first: laptop } = await signUp('Firefox on macOS');
+    const lesson = await createLesson({ ...LESSON, title: 'The Good Shepherd' }, laptop.db);
+    const question = await addQuestion(lesson.id, 'Who are the other sheep?', laptop.db);
+    // Settings sync once changed; until then each device keeps its own defaults.
+    await updateSettings({ reviewWindowDays: 7 }, laptop.db);
+    await sync(laptop);
+    const phone = await signIn(email, 'Safari on iOS');
+    await sync(phone);
+
+    // Offline: the laptop parks it, then the phone answers it, a moment later.
+    laptop.api.online = false;
+    phone.api.online = false;
+    await parkQuestion(question.id, laptop.db);
+    await tick();
+    const answer = await promoteQuestion(question.id, undefined, phone.db);
+    await updateSection(
+      answer.id,
+      {
+        body: {
+          type: 'doc',
+          content: [
+            ...answer.body.content.slice(0, 1),
+            { type: 'paragraph', content: [{ type: 'text', text: 'The Gentiles.' }] },
+          ],
+        },
+      },
+      phone.db,
+    );
+
+    await settle(laptop, phone);
+    await expectIdentical(email, laptop, phone);
+    const view = async (on: Device) =>
+      (await questionViews([(await on.db.question.get(question.id))!], on.db))[0]!;
+    for (const on of [laptop, phone]) {
+      expect((await view(on)).entries.map((e) => e.kind)).toEqual(['asked', 'parked', 'answered']);
+      expect(await view(on)).toMatchObject({ status: 'answered', answerSectionId: answer.id });
+    }
+
+    // Reopened on the laptop: open on both.
+    await reopenQuestion(question.id, laptop.db);
+    await settle(laptop, phone);
+    expect((await view(phone)).status).toBe('open');
+    await expectIdentical(email, laptop, phone);
+  });
+});
+
+describe('links on two devices', () => {
+  it('show under what they link to on the other device, and go when removed', async () => {
+    const { email, first: laptop } = await signUp('Firefox on macOS');
+    const shepherd = await createLesson({ ...LESSON, title: 'The Good Shepherd' }, laptop.db);
+    const lazarus = await createLesson({ ...LESSON, title: 'Lazarus' }, laptop.db);
+    await updateSettings({ reviewWindowDays: 7 }, laptop.db);
+    const phone = await signIn(email, 'Safari on iOS');
+    await settle(laptop, phone);
+
+    const linking: SectionBody = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Same idea as ' },
+            {
+              type: 'noteLink',
+              attrs: { targetType: 'lesson', targetId: shepherd.id, label: 'The Good Shepherd' },
+            },
+          ],
+        },
+      ],
+    };
+    const section = await createSection(
+      { ...newSection(lazarus.id, keyBetween(null, null), ''), body: linking },
+      laptop.db,
+    );
+    await settle(laptop, phone);
+    const from = async (on: Device) =>
+      (await linkedFrom({ kind: 'lesson', id: shepherd.id }, on.db)).map((b) => b.section.id);
+    expect(await from(phone)).toEqual([section.id]);
+    await expectIdentical(email, laptop, phone);
+
+    await updateSection(section.id, { body: body('Same idea.') }, laptop.db);
+    await settle(laptop, phone);
+    expect(await from(phone)).toEqual([]);
+    await expectIdentical(email, laptop, phone);
   });
 });
 

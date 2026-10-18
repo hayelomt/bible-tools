@@ -68,3 +68,8 @@ dark text whatever the theme, so it looks the same on screen and on paper; the b
 and `[ Print ]` and is left out of the print. Answered questions print as ☑, open ones as ☐, and a
 parked one ends in *(parked)*. The title page lists each lesson's date ("Sun 12 Oct 2026") and
 title. The print dialog opens once, from Export; reloading the view doesn't open it again.
+
+*Links (M10-05, decision 77):* a link chip prints as "→ The Good Shepherd", its target's title now,
+or the title it last had and "(deleted)". In Markdown it links to the file the target lesson's own
+export gets: `[The Good Shepherd](2026-10-12-the-good-shepherd.md)`; a link to a section points at
+its lesson's file, titled "The Good Shepherd › “I am the good shepherd…”".

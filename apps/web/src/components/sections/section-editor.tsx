@@ -6,6 +6,7 @@ import { resolveFocusPosition } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { cn } from 'cn';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { SectionLinkedFrom } from '@/components/links/linked-from.tsx';
 import { SectionTags } from '@/components/tags/section-tags.tsx';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { forgetUnsaved, keepUnsaved } from '@/data/unsaved.ts';
@@ -278,14 +279,16 @@ export const SectionEditor = memo(function SectionEditor({
         )}
         <EditorContent editor={editor} />
         {item.stored && (
-          <SectionTags
-            sectionId={id}
-            editing={editingTags}
-            onDone={(toHandle) => {
-              setEditingTags(false);
-              if (toHandle) handle.current?.focus();
-            }}
-          />
+          <SectionLinkedFrom sectionId={id}>
+            <SectionTags
+              sectionId={id}
+              editing={editingTags}
+              onDone={(toHandle) => {
+                setEditingTags(false);
+                if (toHandle) handle.current?.focus();
+              }}
+            />
+          </SectionLinkedFrom>
         )}
         {conflict && (
           <div className="mt-2 flex flex-wrap gap-2">

@@ -3,7 +3,7 @@ import { toast } from '@lamp/ui/components/sonner';
 import { Link } from '@tanstack/react-router';
 import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import { setParked } from '@/data/actions/questions.ts';
+import { parkQuestion, undoEntry } from '@/data/actions/questions.ts';
 import type { QuestionInQueue, TakeawayInQueue } from '@/data/review.ts';
 import { shortDate } from '@/lib/dates.ts';
 import { runWrite } from '@/lib/run-write.ts';
@@ -39,13 +39,10 @@ export function OpenQuestions({ questions }: { questions: QuestionInQueue[] }) {
 function QuestionRow({ entry: { question, lesson } }: { entry: QuestionInQueue }) {
   function park() {
     runWrite(
-      setParked(question.id, true).then(() =>
+      parkQuestion(question.id).then((parked) =>
         toast('Question parked.', {
           duration: 10_000,
-          action: {
-            label: 'Undo',
-            onClick: () => runWrite(setParked(question.id, false), 'a question'),
-          },
+          action: { label: 'Undo', onClick: () => runWrite(undoEntry(parked.id), 'a question') },
         }),
       ),
       'a question',

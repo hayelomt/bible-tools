@@ -2,7 +2,7 @@ import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createLesson, deleteLesson, type LessonFields } from './actions/lessons.ts';
 import { gradeMemoryItem, memorise } from './actions/memory.ts';
-import { addQuestion, promoteQuestion, setParked } from './actions/questions.ts';
+import { addQuestion, parkQuestion, promoteQuestion } from './actions/questions.ts';
 import { updateSettings } from './actions/settings.ts';
 import { createTakeaway, removeTakeaway } from './actions/takeaways.ts';
 import { LampDb, SETTINGS_KEY } from './db.ts';
@@ -52,7 +52,7 @@ describe('openQuestions', () => {
     const sheep = await addQuestion(shepherd.id, 'Who are the other sheep?', db);
     const thief = await addQuestion(shepherd.id, 'Thief vs hired hand?', db);
     const parked = await addQuestion(shepherd.id, 'Parked one', db);
-    await setParked(parked.id, true, db);
+    await parkQuestion(parked.id, db);
 
     const texts = async () => (await openQuestions(db)).map((q) => q.question.text);
     expect(await texts()).toEqual([sheep.text, thief.text, fruit.text]);

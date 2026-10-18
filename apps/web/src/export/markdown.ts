@@ -4,7 +4,7 @@ import {
   escapeMarkdown,
   formatPassage,
   type Lesson,
-  type Question,
+  type LinkWriter,
   type Section,
   type Series,
   type Takeaway,
@@ -15,6 +15,8 @@ import {
   type VerseRef,
 } from '@lamp/domain';
 import { outline } from '@/components/sections/outline.ts';
+import { linkTitle } from '@/data/links.ts';
+import type { QuestionView } from '@/data/question-status.ts';
 import type { Commentary, CompiledNote } from '@/search/compile.ts';
 import { longDate } from '@/lib/dates.ts';
 import { count, SERIES_KIND_LABELS, SOURCE_LABELS } from '@/lib/labels.ts';
@@ -28,8 +30,33 @@ import { count, SERIES_KIND_LABELS, SOURCE_LABELS } from '@/lib/labels.ts';
  *   indented. Verse chips read "John 10:9 (BSB)", with their text quoted after the paragraph.
  * - A section's tags follow it in italics; the lesson's are in its header with its passages.
  * - Takeaways as a list, questions as a task list: `[x]` answered, `[ ]` open or parked.
+ * - A link chip links to the file its lesson's own export gets, with its current title (F23,
+ *   decided in M10-05): "[The Good Shepherd](2026-10-12-the-good-shepherd.md)". Lessons exported
+ *   into one folder link to each other. A deleted target is its last title and "(deleted)".
  * - The translations quoted are credited at the end (decided 2026-10-14).
  */
+
+/** What the export knows of each link target it found, by id: null for one deleted here. */
+export type LinkTargets = ReadonlyMap<
+  string,
+  { lesson: Pick<Lesson, 'title' | 'date'>; section?: Pick<Section, 'body'> } | null
+>;
+
+/**
+ * Writes link chips as relative references to the target lesson's file. A target not on this
+ * device has no file to point at, so it's its title alone.
+ */
+export function linkWriter(targets: LinkTargets): LinkWriter {
+  return (link) => {
+    if (!targets.has(link.targetId)) return { text: link.label };
+    const target = targets.get(link.targetId);
+    if (!target) return null;
+    return {
+      text: linkTitle(target.lesson, target.section),
+      href: fileName(target.lesson.title, target.lesson.date),
+    };
+  };
+}
 
 export interface LessonForExport {
   lesson: Lesson;
@@ -40,7 +67,9 @@ export interface LessonForExport {
   /** The lesson's own tags. */
   tags: string[];
   takeaways: Takeaway[];
-  questions: Question[];
+  questions: QuestionView[];
+  /** The targets of the link chips in its sections. */
+  links?: LinkTargets;
 }
 
 /** One lesson; `level` is its title's heading level (2 inside a series). */
@@ -64,7 +93,13 @@ export function seriesMarkdown(series: Series, lessons: LessonForExport[]): stri
  * heading for each chapter above its groups. A reply nested under its section is quoted, as in a
  * lesson; a section under several passages says where else it is, or, shown once, points there.
  */
-export function commentaryMarkdown(title: string, data: Commentary, wholeBook: boolean): string {
+export function commentaryMarkdown(
+  title: string,
+  data: Commentary,
+  wholeBook: boolean,
+  links: LinkTargets = new Map(),
+): string {
+  const writer = linkWriter(links);
   const blocks = [
     `# Commentary on ${escapeMarkdown(title)}`,
     `${count(data.sections, 'section')} in ${count(data.lessons, 'lesson')}`,
@@ -77,7 +112,7 @@ export function commentaryMarkdown(title: string, data: Commentary, wholeBook: b
       blocks.push(`## ${formatPassage({ book: group.passage.book, chapter })}`);
     }
     blocks.push(`${'#'.repeat(level)} ${formatPassage(group.passage)}`);
-    for (const entry of group.entries) blocks.push(commentaryEntry(entry, level + 1));
+    for (const entry of group.entries) blocks.push(commentaryEntry(entry, level + 1, writer));
   }
   const sections = data.groups.flatMap((g) =>
     g.entries.filter((e) => !e.shownUnder).map((e) => e.item.section),
@@ -86,7 +121,11 @@ export function commentaryMarkdown(title: string, data: Commentary, wholeBook: b
   return document([...blocks, ...(credit ? ['---', credit] : [])]);
 }
 
-function commentaryEntry(entry: CompileGroup<CompiledNote>['entries'][number], level: number) {
+function commentaryEntry(
+  entry: CompileGroup<CompiledNote>['entries'][number],
+  level: number,
+  links: LinkWriter,
+) {
   const { section, lesson, nested } = entry.item;
   const byline = `*${escapeMarkdown(lesson.title)} · ${longDate(lesson.date)}*`;
   if (entry.shownUnder) {
@@ -96,7 +135,7 @@ function commentaryEntry(entry: CompileGroup<CompiledNote>['entries'][number], l
     entry.also.length > 0
       ? `*Also under ${entry.also.map((p) => formatPassage(p)).join(', ')}*`
       : '';
-  const lines = [toMarkdown(section.body, { headingLevel: level }).trimEnd(), byline, also]
+  const lines = [toMarkdown(section.body, { headingLevel: level, links }).trimEnd(), byline, also]
     .filter(Boolean)
     .join('\n\n');
   return nested ? quoted(lines) : lines;
@@ -112,9 +151,10 @@ function lessonBlocks(data: LessonForExport, level: number): string[] {
   const heading = '#'.repeat(level);
   const sub = '#'.repeat(level + 1);
   const blocks = [`${heading} ${escapeMarkdown(lesson.title)}`, header(data)];
+  const links = linkWriter(data.links ?? new Map());
 
   for (const row of outline(data.sections)) {
-    const body = toMarkdown(row.item.body, { headingLevel: level + 1 }).trimEnd();
+    const body = toMarkdown(row.item.body, { headingLevel: level + 1, links }).trimEnd();
     const tags = data.sectionTags.get(row.item.id) ?? [];
     const lines = [body, tags.length > 0 ? `*${tags.map(tagLabel).join(' · ')}*` : '']
       .filter(Boolean)
@@ -157,7 +197,7 @@ export function tagLabel(name: string): string {
   return `#${name}`;
 }
 
-function questionLine(question: Question): string {
+function questionLine(question: QuestionView): string {
   const text = escapeMarkdown(question.text);
   if (question.status === 'answered') return `- [x] ${text}`;
   return question.status === 'parked' ? `- [ ] ${text} *(parked)*` : `- [ ] ${text}`;

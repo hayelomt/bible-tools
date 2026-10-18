@@ -151,7 +151,14 @@ async function fillAccount(userId: string): Promise<void> {
     p.sectionTag.create({ data: { userId, sectionId: section.id, tagId: tag.id } }),
     p.lessonTag.create({ data: { userId, lessonId: lesson.id, tagId: tag.id } }),
     p.takeaway.create({ data: { userId, lessonId: lesson.id, text: 't' } }),
-    p.question.create({ data: { userId, lessonId: lesson.id, text: 'q' } }),
+    p.question.create({
+      data: {
+        userId,
+        lessonId: lesson.id,
+        text: 'q',
+        entries: { create: { userId, lessonId: lesson.id, kind: 'asked' } },
+      },
+    }),
     p.highlight.create({ data: { userId, ref: {}, colour: 'yellow' } }),
     p.memoryItem.create({ data: { userId, ref: {} } }),
     p.inboxItem.create({ data: { userId, origin: 'share', receivedAt: new Date(), text: 't' } }),
@@ -164,6 +171,15 @@ async function fillAccount(userId: string): Promise<void> {
         book: 'ROM',
         startOrd: 45001001,
         endOrd: 45001002,
+      },
+    }),
+    p.link.create({
+      data: {
+        userId,
+        fromSectionId: section.id,
+        fromLessonId: lesson.id,
+        targetType: 'lesson',
+        targetId: lesson.id,
       },
     }),
     p.syncChange.create({

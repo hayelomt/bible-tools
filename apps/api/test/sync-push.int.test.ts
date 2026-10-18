@@ -8,6 +8,7 @@ import * as sync from './int/sync.js';
 import {
   type Account,
   bodyCiting,
+  bodyLinking,
   DEVICE_ID,
   JOHN_3_16,
   LATER,
@@ -173,6 +174,87 @@ describe('POST /api/sync/push', () => {
     ]);
   });
 
+  it('builds a section’s links from its body, and drops them with it (§17.4)', async () => {
+    const account = await signUp();
+    const lesson = lessonRow();
+    const target = sectionRow(lesson.id);
+    // A link to a row this account doesn't have is allowed: it shows as broken.
+    const missing = newId();
+    const section = sectionRow(lesson.id, { orderKey: 'a1', body: bodyLinking('lesson', missing) });
+    await pushOk(account, [
+      upsert('lesson', lesson),
+      upsert('section', target),
+      upsert('section', section),
+    ]);
+    const links = () =>
+      t.prisma.link.findMany({ where: { userId: account.id }, omit: { id: true, userId: true } });
+    await expect(links()).resolves.toEqual([
+      {
+        fromSectionId: section.id,
+        fromLessonId: lesson.id,
+        targetType: 'lesson',
+        targetId: missing,
+      },
+    ]);
+
+    const relinked = { ...section, updatedAt: LATER, body: bodyLinking('section', target.id) };
+    await pushOk(account, [upsert('section', relinked, 3)]);
+    await expect(links()).resolves.toEqual([
+      {
+        fromSectionId: section.id,
+        fromLessonId: lesson.id,
+        targetType: 'section',
+        targetId: target.id,
+      },
+    ]);
+
+    await pushOk(account, [remove('section', section.id, 4)]);
+    await expect(links()).resolves.toEqual([]);
+  });
+
+  it('stores a question entry, which pulls without the question’s old status', async () => {
+    const account = await signUp();
+    const lesson = lessonRow();
+    const question = { ...synced(), lessonId: lesson.id, text: 'Who are the other sheep?' };
+    const entry = {
+      ...synced(),
+      questionId: question.id,
+      lessonId: lesson.id,
+      kind: 'asked',
+      sectionId: null,
+    };
+    const results = await pushOk(account, [
+      upsert('lesson', lesson),
+      upsert('question', question),
+      upsert('questionEntry', entry),
+    ]);
+    expect(results.map((r) => r.status)).toEqual(['applied', 'applied', 'applied']);
+    // The retired columns keep their defaults, and are never sent.
+    await expect(
+      t.prisma.question.findUniqueOrThrow({ where: { id: question.id } }),
+    ).resolves.toMatchObject({ status: 'open', answerSectionId: null });
+    const pulled = await client
+      .get(
+        `/api/sync/pull?cursor=0&clientVersion=${sync.CLIENT_VERSION}&${sync.PULL_DEVICE}`,
+        account.token,
+      )
+      .expect(200);
+    const rows = (pulled.body as { rows: { entity: string; row: object }[] }).rows;
+    expect(rows.find((r) => r.entity === 'question')?.row).toEqual({ ...question, rev: 2 });
+    expect(rows.find((r) => r.entity === 'questionEntry')?.row).toEqual({ ...entry, rev: 3 });
+  });
+
+  it('refuses a question with its old status', async () => {
+    const account = await signUp();
+    const lesson = lessonRow();
+    const question = { ...synced(), lessonId: lesson.id, text: 'Why?', status: 'open' };
+    const [, result] = await pushOk(account, [
+      upsert('lesson', lesson),
+      upsert('question', question),
+    ]);
+    expect(result).toMatchObject({ status: 'rejected', errorCode: 'INVALID_CHANGE' });
+  });
+
   it('updates a row whose baseRev is current, and rebuilds its citations', async () => {
     const account = await signUp();
     const lesson = lessonRow();
@@ -323,10 +405,10 @@ describe('POST /api/sync/push', () => {
         (l: Row) => ['takeaway', { ...synced(), lessonId: l.id, text: 'Hold fast' }],
       ],
       [
-        'a question answered by their section',
-        (_: Row, s: Row) => [
-          'question',
-          { ...synced(), lessonId: newId(), text: 'Why?', status: 'open', answerSectionId: s.id },
+        'a question entry answered by their section',
+        (l: Row, s: Row) => [
+          'questionEntry',
+          { ...synced(), questionId: newId(), lessonId: l.id, kind: 'answered', sectionId: s.id },
         ],
       ],
     ] as const)('referencing them is rejected: %s', async (_, make) => {

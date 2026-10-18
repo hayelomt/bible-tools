@@ -1,7 +1,6 @@
 import {
   compareOrder,
   type Lesson,
-  type Question,
   type Section,
   type Series,
   type Tag,
@@ -9,6 +8,7 @@ import {
 } from '@lamp/domain';
 import type { TagLink, TagTarget } from './actions/tags.ts';
 import { db as appDb, type LampDb } from './db.ts';
+import { type QuestionView, questionViews } from './question-status.ts';
 
 /**
  * Reads for the lesson and series screens, used through `useLiveQuery`. Tombstones are filtered
@@ -224,8 +224,11 @@ export async function lessonTakeaways(lessonId: string, db: LampDb = appDb): Pro
   return rows.toSorted(byCreation);
 }
 
-/** A lesson's questions (F5), oldest first, with or without an answer. */
-export async function lessonQuestions(lessonId: string, db: LampDb = appDb): Promise<Question[]> {
+/** A lesson's questions (F5), oldest first, with their status (F24). */
+export async function lessonQuestions(
+  lessonId: string,
+  db: LampDb = appDb,
+): Promise<QuestionView[]> {
   const rows = await db.question.where('lessonId').equals(lessonId).filter(notDeleted).toArray();
-  return rows.toSorted(byCreation);
+  return questionViews(rows.toSorted(byCreation), db);
 }

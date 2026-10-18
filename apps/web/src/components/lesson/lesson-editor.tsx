@@ -13,6 +13,7 @@ import { LessonDetails } from './lesson-details.tsx';
 import { LessonDictionary } from './lesson-dictionary.tsx';
 import { LessonMenu } from './lesson-menu.tsx';
 import { PanelHeading } from './panel-heading.tsx';
+import { LessonLinkedFrom } from '@/components/links/linked-from.tsx';
 import { Questions } from './questions.tsx';
 import { type PanelApi, Takeaways } from './takeaways.tsx';
 import { useLessonSaver } from './use-lesson-saver.ts';
@@ -63,7 +64,14 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
     if (answer) return { kind: 'answer', questionId: answer, seq: 1 };
     return reveal?.section ? { kind: 'reveal', sectionId: reveal.section, seq: 1 } : undefined;
   });
-  const requests = useRef(1);
+  // A link to a section of this lesson, followed from the lesson itself, shows it too.
+  const [revealed, setRevealed] = useState(reveal?.section);
+  if (reveal?.section !== revealed) {
+    setRevealed(reveal?.section);
+    if (reveal?.section) {
+      setRequest({ kind: 'reveal', sectionId: reveal.section, seq: (request?.seq ?? 0) + 1 });
+    }
+  }
   const takeaways = useRef<PanelApi>(null);
   const questions = useRef<PanelApi>(null);
   const wide = useMediaQuery(WIDE);
@@ -84,12 +92,13 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
         hideWhenEmpty={!wide}
         reveal={reveal?.question}
         onAnswer={(questionId) =>
-          setRequest({ kind: 'answer', questionId, seq: ++requests.current })
+          setRequest({ kind: 'answer', questionId, seq: (request?.seq ?? 0) + 1 })
         }
         onShowAnswer={(sectionId) =>
-          setRequest({ kind: 'reveal', sectionId, seq: ++requests.current })
+          setRequest({ kind: 'reveal', sectionId, seq: (request?.seq ?? 0) + 1 })
         }
       />
+      <LessonLinkedFrom lessonId={id} />
     </>
   );
 

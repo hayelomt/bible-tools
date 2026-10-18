@@ -150,23 +150,36 @@ async function main(): Promise<void> {
       rev: next(),
     },
   });
-  await prisma.question.create({
+  // A question's status is its entries (§17.5): asked, then answered in the reply.
+  const answered = await prisma.question.create({
     data: {
       userId,
       lessonId: lesson.id,
       text: 'How does foreknowledge relate to predestination here?',
-      answerSectionId: reply.id,
-      status: 'answered',
       rev: next(),
     },
   });
-  await prisma.question.create({
+  const open = await prisma.question.create({
     data: {
       userId,
       lessonId: lesson.id,
       text: 'What does "conformed to the image" look like day to day?',
       rev: next(),
     },
+  });
+  await prisma.questionEntry.createMany({
+    data: [
+      { userId, questionId: answered.id, lessonId: lesson.id, kind: 'asked', rev: next() },
+      {
+        userId,
+        questionId: answered.id,
+        lessonId: lesson.id,
+        kind: 'answered',
+        sectionId: reply.id,
+        rev: next(),
+      },
+      { userId, questionId: open.id, lessonId: lesson.id, kind: 'asked', rev: next() },
+    ],
   });
 
   const earlier = await prisma.lesson.create({

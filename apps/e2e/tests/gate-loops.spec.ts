@@ -73,9 +73,13 @@ test('a question is answered and a verse reviewed from the queue, then the lesso
   const answer = page.locator('[data-section]').filter({ hasText: 'Who are the other sheep?' });
   await expect(answer.getByRole('textbox')).toBeFocused();
   await page.keyboard.type('Other flocks, one shepherd.');
+  // Stored: answered, as its latest entry names a section with an answer.
   await expect
-    .poll(async () => (await rows<{ status: string }>(page, 'question'))[0]?.status)
-    .toBe('answered');
+    .poll(async () => JSON.stringify(await rows(page, 'section')))
+    .toContain('Other flocks, one shepherd.');
+  await expect
+    .poll(async () => (await rows<{ kind: string }>(page, 'questionEntry')).map((e) => e.kind))
+    .toContain('answered');
   await page.keyboard.press('Escape');
   const lessonPage = new URL(page.url()).pathname;
 

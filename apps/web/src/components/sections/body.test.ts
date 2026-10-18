@@ -49,8 +49,28 @@ const FULL: SectionBody = {
       content: [{ type: 'paragraph', content: [{ type: 'text', text: 'quoted' }] }],
     },
     { type: 'orderedList', content: [{ type: 'listItem', content: [{ type: 'paragraph' }] }] },
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'As in ' },
+        {
+          type: 'noteLink',
+          attrs: {
+            targetType: 'lesson',
+            targetId: '0199e0a0-0000-7000-8000-000000000004',
+            label: 'The Good Shepherd',
+          },
+        },
+      ],
+    },
   ],
 };
+
+/** A body holding one link chip with these attributes. */
+const link = (attrs: object) => ({
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'noteLink', attrs }] }],
+});
 
 let editor: Editor | undefined;
 afterEach(() => editor?.destroy());
@@ -81,6 +101,15 @@ describe('toBody', () => {
     const body = toBody(editorWith(FULL).getJSON());
     expect(body).toEqual(FULL);
     expect(bodySchema.parse(body)).toEqual(FULL);
+  });
+
+  it('keeps a link chip’s target and label, and drops one it can’t store', () => {
+    const target = { targetType: 'section', targetId: '0199e0a0-0000-7000-8000-000000000005' };
+    expect(toBody(link({ ...target, label: `  ${'x'.repeat(250)} ` }))).toEqual(
+      link({ ...target, label: 'x'.repeat(200) }),
+    );
+    expect(toBody(link({ ...target, label: ' ' }))).toEqual(emptyBody());
+    expect(toBody(link({ ...target, targetType: 'tag', label: 'x' }))).toEqual(emptyBody());
   });
 
   it('keeps an empty section as one empty paragraph', () => {

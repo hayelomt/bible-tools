@@ -1,4 +1,4 @@
-import type { Lesson, MemoryItem, Question } from '@lamp/domain';
+import type { Lesson, MemoryItem, Question, QuestionEntry, QuestionStatus } from '@lamp/domain';
 import { describe, expect, it } from 'vitest';
 import { reminderBody, weeklyReminder } from './reminder.ts';
 import { countWaiting } from './review-count.ts';
@@ -25,23 +25,56 @@ describe('weeklyReminder', () => {
 
 // Only the fields counted; the rows come straight from IndexedDB in the service worker.
 const lesson = (id: string, deletedAt: string | null = null) => ({ id, deletedAt }) as Lesson;
-const question = (lessonId: string, status: Question['status'], deletedAt: string | null = null) =>
-  ({ lessonId, status, deletedAt }) as Question;
+let ids = 0;
+/** A question, with the entries and answer section its status needs. */
+function question(lessonId: string, status: QuestionStatus, deletedAt: string | null = null) {
+  const id = `q${++ids}`;
+  const at = '2026-10-01T00:00:00.000Z';
+  const entry = (kind: QuestionEntry['kind'], sectionId: string | null = null) =>
+    ({
+      id: `${id}-${kind}`,
+      questionId: id,
+      kind,
+      sectionId,
+      createdAt: at,
+      deletedAt: null,
+    }) as QuestionEntry;
+  const entries =
+    status === 'parked'
+      ? [entry('parked')]
+      : status === 'answered'
+        ? [entry('answered', `${id}-s`)]
+        : [];
+  return { question: { id, lessonId, deletedAt } as Question, entries };
+}
+const answerSection = (id: string) =>
+  [
+    `${id}-s`,
+    {
+      body: {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes.' }] }],
+      },
+    },
+  ] as const;
 const item = (nextReviewAt: string, deletedAt: string | null = null) =>
   ({ nextReviewAt, deletedAt }) as MemoryItem;
 
 describe('countWaiting', () => {
   it('counts open questions of live lessons and the verses due today', () => {
+    const questions = [
+      question('a', 'open'),
+      question('a', 'open'),
+      question('a', 'parked'),
+      question('a', 'answered'),
+      question('a', 'open', '2026-10-13T00:00:00.000Z'),
+      question('gone', 'open'),
+    ];
     const rows = {
       lessons: [lesson('a'), lesson('gone', '2026-10-13T00:00:00.000Z')],
-      questions: [
-        question('a', 'open'),
-        question('a', 'open'),
-        question('a', 'parked'),
-        question('a', 'answered'),
-        question('a', 'open', '2026-10-13T00:00:00.000Z'),
-        question('gone', 'open'),
-      ],
+      questions: questions.map((q) => q.question),
+      entries: questions.flatMap((q) => q.entries),
+      sections: new Map(questions.map((q) => answerSection(q.question.id))) as never,
       items: [
         item('2026-10-14T00:00:00.000Z'),
         item('2026-10-01T00:00:00.000Z'),

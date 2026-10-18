@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idSchema, lineSchema } from './schemas/common.ts';
 import { verseRefSchema } from './schemas/verse-ref.ts';
 import { translationLabel, type VerseRef } from './verse-ref.ts';
 
@@ -20,7 +21,21 @@ export interface VerseNode {
   type: 'verse';
   attrs: VerseRef;
 }
-export type InlineNode = TextNode | VerseNode;
+/** What a link chip can point at (F23, §17.4). */
+export const LINK_TARGET_TYPES = ['lesson', 'section'] as const;
+export type LinkTargetType = (typeof LINK_TARGET_TYPES)[number];
+export interface NoteLinkAttrs {
+  targetType: LinkTargetType;
+  targetId: string;
+  /** The target's title when the link was made; shown only once the target is gone. */
+  label: string;
+}
+/** An inline atom: a link to another lesson or section (F23). */
+export interface NoteLinkNode {
+  type: 'noteLink';
+  attrs: NoteLinkAttrs;
+}
+export type InlineNode = TextNode | VerseNode | NoteLinkNode;
 
 export interface Paragraph {
   type: 'paragraph';
@@ -83,9 +98,19 @@ const textSchema = z.strictObject({
     .optional(),
 });
 
+/** A link chip's label: one line, up to 200 characters. */
+export const MAX_LINK_LABEL = 200;
+
+const noteLinkAttrsSchema = z.strictObject({
+  targetType: z.enum(LINK_TARGET_TYPES),
+  targetId: idSchema,
+  label: lineSchema(MAX_LINK_LABEL),
+});
+
 const inlineSchema = z.discriminatedUnion('type', [
   textSchema,
   z.strictObject({ type: z.literal('verse'), attrs: verseRefSchema }),
+  z.strictObject({ type: z.literal('noteLink'), attrs: noteLinkAttrsSchema }),
 ]);
 
 const paragraphSchema = z.strictObject({
@@ -162,16 +187,27 @@ function verseLabel(ref: VerseRef): string {
   return `${ref.display} (${translationLabel(ref)})`;
 }
 
+/** An inline node as plain text: a verse chip as its reference, a link chip as its label. */
+function inlineText(node: InlineNode): string {
+  switch (node.type) {
+    case 'text':
+      return node.text;
+    case 'verse':
+      return node.attrs.display;
+    case 'noteLink':
+      return node.attrs.label;
+  }
+}
+
 /**
  * Plain text for search: one line per paragraph, heading or list item paragraph, with each verse
- * chip as its reference ("Romans 8:28"), so a search for the reference finds the note.
+ * chip as its reference ("Romans 8:28"), so a search for the reference finds the note, and each
+ * link chip as its label.
  */
 export function toPlainText(body: SectionBody): string {
   const lines: string[] = [];
   eachTextBlock(body.content, (block) => {
-    const line = (block.content ?? [])
-      .map((n) => (n.type === 'text' ? n.text : n.attrs.display))
-      .join('');
+    const line = (block.content ?? []).map(inlineText).join('');
     if (line.trim()) lines.push(line);
   });
   return lines.join('\n');
@@ -186,13 +222,47 @@ export function citedRefs(body: SectionBody): VerseRef[] {
   return refs;
 }
 
+/** Every link chip in the body, in document order, repeats included (the source of its links). */
+export function linkedTargets(body: SectionBody): NoteLinkAttrs[] {
+  const links: NoteLinkAttrs[] = [];
+  eachTextBlock(body.content, (block) => {
+    for (const node of block.content ?? []) if (node.type === 'noteLink') links.push(node.attrs);
+  });
+  return links;
+}
+
+/**
+ * How a link chip is written in Markdown: its text and a relative reference; its text alone for a
+ * target that can't be referenced (not on the device); or null for a target that's gone, written
+ * as its label and "(deleted)". The caller resolves targets; the domain doesn't read rows.
+ */
+export type LinkWriter = (link: NoteLinkAttrs) => { text: string; href?: string } | null;
+
+export interface MarkdownOptions {
+  /** `###` by default; a lesson export puts section headings under its own. */
+  headingLevel?: number;
+  /** Without one, a link chip is its label as plain text. */
+  links?: LinkWriter;
+}
+
 /**
  * Markdown for export (F11). A verse chip becomes "Romans 8:28 (BSB)" in the sentence, and its
- * snapshot follows the paragraph as a quote: "> **Romans 8:28 (BSB)** And we know…". Headings are
- * `###` unless `headingLevel` says otherwise (a lesson export puts them under its own).
+ * snapshot follows the paragraph as a quote: "> **Romans 8:28 (BSB)** And we know…". A link chip
+ * becomes a relative reference, as `links` writes it (F23, decided in M10-05): "[The Good
+ * Shepherd](2026-10-12-the-good-shepherd.md)".
  */
-export function toMarkdown(body: SectionBody, { headingLevel = 3 } = {}): string {
-  return blocksToMarkdown(body.content, '#'.repeat(headingLevel)).join('\n') + '\n';
+export function toMarkdown(
+  body: SectionBody,
+  { headingLevel = 3, links }: MarkdownOptions = {},
+): string {
+  const context: Context = { heading: '#'.repeat(headingLevel), links };
+  return blocksToMarkdown(body.content, context).join('\n') + '\n';
+}
+
+/** What every block of one export shares. */
+interface Context {
+  heading: string;
+  links: LinkWriter | undefined;
 }
 
 /** One line of the user's text (a title, a takeaway) as Markdown that shows it as typed. */
@@ -201,39 +271,39 @@ export function escapeMarkdown(text: string): string {
 }
 
 /** Blocks as lines, with a blank line between blocks. */
-function blocksToMarkdown(blocks: readonly Block[], heading: string): string[] {
+function blocksToMarkdown(blocks: readonly Block[], context: Context): string[] {
   const parts = blocks
-    .flatMap((block) => blockToMarkdown(block, heading))
+    .flatMap((block) => blockToMarkdown(block, context))
     .filter((part) => part.length > 0);
   return parts.flatMap((part, i) => (i === 0 ? part : ['', ...part]));
 }
 
 /** One block as one or more parts (a text block's verse quotes are parts of their own). */
-function blockToMarkdown(block: Block, heading: string): string[][] {
+function blockToMarkdown(block: Block, context: Context): string[][] {
   switch (block.type) {
     case 'paragraph':
     case 'heading': {
-      const text = inlineToMarkdown(block.content ?? []);
-      const line = block.type === 'heading' ? `${heading} ${text}` : escapeLineStart(text);
+      const text = inlineToMarkdown(block.content ?? [], context.links);
+      const line = block.type === 'heading' ? `${context.heading} ${text}` : escapeLineStart(text);
       const quotes = (block.content ?? []).flatMap((node) =>
         node.type === 'verse' && node.attrs.snapshotText ? [verseQuote(node.attrs)] : [],
       );
       return [text ? [line] : [], ...quotes];
     }
     case 'blockquote':
-      return [blocksToMarkdown(block.content, heading).map((line) => (line ? `> ${line}` : '>'))];
+      return [blocksToMarkdown(block.content, context).map((line) => (line ? `> ${line}` : '>'))];
     case 'bulletList':
-      return [block.content.flatMap((item) => listItem('- ', item, heading))];
+      return [block.content.flatMap((item) => listItem('- ', item, context))];
     case 'orderedList': {
       const start = block.attrs?.start ?? 1;
-      return [block.content.flatMap((item, i) => listItem(`${start + i}. `, item, heading))];
+      return [block.content.flatMap((item, i) => listItem(`${start + i}. `, item, context))];
     }
   }
 }
 
-function listItem(marker: string, item: ListItem, heading: string): string[] {
+function listItem(marker: string, item: ListItem, context: Context): string[] {
   const indent = ' '.repeat(marker.length);
-  const [first, ...rest] = blocksToMarkdown(item.content, heading);
+  const [first, ...rest] = blocksToMarkdown(item.content, context);
   return [`${marker}${first ?? ''}`.trimEnd(), ...rest.map((line) => (line ? indent + line : ''))];
 }
 
@@ -249,7 +319,7 @@ const sameMark = (a: Mark, b: Mark) =>
   a.type === b.type && (a.type !== 'link' || a.attrs.href === (b as typeof a).attrs.href);
 
 /** Inline content with marks opened and closed as runs change, so "**a *b***" nests properly. */
-function inlineToMarkdown(nodes: readonly InlineNode[]): string {
+function inlineToMarkdown(nodes: readonly InlineNode[], links: LinkWriter | undefined): string {
   let out = '';
   let open: Mark[] = [];
 
@@ -272,7 +342,12 @@ function inlineToMarkdown(nodes: readonly InlineNode[]): string {
     let keep = 0;
     while (keep < open.length && keep < marks.length && sameMark(open[keep]!, marks[keep]!)) keep++;
     closeTo(keep);
-    let text = node.type === 'text' ? escapeText(node.text) : verseLabel(node.attrs);
+    let text =
+      node.type === 'text'
+        ? escapeText(node.text)
+        : node.type === 'verse'
+          ? verseLabel(node.attrs)
+          : linkToMarkdown(node.attrs, links);
     if (marks.length > keep) {
       // Likewise, emphasis can't start before a space.
       const body = text.trimStart();
@@ -287,13 +362,27 @@ function inlineToMarkdown(nodes: readonly InlineNode[]): string {
   return out;
 }
 
+/** A link chip: "[Title](file.md)", its label alone without a writer, or "Title (deleted)". */
+function linkToMarkdown(link: NoteLinkAttrs, links: LinkWriter | undefined): string {
+  if (!links) return escapeText(link.label);
+  const target = links(link);
+  if (!target) return `${escapeText(link.label)} (deleted)`;
+  if (target.href === undefined) return escapeText(target.text);
+  return `[${escapeText(target.text)}](${escapeHref(target.href)})`;
+}
+
+/** A reference inside `(…)`: spaces and parentheses would end it. */
+function escapeHref(href: string): string {
+  return href.replaceAll(' ', '%20').replaceAll('(', '%28').replaceAll(')', '%29');
+}
+
 function opener(mark: Mark): string {
   return mark.type === 'link' ? '[' : mark.type === 'bold' ? '**' : '*';
 }
 
 function closer(mark: Mark): string {
   if (mark.type !== 'link') return opener(mark);
-  return `](${mark.attrs.href.replaceAll('(', '%28').replaceAll(')', '%29')})`;
+  return `](${escapeHref(mark.attrs.href)})`;
 }
 
 /** Escapes characters that would start Markdown formatting inside a line. */

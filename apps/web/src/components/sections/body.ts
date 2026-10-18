@@ -1,6 +1,8 @@
 import {
   type Block,
   type InlineNode,
+  LINK_TARGET_TYPES,
+  MAX_LINK_LABEL,
   type ListItem,
   type Mark,
   type Paragraph,
@@ -21,7 +23,7 @@ export function toBody(json: JSONContent): SectionBody {
   return { type: 'doc', content: content.length > 0 ? content : [{ type: 'paragraph' }] };
 }
 
-/** Whether a body has anything in it worth storing: text or a verse chip. */
+/** Whether a body has anything in it worth storing: text, a verse chip or a link chip. */
 export function hasText(body: SectionBody): boolean {
   return toPlainText(body).trim().length > 0;
 }
@@ -104,6 +106,27 @@ function inline(nodes: JSONContent[] | undefined): InlineNode[] {
         VERSE_FIELDS.flatMap((key) => (node.attrs?.[key] == null ? [] : [[key, node.attrs[key]]])),
       );
       return [{ type: 'verse', attrs: attrs as unknown as VerseRef }];
+    }
+    if (node.type === 'noteLink' && node.attrs) {
+      const { targetType, targetId, label } = node.attrs as Record<string, unknown>;
+      const title = typeof label === 'string' ? label.trim().slice(0, MAX_LINK_LABEL) : '';
+      if (
+        !(LINK_TARGET_TYPES as readonly unknown[]).includes(targetType) ||
+        typeof targetId !== 'string' ||
+        !title
+      ) {
+        return [];
+      }
+      return [
+        {
+          type: 'noteLink',
+          attrs: {
+            targetType: targetType as (typeof LINK_TARGET_TYPES)[number],
+            targetId,
+            label: title,
+          },
+        },
+      ];
     }
     return [];
   });

@@ -1,10 +1,10 @@
 import { expect, type Page, test } from '@playwright/test';
 import { newLesson, rows } from './helpers.ts';
 
-interface StoredQuestion {
-  text: string;
-  status: string;
-  answerSectionId: string | null;
+interface StoredEntry {
+  kind: string;
+  sectionId: string | null;
+  createdAt: string;
 }
 
 const takeaways = (page: Page) => page.getByRole('textbox', { name: 'Takeaway' });
@@ -107,9 +107,18 @@ test.describe('on a phone', () => {
     await expect(answer.getByRole('heading', { level: 3 })).toHaveText('What is the door?');
     await expect(answer.getByRole('textbox')).toBeFocused();
     const [section] = await rows<{ id: string }>(page, 'section');
+    // The question's thread: asked, then answered in that section (F24).
     await expect
-      .poll(async () => (await rows<StoredQuestion>(page, 'question'))[0])
-      .toMatchObject({ status: 'open', answerSectionId: section?.id });
+      .poll(async () =>
+        (await rows<StoredEntry>(page, 'questionEntry'))
+          .toSorted((a, b) => a.createdAt.localeCompare(b.createdAt))
+          .map((e) => [e.kind, e.sectionId]),
+      )
+      .toEqual([
+        ['asked', null],
+        ['asked', null],
+        ['answered', section?.id],
+      ]);
     await expect(questionList(page).first()).toHaveText('Open: What is the door?');
 
     // Text under the heading answers it.

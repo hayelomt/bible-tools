@@ -1,5 +1,6 @@
 import {
   citationSchema,
+  linkSchema,
   deviceSchema,
   ENTITY_SCHEMAS,
   type EntityName,
@@ -30,6 +31,16 @@ const ENTITY_TABLES: Record<EntityName, string> = {
   highlight: 'highlight',
   memoryItem: 'memory_item',
   inboxItem: 'inbox_item',
+  questionEntry: 'question_entry',
+};
+
+/** Columns only the server has. */
+const SERVER_COLUMNS: Partial<Record<EntityName, string[]>> = {
+  // section.body_rev tells the push whether a body changed after a change's baseRev, and
+  // body_device which device wrote it, for a conflicted copy's label (§6.4).
+  section: ['body_rev', 'body_device'],
+  // Out of the wire format since M10, where its entries hold them; dropped in the next release.
+  question: ['status', 'answer_section_id'],
 };
 
 interface Contract {
@@ -43,11 +54,10 @@ const CONTRACTS: Contract[] = [
   ...Object.entries(ENTITY_TABLES).map(([entity, table]) => ({
     table,
     schema: ENTITY_SCHEMAS[entity as EntityName] as z.ZodObject,
-    // section.body_rev tells the push whether a body changed after a change's baseRev, and
-    // body_device which device wrote it, for a conflicted copy's label (§6.4).
-    serverOnly: entity === 'section' ? ['user_id', 'body_rev', 'body_device'] : ['user_id'],
+    serverOnly: ['user_id', ...(SERVER_COLUMNS[entity as EntityName] ?? [])],
   })),
   { table: 'citation', schema: citationSchema, serverOnly: ['user_id'] },
+  { table: 'link', schema: linkSchema, serverOnly: ['user_id'] },
   { table: 'device', schema: deviceSchema, serverOnly: ['user_id'] },
   {
     table: 'user',

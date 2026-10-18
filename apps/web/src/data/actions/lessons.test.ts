@@ -88,11 +88,15 @@ describe('lessons', () => {
       await w.create('sectionTag', { tagId: tag.id, sectionId: section.id });
       await w.create('lessonTag', { tagId: tag.id, lessonId: id });
       await w.create('takeaway', { lessonId: id, text: 'He knows his sheep.' });
-      await w.create('question', {
+      const question = await w.create('question', {
         lessonId: id,
         text: 'Who are the other sheep?',
-        status: 'open',
-        answerSectionId: null,
+      });
+      await w.create('questionEntry', {
+        questionId: question.id,
+        lessonId: id,
+        kind: 'asked',
+        sectionId: null,
       });
     });
 
@@ -105,7 +109,15 @@ describe('lessons', () => {
     expect(await db.citation.where('sourceId').equals(id).count()).toBe(0);
     const deletes = await db.outbox.filter((c) => c.op === 'delete').toArray();
     expect(deletes.map((c) => c.entity).toSorted()).toEqual(
-      ['lesson', 'lessonTag', 'question', 'section', 'sectionTag', 'takeaway'].toSorted(),
+      [
+        'lesson',
+        'lessonTag',
+        'question',
+        'questionEntry',
+        'section',
+        'sectionTag',
+        'takeaway',
+      ].toSorted(),
     );
   });
 });

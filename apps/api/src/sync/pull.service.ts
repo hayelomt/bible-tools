@@ -133,5 +133,5 @@ export class PullService {
 
 /** A stored row as the device stores it, `rev` and all. */
 function pulled({ entity, rev, stored }: Found): PulledRow {
-  return { entity, row: { ...toRow(stored), rev: Number(rev) } } as PulledRow;
+  return { entity, row: { ...toRow(entity, stored), rev: Number(rev) } } as PulledRow;
 }

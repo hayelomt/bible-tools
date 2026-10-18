@@ -267,6 +267,7 @@ describe('PARENT_COLUMNS', () => {
     expect(PARENT_COLUMNS.section).toEqual(['lessonId', 'parentId']);
     expect(PARENT_COLUMNS.sectionTag).toEqual(['tagId', 'sectionId']);
     expect(PARENT_COLUMNS.question).toEqual(['lessonId']);
+    expect(PARENT_COLUMNS.questionEntry).toEqual(['questionId', 'lessonId']);
     expect(PARENT_COLUMNS.highlight).toEqual([]);
   });
 });

@@ -10,7 +10,12 @@ import {
 } from '@lamp/domain';
 import { action } from '@/data/action.ts';
 import { createLesson } from '@/data/actions/lessons.ts';
-import { addQuestion, answerBody, promoteQuestion, setParked } from '@/data/actions/questions.ts';
+import {
+  addQuestion,
+  answerBody,
+  parkQuestion,
+  promoteQuestion,
+} from '@/data/actions/questions.ts';
 import { createSection, updateSection } from '@/data/actions/sections.ts';
 import { createSeries } from '@/data/actions/series.ts';
 import { addTag } from '@/data/actions/tags.ts';
@@ -380,7 +385,7 @@ async function writeNotes(
 
 async function writeQuestion(db: LampDb, lessonId: string, plan: QuestionPlan) {
   const question = await addQuestion(lessonId, plan.text, db);
-  if (plan.status === 'parked') await setParked(question.id, true, db);
+  if (plan.status === 'parked') await parkQuestion(question.id, db);
   if (plan.status === 'answered') {
     const section = await promoteQuestion(question.id, undefined, db);
     const body = answerBody(plan.text);

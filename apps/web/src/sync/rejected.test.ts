@@ -129,3 +129,87 @@ describe('Dexie version 7', () => {
     await upgraded.delete();
   });
 });
+
+const at = (minute: number) => `2026-03-01T09:0${minute}:00.000Z`;
+const id = (n: number) => `0199e0a0-0000-7000-8000-00000000000${n}`;
+
+describe('Dexie version 8', () => {
+  it('turns question statuses into entries for questions the server never had, and drops them', async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(7).stores({
+      question: 'id, lessonId, status',
+      section: 'id, lessonId, parentId, conflictOf',
+      outbox: '++seq, [entity+entityId]',
+    });
+    const lessonId = id(9);
+    const answer = { id: id(8), lessonId, createdAt: at(5), deletedAt: null };
+    const question = (
+      n: number,
+      status: string,
+      rev: number,
+      answerSectionId: string | null = null,
+    ) => ({
+      id: id(n),
+      lessonId,
+      text: `Question ${n}`,
+      status,
+      answerSectionId,
+      createdAt: at(1),
+      updatedAt: at(7),
+      rev,
+      deletedAt: null,
+    });
+    const rows = [
+      question(1, 'open', 0),
+      question(2, 'answered', 0, answer.id),
+      question(3, 'parked', 0),
+      // Synced, and parked here since, not yet pushed.
+      question(4, 'parked', 3),
+      // Synced and unchanged: the server's migration gives it its entries.
+      question(5, 'answered', 3, answer.id),
+    ];
+    await old.table('section').put(answer);
+    await old.table('question').bulkPut(rows);
+    const { rev: _, ...row4 } = rows[3]!;
+    await old.table('outbox').add({
+      entity: 'question',
+      entityId: id(4),
+      op: 'upsert',
+      row: row4,
+      changed: ['status', 'updatedAt'],
+    });
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    const entries = await upgraded.questionEntry.toArray();
+    const thread = (n: number) =>
+      entries
+        .filter((e) => e.questionId === id(n))
+        .toSorted((a, b) => a.createdAt.localeCompare(b.createdAt))
+        .map((e) => [e.kind, e.sectionId, e.createdAt]);
+    expect(thread(1)).toEqual([['asked', null, at(1)]]);
+    expect(thread(2)).toEqual([
+      ['asked', null, at(1)],
+      ['answered', answer.id, at(5)],
+    ]);
+    expect(thread(3)).toEqual([
+      ['asked', null, at(1)],
+      ['parked', null, at(7)],
+    ]);
+    expect(thread(4)).toEqual([['parked', null, at(7)]]);
+    expect(thread(5)).toEqual([]);
+    expect(entries.every((e) => e.rev === 0 && e.lessonId === lessonId)).toBe(true);
+
+    // The questions and their queued changes lose the fields; each entry is queued.
+    for (const stored of await upgraded.question.toArray()) {
+      expect(stored).not.toHaveProperty('status');
+      expect(stored).not.toHaveProperty('answerSectionId');
+    }
+    const queued = await upgraded.outbox.toArray();
+    expect(queued[0]).toMatchObject({ entity: 'question', changed: ['updatedAt'] });
+    expect(queued[0]).not.toHaveProperty('row.status');
+    expect(queued.slice(1).map((c) => c.entity)).toEqual(entries.map(() => 'questionEntry'));
+    await upgraded.delete();
+  });
+});

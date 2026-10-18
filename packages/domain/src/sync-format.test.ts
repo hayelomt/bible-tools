@@ -90,7 +90,8 @@ describe('why the minimum matters', () => {
     expect(
       pullResponseSchema.safeParse(page(paragraph({ type: 'text', text: 'Hi' }))).success,
     ).toBe(true);
-    // F23's link to another lesson, which a v1 app has never heard of.
+    // F23's link to another lesson: this format knows it, and a v1 or M9 app has never heard of
+    // it, as this app hasn't heard of a node a later format may add.
     const link = {
       type: 'noteLink',
       attrs: {
@@ -99,6 +100,8 @@ describe('why the minimum matters', () => {
         label: 'The Good Shepherd',
       },
     };
-    expect(pullResponseSchema.safeParse(page(paragraph(link))).success).toBe(false);
+    expect(pullResponseSchema.safeParse(page(paragraph(link))).success).toBe(true);
+    const later = { type: 'footnote', attrs: { text: 'See the appendix' } };
+    expect(pullResponseSchema.safeParse(page(paragraph(later))).success).toBe(false);
   });
 });

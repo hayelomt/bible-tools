@@ -5,6 +5,7 @@ import { Suggestion, type SuggestionProps } from '@tiptap/suggestion';
 import { shift } from '@floating-ui/dom';
 import { bookState, snapshotText } from '@/data/bible.ts';
 import { activeTranslation } from '@/data/translation.ts';
+import { typingLink } from '@/components/links/note-link.ts';
 import { pasteOffered } from './paste-chips.ts';
 import { findReference, type ReferenceEntry, referenceEntries } from './find-reference.ts';
 import { LAPTOP_QUERY, type KeyHandler, VerseSuggestions } from './verse-suggestions.tsx';
@@ -37,6 +38,8 @@ export const VerseSuggestion = Extension.create({
         findSuggestionMatch: ({ $position }) => {
           if (!$position.parent.isTextblock) return null;
           const before = $position.parent.textBetween(0, $position.parentOffset, undefined, LEAF);
+          // "[[John" is a link being typed, which the link picker has.
+          if (typingLink(before)) return null;
           const match = findReference(before);
           if (!match) return null;
           const from = $position.start() + match.from;

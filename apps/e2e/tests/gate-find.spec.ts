@@ -167,6 +167,7 @@ function seedMonth(tagIds: Map<string, string>): Seed {
     sectionTag: [] as EntityRow<'sectionTag'>[],
     takeaway: [] as EntityRow<'takeaway'>[],
     question: [] as EntityRow<'question'>[],
+    questionEntry: [] as EntityRow<'questionEntry'>[],
   };
   for (const plan of MONTH) {
     const lesson = ENTITY_SCHEMAS.lesson.parse({
@@ -204,13 +205,19 @@ function seedMonth(tagIds: Map<string, string>): Seed {
     seed.takeaway.push(
       ENTITY_SCHEMAS.takeaway.parse({ ...synced(), lessonId: lesson.id, text: plan.takeaway }),
     );
-    seed.question.push(
-      ENTITY_SCHEMAS.question.parse({
+    const question = ENTITY_SCHEMAS.question.parse({
+      ...synced(),
+      lessonId: lesson.id,
+      text: plan.question,
+    });
+    seed.question.push(question);
+    seed.questionEntry.push(
+      ENTITY_SCHEMAS.questionEntry.parse({
         ...synced(),
+        questionId: question.id,
         lessonId: lesson.id,
-        text: plan.question,
-        status: 'open',
-        answerSectionId: null,
+        kind: 'asked',
+        sectionId: null,
       }),
     );
   }

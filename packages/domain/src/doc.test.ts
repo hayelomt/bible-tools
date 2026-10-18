@@ -5,7 +5,10 @@ import {
   citedRefs,
   emptyBody,
   type InlineNode,
+  linkedTargets,
+  type LinkWriter,
   MAX_BODY_DEPTH,
+  type NoteLinkAttrs,
   type Paragraph,
   type SectionBody,
   escapeMarkdown,
@@ -44,6 +47,17 @@ const text = (value: string, ...marks: ('bold' | 'italic' | string)[]): InlineNo
   return node;
 };
 const verse = (attrs: VerseRef): InlineNode => ({ type: 'verse', attrs });
+const SHEPHERD: NoteLinkAttrs = {
+  targetType: 'lesson',
+  targetId: '0199e0a0-0000-7000-8000-000000000004',
+  label: 'The Good Shepherd',
+};
+const OTHER_SHEEP: NoteLinkAttrs = {
+  targetType: 'section',
+  targetId: '0199e0a0-0000-7000-8000-000000000005',
+  label: 'The Good Shepherd › “Other sheep I have…”',
+};
+const link = (attrs: NoteLinkAttrs): InlineNode => ({ type: 'noteLink', attrs });
 const p = (...content: InlineNode[]): Paragraph =>
   content.length ? { type: 'paragraph', content } : { type: 'paragraph' };
 const doc = (...content: Block[]): SectionBody => ({ type: 'doc', content });
@@ -77,6 +91,7 @@ const RICH = doc(
     ],
   },
   { type: 'blockquote', content: [p(text('Nothing can separate us. '), verse(ROM_8_38))] },
+  p(text('Same idea as '), link(SHEPHERD), text('.')),
 );
 
 describe('bodySchema', () => {
@@ -140,6 +155,11 @@ describe('bodySchema', () => {
       'a verse without its display',
       doc(p({ type: 'verse', attrs: { book: 'ROM', chapter: 8 } } as never)),
     ],
+    ['a link to an unknown kind of row', doc(p(link({ ...SHEPHERD, targetType: 'tag' } as never)))],
+    ['a link to an id that is not a UUIDv7', doc(p(link({ ...SHEPHERD, targetId: 'x' })))],
+    ['a link without a label', doc(p(link({ ...SHEPHERD, label: ' ' })))],
+    ['a link label over 200 characters', doc(p(link({ ...SHEPHERD, label: 'x'.repeat(201) })))],
+    ['a link with an extra attribute', doc(p(link({ ...SHEPHERD, href: 'x' } as never)))],
   ];
   it.each(reject)('rejects %s', (_, body) => {
     expect(bodySchema.safeParse(body).success).toBe(false);
@@ -166,12 +186,22 @@ describe('toPlainText', () => {
         'Read the notes',
         'nested',
         'Nothing can separate us. Romans 8:38–9:5',
+        'Same idea as The Good Shepherd.',
       ].join('\n'),
     );
   });
 
   it('is empty for an empty body', () => {
     expect(toPlainText(emptyBody())).toBe('');
+  });
+});
+
+describe('linkedTargets', () => {
+  it('lists every link chip in document order, repeats included', () => {
+    const body = doc(p(link(OTHER_SHEEP), verse(JHN_3)), p(link(SHEPHERD), link(OTHER_SHEEP)));
+    expect(linkedTargets(body)).toEqual([OTHER_SHEEP, SHEPHERD, OTHER_SHEEP]);
+    expect(linkedTargets(RICH)).toEqual([SHEPHERD]);
+    expect(linkedTargets(emptyBody())).toEqual([]);
   });
 });
 
@@ -207,7 +237,25 @@ Paul says Romans 8:28 (BSB) — ***all*** things.
 >
 > > **Romans 8:38–9:5 (BSB)** For I am persuaded…
 > > …who is over all, God, blessed forever. Amen.
+
+Same idea as The Good Shepherd.
 `,
+    );
+  });
+
+  it('writes a link chip as the relative reference the caller gives, or as deleted', () => {
+    const files: LinkWriter = ({ targetId }) =>
+      targetId === SHEPHERD.targetId
+        ? { text: 'The Good [Shepherd]', href: '2026-10-12-the good-shepherd (1).md' }
+        : null;
+    const body = doc(p(text('As in '), link(SHEPHERD), text(' and '), link(OTHER_SHEEP)));
+    expect(toMarkdown(body, { links: files })).toBe(
+      'As in [The Good \\[Shepherd\\]](2026-10-12-the%20good-shepherd%20%281%29.md) and ' +
+        'The Good Shepherd › “Other sheep I have…” (deleted)\n',
+    );
+    // A target the caller can't reference is its text alone.
+    expect(toMarkdown(body, { links: (l) => ({ text: l.label }) })).toBe(
+      'As in The Good Shepherd and The Good Shepherd › “Other sheep I have…”\n',
     );
   });
 

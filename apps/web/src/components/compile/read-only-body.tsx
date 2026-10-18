@@ -5,6 +5,7 @@ import {
   translationLabel,
   type VerseRef,
 } from '@lamp/domain';
+import { ReadOnlyLink } from '@/components/links/read-only-link.tsx';
 import { Marked } from '@/components/print/print-body.tsx';
 import {
   CHIP_CLASS,
@@ -17,7 +18,7 @@ import {
 /**
  * A section body to read, not edit (the commentary, wireframes/thinking.md): its text as the
  * editor shows it, without a cursor or toolbar, so it can be selected and copied. Its verse chips
- * open in the viewer as they do in a note. Headings sit at `headingLevel`, under the group's.
+ * open in the viewer as they do in a note, and its link chips open what they link to. Headings sit at `headingLevel`, under the group's.
  */
 export function ReadOnlyBody({ body, headingLevel }: { body: SectionBody; headingLevel: 4 | 5 }) {
   return (
@@ -76,13 +77,16 @@ function BlockView({ block, headingLevel }: { block: Block; headingLevel: 4 | 5 
 }
 
 function Inline({ nodes }: { nodes: readonly InlineNode[] }) {
-  return nodes.map((node, i) =>
-    node.type === 'verse' ? (
-      <VerseChip key={i} verse={node.attrs} />
-    ) : (
-      <Marked key={i} text={node.text} marks={node.marks ?? []} />
-    ),
-  );
+  return nodes.map((node, i) => {
+    switch (node.type) {
+      case 'verse':
+        return <VerseChip key={i} verse={node.attrs} />;
+      case 'noteLink':
+        return <ReadOnlyLink key={i} link={node.attrs} />;
+      case 'text':
+        return <Marked key={i} text={node.text} marks={node.marks ?? []} />;
+    }
+  });
 }
 
 /** A verse chip as in a note: a tap, Enter or resting the mouse on it opens the viewer. */
