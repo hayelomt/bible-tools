@@ -1,5 +1,11 @@
 import type { BookText } from '@lamp/bible-data';
-import { type BookCode, TRANSLATION_NAMES, type TranslationId, type VerseRef } from '@lamp/domain';
+import {
+  type BookCode,
+  type TranslationId,
+  translationLabel,
+  translationName,
+  type VerseRef,
+} from '@lamp/domain';
 import { type Editor, Extension, type NodeViewRenderer } from '@tiptap/core';
 import { NodeSelection, Selection } from '@tiptap/pm/state';
 import { useSyncExternalStore } from 'react';
@@ -112,10 +118,15 @@ export function useOpenChip(): OpenChip | null {
 }
 
 /** "John 10:9, Berean Standard Bible, verse. Show text." (UX-PATTERNS "Verse references"). */
-export function chipLabel(ref: Pick<VerseRef, 'display' | 'translation'>): string {
-  const name = TRANSLATION_NAMES[ref.translation as TranslationId] ?? ref.translation;
-  return `${ref.display}, ${name}, verse. Show text.`;
+export function chipLabel(ref: Pick<VerseRef, 'display' | 'translation' | 'versionLabel'>): string {
+  return `${ref.display}, ${translationName(ref)}, verse. Show text.`;
 }
+
+/** What shows for a chip without text: it's on its way, or, from outside, none came with it. */
+export const missingText = (ref: Pick<VerseRef, 'translation'>): string =>
+  ref.translation === 'shared' || ref.translation === 'pasted'
+    ? 'No text came with it.'
+    : 'Text not downloaded yet.';
 
 const CHIP_CLASS =
   'cursor-pointer rounded-md bg-muted px-1 font-sans text-[0.9em] whitespace-nowrap hover:bg-accent';
@@ -137,7 +148,7 @@ export const verseChipView: NodeViewRenderer = ({ node: initial, editor }) => {
   dom.dataset['slot'] = 'verse-chip';
   const render = () => {
     const ref = node.attrs as VerseRef;
-    dom.textContent = `${ref.display} · ${ref.translation}`;
+    dom.textContent = `${ref.display} · ${translationLabel(ref)}`;
     dom.setAttribute('aria-label', chipLabel(ref));
   };
   render();

@@ -1,4 +1,11 @@
-import type { InboxItem, InboxOrigin, VerseRef } from '@lamp/domain';
+import {
+  type InboxItem,
+  type InboxOrigin,
+  isAppTranslation,
+  type TranslationId,
+  translationLabel,
+  type VerseRef,
+} from '@lamp/domain';
 import { Button } from '@lamp/ui/components/button';
 import { Dialog, DialogContent } from '@lamp/ui/components/dialog';
 import {
@@ -172,30 +179,28 @@ function SendDialog({
 }
 
 /** `⟦Romans 8:28 · BSB⟧` and the verse's text: the snapshot, or the book's while it has none. */
-function ChipLine({ verse }: { verse: VerseRef }) {
+export function ChipLine({ verse }: { verse: VerseRef }) {
   return (
     <div className="flex flex-col gap-1">
       <span className="self-start" data-slot="verse-chip">
-        {verse.display} · {verse.translation}
+        {verse.display} · {translationLabel(verse)}
       </span>
       {verse.snapshotText ? (
         <p className="line-clamp-3 break-words">{verse.snapshotText}</p>
-      ) : (
-        <BookText verse={verse} />
-      )}
+      ) : isAppTranslation(verse.translation) ? (
+        <BookText verse={verse} translation={verse.translation} />
+      ) : null}
     </div>
   );
 }
 
-function BookText({ verse }: { verse: VerseRef }) {
-  const book = useBook(verse.translation, verse.book);
+function BookText({ verse, translation }: { verse: VerseRef; translation: TranslationId }) {
+  const book = useBook(translation, verse.book);
   if (book.status === 'loading') return null;
   if (book.status === 'missing') {
     return <p className="text-sm text-muted-foreground">Text not downloaded yet.</p>;
   }
-  return (
-    <p className="line-clamp-3 break-words">{snapshotText(book.text, verse, verse.translation)}</p>
-  );
+  return <p className="line-clamp-3 break-words">{snapshotText(book.text, verse, translation)}</p>;
 }
 
 /** "bible.com" from a shared address; nothing for none. */

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { BOOK_CODES } from '../books.ts';
 import { describeParseError } from '../parse-reference.ts';
-import { checkPassage, type Passage, TRANSLATIONS } from '../verse-ref.ts';
+import { CHIP_TRANSLATIONS, checkPassage, type Passage } from '../verse-ref.ts';
 
 const count = z.int().min(1);
 
@@ -30,7 +30,8 @@ export const verseRefSchema = z
   .strictObject({
     ...passageFields,
     display: z.string().min(1).max(200),
-    translation: z.enum(TRANSLATIONS),
+    translation: z.enum(CHIP_TRANSLATIONS),
+    versionLabel: z.string().trim().min(1).max(16).optional(),
     snapshotText: z.string().max(100_000).optional(),
   })
   .superRefine(inBookTable);

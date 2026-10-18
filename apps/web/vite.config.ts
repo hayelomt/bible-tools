@@ -137,6 +137,13 @@ function pwa() {
         { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
         { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
+      // F18: Lamp in the share sheet. A GET, so `/share` opens from the precached shell offline
+      // and nothing needs the service worker to read a posted body (TECH-DESIGN §8.6).
+      share_target: {
+        action: '/share',
+        method: 'GET',
+        params: { title: 'title', text: 'text', url: 'url' },
+      },
     },
   });
 }

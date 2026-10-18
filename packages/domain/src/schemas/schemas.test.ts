@@ -3,6 +3,7 @@ import { emptyBody } from '../doc.ts';
 import { keyBetween } from '../order.ts';
 import { SEED_TAGS } from '../seed-tags.ts';
 import type { VerseRef } from '../verse-ref.ts';
+import { verseRefSchema } from './verse-ref.ts';
 import { apiErrorSchema, devicesResponseSchema, healthResponseSchema } from './api.ts';
 import {
   changePasswordRequestSchema,
@@ -412,5 +413,25 @@ describe('api schemas', () => {
       lastSyncAt: null,
     };
     expect(devicesResponseSchema.parse({ devices: [device] })).toEqual({ devices: [device] });
+  });
+});
+
+describe('verseRefSchema', () => {
+  it('takes text from outside, `shared` or `pasted`, with a version label (decision 63)', () => {
+    for (const ref of [
+      { ...ROM_8_28, translation: 'shared', versionLabel: 'NIV', snapshotText: 'And we know…' },
+      { ...ROM_8_28, translation: 'shared' },
+      { ...ROM_8_28, translation: 'pasted', snapshotText: 'And we know…' },
+    ]) {
+      expect(verseRefSchema.parse(ref)).toEqual(ref);
+    }
+  });
+
+  it('refuses another translation, or a label that is empty or too long', () => {
+    expect(verseRefSchema.safeParse({ ...ROM_8_28, translation: 'NIV' }).success).toBe(false);
+    expect(verseRefSchema.safeParse({ ...ROM_8_28, versionLabel: ' ' }).success).toBe(false);
+    expect(verseRefSchema.safeParse({ ...ROM_8_28, versionLabel: 'X'.repeat(17) }).success).toBe(
+      false,
+    );
   });
 });

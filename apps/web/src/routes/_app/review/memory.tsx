@@ -6,6 +6,7 @@ import {
   isDue,
   type MemoryItem,
   nextInterval,
+  translationLabel,
 } from '@lamp/domain';
 import { Button, buttonVariants } from '@lamp/ui/components/button';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -127,7 +128,7 @@ function MemoryCard({ item, onGrade }: { item: MemoryItem; onGrade: (grade: Grad
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm font-medium">
-        {ref.display} · {ref.translation}
+        {ref.display} · {translationLabel(ref)}
       </p>
       <div
         ref={verse}

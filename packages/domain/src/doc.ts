@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { verseRefSchema } from './schemas/verse-ref.ts';
-import type { VerseRef } from './verse-ref.ts';
+import { translationLabel, type VerseRef } from './verse-ref.ts';
 
 /**
  * Section bodies: ProseMirror JSON (the format TipTap stores) restricted to the nodes Lamp uses
@@ -157,9 +157,9 @@ function eachTextBlock(blocks: readonly Block[], visit: (block: TextBlock) => vo
   }
 }
 
-/** The text a verse chip stands for in plain text and Markdown: "Romans 8:28 (BSB)". */
+/** The text a verse chip stands for in plain text and Markdown: "Romans 8:28 (BSB)", "(NIV)". */
 function verseLabel(ref: VerseRef): string {
-  return `${ref.display} (${ref.translation})`;
+  return `${ref.display} (${translationLabel(ref)})`;
 }
 
 /**

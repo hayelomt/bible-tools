@@ -23,6 +23,8 @@ used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
 - **Optional account:** use it as a guest with no sign-up, or create an account to back up notes
   and sync them between devices.
 - **Export** a lesson or series as Markdown, or print it to PDF.
+- **Share verses in from other apps:** a verse shared from YouVersion or a Bible site, or pasted,
+  waits in the Inbox with its reference and translation recognised, until it goes into a lesson.
 
 ### The weekly reminder, by browser
 
@@ -42,6 +44,24 @@ Review tab's count is the reminder.
 
 The switch is per device: the browser keeps the permission and the registration, so it isn't
 synced. Checked by hand with [MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
+
+### Sharing to Lamp, by platform
+
+Installed, Lamp asks to be a share target (`share_target` in its manifest), so a verse shared from
+another app opens Lamp's share screen. Only some browsers put a web app in the share sheet. Where
+none does (an iPhone or iPad), copy the verse and tap **Add from clipboard** in the Inbox: it opens
+the same screen, which finds the references and verses in what was copied.
+
+| Platform                                    | Lamp in the share sheet | Add from clipboard |
+| ------------------------------------------- | ----------------------- | ------------------ |
+| Android: Chrome, Edge, Samsung (installed)  | Yes                     | Yes                |
+| Android: Firefox                            | No                      | Yes                |
+| Windows, ChromeOS: Chrome, Edge (installed) | Yes                     | Yes                |
+| macOS, Linux: Chrome, Edge (installed)      | No                      | Yes                |
+| iPhone, iPad: Safari, Home Screen app       | No                      | Yes (Safari asks)  |
+
+From each browser's support for Web Share Target, 2026-10-18; **not yet checked on an iPhone or an
+Android phone** (M9-07).
 
 The full product description is the [PRD](<docs/Bible Study App — PRD.md>); the technical
 design is [TECH-DESIGN.md](docs/TECH-DESIGN.md).

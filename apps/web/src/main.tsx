@@ -26,7 +26,7 @@ declare module '@tanstack/react-router' {
     /** The screen's title, shown as its `h1` by the shell. */
     title?: string;
     /** Where `←` goes, on screens below a destination. */
-    back?: '/' | '/settings' | '/search' | '/review';
+    back?: '/' | '/settings' | '/search' | '/review' | '/inbox';
   }
 }
 

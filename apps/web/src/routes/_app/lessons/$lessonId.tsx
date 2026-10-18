@@ -6,6 +6,7 @@ import { LessonEditor } from '@/components/lesson/lesson-editor.tsx';
 import { ScreenTitle } from '@/components/shell/slots.tsx';
 import { lessonById } from '@/data/queries.ts';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
+import { useRecentLesson } from '@/lib/recent-lesson.ts';
 import { useScreenReady } from '@/lib/screen-ready.ts';
 
 interface LessonSearch {
@@ -40,6 +41,8 @@ function LessonScreen() {
   const navigate = Route.useNavigate();
   const lesson = useLiveQuery(() => lessonById(lessonId), [lessonId]);
   useScreenReady('lesson', lesson !== undefined);
+  // A share in the next 10 minutes offers this lesson (F18).
+  useRecentLesson(lesson ? lessonId : null);
 
   // Once the draft is stored, its address loses `?new`, so reloading or going back shows the lesson.
   useEffect(() => {

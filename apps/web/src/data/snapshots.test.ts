@@ -62,6 +62,19 @@ describe('withSnapshots', () => {
     expect(JSON.stringify(filled)).not.toContain('Mercy to you.');
   });
 
+  it('never fills text from outside, shared or pasted (TECH-DESIGN §17.3)', () => {
+    const shared = chip({
+      book: 'JUD',
+      chapter: 1,
+      verseStart: 2,
+      display: 'Jude 2',
+      translation: 'shared',
+    });
+    const pasted = { ...shared, attrs: { ...shared.attrs, translation: 'pasted' as const } };
+    expect(booksWaiting(body(shared, pasted))).toEqual(new Set());
+    expect(withSnapshots(body(shared, pasted), new Map([['BSB:JUD', JUDE]]))).toBeNull();
+  });
+
   it('gives null when no waiting chip has its book', () => {
     expect(withSnapshots(body(jude2, john), new Map())).toBeNull();
     expect(withSnapshots(body(john), new Map([['BSB:JUD', JUDE]]))).toBeNull();

@@ -183,6 +183,12 @@ describe('citedRefs', () => {
   });
 });
 
+/** A body with one chip of Romans 8:28, changed by `ref`. */
+const outside = (ref: Partial<VerseRef>): SectionBody => ({
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'verse', attrs: { ...ROM_8_28, ...ref } }] }],
+});
+
 describe('toMarkdown', () => {
   it('renders every node, with verse quotes after their paragraph', () => {
     expect(toMarkdown(RICH)).toBe(
@@ -207,6 +213,14 @@ Paul says Romans 8:28 (BSB) — ***all*** things.
 
   it('is a single newline for an empty body', () => {
     expect(toMarkdown(emptyBody())).toBe('\n');
+  });
+
+  it('labels text from outside with its version, or as shared', () => {
+    expect(toMarkdown(outside({ translation: 'shared', versionLabel: 'NIV' }))).toContain(
+      '**Romans 8:28 (NIV)**',
+    );
+    expect(toMarkdown(outside({ translation: 'shared' }))).toContain('**Romans 8:28 (shared)**');
+    expect(toMarkdown(outside({ translation: 'pasted' }))).toContain('**Romans 8:28 (pasted)**');
   });
 
   it('puts headings at the level asked for, under an export’s own', () => {

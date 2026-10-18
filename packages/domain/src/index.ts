@@ -23,6 +23,7 @@ export {
   suggest,
 } from './parse-reference.ts';
 export { type FoundReference, findReferences } from './find-references.ts';
+export { isBibleSite, type ShareSource, shareSource } from './share-source.ts';
 export {
   type CitationEntry,
   CITING_ENTITIES,
@@ -53,7 +54,10 @@ export {
 } from './srs.ts';
 export { MAX_TAG_NAME_LENGTH, normaliseTagName, tagKey } from './tag-names.ts';
 export {
+  CHIP_TRANSLATIONS,
+  type ChipTranslation,
   DEFAULT_TRANSLATION,
+  isAppTranslation,
   checkPassage,
   formatPassage,
   type OrdinalRange,
@@ -66,6 +70,8 @@ export {
   rangesOverlap,
   TRANSLATION_NAMES,
   TRANSLATIONS,
+  translationLabel,
+  translationName,
   type TranslationId,
   type VerseRef,
   verseOrdinal,

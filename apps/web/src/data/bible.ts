@@ -1,6 +1,9 @@
-import { type BookText, type Manifest, passageText, passageVerses } from '@lamp/bible-data';
+import { type BookText, passageText, passageVerses } from '@lamp/bible-data';
 import type { BookCode, Passage, TranslationId } from '@lamp/domain';
 import { useSyncExternalStore } from 'react';
+import { loadManifest, storedBook } from './bible-files.ts';
+
+export { BIBLE_CACHE, bibleCache, bookUrl, loadManifest, storedBook } from './bible-files.ts';
 
 /**
  * The Bible text, as the book files `@lamp/bible-data` builds (TECH-DESIGN §9), served under
@@ -16,12 +19,8 @@ export type BookState =
   /** Not downloaded, and couldn't be fetched (offline). Tried again after a while or once online. */
   | { status: 'missing' };
 
-const BASE = '/bible/';
-const MANIFEST = `${BASE}manifest.json`;
-export const BIBLE_CACHE = 'lamp-bible';
 const RETRY_MS = 10_000;
 
-let manifest: Promise<Manifest> | undefined;
 /** By `key`: one translation's book. */
 const books = new Map<string, BookState & { at?: number }>();
 const listeners = new Set<() => void>();
@@ -67,54 +66,6 @@ if (typeof window !== 'undefined') {
     for (const [k, state] of books) if (state.status === 'missing') books.delete(k);
     notify();
   });
-}
-
-/** The Bible's cache, where there is Cache Storage (a secure context; not in unit tests). */
-export async function bibleCache(): Promise<Cache | null> {
-  if (typeof caches === 'undefined') return null;
-  return caches.open(BIBLE_CACHE).catch(() => null);
-}
-
-async function fetchOk(url: string): Promise<Response> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`${url}: ${response.status}`);
-  return response;
-}
-
-/** The manifest: from the network, else the copy stored the last time (offline). */
-export function loadManifest(): Promise<Manifest> {
-  manifest ??= (async () => {
-    const cache = await bibleCache();
-    try {
-      const response = await fetchOk(MANIFEST);
-      await cache?.put(MANIFEST, response.clone());
-      return (await response.json()) as Manifest;
-    } catch (error) {
-      const stored = await cache?.match(MANIFEST);
-      if (!stored) throw error;
-      return (await stored.json()) as Manifest;
-    }
-  })().catch((error: unknown) => {
-    manifest = undefined;
-    throw error;
-  });
-  return manifest;
-}
-
-/** A book file's address, from its manifest entry. */
-export function bookUrl(file: string): string {
-  return BASE + file;
-}
-
-/** A book file: the stored copy, else fetched and stored. */
-export async function storedBook(file: string): Promise<{ text: BookText; fetched: boolean }> {
-  const url = bookUrl(file);
-  const cache = await bibleCache();
-  const stored = await cache?.match(url);
-  if (stored) return { text: (await stored.json()) as BookText, fetched: false };
-  const response = await fetchOk(url);
-  await cache?.put(url, response.clone());
-  return { text: (await response.json()) as BookText, fetched: true };
 }
 
 async function fetchBook(translation: TranslationId, code: BookCode): Promise<BookText> {

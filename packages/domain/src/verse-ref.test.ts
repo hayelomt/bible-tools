@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CHIP_TRANSLATIONS,
+  isAppTranslation,
+  translationLabel,
+  translationName,
   type Passage,
   checkPassage,
   formatPassage,
@@ -158,5 +162,21 @@ describe('passage slugs', () => {
     ]) {
       expect(parsePassageSlug(slug)).toBeNull();
     }
+  });
+});
+
+describe('chip translations', () => {
+  it('labels a chip with its translation, or the version its source named', () => {
+    expect(translationLabel({ translation: 'BSB' })).toBe('BSB');
+    expect(translationLabel({ translation: 'shared', versionLabel: 'NIV' })).toBe('NIV');
+    expect(translationLabel({ translation: 'pasted' })).toBe('pasted');
+    expect(translationName({ translation: 'KJV' })).toBe('King James Version');
+    expect(translationName({ translation: 'shared', versionLabel: 'ESV' })).toBe('ESV');
+    expect(translationName({ translation: 'shared' })).toBe('Shared text');
+    expect(translationName({ translation: 'pasted' })).toBe('Pasted text');
+  });
+
+  it('knows which translations the app has text for', () => {
+    expect(CHIP_TRANSLATIONS.filter(isAppTranslation)).toEqual(['BSB', 'KJV']);
   });
 });

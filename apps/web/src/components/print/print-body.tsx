@@ -1,4 +1,12 @@
-import type { Block, InlineNode, Mark, SectionBody, TextBlock, VerseRef } from '@lamp/domain';
+import {
+  type Block,
+  type InlineNode,
+  type Mark,
+  type SectionBody,
+  type TextBlock,
+  translationLabel,
+  type VerseRef,
+} from '@lamp/domain';
 import type { ReactNode } from 'react';
 
 /**
@@ -82,7 +90,7 @@ function VerseQuote({ verse }: { verse: VerseRef }) {
 }
 
 function verseLabel(ref: VerseRef): string {
-  return `${ref.display} (${ref.translation})`;
+  return `${ref.display} (${translationLabel(ref)})`;
 }
 
 function Inline({ nodes }: { nodes: readonly InlineNode[] }) {

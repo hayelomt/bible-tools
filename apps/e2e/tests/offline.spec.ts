@@ -82,3 +82,16 @@ test('in airplane mode after the first load, every screen works and any book ope
   await search.fill('Obadiah 15');
   await expect(page.getByText('Obadiah 15 · 1 note')).toBeVisible();
 });
+
+test('a share opens offline and lands in the inbox', async ({ page, context }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+  await context.setOffline(true);
+  const text = 'Look at John 10:11 before Sunday';
+  await page.goto(`/share?${new URLSearchParams({ text })}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Shared to Lamp');
+  await page.getByRole('button', { name: 'Add to inbox' }).click();
+  await expect(page.getByRole('article', { name: 'John 10:11' })).toContainText(
+    'Look at before Sunday',
+  );
+});

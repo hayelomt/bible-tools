@@ -5,6 +5,7 @@ import { LampDb } from '../db.ts';
 import { ensureDevice } from '../setup.ts';
 import {
   addInboxItem,
+  addShared,
   appendToSection,
   dismissInboxItem,
   inboxCount,
@@ -14,6 +15,7 @@ import {
   restoreInboxItem,
   sendToLesson,
   undoPlacement,
+  undoShared,
 } from './inbox.ts';
 import { createLesson } from './lessons.ts';
 import { createSection, updateSection } from './sections.ts';
@@ -211,6 +213,64 @@ describe('appending an item to a section', () => {
     await undoPlacement(placement, db);
     expect((await db.section.get(section.id))?.body).toEqual(before);
     expect(await inboxCount(DAY, db)).toBe(1);
+  });
+});
+
+describe('saving a share', () => {
+  const shared = [
+    { origin: 'share' as const, ref, text: 'For Sunday', sourceUrl: 'https://bible.com/x' },
+    {
+      origin: 'share' as const,
+      ref: { ...ref, verseStart: 29, display: 'Romans 8:29' },
+      text: null,
+    },
+  ];
+
+  it('puts each item in the inbox, and Undo takes them out', async () => {
+    const result = await addShared(shared, null, db);
+    expect((await inboxItems(DAY, db)).map((item) => item.ref?.display)).toEqual([
+      'Romans 8:28',
+      'Romans 8:29',
+    ]);
+    expect(result.items[0]).toMatchObject({ text: 'For Sunday', sourceUrl: 'https://bible.com/x' });
+    await undoShared(result, db);
+    expect(await inboxCount(DAY, db)).toBe(0);
+  });
+
+  it('puts them in a lesson as sections, out of the inbox, and Undo takes it all back', async () => {
+    const { id } = await lesson();
+    const result = await addShared(shared, { lessonId: id }, db);
+    expect(await inboxCount(DAY, db)).toBe(0);
+    const sections = await db.section.where('lessonId').equals(id).toArray();
+    expect(sections.map((section) => section.body.content.length)).toEqual([2, 1]);
+    const placed = await Promise.all(result.items.map((item) => db.inboxItem.get(item.id)));
+    expect(placed.map((item) => item?.placedInSectionId)).toEqual(
+      result.sections.map((section) => section.id),
+    );
+    await undoShared(result, db);
+    expect(
+      (await db.section.where('lessonId').equals(id).toArray()).every((x) => x.deletedAt),
+    ).toBe(true);
+    expect((await db.inboxItem.toArray()).every((item) => item.deletedAt)).toBe(true);
+    expect((await db.lesson.get(id))?.deletedAt).toBeNull();
+  });
+
+  it('makes one new lesson for them all, which Undo removes unless a section was edited', async () => {
+    const result = await addShared(shared, { newLesson: { date: DAY } }, db);
+    expect(result.lesson).toMatchObject({ title: 'Romans 8:28', source: 'personal' });
+    expect(result.lesson?.mainPassages.map((p) => p.display)).toEqual([
+      'Romans 8:28',
+      'Romans 8:29',
+    ]);
+    await updateSection(
+      result.sections[1]!.id,
+      { body: { type: 'doc', content: [paragraph('Mine')] } },
+      db,
+    );
+    await undoShared(result, db);
+    expect((await db.lesson.get(result.lesson!.id))?.deletedAt).toBeNull();
+    expect((await db.section.get(result.sections[1]!.id))?.deletedAt).toBeNull();
+    expect((await db.section.get(result.sections[0]!.id))?.deletedAt).not.toBeNull();
   });
 });
 

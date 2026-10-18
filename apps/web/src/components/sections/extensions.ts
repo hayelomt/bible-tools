@@ -1,3 +1,4 @@
+import { translationLabel, type VerseRef } from '@lamp/domain';
 import { type Editor, Extension, type Extensions, mergeAttributes, Node } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
 import { Selection } from '@tiptap/pm/state';
@@ -61,6 +62,7 @@ export const Verse = Node.create({
         'verseEnd',
         'display',
         'translation',
+        'versionLabel',
         'snapshotText',
       ].map((name) => [name, verseField(name)]),
     );
@@ -77,7 +79,7 @@ export const Verse = Node.create({
         'data-verse': JSON.stringify(node.attrs),
         class: 'rounded-md bg-muted px-1 font-sans text-[0.9em] whitespace-nowrap',
       }),
-      `${node.attrs.display} · ${node.attrs.translation}`,
+      `${node.attrs.display} · ${translationLabel(node.attrs as VerseRef)}`,
     ];
   },
 

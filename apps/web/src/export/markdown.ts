@@ -7,8 +7,10 @@ import {
   type Series,
   type Takeaway,
   toMarkdown,
+  isAppTranslation,
   TRANSLATION_NAMES,
   type TranslationId,
+  type VerseRef,
 } from '@lamp/domain';
 import { outline } from '@/components/sections/outline.ts';
 import { longDate } from '@/lib/dates.ts';
@@ -142,14 +144,15 @@ function credits(lessons: LessonForExport[]): string[] {
  * when they quote none.
  */
 export function scriptureCredit(lessons: LessonForExport[]): string | null {
-  const used = new Set<string>();
+  const used = new Set<TranslationId>();
+  const use = (ref: VerseRef) => isAppTranslation(ref.translation) && used.add(ref.translation);
   for (const { lesson, sections } of lessons) {
-    for (const passage of lesson.mainPassages) used.add(passage.translation);
-    for (const section of sections)
-      for (const ref of citedRefs(section.body)) used.add(ref.translation);
+    lesson.mainPassages.forEach(use);
+    for (const section of sections) citedRefs(section.body).forEach(use);
   }
+  // Text from outside isn't the app's to credit: it's labelled where it's quoted.
   if (used.size === 0) return null;
-  const names = [...used].toSorted().map((id) => TRANSLATION_NAMES[id as TranslationId] ?? id);
+  const names = [...used].toSorted().map((id) => TRANSLATION_NAMES[id]);
   return `Scripture: ${names.join(', ')} (public domain).`;
 }
 

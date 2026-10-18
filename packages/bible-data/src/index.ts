@@ -4,6 +4,7 @@
 export type { BookText } from './book-text.ts';
 export type { BookManifest, Manifest, TranslationManifest } from './build.ts';
 export { passageText, passageVerses, type VerseText } from './lookup.ts';
+export { MIN_WORDS_ALONE, VerseTextIndex, type VerseTextMatch } from './verse-match.ts';
 export {
   createGlossary,
   type Glossary,

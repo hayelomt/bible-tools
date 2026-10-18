@@ -35,17 +35,19 @@ export type NewInboxItem = Pick<NewRow<'inboxItem'>, 'origin' | 'ref' | 'text'> 
 
 /** Puts a verse or a note in the inbox, received now unless the item says when. */
 export function addInboxItem(fields: NewInboxItem, db: LampDb = appDb): Promise<InboxItem> {
-  return action(db, (w) =>
-    w.create('inboxItem', {
-      sourceUrl: null,
-      colour: null,
-      importId: null,
-      snoozedUntil: null,
-      placedInSectionId: null,
-      receivedAt: w.now,
-      ...fields,
-    }),
-  );
+  return action(db, (w) => createItem(w, fields));
+}
+
+function createItem(w: Writer, fields: NewInboxItem): Promise<InboxItem> {
+  return w.create('inboxItem', {
+    sourceUrl: null,
+    colour: null,
+    importId: null,
+    snoozedUntil: null,
+    placedInSectionId: null,
+    receivedAt: w.now,
+    ...fields,
+  });
 }
 
 /** What an item becomes in a section: the chip, then the text a paragraph a line. */
@@ -85,31 +87,96 @@ export function sendToLesson(
 ): Promise<Placement> {
   return action(db, async (w) => {
     const item = await waitingItem(w, id);
-    let lesson: Lesson;
-    if ('lessonId' in target) {
-      lesson = await liveLesson(w, target.lessonId);
-    } else {
-      const { snapshotText: _text, ...passage } = item.ref ?? {};
-      lesson = await w.create('lesson', {
-        seriesId: null,
-        title: inboxItemTitle(item),
-        date: target.newLesson.date,
-        source: 'personal',
-        speaker: null,
-        church: null,
-        mainPassages: item.ref ? [passage as VerseRef] : [],
-      });
-    }
-    const section = await w.create('section', {
-      lessonId: lesson.id,
-      parentId: null,
-      orderKey: await endOfLesson(w, lesson.id),
-      body: inboxItemBody(item),
-      conflictOf: null,
-      conflictDevice: null,
-    });
-    await w.update('inboxItem', id, { placedInSectionId: section.id });
+    const lesson = await targetLesson(w, target, [item]);
+    const section = await placeAtEnd(w, item, lesson);
     return { kind: 'section', itemId: id, lesson, section, newLesson: !('lessonId' in target) };
+  });
+}
+
+/** The lesson chosen, or a new one for `items`: personal, titled from the first, with their passages. */
+async function targetLesson(
+  w: Writer,
+  target: PromoteTarget,
+  items: ReadonlyArray<Pick<InboxItem, 'ref' | 'text'>>,
+): Promise<Lesson> {
+  if ('lessonId' in target) return liveLesson(w, target.lessonId);
+  const mainPassages = items.flatMap((item) => {
+    if (!item.ref) return [];
+    const { snapshotText: _text, ...passage } = item.ref;
+    return [passage as VerseRef];
+  });
+  return w.create('lesson', {
+    seriesId: null,
+    title: inboxItemTitle(items[0]!),
+    date: target.newLesson.date,
+    source: 'personal',
+    speaker: null,
+    church: null,
+    mainPassages,
+  });
+}
+
+/** A new top-level section at the end of the lesson holding the item, which is then placed. */
+async function placeAtEnd(w: Writer, item: InboxItem, lesson: Lesson): Promise<Section> {
+  const section = await w.create('section', {
+    lessonId: lesson.id,
+    parentId: null,
+    orderKey: await endOfLesson(w, lesson.id),
+    body: inboxItemBody(item),
+    conflictOf: null,
+    conflictDevice: null,
+  });
+  await w.update('inboxItem', item.id, { placedInSectionId: section.id });
+  return section;
+}
+
+/** What a share or a paste saved (M9-06), for Undo. */
+export interface Shared {
+  items: InboxItem[];
+  /** Where they went, when they went straight to a lesson. */
+  lesson: Lesson | null;
+  newLesson: boolean;
+  sections: Section[];
+}
+
+/**
+ * Saves what the share screen found (F18, M9-06): its items in the inbox, or, with a target,
+ * each as a section at the end of that lesson (or a new one), placed as Send to lesson places
+ * them, so they're out of the inbox. One action, so Undo takes all of it back.
+ */
+export function addShared(
+  items: readonly NewInboxItem[],
+  target: PromoteTarget | null,
+  db: LampDb = appDb,
+): Promise<Shared> {
+  return action(db, async (w) => {
+    // Made last first: items received together list newest id first, so the inbox shows them in
+    // the order they were shared.
+    const added: InboxItem[] = [];
+    for (const fields of items.toReversed()) added.unshift(await createItem(w, fields));
+    if (!target) return { items: added, lesson: null, newLesson: false, sections: [] };
+    const lesson = await targetLesson(w, target, added);
+    const sections: Section[] = [];
+    for (const item of added) sections.push(await placeAtEnd(w, item, lesson));
+    return { items: added, lesson, newLesson: !('lessonId' in target), sections };
+  });
+}
+
+/**
+ * Undo for `addShared`: the items are gone again, with the sections they made (and a lesson made
+ * for them), except a section edited since, which stays.
+ */
+export function undoShared(shared: Shared, db: LampDb = appDb): Promise<void> {
+  return action(db, async (w) => {
+    let kept = false;
+    for (const made of shared.sections) {
+      const section = await w.db.section.get(made.id);
+      if (section?.deletedAt === null && section.updatedAt === made.updatedAt) {
+        await w.remove('section', section.id);
+      } else if (section?.deletedAt === null) kept = true;
+    }
+    if (shared.newLesson && shared.lesson && !kept) await w.remove('lesson', shared.lesson.id);
+    for (const item of shared.items) await w.remove('inboxItem', item.id);
   });
 }
 

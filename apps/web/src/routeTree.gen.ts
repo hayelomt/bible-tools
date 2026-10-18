@@ -17,6 +17,7 @@ import { Route as AppCheckEmailRouteImport } from './routes/_app/check-email'
 import { Route as AppForgotPasswordRouteImport } from './routes/_app/forgot-password'
 import { Route as AppResetPasswordRouteImport } from './routes/_app/reset-password'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
+import { Route as AppShareRouteImport } from './routes/_app/share'
 import { Route as AppSigninRouteImport } from './routes/_app/signin'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppVerifyEmailRouteImport } from './routes/_app/verify-email'
@@ -73,6 +74,11 @@ const AppResetPasswordRoute = AppResetPasswordRouteImport.update({
 const AppSearchRoute = AppSearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShareRoute = AppShareRouteImport.update({
+  id: '/share',
+  path: '/share',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSigninRoute = AppSigninRouteImport.update({
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof AppForgotPasswordRoute
   '/reset-password': typeof AppResetPasswordRoute
   '/search': typeof AppSearchRoute
+  '/share': typeof AppShareRoute
   '/signin': typeof AppSigninRoute
   '/signup': typeof AppSignupRoute
   '/verify-email': typeof AppVerifyEmailRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof AppForgotPasswordRoute
   '/reset-password': typeof AppResetPasswordRoute
   '/search': typeof AppSearchRoute
+  '/share': typeof AppShareRoute
   '/signin': typeof AppSigninRoute
   '/signup': typeof AppSignupRoute
   '/verify-email': typeof AppVerifyEmailRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/_app/forgot-password': typeof AppForgotPasswordRoute
   '/_app/reset-password': typeof AppResetPasswordRoute
   '/_app/search': typeof AppSearchRoute
+  '/_app/share': typeof AppShareRoute
   '/_app/signin': typeof AppSigninRoute
   '/_app/signup': typeof AppSignupRoute
   '/_app/verify-email': typeof AppVerifyEmailRoute
@@ -266,6 +275,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/search'
+    | '/share'
     | '/signin'
     | '/signup'
     | '/verify-email'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/search'
+    | '/share'
     | '/signin'
     | '/signup'
     | '/verify-email'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/_app/forgot-password'
     | '/_app/reset-password'
     | '/_app/search'
+    | '/_app/share'
     | '/_app/signin'
     | '/_app/signup'
     | '/_app/verify-email'
@@ -405,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/share': {
+      id: '/_app/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof AppShareRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/signin': {
@@ -549,6 +568,7 @@ interface AppRouteChildren {
   AppForgotPasswordRoute: typeof AppForgotPasswordRoute
   AppResetPasswordRoute: typeof AppResetPasswordRoute
   AppSearchRoute: typeof AppSearchRoute
+  AppShareRoute: typeof AppShareRoute
   AppSigninRoute: typeof AppSigninRoute
   AppSignupRoute: typeof AppSignupRoute
   AppVerifyEmailRoute: typeof AppVerifyEmailRoute
@@ -574,6 +594,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppForgotPasswordRoute: AppForgotPasswordRoute,
   AppResetPasswordRoute: AppResetPasswordRoute,
   AppSearchRoute: AppSearchRoute,
+  AppShareRoute: AppShareRoute,
   AppSigninRoute: AppSigninRoute,
   AppSignupRoute: AppSignupRoute,
   AppVerifyEmailRoute: AppVerifyEmailRoute,

@@ -35,6 +35,7 @@ const VERSE_FIELDS = [
   'verseEnd',
   'display',
   'translation',
+  'versionLabel',
   'snapshotText',
 ] as const satisfies readonly (keyof VerseRef)[];
 

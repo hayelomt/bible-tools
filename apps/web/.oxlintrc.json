@@ -8,7 +8,10 @@
   "ignorePatterns": ["dist/**", "src/routeTree.gen.ts"],
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "jsx-a11y/label-has-associated-control": ["error", { "controlComponents": ["Switch"] }],
+    "jsx-a11y/label-has-associated-control": [
+      "error",
+      { "controlComponents": ["Switch", "Checkbox"] }
+    ],
     "import/no-unassigned-import": [
       "warn",
       {

@@ -12,6 +12,29 @@ export const TRANSLATION_NAMES: Record<TranslationId, string> = {
 };
 
 /**
+ * What a chip's text can come from (TECH-DESIGN §17.3, decision 63): a translation in the app, or
+ * text from outside kept as it came. `shared` came with a share or an import; `pasted` was pasted
+ * and matched neither the BSB nor the KJV. Lamp never fills or replaces their text.
+ */
+export const CHIP_TRANSLATIONS = [...TRANSLATIONS, 'shared', 'pasted'] as const;
+export type ChipTranslation = (typeof CHIP_TRANSLATIONS)[number];
+
+/** Whether the app has this translation's text: the BSB or the KJV, not text from outside. */
+export const isAppTranslation = (translation: ChipTranslation): translation is TranslationId =>
+  (TRANSLATIONS as readonly string[]).includes(translation);
+
+type ChipSource = Pick<VerseRef, 'translation' | 'versionLabel'>;
+
+/** The label a chip shows after its reference: "BSB", the source's version ("NIV"), or "shared". */
+export const translationLabel = (ref: ChipSource): string => ref.versionLabel ?? ref.translation;
+
+/** The chip's translation in full, for the viewer and screen readers: "Berean Standard Bible". */
+export function translationName(ref: ChipSource): string {
+  if (isAppTranslation(ref.translation)) return TRANSLATION_NAMES[ref.translation];
+  return ref.versionLabel ?? (ref.translation === 'shared' ? 'Shared text' : 'Pasted text');
+}
+
+/**
  * A passage, without the text: one verse, a verse range, a whole chapter, a chapter range or a
  * range across chapters ("Romans 8:38–9:5").
  */
@@ -31,7 +54,9 @@ export interface VerseRef extends Passage {
   /** "Romans 8:28–30", formatted from the fields by `formatPassage`. */
   display: string;
   /** Which text the snapshot came from. */
-  translation: TranslationId;
+  translation: ChipTranslation;
+  /** The version a `shared` or `pasted` text's source named ("NIV"), shown in place of it. */
+  versionLabel?: string;
   /** Frozen at capture (F3). */
   snapshotText?: string;
 }

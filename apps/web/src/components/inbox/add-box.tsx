@@ -49,7 +49,7 @@ export function AddBox({ onAdded }: { onAdded?: (id: string) => void }) {
 
   return (
     <form
-      className="flex items-end gap-2"
+      className="flex w-full items-end gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         void add();
@@ -82,7 +82,11 @@ export function AddBox({ onAdded }: { onAdded?: (id: string) => void }) {
 export async function chipFor(entry: string, translation: TranslationId): Promise<VerseRef | null> {
   const parsed = parseReference(entry);
   if (!parsed.ok) return null;
-  const ref: VerseRef = { ...parsed.ref, translation };
+  return withBookText({ ...parsed.ref, translation }, translation);
+}
+
+/** The chip with its text from the book, when it's here or arrives within 2 s; as it was if not. */
+export async function withBookText(ref: VerseRef, translation: TranslationId): Promise<VerseRef> {
   const book = await Promise.race([
     whenBook(translation, ref.book),
     new Promise<null>((resolve) => setTimeout(resolve, BOOK_WAIT_MS, null)),

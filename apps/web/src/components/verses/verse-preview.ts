@@ -1,4 +1,4 @@
-import type { VerseRef } from '@lamp/domain';
+import { isAppTranslation, translationLabel, type VerseRef } from '@lamp/domain';
 import { type Editor, Extension } from '@tiptap/core';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -6,6 +6,7 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { useEffect } from 'react';
 import { bookState, onBookArrived } from '@/data/bible.ts';
 import { useSettings } from '@/data/use-settings.ts';
+import { missingText } from './verse-chip.ts';
 import { verseTextNodes } from './verse-text.tsx';
 
 /** The user's "Show verse text in notes" setting, for every open editor. */
@@ -82,10 +83,7 @@ function previews(doc: PmNode): DecorationSet {
         Decoration.widget(pos + node.nodeSize, () => previewDom(refs), {
           // Kept while the chips and their books are the same, so typing doesn't redraw it.
           key: refs
-            .map(
-              (r) =>
-                `${r.display}|${r.snapshotText ?? ''}|${bookState(r.translation, r.book).status}`,
-            )
+            .map((r) => `${r.display}|${r.snapshotText ?? ''}|${bookOf(r)?.status ?? 'outside'}`)
             .join('\n'),
           side: -1,
           ignoreSelection: true,
@@ -109,17 +107,21 @@ function previewDom(refs: VerseRef[]): HTMLElement {
     const label = document.createElement('div');
     label.className =
       'mb-0.5 font-sans text-[0.7rem] font-medium tracking-wide text-primary uppercase';
-    label.textContent = `${ref.display} · ${ref.translation}`;
+    label.textContent = `${ref.display} · ${translationLabel(ref)}`;
     const text = document.createElement('div');
     if (ref.snapshotText) {
       text.className = 'text-foreground/80 italic';
-      text.append(...verseTextNodes(bookState(ref.translation, ref.book), ref, ref.snapshotText));
+      text.append(...verseTextNodes(bookOf(ref), ref, ref.snapshotText));
     } else {
       text.className = 'font-sans text-sm text-muted-foreground';
-      text.textContent = 'Text not downloaded yet.';
+      text.textContent = missingText(ref);
     }
     item.append(label, text);
     dom.append(item);
   }
   return dom;
 }
+
+/** The book that numbers the chip's verses; none for text from outside. */
+const bookOf = (ref: VerseRef) =>
+  isAppTranslation(ref.translation) ? bookState(ref.translation, ref.book) : null;

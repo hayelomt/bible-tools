@@ -1,4 +1,4 @@
-import { passageSlug, TRANSLATION_NAMES, type TranslationId } from '@lamp/domain';
+import { isAppTranslation, passageSlug, translationName } from '@lamp/domain';
 import {
   Popover,
   PopoverContent,
@@ -55,7 +55,7 @@ export function VerseViewer() {
           >
             <PopoverHeader>
               <PopoverTitle className="text-base">{shown.ref.display}</PopoverTitle>
-              <PopoverDescription>{translationName(shown)}</PopoverDescription>
+              <PopoverDescription>{translationName(shown.ref)}</PopoverDescription>
             </PopoverHeader>
             <ChipText chip={shown} />
             <IndexLink chip={shown} />
@@ -75,7 +75,7 @@ export function VerseViewer() {
         >
           <div className="flex flex-col gap-0.5 px-4 pt-4 pb-3">
             <SheetTitle className="text-lg">{shown.ref.display}</SheetTitle>
-            <SheetDescription>{translationName(shown)}</SheetDescription>
+            <SheetDescription>{translationName(shown.ref)}</SheetDescription>
           </div>
           <div className="flex flex-col gap-3 px-4 pb-6">
             <ChipText chip={shown} />
@@ -96,16 +96,14 @@ function onOpenChange(next: boolean, details: { reason: string; event: Event }) 
   closeChip();
 }
 
-function translationName({ ref }: OpenChip): string {
-  return TRANSLATION_NAMES[ref.translation as TranslationId] ?? ref.translation;
-}
-
 /** The snapshot, or, for a chip inserted before its book was downloaded, that it's coming. */
 function ChipText({ chip: { ref } }: { chip: OpenChip }) {
   if (!ref.snapshotText) {
     return (
       <p className="text-muted-foreground">
-        Text not downloaded yet. It’s added when the Bible is downloaded.
+        {isAppTranslation(ref.translation)
+          ? 'Text not downloaded yet. It’s added when the Bible is downloaded.'
+          : 'No text came with it.'}
       </p>
     );
   }

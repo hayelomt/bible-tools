@@ -199,6 +199,25 @@ describe('Markdown export', () => {
     );
   });
 
+  it('credits only the translations Lamp has, not text from outside', async () => {
+    const niv: VerseRef = { ...JOHN_10_9, translation: 'shared', versionLabel: 'NIV' };
+    const lesson = await createLesson(
+      {
+        seriesId: null,
+        title: 'Shared',
+        date: '2026-10-14',
+        source: 'personal',
+        speaker: null,
+        church: null,
+        mainPassages: [niv],
+      },
+      db,
+    );
+    const markdown = (await exportLesson(lesson.id, db))?.markdown;
+    expect(markdown).toContain('John 10:9');
+    expect(markdown).not.toContain('Scripture:');
+  });
+
   it('is null for a lesson or series that is gone', async () => {
     expect(await exportLesson('missing', db)).toBeNull();
     expect(await exportSeries('missing', db)).toBeNull();

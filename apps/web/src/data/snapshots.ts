@@ -1,5 +1,11 @@
 import type { BookText } from '@lamp/bible-data';
-import type { BookCode, SectionBody, TranslationId, VerseRef } from '@lamp/domain';
+import {
+  type BookCode,
+  isAppTranslation,
+  type SectionBody,
+  type TranslationId,
+  type VerseRef,
+} from '@lamp/domain';
 import { action } from './action.ts';
 import { snapshotText, whenBook } from './bible.ts';
 import { db as appDb, type LampDb } from './db.ts';
@@ -15,17 +21,24 @@ interface Node {
   content?: Node[];
 }
 
-function eachVerse(nodes: readonly Node[], visit: (ref: VerseRef) => void) {
+/** Calls `visit` on each chip with a translation in the app: text from outside is never filled. */
+function eachVerse(
+  nodes: readonly Node[],
+  visit: (ref: VerseRef & { translation: TranslationId }) => void,
+) {
   for (const node of nodes) {
-    if (node.type === 'verse') visit(node.attrs as VerseRef);
-    else if (node.content) eachVerse(node.content, visit);
+    const ref = node.attrs as VerseRef;
+    if (node.type === 'verse') {
+      if (isAppTranslation(ref.translation))
+        visit(ref as VerseRef & { translation: TranslationId });
+    } else if (node.content) eachVerse(node.content, visit);
   }
 }
 
 /** A translation's book, as `booksWaiting` names it and `withSnapshots` looks it up: "BSB:ROM". */
 export type BookKey = `${TranslationId}:${BookCode}`;
 
-function bookKey(ref: VerseRef): BookKey {
+function bookKey(ref: VerseRef & { translation: TranslationId }): BookKey {
   return `${ref.translation}:${ref.book}`;
 }
 
