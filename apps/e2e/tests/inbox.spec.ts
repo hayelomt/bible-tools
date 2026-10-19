@@ -15,7 +15,7 @@ interface Item {
   id: string;
   origin: string;
   text: string | null;
-  ref: { display: string; translation: string; snapshotText?: string } | null;
+  ref: { display: string; translation?: string; snapshotText?: string } | null;
   placedInSectionId: string | null;
 }
 
@@ -53,7 +53,7 @@ test('adds notes and verses, sends, appends and dismisses them, each with Undo',
   expect(added.find((row) => row.ref)).toMatchObject({
     origin: 'typed',
     text: null,
-    ref: { display: 'John 10:11', translation: 'BSB' },
+    ref: { book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11' },
   });
 
   // Send to lesson: the most recent lesson is chosen; the item leaves the list.

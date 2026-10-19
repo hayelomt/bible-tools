@@ -4,6 +4,7 @@ import { Button } from '@lamp/ui/components/button';
 import { cn } from 'cn';
 import { X } from 'lucide-react';
 import { useLayoutEffect, useRef, useState } from 'react';
+import { activeTranslation } from '@/data/translation.ts';
 import { useKeyboardInset } from '@/lib/use-keyboard.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import {
@@ -15,7 +16,8 @@ import {
 } from './paste-chips.ts';
 import { LAPTOP_QUERY } from './verse-suggestions.tsx';
 
-const chipName = (chip: PlacedChip) => `${chip.ref.display} · ${translationLabel(chip.ref)}`;
+const chipName = (chip: PlacedChip) =>
+  `${chip.ref.display} · ${translationLabel(chip.ref, activeTranslation())}`;
 
 /**
  * The paste prompt (F19, M9-08, wireframes/interop.md): the chips a paste could make, with Make
@@ -67,7 +69,7 @@ function Prompt({ prompt }: { prompt: PastePrompt }) {
   const one = chips.length === 1 ? chips[0]! : null;
   const summary = one
     ? one.matchedOnly
-      ? `This is ${one.ref.display} (${translationLabel(one.ref)}).`
+      ? `This is ${one.ref.display} (${translationLabel(one.ref, activeTranslation())}).`
       : chipName(one)
     : `${chips.length} references found`;
 

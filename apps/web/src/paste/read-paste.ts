@@ -1,11 +1,5 @@
 import type { VerseTextMatch } from '@lamp/bible-data';
-import {
-  findReferences,
-  type FoundReference,
-  type TranslationId,
-  type VerseRef,
-  versionAfter,
-} from '@lamp/domain';
+import { findReferences, type FoundReference, type VerseRef, versionAfter } from '@lamp/domain';
 import { samePassage, tidy } from '@/share/read-share.ts';
 
 /** A chip pasting could make (F19): the span of the pasted text it replaces, and the chip. */
@@ -13,8 +7,6 @@ export interface PasteChip {
   from: number;
   to: number;
   ref: VerseRef;
-  /** Its text is still to come from Lamp's book, in `ref.translation`. */
-  fromBook: boolean;
   /** Found by its words (the matcher), with no reference in the text. */
   matchedOnly: boolean;
 }
@@ -27,20 +19,17 @@ const CLOSING = /^[.,;:!?’”"')\]]*/u;
 
 /**
  * Reads pasted text for chips (F19, M9-08, wireframes/interop.md "Paste prompt"): the references
- * in it (M9-03) and the whole BSB or KJV verses the matcher found (M9-04, `matches`).
- * - A matched verse is a chip in its translation, with the text as pasted (decision 69). A
- *   reference just before or after it, for the same passage, goes into the same chip.
+ * in it (M9-03) and the whole BSB or KJV verses the matcher found (M9-04, `matches`). A chip of
+ * the app's own text is the passage alone, read in the translation picked in Settings (decision
+ * 97), so a verse matched in the KJV reads in the BSB when that's the one picked.
+ * - A matched verse is a chip that replaces it. A reference just before or after it, for the same
+ *   passage, goes into the same chip.
  * - A reference with another version after it ("John 3:16 NIV") is a `pasted` chip with that
  *   label, and the verse text is the rest of its line, or the line before when the reference stands
- *   on its own (as YouVersion copies it); BSB or KJV after it gives a chip from that book.
- * - Any other reference is a chip from Lamp's book in `translation`, and the text around it stays
- *   (decided 2026-10-18).
+ *   on its own (as YouVersion copies it); BSB or KJV after it goes into the chip.
+ * - Any other reference is a chip, and the text around it stays (decided 2026-10-18).
  */
-export function readPaste(
-  text: string,
-  matches: readonly VerseTextMatch[],
-  translation: TranslationId,
-): PasteChip[] {
+export function readPaste(text: string, matches: readonly VerseTextMatch[]): PasteChip[] {
   const references = findReferences(text);
   const used = new Set<FoundReference>();
   const chips: PasteChip[] = [];
@@ -48,7 +37,6 @@ export function readPaste(
   for (const match of matches) {
     let from = match.from - (OPENING.exec(text.slice(0, match.from))?.[0].length ?? 0);
     let to = match.to + (CLOSING.exec(text.slice(match.to))?.[0].length ?? 0);
-    const verseText = tidy(text.slice(match.from, to));
     // The same passage named next to it: "Romans 8:28 And we know…", "“…”\nJohn 10:11 BSB".
     const named = references.find((found) => {
       if (used.has(found) || !samePassage(found.ref, match.passage)) return false;
@@ -62,17 +50,7 @@ export function readPaste(
       from = Math.min(from, named.from);
       to = Math.max(to, labelEnd(text, named));
     }
-    chips.push({
-      from,
-      to,
-      fromBook: false,
-      matchedOnly: !named,
-      ref: {
-        ...match.passage,
-        translation: match.translation as TranslationId,
-        ...(verseText && { snapshotText: verseText }),
-      },
-    });
+    chips.push({ from, to, matchedOnly: !named, ref: { ...match.passage } });
   }
 
   for (const found of references) {
@@ -81,19 +59,12 @@ export function readPaste(
     const end = found.to + (label?.length ?? 0);
     const ref = { ...found.ref };
     if (label?.label === 'BSB' || label?.label === 'KJV') {
-      chips.push({
-        from: found.from,
-        to: end,
-        fromBook: true,
-        matchedOnly: false,
-        ref: { ...ref, translation: label.label },
-      });
+      chips.push({ from: found.from, to: end, matchedOnly: false, ref });
     } else if (label) {
       const verse = labelledText(text, found.from, end);
       chips.push({
         from: Math.min(found.from, verse?.from ?? found.from),
         to: Math.max(end, verse?.to ?? end),
-        fromBook: false,
         matchedOnly: false,
         ref: {
           ...ref,
@@ -103,13 +74,7 @@ export function readPaste(
         },
       });
     } else {
-      chips.push({
-        from: found.from,
-        to: found.to,
-        fromBook: true,
-        matchedOnly: false,
-        ref: { ...ref, translation },
-      });
+      chips.push({ from: found.from, to: found.to, matchedOnly: false, ref });
     }
   }
   return chips.toSorted((a, b) => a.from - b.from);

@@ -122,6 +122,7 @@ export {
   START_EASE,
 } from './srs.ts';
 export { MAX_TAG_NAME_LENGTH, normaliseTagName, tagKey } from './tag-names.ts';
+export { chipsWithoutAppText, withoutAppText } from './app-text.ts';
 export {
   CHIP_TRANSLATIONS,
   type ChipTranslation,
@@ -130,6 +131,8 @@ export {
   checkPassage,
   formatPassage,
   type OrdinalRange,
+  OUTSIDE_TRANSLATIONS,
+  type OutsideTranslation,
   type Passage,
   type PassageError,
   parsePassageSlug,
@@ -137,11 +140,14 @@ export {
   passageSlug,
   passagesOverlap,
   rangesOverlap,
+  refText,
+  refTranslation,
   TRANSLATION_NAMES,
   TRANSLATIONS,
   translationLabel,
   translationName,
   type TranslationId,
+  type VerseReader,
   type VerseRef,
   verseOrdinal,
 } from './verse-ref.ts';

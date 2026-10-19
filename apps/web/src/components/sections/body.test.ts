@@ -9,8 +9,12 @@ const ROM_8_28 = {
   chapter: 8,
   verseStart: 28,
   display: 'Romans 8:28',
-  translation: 'BSB',
-  snapshotText: 'We know that all things work together for good…',
+} as const;
+const NIV = {
+  ...ROM_8_28,
+  translation: 'shared',
+  versionLabel: 'NIV',
+  snapshotText: 'And we know that in all things God works for the good…',
 } as const;
 
 /** Every node and mark a body allows. */
@@ -25,6 +29,7 @@ const FULL: SectionBody = {
         { type: 'text', text: 'the door', marks: [{ type: 'bold' }, { type: 'italic' }] },
         { type: 'text', text: ' ' },
         { type: 'verse', attrs: ROM_8_28 },
+        { type: 'verse', attrs: NIV },
         { type: 'text', text: ' see', marks: [{ type: 'link', attrs: { href: 'https://x.org' } }] },
       ],
     },
@@ -101,6 +106,18 @@ describe('toBody', () => {
     const body = toBody(editorWith(FULL).getJSON());
     expect(body).toEqual(FULL);
     expect(bodySchema.parse(body)).toEqual(FULL);
+  });
+
+  it('leaves out the BSB or KJV text a chip copied from an older app holds (decision 97)', () => {
+    const old = { ...ROM_8_28, translation: 'KJV', snapshotText: 'And we know…' };
+    const body = toBody({
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'verse', attrs: old }] }],
+    });
+    expect(body.content[0]).toEqual({
+      type: 'paragraph',
+      content: [{ type: 'verse', attrs: ROM_8_28 }],
+    });
   });
 
   it('keeps a link chip’s target and label, and drops one it can’t store', () => {

@@ -4,9 +4,9 @@ import { useSyncExternalStore } from 'react';
 import { db, SETTINGS_KEY } from './db.ts';
 
 /**
- * The translation the app reads (F8) and quotes in new chips and highlights: the user's choice in
- * settings (`defaultTranslation`, synced), followed live once background work starts, and
- * `DEFAULT_TRANSLATION` until then. A chip keeps the translation it was captured from.
+ * The translation the app reads (F8) and every chip, highlight and memory verse quotes (decision
+ * 97): the user's choice in settings (`defaultTranslation`, synced), followed live from before the
+ * first screen, and `DEFAULT_TRANSLATION` until then. Only text from outside keeps its own.
  */
 let active: TranslationId = DEFAULT_TRANSLATION;
 const listeners = new Set<(translation: TranslationId) => void>();
@@ -38,12 +38,14 @@ let pasteChips = true;
 /** Whether pasting offers verse chips (F19, `UserSettings.pasteChips`), followed like the translation. */
 export const pasteChipsOn = (): boolean => pasteChips;
 
+let following: Promise<void> | undefined;
+
 /**
  * Follows the settings row, so a change here or from another device applies at once. Resolves once
- * the row has been read.
+ * the row has been read; started once.
  */
 export function followSettings(): Promise<void> {
-  return new Promise((resolve) => {
+  following ??= new Promise((resolve) => {
     liveQuery(() => db.userSettings.get(SETTINGS_KEY)).subscribe({
       next: (settings) => {
         setActiveTranslation(settings?.defaultTranslation ?? DEFAULT_TRANSLATION);
@@ -56,6 +58,7 @@ export function followSettings(): Promise<void> {
       },
     });
   });
+  return following;
 }
 
 /** The active translation, re-rendering when it changes. */

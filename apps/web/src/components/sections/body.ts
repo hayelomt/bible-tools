@@ -5,6 +5,7 @@ import {
   MAX_LINK_LABEL,
   type ListItem,
   type Mark,
+  OUTSIDE_TRANSLATIONS,
   type Paragraph,
   type SectionBody,
   toPlainText,
@@ -40,6 +41,7 @@ const VERSE_FIELDS = [
   'versionLabel',
   'snapshotText',
 ] as const satisfies readonly (keyof VerseRef)[];
+const OUTSIDE_ONLY = new Set<keyof VerseRef>(['translation', 'versionLabel', 'snapshotText']);
 
 function blocks(nodes: JSONContent[] | undefined): Block[] {
   return (nodes ?? []).flatMap((node) => {
@@ -102,8 +104,12 @@ function inline(nodes: JSONContent[] | undefined): InlineNode[] {
       return [{ type: 'text', text: node.text, ...(kept.length > 0 && { marks: kept }) }];
     }
     if (node.type === 'verse' && node.attrs) {
+      // Only text from outside keeps a translation and text (decision 97): a chip copied from an
+      // older version of the app leaves its BSB or KJV snapshot behind.
+      const outside = (OUTSIDE_TRANSLATIONS as readonly unknown[]).includes(node.attrs.translation);
+      const fields = outside ? VERSE_FIELDS : VERSE_FIELDS.filter((key) => !OUTSIDE_ONLY.has(key));
       const attrs = Object.fromEntries(
-        VERSE_FIELDS.flatMap((key) => (node.attrs?.[key] == null ? [] : [[key, node.attrs[key]]])),
+        fields.flatMap((key) => (node.attrs?.[key] == null ? [] : [[key, node.attrs[key]]])),
       );
       return [{ type: 'verse', attrs: attrs as unknown as VerseRef }];
     }

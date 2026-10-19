@@ -21,7 +21,7 @@ interface Item {
   sourceUrl: string | null;
   ref: {
     display: string;
-    translation: string;
+    translation?: string;
     versionLabel?: string;
     snapshotText?: string;
   } | null;
@@ -49,9 +49,11 @@ test('a verse shared from YouVersion lands in the inbox, with Undo', async ({ pa
       origin: 'share',
       text: null,
       sourceUrl: 'https://bible.com/bible/3034/jhn.10.11.BSB',
-      ref: { display: 'John 10:11', translation: 'BSB', snapshotText: GOOD_SHEPHERD },
+      // The passage alone: its text is read from the BSB (decision 97).
+      ref: { book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11' },
     },
   ]);
+  expect((await rows<Item>(page, 'inboxItem'))[0]?.ref).not.toHaveProperty('snapshotText');
 
   await toast(page, 'Added to your inbox.').getByRole('button', { name: 'Undo' }).click();
   await expect(page.getByText('Nothing waiting.')).toBeVisible();

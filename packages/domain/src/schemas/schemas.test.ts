@@ -45,7 +45,6 @@ const ROM_8_28: VerseRef = {
   chapter: 8,
   verseStart: 28,
   display: 'Romans 8:28',
-  translation: 'BSB',
 };
 
 /** One valid row per synced entity. */
@@ -486,10 +485,23 @@ describe('verseRefSchema', () => {
   });
 
   it('refuses another translation, or a label that is empty or too long', () => {
+    const shared = { ...ROM_8_28, translation: 'shared' };
     expect(verseRefSchema.safeParse({ ...ROM_8_28, translation: 'NIV' }).success).toBe(false);
-    expect(verseRefSchema.safeParse({ ...ROM_8_28, versionLabel: ' ' }).success).toBe(false);
-    expect(verseRefSchema.safeParse({ ...ROM_8_28, versionLabel: 'X'.repeat(17) }).success).toBe(
+    expect(verseRefSchema.safeParse({ ...shared, versionLabel: ' ' }).success).toBe(false);
+    expect(verseRefSchema.safeParse({ ...shared, versionLabel: 'X'.repeat(17) }).success).toBe(
       false,
     );
+  });
+
+  it("stores the app's own text as the passage alone, never its translation or text (decision 97)", () => {
+    expect(verseRefSchema.parse(ROM_8_28)).toEqual(ROM_8_28);
+    for (const extra of [
+      { translation: 'BSB' },
+      { translation: 'KJV', snapshotText: 'And we know…' },
+      { snapshotText: 'And we know…' },
+      { versionLabel: 'NIV' },
+    ]) {
+      expect(verseRefSchema.safeParse({ ...ROM_8_28, ...extra }).success).toBe(false);
+    }
   });
 });

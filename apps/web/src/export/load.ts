@@ -1,4 +1,5 @@
 import {
+  citedRefs,
   isWholeBook,
   keysBetween,
   type Lesson,
@@ -8,8 +9,10 @@ import {
   type Passage,
   type Section,
   type Series,
+  type VerseRef,
 } from '@lamp/domain';
 import { db as appDb, type LampDb } from '@/data/db.ts';
+import { verseReader } from '@/data/verse-text.ts';
 import {
   lessonById,
   lessonQuestions,
@@ -36,7 +39,9 @@ export interface Exported {
   markdown: string;
 }
 
-async function lessonData(lesson: Lesson, db: LampDb): Promise<LessonForExport> {
+type LessonRows = Omit<LessonForExport, 'verses'>;
+
+async function lessonRows(lesson: Lesson, db: LampDb): Promise<LessonRows> {
   const [sections, tags, takeaways, questions] = await Promise.all([
     lessonSections(lesson.id, db),
     tagsOf({ kind: 'lesson', id: lesson.id }, db),
@@ -96,13 +101,31 @@ export interface SeriesForExport {
   lessons: LessonForExport[];
 }
 
+/** Every reference the lessons quote: their main passages and their sections' chips. */
+const refsOf = (lessons: readonly LessonRows[]): VerseRef[] =>
+  lessons.flatMap(({ lesson, sections }) => [
+    ...lesson.mainPassages,
+    ...sections.flatMap((section) => citedRefs(section.body)),
+  ]);
+
+/**
+ * The lessons with a reader of their chips' text, in the translation picked in Settings (decision
+ * 97). Read last: in a live query, nothing is read from the database after the books.
+ */
+async function withVerses(lessons: LessonRows[]): Promise<LessonForExport[]> {
+  const verses = await verseReader(refsOf(lessons));
+  return lessons.map((rows) => ({ ...rows, verses }));
+}
+
 /** A lesson and its rows, as the exports and the print view read them; null when it's gone. */
 export async function lessonForExport(
   id: string,
   db: LampDb = appDb,
 ): Promise<LessonForExport | null> {
   const lesson = await lessonById(id, db);
-  return lesson ? lessonData(lesson, db) : null;
+  if (!lesson) return null;
+  const [data] = await withVerses([await lessonRows(lesson, db)]);
+  return data!;
 }
 
 /** A series and its lessons in date order, with their rows; null when it's gone. */
@@ -113,7 +136,8 @@ export async function seriesForExport(
   const series = await seriesById(id, db);
   if (!series) return null;
   const lessons = await seriesLessons(id, db);
-  return { series, lessons: await Promise.all(lessons.map((lesson) => lessonData(lesson, db))) };
+  const rows = await Promise.all(lessons.map((lesson) => lessonRows(lesson, db)));
+  return { series, lessons: await withVerses(rows) };
 }
 
 /** A lesson as Markdown, read from the device; null when it's gone. */
@@ -180,9 +204,8 @@ export async function exportDigestDraft(
     ({ id, body }, i) =>
       ({ id, body, lessonId: quarter, parentId: null, orderKey: keys[i]! }) as unknown as Section,
   );
-  return {
-    fileName: fileName(draft.title, date),
-    markdown: lessonMarkdown({
+  const [data] = await withVerses([
+    {
       lesson,
       sections,
       sectionTags: new Map(),
@@ -190,8 +213,9 @@ export async function exportDigestDraft(
       takeaways: [],
       questions: [],
       links: await linkTargets(sections, db),
-    }),
-  };
+    },
+  ]);
+  return { fileName: fileName(draft.title, date), markdown: lessonMarkdown(data!) };
 }
 
 /** The compile view of `scope` as Markdown (M10-04): "commentary-on-romans-8.md". */
@@ -199,8 +223,10 @@ export async function exportCommentary(scope: Passage, db: LampDb = appDb): Prom
   const title = scopeTitle(scope);
   const data = await commentary(scope, db);
   const sections = data.groups.flatMap((g) => g.entries.map((e) => e.item.section));
+  const links = await linkTargets(sections, db);
+  const verses = await verseReader(sections.flatMap((s) => citedRefs(s.body)));
   return {
     fileName: fileName(`Commentary on ${title}`),
-    markdown: commentaryMarkdown(title, data, isWholeBook(scope), await linkTargets(sections, db)),
+    markdown: commentaryMarkdown(title, data, isWholeBook(scope), verses, links),
   };
 }

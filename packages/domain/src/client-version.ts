@@ -45,6 +45,12 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
     change:
       'M12 (reflection and export): passage visits and resurface dismissals; the `resurfacing` and `lastDigestQuarter` settings',
   },
+  {
+    minClientVersion: '0.6.0',
+    fingerprint: '3743ea89',
+    change:
+      "Verse references keep no translation or text of the app's own (decision 97): only text from outside, `shared` or `pasted`, has them",
+  },
 ];
 
 /**

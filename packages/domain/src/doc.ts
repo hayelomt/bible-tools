@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { idSchema, lineSchema } from './schemas/common.ts';
 import { verseRefSchema } from './schemas/verse-ref.ts';
-import { translationLabel, type VerseRef } from './verse-ref.ts';
+import { refText, translationLabel, type VerseReader, type VerseRef } from './verse-ref.ts';
 
 /**
  * Section bodies: ProseMirror JSON (the format TipTap stores) restricted to the nodes Lamp uses
@@ -182,9 +182,9 @@ function eachTextBlock(blocks: readonly Block[], visit: (block: TextBlock) => vo
   }
 }
 
-/** The text a verse chip stands for in plain text and Markdown: "Romans 8:28 (BSB)", "(NIV)". */
-function verseLabel(ref: VerseRef): string {
-  return `${ref.display} (${translationLabel(ref)})`;
+/** The text a verse chip stands for in Markdown: "Romans 8:28 (BSB)", "(NIV)". */
+function verseLabel(ref: VerseRef, verses: VerseReader): string {
+  return `${ref.display} (${translationLabel(ref, verses.translation)})`;
 }
 
 /** An inline node as plain text: a verse chip as its reference, a link chip as its label. */
@@ -239,6 +239,8 @@ export function linkedTargets(body: SectionBody): NoteLinkAttrs[] {
 export type LinkWriter = (link: NoteLinkAttrs) => { text: string; href?: string } | null;
 
 export interface MarkdownOptions {
+  /** Where the chips' text and translation are read. */
+  verses: VerseReader;
   /** `###` by default; a lesson export puts section headings under its own. */
   headingLevel?: number;
   /** Without one, a link chip is its label as plain text. */
@@ -247,15 +249,15 @@ export interface MarkdownOptions {
 
 /**
  * Markdown for export (F11). A verse chip becomes "Romans 8:28 (BSB)" in the sentence, and its
- * snapshot follows the paragraph as a quote: "> **Romans 8:28 (BSB)** And we know…". A link chip
- * becomes a relative reference, as `links` writes it (F23, decided in M10-05): "[The Good
+ * text, read from `verses`, follows the paragraph as a quote: "> **Romans 8:28 (BSB)** And we
+ * know…". A link chip becomes a relative reference, as `links` writes it (F23, decided in M10-05): "[The Good
  * Shepherd](2026-10-12-the-good-shepherd.md)".
  */
 export function toMarkdown(
   body: SectionBody,
-  { headingLevel = 3, links }: MarkdownOptions = {},
+  { headingLevel = 3, links, verses }: MarkdownOptions,
 ): string {
-  const context: Context = { heading: '#'.repeat(headingLevel), links };
+  const context: Context = { heading: '#'.repeat(headingLevel), links, verses };
   return blocksToMarkdown(body.content, context).join('\n') + '\n';
 }
 
@@ -263,6 +265,7 @@ export function toMarkdown(
 interface Context {
   heading: string;
   links: LinkWriter | undefined;
+  verses: VerseReader;
 }
 
 /** One line of the user's text (a title, a takeaway) as Markdown that shows it as typed. */
@@ -283,10 +286,10 @@ function blockToMarkdown(block: Block, context: Context): string[][] {
   switch (block.type) {
     case 'paragraph':
     case 'heading': {
-      const text = inlineToMarkdown(block.content ?? [], context.links);
+      const text = inlineToMarkdown(block.content ?? [], context);
       const line = block.type === 'heading' ? `${context.heading} ${text}` : escapeLineStart(text);
-      const quotes = (block.content ?? []).flatMap((node) =>
-        node.type === 'verse' && node.attrs.snapshotText ? [verseQuote(node.attrs)] : [],
+      const quotes = verseTexts(block, context.verses).map((verse) =>
+        verseQuote(verse.ref, verse.text, context.verses),
       );
       return [text ? [line] : [], ...quotes];
     }
@@ -307,9 +310,18 @@ function listItem(marker: string, item: ListItem, context: Context): string[] {
   return [`${marker}${first ?? ''}`.trimEnd(), ...rest.map((line) => (line ? indent + line : ''))];
 }
 
-function verseQuote(ref: VerseRef): string[] {
-  const lines = escapeText(ref.snapshotText!.trim()).split(/\r?\n/);
-  lines[0] = `**${verseLabel(ref)}** ${lines[0]}`;
+/** A text block's chips that have text, with it. */
+function verseTexts(block: TextBlock, verses: VerseReader): { ref: VerseRef; text: string }[] {
+  return (block.content ?? []).flatMap((node) => {
+    if (node.type !== 'verse') return [];
+    const text = refText(node.attrs, verses).trim();
+    return text ? [{ ref: node.attrs, text }] : [];
+  });
+}
+
+function verseQuote(ref: VerseRef, text: string, verses: VerseReader): string[] {
+  const lines = escapeText(text).split(/\r?\n/);
+  lines[0] = `**${verseLabel(ref, verses)}** ${lines[0]}`;
   return lines.map((line) => `> ${line}`.trimEnd());
 }
 
@@ -319,7 +331,7 @@ const sameMark = (a: Mark, b: Mark) =>
   a.type === b.type && (a.type !== 'link' || a.attrs.href === (b as typeof a).attrs.href);
 
 /** Inline content with marks opened and closed as runs change, so "**a *b***" nests properly. */
-function inlineToMarkdown(nodes: readonly InlineNode[], links: LinkWriter | undefined): string {
+function inlineToMarkdown(nodes: readonly InlineNode[], { links, verses }: Context): string {
   let out = '';
   let open: Mark[] = [];
 
@@ -346,7 +358,7 @@ function inlineToMarkdown(nodes: readonly InlineNode[], links: LinkWriter | unde
       node.type === 'text'
         ? escapeText(node.text)
         : node.type === 'verse'
-          ? verseLabel(node.attrs)
+          ? verseLabel(node.attrs, verses)
           : linkToMarkdown(node.attrs, links);
     if (marks.length > keep) {
       // Likewise, emphasis can't start before a space.
@@ -398,6 +410,8 @@ function escapeLineStart(line: string): string {
 }
 
 export interface NotionOptions {
+  /** Where the chips' text and translation are read. */
+  verses: VerseReader;
   /** `##` by default: Notion has three heading levels, and the lesson's title takes the first. */
   headingLevel?: number;
   links?: LinkWriter;
@@ -413,7 +427,7 @@ export interface NotionOptions {
 type NotionItem =
   | { type: 'line'; text: string; quote: boolean }
   | { type: 'list'; lines: string[] }
-  | { type: 'verse'; ref: VerseRef };
+  | { type: 'verse'; ref: VerseRef; text: string };
 
 /**
  * A section body as Markdown that pastes into Notion with its structure (F33, M12-06): the blocks
@@ -424,10 +438,10 @@ type NotionItem =
  */
 export function toNotionBlocks(
   body: SectionBody,
-  { headingLevel = 2, links, quoted = false, lead, after }: NotionOptions = {},
+  { headingLevel = 2, links, verses, quoted = false, lead, after }: NotionOptions,
 ): string[] {
   const items: NotionItem[] = [];
-  notionItems(body.content, { heading: '#'.repeat(headingLevel), links }, quoted, items);
+  notionItems(body.content, { heading: '#'.repeat(headingLevel), links, verses }, quoted, items);
   if (lead) {
     const first = items[0];
     if (first?.type === 'line' && body.content[0]?.type === 'paragraph') {
@@ -458,10 +472,10 @@ export function toNotionBlocks(
     if (item.type === 'line') blocks.push(item.text);
     else if (item.type === 'list') blocks.push(item.lines.join('\n'));
     else {
-      const text = escapeText(item.ref.snapshotText!.trim()).split(/\r?\n/);
+      const text = escapeText(item.text).split(/\r?\n/);
       blocks.push(
         text.map((line) => `> ${line}`.trimEnd()).join('\n'),
-        `— ${verseLabel(item.ref)}`,
+        `— ${verseLabel(item.ref, verses)}`,
       );
     }
   }
@@ -479,7 +493,7 @@ function notionItems(
     switch (block.type) {
       case 'paragraph':
       case 'heading': {
-        const text = inlineToMarkdown(block.content ?? [], context.links);
+        const text = inlineToMarkdown(block.content ?? [], context);
         if (text) {
           const line =
             block.type === 'paragraph'
@@ -489,10 +503,8 @@ function notionItems(
                 : `${context.heading} ${text}`;
           items.push({ type: 'line', text: line, quote });
         }
-        for (const node of block.content ?? []) {
-          if (node.type === 'verse' && node.attrs.snapshotText) {
-            items.push({ type: 'verse', ref: node.attrs });
-          }
+        for (const verse of verseTexts(block, context.verses)) {
+          items.push({ type: 'verse', ...verse });
         }
         break;
       }

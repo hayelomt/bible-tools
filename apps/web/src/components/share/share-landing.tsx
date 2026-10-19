@@ -1,5 +1,4 @@
 import type { VerseTextMatch } from '@lamp/bible-data';
-import { DEFAULT_TRANSLATION } from '@lamp/domain';
 import { Button, buttonVariants } from '@lamp/ui/components/button';
 import { Checkbox } from '@lamp/ui/components/checkbox';
 import { Dialog, DialogContent } from '@lamp/ui/components/dialog';
@@ -13,7 +12,6 @@ import { ScreenTitle } from '@/components/shell/slots.tsx';
 import type { PromoteTarget } from '@/data/actions/highlights.ts';
 import { addShared, inboxItemTitle, type NewInboxItem, undoShared } from '@/data/actions/inbox.ts';
 import { lessonById } from '@/data/queries.ts';
-import { useSettings } from '@/data/use-settings.ts';
 import { today } from '@/lib/dates.ts';
 import { recentLessonId } from '@/lib/recent-lesson.ts';
 import { reportWriteError, runWrite } from '@/lib/run-write.ts';
@@ -32,8 +30,6 @@ import { matchVerseText } from '@/verse-match/client.ts';
  * is ready, and the buttons work meanwhile with what's found.
  */
 export function ShareLanding({ title, text, url, from }: ShareSearch) {
-  const settings = useSettings();
-  const translation = settings?.defaultTranslation ?? DEFAULT_TRANSLATION;
   const input = useMemo(() => ({ title, text, url }), [title, text, url]);
   const empty = !title?.trim() && !text?.trim() && !url?.trim();
   const [matches, setMatches] = useState<VerseTextMatch[] | null>(empty ? [] : null);
@@ -48,8 +44,8 @@ export function ShareLanding({ title, text, url, from }: ShareSearch) {
     };
   }, [empty, input]);
   const reading = useMemo(
-    () => readShare(input, matches ?? [], translation, from === 'clipboard' ? 'pasted' : 'shared'),
-    [input, matches, translation, from],
+    () => readShare(input, matches ?? [], from === 'clipboard' ? 'pasted' : 'shared'),
+    [input, matches, from],
   );
   useScreenReady('share', true);
 
@@ -72,7 +68,7 @@ export function ShareLanding({ title, text, url, from }: ShareSearch) {
       <ScreenTitle>{heading}</ScreenTitle>
       <Found
         // Verses matched by their text can change the list: the ticks start over.
-        key={reading.verses.map((v) => `${v.ref.display}|${v.ref.translation}`).join('\n')}
+        key={reading.verses.map((v) => `${v.ref.display}|${v.ref.translation ?? ''}`).join('\n')}
         reading={reading}
         origin={from === 'clipboard' ? 'paste' : 'share'}
         looking={matches === null}
@@ -107,7 +103,7 @@ function Found({
     if (busy || count === 0) return;
     setBusy(true);
     try {
-      const shared = await addShared(await shareItems(reading, chosen, origin), target);
+      const shared = await addShared(shareItems(reading, chosen, origin), target);
       const undo = {
         label: 'Undo',
         onClick: () => runWrite(undoShared(shared), 'a share'),

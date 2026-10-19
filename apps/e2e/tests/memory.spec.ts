@@ -32,10 +32,8 @@ test('memorises verses from the reader, lists them in the verse index, and remov
   await expect.poll(async () => (await rows(page, 'memoryItem')).length).toBe(1);
   const [item] = await rows<Record<string, unknown>>(page, 'memoryItem');
   expect(item).toMatchObject({
-    ref: expect.objectContaining({
-      display: 'John 10:27',
-      snapshotText: expect.stringContaining('My sheep listen to My voice'),
-    }),
+    // The passage alone: its text is read from the book (decision 97).
+    ref: { book: 'JHN', chapter: 10, verseStart: 27, display: 'John 10:27' },
     ease: 2.5,
     interval: 0,
     reviewCount: 0,

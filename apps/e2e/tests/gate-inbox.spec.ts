@@ -18,7 +18,7 @@ const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 
 interface Item {
   importId: string | null;
-  ref: { display: string; translation: string; snapshotText?: string } | null;
+  ref: { display: string; translation?: string; snapshotText?: string } | null;
   placedInSectionId: string | null;
 }
 
@@ -49,7 +49,7 @@ test('a shared verse and an export land in the inbox, and the verse reaches a le
   await expect(verse).toBeHidden();
   const [sent] = await rows<Item>(page, 'inboxItem');
   expect(sent).toMatchObject({
-    ref: { display: 'John 10:11', translation: 'BSB', snapshotText: GOOD_SHEPHERD },
+    ref: { book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11' },
     placedInSectionId: expect.any(String),
   });
   await page.goto('/');

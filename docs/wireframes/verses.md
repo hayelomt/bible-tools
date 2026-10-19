@@ -13,8 +13,9 @@ cursor moves over it, and Backspace deletes it whole.
 │ ┃ salvation and pasture.             │
 ```
 
-Tapping it opens the captured text: a bottom sheet on a phone, a popover on a laptop. The text is
-the snapshot taken when the chip was inserted and never changes. On a laptop, resting the mouse on
+Tapping it opens its text: a bottom sheet on a phone, a popover on a laptop. The text is read from
+the translation picked in Settings, so picking the other changes it, and the label with it. On a
+laptop, resting the mouse on
 the chip opens the popover too, leaving the cursor in the note; it closes when the mouse leaves the
 chip and the popover, unless the chip was clicked. Each verse starts with its number (²⁸ … ²⁹ …, and
 "9:1" where a new chapter starts), once the book is on the device.
@@ -107,11 +108,11 @@ A reference that can't exist explains why, with nothing to insert:
 ```
 
 Both translations number verses the KJV's way. A verse the BSB leaves out (Acts 8:37) shows its
-note, and the chip keeps it: "[Not in BSB: Some later manuscripts include this verse.]".
+note: "[Not in BSB: Some later manuscripts include this verse.]".
 
 If the book isn't downloaded yet (first minutes after install), suggestions still appear and
-insert a chip; the preview reads "Text not downloaded yet", and the chip's snapshot is filled in
-when the book arrives (M2-11).
+insert a chip; the preview reads "Text not downloaded yet", and the chip shows its text when the
+book arrives (M2-11).
 
 ## Verse index (M4-07)
 

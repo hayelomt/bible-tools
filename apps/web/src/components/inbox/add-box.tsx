@@ -1,10 +1,4 @@
-import {
-  DEFAULT_TRANSLATION,
-  parseReference,
-  translationLabel,
-  type TranslationId,
-  type VerseRef,
-} from '@lamp/domain';
+import { parseReference, translationLabel, type VerseRef } from '@lamp/domain';
 import { Button } from '@lamp/ui/components/button';
 import { toast } from '@lamp/ui/components/sonner';
 import { Textarea } from '@lamp/ui/components/textarea';
@@ -12,10 +6,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { addInboxItem, addShared, undoShared } from '@/data/actions/inbox.ts';
+import { useActiveTranslation } from '@/data/translation.ts';
 import { useSettings } from '@/data/use-settings.ts';
 import { reportWriteError, runWrite } from '@/lib/run-write.ts';
 import { readShare, type ShareReading, shareHints } from '@/share/read-share.ts';
-import { shareItems, withBookText } from '@/share/share-items.ts';
+import { shareItems } from '@/share/share-items.ts';
 import { matchVerseText } from '@/verse-match/client.ts';
 
 /** What a paste into the box holds, offered as chips while the box still has that text. */
@@ -27,7 +22,7 @@ interface PasteOffer {
 /**
  * The add box at the top of the Inbox (wireframes/interop.md): a verse or a note, typed or
  * pasted; Enter adds it and Shift+Enter starts a new line. An entry that is all one reference
- * ("Rom 8:28") becomes a chip in the default translation; anything else is kept as a note
+ * ("Rom 8:28") becomes a chip; anything else is kept as a note
  * (decided 2026-10-17). What was typed stays if saving fails.
  *
  * A paste holding references or known verses (F19, M9-09) offers chips under the box, read as
@@ -41,7 +36,6 @@ export function AddBox({ onAdded }: { onAdded?: (id: string) => void }) {
   const [busy, setBusy] = useState(false);
   const [offer, setOffer] = useState<PasteOffer | null>(null);
   const pastes = useRef(0);
-  const translation = settings?.defaultTranslation ?? DEFAULT_TRANSLATION;
   // Typing on changes what was pasted: the offer goes.
   const shown = offer?.text === text ? offer : null;
 
@@ -50,7 +44,7 @@ export function AddBox({ onAdded }: { onAdded?: (id: string) => void }) {
     if (!entry || busy) return;
     setBusy(true);
     try {
-      const ref = await chipFor(entry, translation);
+      const ref = chipFor(entry);
       const item = await addInboxItem({
         origin: 'typed',
         ref,
@@ -71,7 +65,7 @@ export function AddBox({ onAdded }: { onAdded?: (id: string) => void }) {
     const input = { text: value };
     const matches = await matchVerseText(value, shareHints(input), { wait: false }).catch(() => []);
     if (paste !== pastes.current) return;
-    const reading = readShare(input, matches, translation, 'pasted');
+    const reading = readShare(input, matches, 'pasted');
     setOffer(reading.verses.length > 0 ? { text: value, reading } : null);
   }
 
@@ -79,7 +73,7 @@ export function AddBox({ onAdded }: { onAdded?: (id: string) => void }) {
     if (busy) return;
     setBusy(true);
     try {
-      const shared = await addShared(await shareItems(reading, reading.verses, 'paste'), null);
+      const shared = await addShared(shareItems(reading, reading.verses, 'paste'), null);
       setText('');
       setOffer(null);
       onAdded?.(shared.items[0]!.id);
@@ -158,6 +152,7 @@ interface PasteOfferPanelProps {
 function PasteOfferPanel({ offer, busy, onMake, onChoose, onDismiss }: PasteOfferPanelProps) {
   const { verses } = offer.reading;
   const one = verses.length === 1 ? verses[0]! : null;
+  const active = useActiveTranslation();
   return (
     <section
       aria-label="Verse chips"
@@ -166,7 +161,7 @@ function PasteOfferPanel({ offer, busy, onMake, onChoose, onDismiss }: PasteOffe
       <div className="flex items-start justify-between gap-2">
         <output aria-live="polite" className="pt-1.5 font-medium">
           {one
-            ? `${one.ref.display} · ${translationLabel(one.ref)}`
+            ? `${one.ref.display} · ${translationLabel(one.ref, active)}`
             : `${verses.length} references found`}
         </output>
         <Button
@@ -199,12 +194,8 @@ function PasteOfferPanel({ offer, busy, onMake, onChoose, onDismiss }: PasteOffe
   );
 }
 
-/**
- * The chip for an entry that is exactly one reference, with its text when the book is here (or
- * arrives in a moment); null for anything else.
- */
-export async function chipFor(entry: string, translation: TranslationId): Promise<VerseRef | null> {
+/** The chip for an entry that is exactly one reference; null for anything else. */
+export function chipFor(entry: string): VerseRef | null {
   const parsed = parseReference(entry);
-  if (!parsed.ok) return null;
-  return withBookText({ ...parsed.ref, translation }, translation);
+  return parsed.ok ? { ...parsed.ref } : null;
 }

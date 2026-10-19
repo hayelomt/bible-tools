@@ -1,6 +1,7 @@
 import { OPEN_IN_TARGETS, openInUrl, shownTargets, type VerseRef } from '@lamp/domain';
 import { ArrowUpRight } from 'lucide-react';
 import { useId } from 'react';
+import { useActiveTranslation } from '@/data/translation.ts';
 import { useSettings } from '@/data/use-settings.ts';
 import { useOpenInTable } from '@/open-in/table.ts';
 
@@ -13,6 +14,7 @@ export function OpenInLinks({ chip }: { chip: VerseRef }) {
   const id = useId();
   const table = useOpenInTable();
   const keys = useSettings()?.openInTargets ?? OPEN_IN_TARGETS;
+  const active = useActiveTranslation();
   const targets = shownTargets(table, keys);
   if (targets.length === 0) return null;
   return (
@@ -24,7 +26,7 @@ export function OpenInLinks({ chip }: { chip: VerseRef }) {
         {targets.map((target) => (
           <li key={target.key}>
             <a
-              href={openInUrl(target, chip)}
+              href={openInUrl(target, chip, active)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between rounded-lg px-2 py-2 text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"

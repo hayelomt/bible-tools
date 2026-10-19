@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback } from 'react';
 import { NotFoundScreen } from '@/components/error-screen.tsx';
 import { PrintPage, SeriesDocument } from '@/components/print/print-document.tsx';
+import { useActiveTranslation } from '@/data/translation.ts';
 import { seriesForExport } from '@/export/load.ts';
 import { type PrintSearch, validatePrintSearch } from '@/lib/print-search.ts';
 
@@ -16,7 +17,9 @@ function SeriesPrintScreen() {
   const { seriesId } = Route.useParams();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const data = useLiveQuery(() => seriesForExport(seriesId), [seriesId]);
+  // Read again in another translation when one is picked.
+  const active = useActiveTranslation();
+  const data = useLiveQuery(() => seriesForExport(seriesId), [seriesId, active]);
   const printed = useCallback(
     () => void navigate({ search: {} satisfies PrintSearch, replace: true }),
     [navigate],

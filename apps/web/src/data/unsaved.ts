@@ -1,4 +1,4 @@
-import type { SectionBody } from '@lamp/domain';
+import { chipsWithoutAppText, type SectionBody } from '@lamp/domain';
 import { createSection, updateSection } from './actions/sections.ts';
 import type { LampDb } from './db.ts';
 
@@ -59,11 +59,13 @@ export function forgetUnsaved(id: string, body: SectionBody, storage: Storage = 
 /**
  * Stores kept text on start, through the same actions as typing. Text is only applied to the row
  * it was typed on: if the row changed since (the write did land, or a newer change came), or its
- * lesson is gone, the kept text is dropped.
+ * lesson is gone, the kept text is dropped. Text kept by an older version of the app has its
+ * chips' BSB or KJV snapshots left out (decision 97).
  */
 export async function restoreUnsaved(db: LampDb, storage: Storage = localStorage): Promise<void> {
   const journal = read(storage);
-  for (const entry of Object.values(journal)) {
+  for (const kept of Object.values(journal)) {
+    const entry = { ...kept, body: chipsWithoutAppText(kept.body) };
     try {
       const row = await db.section.get(entry.id);
       if (row) {
@@ -83,6 +85,6 @@ export async function restoreUnsaved(db: LampDb, storage: Storage = localStorage
     } catch (error) {
       console.error('Restoring unsaved text failed', error);
     }
-    forgetUnsaved(entry.id, entry.body, storage);
+    forgetUnsaved(kept.id, kept.body, storage);
   }
 }

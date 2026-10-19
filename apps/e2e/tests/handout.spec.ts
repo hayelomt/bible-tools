@@ -49,7 +49,6 @@ function goodShepherd(): { seed: Seed; lessonId: string } {
         verseStart: 1,
         verseEnd: 18,
         display: 'John 10:1–18',
-        translation: 'BSB',
       },
     ],
   });

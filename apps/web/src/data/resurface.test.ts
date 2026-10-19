@@ -34,7 +34,7 @@ const at = (date: string) => new Date(`${date}T12:00:00`).toISOString();
 const ROM_8_28: Passage = { book: 'ROM', chapter: 8, verseStart: 28 };
 const chip = (p: Passage) => ({
   type: 'verse' as const,
-  attrs: { ...p, display: formatPassage(p), translation: 'BSB' as const },
+  attrs: { ...p, display: formatPassage(p) },
 });
 const citing = (p: Passage): SectionBody => ({
   type: 'doc',

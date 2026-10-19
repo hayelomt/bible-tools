@@ -1,4 +1,4 @@
-import { isAppTranslation, passageSlug, translationName } from '@lamp/domain';
+import { passageSlug, translationName } from '@lamp/domain';
 import {
   Popover,
   PopoverContent,
@@ -11,6 +11,7 @@ import { buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { useActiveTranslation } from '@/data/translation.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { memoriseVerse, storedRef, useMemoryItem } from '../memory/memorise.ts';
 import {
@@ -24,11 +25,11 @@ import {
 } from './verse-chip.ts';
 import { OpenInLinks } from './open-in-links.tsx';
 import { LAPTOP_QUERY } from './verse-suggestions.tsx';
-import { VerseText } from './verse-text.tsx';
+import { RefText } from './verse-text.tsx';
 
 /**
  * An open verse chip (wireframes/verses.md "Verse chip"): its reference, the translation's name and
- * the text captured when it was inserted, which never changes. A popover under the chip on a
+ * its text, in the translation picked in Settings for the app's own (decision 97). A popover under the chip on a
  * laptop, a bottom sheet on a phone; Esc, a tap outside or × closes it. One for the page. Opened
  * by resting the mouse on the chip, the popover leaves focus in the note and closes as the pointer
  * leaves both.
@@ -36,6 +37,7 @@ import { VerseText } from './verse-text.tsx';
 export function VerseViewer() {
   const open = useOpenChip();
   const laptop = useMediaQuery(LAPTOP_QUERY);
+  const active = useActiveTranslation();
   // The last chip stays drawn while the viewer closes.
   const [shown, setShown] = useState<OpenChip | null>(open);
   if (open && open !== shown) setShown(open);
@@ -56,7 +58,7 @@ export function VerseViewer() {
           >
             <PopoverHeader>
               <PopoverTitle className="text-base">{shown.ref.display}</PopoverTitle>
-              <PopoverDescription>{translationName(shown.ref)}</PopoverDescription>
+              <PopoverDescription>{translationName(shown.ref, active)}</PopoverDescription>
             </PopoverHeader>
             <ChipText chip={shown} />
             <IndexLink chip={shown} />
@@ -77,7 +79,7 @@ export function VerseViewer() {
         >
           <div className="flex flex-col gap-0.5 px-4 pt-4 pb-3">
             <SheetTitle className="text-lg">{shown.ref.display}</SheetTitle>
-            <SheetDescription>{translationName(shown.ref)}</SheetDescription>
+            <SheetDescription>{translationName(shown.ref, active)}</SheetDescription>
           </div>
           <div className="flex flex-col gap-3 px-4 pb-6">
             <ChipText chip={shown} />
@@ -99,23 +101,17 @@ function onOpenChange(next: boolean, details: { reason: string; event: Event }) 
   closeChip();
 }
 
-/** The snapshot, or, for a chip inserted before its book was downloaded, that it's coming. */
+/** The chip's text, or, while its book isn't downloaded, that it's coming. */
 function ChipText({ chip: { ref } }: { chip: OpenChip }) {
-  if (!ref.snapshotText) {
-    return (
-      <p className="text-muted-foreground">
-        {isAppTranslation(ref.translation)
-          ? 'Text not downloaded yet. It’s added when the Bible is downloaded.'
-          : 'No text came with it.'}
-      </p>
-    );
-  }
   return (
-    <VerseText
-      passage={ref}
-      translation={ref.translation}
-      text={ref.snapshotText}
+    <RefText
+      verse={ref}
       className="text-[17px] leading-[1.6]"
+      missing={
+        ref.translation
+          ? 'No text came with it.'
+          : 'Text not downloaded yet. It shows once the Bible is downloaded.'
+      }
     />
   );
 }

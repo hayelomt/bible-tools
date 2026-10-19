@@ -11,7 +11,6 @@ import { Input } from '@lamp/ui/components/input';
 import { cn } from 'cn';
 import { XIcon } from 'lucide-react';
 import { useId, useState } from 'react';
-import { useActiveTranslation } from '@/data/translation.ts';
 
 /** `lessonSchema` allows 20 main passages. */
 const MAX_PASSAGES = 20;
@@ -39,14 +38,13 @@ export function PassageInput({ id, value, onChange }: PassageInputProps) {
   const [error, setError] = useState<string | null>(null);
   const listId = useId();
   const errorId = useId();
-  const translation = useActiveTranslation();
 
   const suggestions = open && text.trim() ? suggest(text) : [];
   const showList = suggestions.length > 0;
   const full = value.length >= MAX_PASSAGES;
 
   function add(passage: ParsedPassage) {
-    const ref: VerseRef = { ...passage, translation };
+    const ref: VerseRef = { ...passage };
     if (!value.some((v) => v.display === ref.display)) onChange([...value, ref]);
     setText('');
     setOpen(false);

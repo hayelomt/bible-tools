@@ -1,4 +1,12 @@
-import type { Lesson, Section, SectionBody, Series, Takeaway, VerseRef } from '@lamp/domain';
+import type {
+  Lesson,
+  Section,
+  SectionBody,
+  Series,
+  Takeaway,
+  VerseReader,
+  VerseRef,
+} from '@lamp/domain';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { QuestionView } from '@/data/question-status.ts';
@@ -7,13 +15,15 @@ import { Credit, LessonDocument, SeriesDocument } from './print-document.tsx';
 
 afterEach(cleanup);
 
-const JOHN_10_9: VerseRef = {
-  book: 'JHN',
-  chapter: 10,
-  verseStart: 9,
-  display: 'John 10:9',
+const JOHN_10_9: VerseRef = { book: 'JHN', chapter: 10, verseStart: 9, display: 'John 10:9' };
+
+/** The BSB, with John 10:9's text and no other. */
+const VERSES: VerseReader = {
   translation: 'BSB',
-  snapshotText: 'I am the door. If anyone enters in by me, he will be saved.',
+  text: (p) =>
+    p.book === 'JHN' && p.verseStart === 9
+      ? 'I am the door. If anyone enters in by me, he will be saved.'
+      : '',
 };
 
 const doc = (...content: SectionBody['content']): SectionBody => ({ type: 'doc', content });
@@ -88,6 +98,7 @@ function goodShepherd(overrides: Partial<Lesson> = {}): LessonForExport {
       question('q2', 'What is the door?', 'open'),
       question('q3', 'Thief vs hired hand?', 'parked'),
     ],
+    verses: VERSES,
   };
 }
 

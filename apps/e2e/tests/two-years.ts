@@ -1,6 +1,5 @@
 import {
   citationsFor,
-  DEFAULT_TRANSLATION,
   ENTITY_SCHEMAS,
   type EntityRow,
   keysBetween,
@@ -8,8 +7,6 @@ import {
   parseReference,
   type SectionBody,
 } from '@lamp/domain';
-import { readdirSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import type { Seed } from './helpers.ts';
 
 // Two years of notes for the M12-11 budget checks (`themes.spec.ts`, `digest.spec.ts`): a sermon
@@ -50,30 +47,11 @@ const BOOKS = [
   'Rev',
 ];
 
-const BSB = fileURLToPath(new URL('../../../packages/bible-data/dist/BSB/', import.meta.url));
-const books = new Map<string, string[][]>();
-/** A verse's BSB text, from the built book files (`pnpm --filter @lamp/bible-data build`). */
-function verseText(book: string, chapter: number, verse: number): string {
-  let text = books.get(book);
-  if (!text) {
-    const file = readdirSync(BSB).find((name) => name.startsWith(`${book}.`));
-    if (!file) throw new Error(`No BSB file for ${book}`);
-    text = (JSON.parse(readFileSync(BSB + file, 'utf8')) as { c: string[][] }).c;
-    books.set(book, text);
-  }
-  return text[chapter - 1]![verse - 1]!;
-}
-
 function chip(i: number) {
   const reference = `${BOOKS[i % BOOKS.length]} ${(Math.floor(i / BOOKS.length) % 5) + 1}:${(i % 6) + 1}`;
   const parsed = parseReference(reference);
   if (!parsed.ok) throw new Error(`Not a reference: ${reference}`);
-  const { book, chapter, verseStart } = parsed.ref;
-  return {
-    ...parsed.ref,
-    translation: DEFAULT_TRANSLATION,
-    snapshotText: verseText(book, chapter, verseStart!),
-  };
+  return { ...parsed.ref };
 }
 
 function body(text: string, i: number): SectionBody {

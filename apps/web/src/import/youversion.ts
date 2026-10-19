@@ -1,6 +1,5 @@
 import {
   type BookCode,
-  type ChipTranslation,
   formatPassage,
   HIGHLIGHT_COLOURS,
   isBookCode,
@@ -92,21 +91,26 @@ export function recordItems(record: unknown): ImportedItem[] | null {
   return refs.map((ref, i) => ({ ref, text: i === 0 ? note : null, receivedAt, colour }));
 }
 
-/** A reference's chips: its verses joined into ranges, labelled with the version. */
+/**
+ * A reference's chips: its verses joined into ranges, labelled with the version. From the BSB or
+ * KJV, a chip is the passage alone, the app's own text (decision 97).
+ */
 function referenceChips(reference: z.infer<typeof referenceSchema>): VerseRef[] {
   const id = reference.version_id == null ? null : String(reference.version_id);
   const label = id === null ? undefined : youVersionLabel(id);
-  const translation: ChipTranslation = label === 'BSB' || label === 'KJV' ? label : 'shared';
   const verses = reference.usfm.flatMap((usfm) => verseOf(usfm) ?? []);
   const exported = reference.text?.trim();
-  return ranges(verses).map((passage, i, all) => ({
-    ...passage,
-    display: formatPassage(passage),
-    translation,
-    ...(translation === 'shared' && label && { versionLabel: label }),
-    // Exported text belongs to the whole reference: kept when it's one range.
-    ...(exported && all.length === 1 && i === 0 && { snapshotText: exported }),
-  }));
+  return ranges(verses).map((passage, i, all): VerseRef => {
+    const ref = { ...passage, display: formatPassage(passage) };
+    if (label === 'BSB' || label === 'KJV') return ref;
+    return {
+      ...ref,
+      translation: 'shared',
+      ...(label && { versionLabel: label }),
+      // Exported text belongs to the whole reference: kept when it's one range.
+      ...(exported && all.length === 1 && i === 0 && { snapshotText: exported }),
+    };
+  });
 }
 
 interface Verse {

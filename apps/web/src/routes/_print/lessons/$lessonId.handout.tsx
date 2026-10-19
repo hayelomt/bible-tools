@@ -1,4 +1,3 @@
-import { isAppTranslation } from '@lamp/domain';
 import { createFileRoute } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useMemo } from 'react';
@@ -6,6 +5,7 @@ import { NotFoundScreen } from '@/components/error-screen.tsx';
 import { HandoutSheet, useHandoutFit } from '@/components/print/handout.tsx';
 import { PrintPage } from '@/components/print/print-document.tsx';
 import { useBooks } from '@/data/bible.ts';
+import { useActiveTranslation } from '@/data/translation.ts';
 import { handoutOf, leftOutNotice } from '@/export/handout.ts';
 import { lessonForExport } from '@/export/load.ts';
 import type { LessonForExport } from '@/export/markdown.ts';
@@ -19,7 +19,9 @@ export const Route = createFileRoute('/_print/lessons/$lessonId/handout')({
 /** A lesson on one printed page (F33, M12-05, wireframes/reflection.md "Handout"). */
 function HandoutScreen() {
   const { lessonId } = Route.useParams();
-  const data = useLiveQuery(() => lessonForExport(lessonId), [lessonId]);
+  // Read again in another translation when one is picked.
+  const active = useActiveTranslation();
+  const data = useLiveQuery(() => lessonForExport(lessonId), [lessonId, active]);
 
   if (data === undefined) return null;
   if (data === null) {
@@ -44,18 +46,19 @@ function LessonHandout({ data }: { data: LessonForExport }) {
     [navigate],
   );
   // Text from outside Lamp has no book: it prints as its reference.
+  const { translation } = data.verses;
   const wanted = useMemo(
     () =>
       data.lesson.mainPassages.flatMap((ref) =>
-        isAppTranslation(ref.translation) ? [{ translation: ref.translation, book: ref.book }] : [],
+        ref.translation ? [] : [{ translation, book: ref.book }],
       ),
-    [data.lesson.mainPassages],
+    [data.lesson.mainPassages, translation],
   );
   const states = useBooks(wanted);
   const loading = states.some((s) => s.status === 'loading');
   let next = 0;
   const books = data.lesson.mainPassages.map((ref) => {
-    if (!isAppTranslation(ref.translation)) return null;
+    if (ref.translation) return null;
     const state = states[next++]!;
     return state.status === 'ready' ? state.text : null;
   });

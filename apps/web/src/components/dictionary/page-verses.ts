@@ -17,26 +17,18 @@ export async function chapterVerses(book: BookCode, chapter: number): Promise<Pa
 }
 
 /**
- * The verses of the KJV passages a lesson cites, in order and each once. A passage's verses come
- * from its book; without the book, its snapshot stands in as the passage's first verse.
+ * The verses of the passages a lesson cites, from the KJV's books, in order and each once: those
+ * of the app's own text, which read in the KJV when it's the translation picked (decision 97). A
+ * passage whose book can't be had has none.
  */
 export async function passagesVerses(refs: readonly VerseRef[]): Promise<PageVerse[]> {
-  const kjv = refs.filter((ref) => ref.translation === 'KJV');
+  const kjv = refs.filter((ref) => !ref.translation);
   const texts = await Promise.all(kjv.map((ref) => whenBook('KJV', ref.book)));
   const seen = new Set<string>();
   const verses: PageVerse[] = [];
   kjv.forEach((ref, i) => {
     const text = texts[i];
-    const found = text
-      ? passageVerses(text, ref).map((v) => ({ book: ref.book, ...v }))
-      : [
-          {
-            book: ref.book,
-            chapter: ref.chapter,
-            verse: ref.verseStart ?? 1,
-            text: ref.snapshotText ?? '',
-          },
-        ];
+    const found = text ? passageVerses(text, ref).map((v) => ({ book: ref.book, ...v })) : [];
     for (const verse of found) {
       const key = `${verse.book}.${verse.chapter}.${verse.verse}`;
       if (!verse.text || seen.has(key)) continue;

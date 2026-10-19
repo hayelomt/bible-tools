@@ -8,7 +8,7 @@ export {
   bibleCache,
   bookUrl,
   loadManifest,
-  snapshotText,
+  quoteText,
   storedBook,
 } from './bible-files.ts';
 
@@ -140,16 +140,16 @@ export function useBooks(
   return wanted.map((w) => bookState(w.translation, w.book));
 }
 
-/** A verse of a snapshot, with its number: "28", or "9:1" where a new chapter starts. */
+/** A verse of a passage's text, with its number: "28", or "9:1" where a new chapter starts. */
 export interface NumberedVerse {
   label: string;
   text: string;
 }
 
 /**
- * A snapshot split into its numbered verses, from the book's verse texts. The text shown is still
- * the snapshot: it's split only where the book's verses join up to exactly it, so null when the
- * text was captured from an edition since corrected, or for an empty verse's footnote.
+ * A passage's text split into its numbered verses, from the book's verse texts. It's split only
+ * where the book's verses join up to exactly the text, so null for text from elsewhere, or for an
+ * empty verse's footnote.
  */
 export function numberedVerses(
   book: BookText,

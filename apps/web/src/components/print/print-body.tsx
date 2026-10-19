@@ -2,23 +2,39 @@ import {
   type Block,
   type InlineNode,
   type Mark,
+  refText,
   type SectionBody,
   type TextBlock,
   translationLabel,
+  type VerseReader,
   type VerseRef,
 } from '@lamp/domain';
-import type { ReactNode } from 'react';
+import { createContext, type ReactNode, use } from 'react';
 import { PrintedLink } from '@/components/links/read-only-link.tsx';
 
 /**
  * A section body as a printed page shows it (F11, wireframes/export.md "Print view"), the way the
  * Markdown export writes it (decision 19): a verse chip reads "John 10:9 (BSB)" in the sentence,
- * and its text is quoted in full after the paragraph. Headings sit at `headingLevel`, one under
- * the lesson's title.
+ * and its text, read by `verses` (decision 97), is quoted in full after the paragraph. Headings
+ * sit at `headingLevel`, one under the lesson's title.
  */
-export function PrintBody({ body, headingLevel }: { body: SectionBody; headingLevel: 2 | 3 }) {
-  return <Blocks blocks={body.content} headingLevel={headingLevel} />;
+export function PrintBody({
+  body,
+  headingLevel,
+  verses,
+}: {
+  body: SectionBody;
+  headingLevel: 2 | 3;
+  verses: VerseReader;
+}) {
+  return (
+    <Verses value={verses}>
+      <Blocks blocks={body.content} headingLevel={headingLevel} />
+    </Verses>
+  );
 }
+
+const Verses = createContext<VerseReader | null>(null);
 
 function Blocks({ blocks, headingLevel }: { blocks: readonly Block[]; headingLevel: 2 | 3 }) {
   return blocks.map((block, i) => <BlockView key={i} block={block} headingLevel={headingLevel} />);
@@ -56,10 +72,13 @@ function BlockView({ block, headingLevel }: { block: Block; headingLevel: 2 | 3 
 
 /** A paragraph or heading, then the text of each verse it cites. Empty ones print nothing. */
 function TextBlockView({ block, headingLevel }: { block: TextBlock; headingLevel: 2 | 3 }) {
+  const reader = use(Verses)!;
   const nodes = block.content ?? [];
-  const verses = nodes.flatMap((node) =>
-    node.type === 'verse' && node.attrs.snapshotText ? [node.attrs] : [],
-  );
+  const verses = nodes.flatMap((node) => {
+    if (node.type !== 'verse') return [];
+    const text = refText(node.attrs, reader).trim();
+    return text ? [{ ref: node.attrs, text }] : [];
+  });
   if (nodes.length === 0) return null;
   const Heading = headingLevel === 2 ? 'h2' : 'h3';
   return (
@@ -73,25 +92,27 @@ function TextBlockView({ block, headingLevel }: { block: TextBlock; headingLevel
           <Inline nodes={nodes} />
         </p>
       )}
-      {verses.map((ref, i) => (
-        <VerseQuote key={i} verse={ref} />
+      {verses.map(({ ref, text }, i) => (
+        <VerseQuote key={i} verse={ref} text={text} />
       ))}
     </>
   );
 }
 
 /** "**John 10:9 (BSB)** I am the door…", quoted. */
-function VerseQuote({ verse }: { verse: VerseRef }) {
+function VerseQuote({ verse, text }: { verse: VerseRef; text: string }) {
   return (
     <blockquote className="border-l-2 border-neutral-300 pl-4 whitespace-pre-line text-neutral-700 break-inside-avoid">
-      <strong className="font-semibold text-neutral-900">{verseLabel(verse)}</strong>{' '}
-      {verse.snapshotText!.trim()}
+      <strong className="font-semibold text-neutral-900">
+        <VerseLabel verse={verse} />
+      </strong>{' '}
+      {text}
     </blockquote>
   );
 }
 
-function verseLabel(ref: VerseRef): string {
-  return `${ref.display} (${translationLabel(ref)})`;
+function VerseLabel({ verse }: { verse: VerseRef }) {
+  return `${verse.display} (${translationLabel(verse, use(Verses)!.translation)})`;
 }
 
 function Inline({ nodes }: { nodes: readonly InlineNode[] }) {
@@ -100,7 +121,7 @@ function Inline({ nodes }: { nodes: readonly InlineNode[] }) {
       case 'verse':
         return (
           <span key={i} className="font-medium">
-            {verseLabel(node.attrs)}
+            <VerseLabel verse={node.attrs} />
           </span>
         );
       case 'noteLink':

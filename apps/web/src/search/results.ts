@@ -181,8 +181,6 @@ export type VerseIndexEntry =
       note: string | null;
       /** The highlight's own reference, as stored. */
       passages: string[];
-      /** The verse text frozen when it was highlighted. */
-      text: string;
       createdAt: string;
       ref: Highlight['ref'];
     }
@@ -229,7 +227,6 @@ async function highlightEntries(passage: Passage, db: LampDb): Promise<VerseInde
     colour: row.colour,
     note: row.note,
     passages: [row.ref.display],
-    text: row.ref.snapshotText ?? '',
     createdAt: row.createdAt,
     ref: row.ref,
   }));

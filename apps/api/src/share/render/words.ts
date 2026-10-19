@@ -1,6 +1,5 @@
 import {
   citedRefs,
-  isAppTranslation,
   type Lesson,
   type Section,
   type Series,
@@ -109,25 +108,25 @@ export function momentLabel(section: Section, lesson: Lesson): string | null {
 }
 
 /**
- * "Scripture: Berean Standard Bible (public domain).", for the app's translations these refs
- * quote; null when they quote none. Text from outside Lamp is labelled where it's quoted.
+ * "Scripture: Berean Standard Bible (public domain).", when these refs quote the app's own text,
+ * read in `translation`; null when they don't. Text from outside Lamp is labelled where it's
+ * quoted.
  */
-export function creditFor(refs: readonly VerseRef[]): string | null {
-  const used = new Set<TranslationId>();
-  for (const ref of refs) if (isAppTranslation(ref.translation)) used.add(ref.translation);
-  if (used.size === 0) return null;
-  const names = [...used].toSorted().map((id) => TRANSLATION_NAMES[id]);
-  return `Scripture: ${names.join(', ')} (public domain).`;
+export function creditFor(refs: readonly VerseRef[], translation: TranslationId): string | null {
+  if (!refs.some((ref) => !ref.translation)) return null;
+  return `Scripture: ${TRANSLATION_NAMES[translation]} (public domain).`;
 }
 
 /** The credit for lessons: their main passages and the chips in their sections. */
 export function lessonsCredit(
   lessons: readonly { lesson: Lesson; sections: readonly Section[] }[],
+  translation: TranslationId,
 ): string | null {
   return creditFor(
     lessons.flatMap(({ lesson, sections }) => [
       ...lesson.mainPassages,
       ...sections.flatMap((s) => citedRefs(s.body)),
     ]),
+    translation,
   );
 }

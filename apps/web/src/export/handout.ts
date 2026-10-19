@@ -1,11 +1,5 @@
 import { type BookText, passageVerses } from '@lamp/bible-data';
-import {
-  isAppTranslation,
-  type Passage,
-  toPlainText,
-  translationLabel,
-  type VerseRef,
-} from '@lamp/domain';
+import { type Passage, toPlainText, translationLabel, type VerseRef } from '@lamp/domain';
 import { outline } from '@/components/sections/outline.ts';
 import type { QuestionView } from '@/data/question-status.ts';
 import { count } from '@/lib/labels.ts';
@@ -50,8 +44,9 @@ export function passageOf(ref: VerseRef): Passage {
 }
 
 /**
- * The handout's content. `books` holds the main passages' books, in their order: null for one
- * that isn't here (offline, or text from outside Lamp), which prints as its reference.
+ * The handout's content. `books` holds the main passages' books in `data.verses.translation`, the
+ * one picked in Settings, in their order: null for one that isn't here (offline), which prints as
+ * its reference, as text from outside Lamp does.
  */
 export function handoutOf(data: LessonForExport, books: readonly (BookText | null)[]): Handout {
   const { lesson } = data;
@@ -62,10 +57,10 @@ export function handoutOf(data: LessonForExport, books: readonly (BookText | nul
     ...(source ? [host ? `${source.words} (${host})` : source.words] : []),
   ];
   const passages = lesson.mainPassages.map((ref, i): HandoutPassage => {
-    const book = isAppTranslation(ref.translation) ? books[i] : null;
+    const book = ref.translation ? null : books[i];
     const verses = book ? passageVerses(book, passageOf(ref)).filter((v) => v.text) : [];
     return {
-      label: `${ref.display} (${translationLabel(ref)})`,
+      label: `${ref.display} (${translationLabel(ref, data.verses.translation)})`,
       verses:
         verses.length > 0 && verses.length <= MAX_HANDOUT_VERSES
           ? verses.map((v, j) => ({

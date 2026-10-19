@@ -16,17 +16,10 @@ import {
   toNotionBlocks,
   toPlainText,
 } from './doc.ts';
-import type { VerseRef } from './verse-ref.ts';
+import type { Passage, VerseReader, VerseRef } from './verse-ref.ts';
 
-const ROM_8_28: VerseRef = {
-  book: 'ROM',
-  chapter: 8,
-  verseStart: 28,
-  display: 'Romans 8:28',
-  translation: 'BSB',
-  snapshotText: 'We know that all things work together for good for those who love God.',
-};
-const JHN_3: VerseRef = { book: 'JHN', chapter: 3, display: 'John 3', translation: 'BSB' };
+const ROM_8_28: VerseRef = { book: 'ROM', chapter: 8, verseStart: 28, display: 'Romans 8:28' };
+const JHN_3: VerseRef = { book: 'JHN', chapter: 3, display: 'John 3' };
 const ROM_8_38: VerseRef = {
   book: 'ROM',
   chapter: 8,
@@ -34,8 +27,16 @@ const ROM_8_38: VerseRef = {
   chapterEnd: 9,
   verseEnd: 5,
   display: 'Romans 8:38–9:5',
+};
+
+/** The BSB as a test reads it: two passages' text, and no book for John 3. */
+const TEXTS: Record<string, string> = {
+  'ROM 8:28': 'We know that all things work together for good for those who love God.',
+  'ROM 8:38': 'For I am persuaded…\n…who is over all, God, blessed forever. Amen.',
+};
+const verses: VerseReader = {
   translation: 'BSB',
-  snapshotText: 'For I am persuaded…\n…who is over all, God, blessed forever. Amen.',
+  text: (p: Passage) => TEXTS[`${p.book} ${p.chapter}:${p.verseStart}`] ?? '',
 };
 
 const text = (value: string, ...marks: ('bold' | 'italic' | string)[]): InlineNode => {
@@ -217,12 +218,17 @@ describe('citedRefs', () => {
 /** A body with one chip of Romans 8:28, changed by `ref`. */
 const outside = (ref: Partial<VerseRef>): SectionBody => ({
   type: 'doc',
-  content: [{ type: 'paragraph', content: [{ type: 'verse', attrs: { ...ROM_8_28, ...ref } }] }],
+  content: [
+    {
+      type: 'paragraph',
+      content: [{ type: 'verse', attrs: { ...ROM_8_28, snapshotText: 'All things…', ...ref } }],
+    },
+  ],
 });
 
 describe('toMarkdown', () => {
   it('renders every node, with verse quotes after their paragraph', () => {
-    expect(toMarkdown(RICH)).toBe(
+    expect(toMarkdown(RICH, { verses })).toBe(
       `### Called according to his purpose
 
 Paul says Romans 8:28 (BSB) — ***all*** things.
@@ -250,31 +256,44 @@ Same idea as The Good Shepherd.
         ? { text: 'The Good [Shepherd]', href: '2026-10-12-the good-shepherd (1).md' }
         : null;
     const body = doc(p(text('As in '), link(SHEPHERD), text(' and '), link(OTHER_SHEEP)));
-    expect(toMarkdown(body, { links: files })).toBe(
+    expect(toMarkdown(body, { verses, links: files })).toBe(
       'As in [The Good \\[Shepherd\\]](2026-10-12-the%20good-shepherd%20%281%29.md) and ' +
         'The Good Shepherd › “Other sheep I have…” (deleted)\n',
     );
     // A target the caller can't reference is its text alone.
-    expect(toMarkdown(body, { links: (l) => ({ text: l.label }) })).toBe(
+    expect(toMarkdown(body, { verses, links: (l) => ({ text: l.label }) })).toBe(
       'As in The Good Shepherd and The Good Shepherd › “Other sheep I have…”\n',
     );
   });
 
   it('is a single newline for an empty body', () => {
-    expect(toMarkdown(emptyBody())).toBe('\n');
+    expect(toMarkdown(emptyBody(), { verses })).toBe('\n');
+  });
+
+  it('reads the app’s text in the translation it’s given', () => {
+    const kjv: VerseReader = { translation: 'KJV', text: () => 'And we know…' };
+    expect(toMarkdown(doc(p(verse(ROM_8_28))), { verses: kjv })).toBe(
+      'Romans 8:28 (KJV)\n\n> **Romans 8:28 (KJV)** And we know…\n',
+    );
   });
 
   it('labels text from outside with its version, or as shared', () => {
-    expect(toMarkdown(outside({ translation: 'shared', versionLabel: 'NIV' }))).toContain(
-      '**Romans 8:28 (NIV)**',
+    expect(
+      toMarkdown(outside({ translation: 'shared', versionLabel: 'NIV' }), { verses }),
+    ).toContain('**Romans 8:28 (NIV)**');
+    expect(toMarkdown(outside({ translation: 'shared' }), { verses })).toContain(
+      '**Romans 8:28 (shared)**',
     );
-    expect(toMarkdown(outside({ translation: 'shared' }))).toContain('**Romans 8:28 (shared)**');
-    expect(toMarkdown(outside({ translation: 'pasted' }))).toContain('**Romans 8:28 (pasted)**');
+    expect(toMarkdown(outside({ translation: 'pasted' }), { verses })).toContain(
+      '**Romans 8:28 (pasted)**',
+    );
   });
 
   it('puts headings at the level asked for, under an export’s own', () => {
-    expect(toMarkdown(RICH, { headingLevel: 2 })).toMatch(/^## Called according to his purpose\n/);
-    expect(toMarkdown(RICH, { headingLevel: 4 })).toMatch(/^#### Called/);
+    expect(toMarkdown(RICH, { verses, headingLevel: 2 })).toMatch(
+      /^## Called according to his purpose\n/,
+    );
+    expect(toMarkdown(RICH, { verses, headingLevel: 4 })).toMatch(/^#### Called/);
   });
 
   it.each([
@@ -298,12 +317,12 @@ Same idea as The Good Shepherd.
       '[a](https://a.example)[b](https://b.example)',
     ],
   ] as [InlineNode[], string][])('renders inline %j as %j', (content, expected) => {
-    expect(toMarkdown(doc(p(...content)))).toBe(`${expected}\n`);
+    expect(toMarkdown(doc(p(...content)), { verses })).toBe(`${expected}\n`);
   });
 
   it('keeps the marker of an empty list item', () => {
     const body = doc({ type: 'bulletList', content: [{ type: 'listItem', content: [p()] }] });
-    expect(toMarkdown(body)).toBe('-\n');
+    expect(toMarkdown(body, { verses })).toBe('-\n');
   });
 
   it('numbers ordered lists from 1 by default and indents nested blocks', () => {
@@ -315,13 +334,13 @@ Same idea as The Good Shepherd.
       type: 'orderedList',
       content: [item('one'), { type: 'listItem', content: [p(text('two')), p(text('more'))] }],
     } as Block);
-    expect(toMarkdown(body)).toBe('1. one\n2. two\n\n   more\n');
+    expect(toMarkdown(body, { verses })).toBe('1. one\n2. two\n\n   more\n');
   });
 });
 
 describe('toNotionBlocks', () => {
   it('writes verse text as a quote with its reference under it, and quotes one level only', () => {
-    expect(toNotionBlocks(RICH)).toEqual([
+    expect(toNotionBlocks(RICH, { verses })).toEqual([
       '## Called according to his purpose',
       'Paul says Romans 8:28 (BSB) — ***all*** things.',
       '> We know that all things work together for good for those who love God.',
@@ -335,7 +354,7 @@ describe('toNotionBlocks', () => {
   });
 
   it('quotes a reply whole, its headings in bold and its lists as lines of text', () => {
-    expect(toNotionBlocks(RICH, { quoted: true, after: '#hope' })).toEqual([
+    expect(toNotionBlocks(RICH, { verses, quoted: true, after: '#hope' })).toEqual([
       '> **Called according to his purpose**\n>\n> Paul says Romans 8:28 (BSB) — ***all*** things.',
       '> We know that all things work together for good for those who love God.',
       '— Romans 8:28 (BSB)',
@@ -348,9 +367,11 @@ describe('toNotionBlocks', () => {
 
   it('puts a lead before the first paragraph, or above a heading', () => {
     const lead = '[09:45](https://youtu.be/x?t=585)';
-    expect(toNotionBlocks(doc(p(text('The door'))), { lead })).toEqual([`${lead} The door`]);
-    expect(toNotionBlocks(RICH, { lead })[0]).toBe(lead);
-    expect(toNotionBlocks(emptyBody(), { lead, quoted: true })).toEqual([`> ${lead}`]);
+    expect(toNotionBlocks(doc(p(text('The door'))), { verses, lead })).toEqual([
+      `${lead} The door`,
+    ]);
+    expect(toNotionBlocks(RICH, { verses, lead })[0]).toBe(lead);
+    expect(toNotionBlocks(emptyBody(), { verses, lead, quoted: true })).toEqual([`> ${lead}`]);
   });
 
   it('gives the verse after a list item that cites it', () => {
@@ -358,7 +379,7 @@ describe('toNotionBlocks', () => {
       type: 'bulletList',
       content: [{ type: 'listItem', content: [p(text('See '), verse(ROM_8_28))] }],
     });
-    expect(toNotionBlocks(body)).toEqual([
+    expect(toNotionBlocks(body, { verses })).toEqual([
       '- See Romans 8:28 (BSB)',
       '> We know that all things work together for good for those who love God.',
       '— Romans 8:28 (BSB)',

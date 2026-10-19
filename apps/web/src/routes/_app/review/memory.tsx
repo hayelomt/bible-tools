@@ -21,8 +21,9 @@ import {
   withoutRemoved,
 } from '@/components/memory/review-session.ts';
 import { ScreenActions } from '@/components/shell/slots.tsx';
-import { VerseText } from '@/components/verses/verse-text.tsx';
+import { RefText } from '@/components/verses/verse-text.tsx';
 import { gradeMemoryItem, memoryItems } from '@/data/actions/memory.ts';
+import { useActiveTranslation } from '@/data/translation.ts';
 import { today } from '@/lib/dates.ts';
 import { runWrite } from '@/lib/run-write.ts';
 
@@ -105,6 +106,7 @@ function MemoryCard({ item, onGrade }: { item: MemoryItem; onGrade: (grade: Grad
   const showButton = useRef<HTMLButtonElement>(null);
   const verse = useRef<HTMLDivElement>(null);
   const { ref } = item;
+  const active = useActiveTranslation();
 
   // The next card takes focus from the grade just pressed; the verse takes it from "Show".
   useEffect(() => {
@@ -128,7 +130,7 @@ function MemoryCard({ item, onGrade }: { item: MemoryItem; onGrade: (grade: Grad
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm font-medium">
-        {ref.display} · {translationLabel(ref)}
+        {ref.display} · {translationLabel(ref, active)}
       </p>
       <div
         ref={verse}
@@ -137,17 +139,12 @@ function MemoryCard({ item, onGrade }: { item: MemoryItem; onGrade: (grade: Grad
       >
         {!shown ? (
           <p className="text-muted-foreground">Say it from memory, then show the verse.</p>
-        ) : ref.snapshotText ? (
-          <VerseText
-            passage={ref}
-            translation={ref.translation}
-            text={ref.snapshotText}
-            className="text-[19px] leading-[1.6]"
-          />
         ) : (
-          <p className="text-muted-foreground">
-            Text not downloaded yet. It’s added when the Bible is downloaded.
-          </p>
+          <RefText
+            verse={ref}
+            className="text-[19px] leading-[1.6]"
+            missing="Text not downloaded yet. It shows once the Bible is downloaded."
+          />
         )}
       </div>
       {shown ? (

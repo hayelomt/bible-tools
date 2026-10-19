@@ -275,6 +275,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@lamp/bible-data':
+        specifier: workspace:*
+        version: link:../../packages/bible-data
       '@lamp/domain':
         specifier: workspace:*
         version: link:../../packages/domain

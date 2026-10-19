@@ -2,7 +2,7 @@ import { type Editor, Extension, type Extensions } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Verse } from '@/components/sections/extensions.ts';
-import { VerseChipKeys, VerseSnapshots } from '@/components/verses/verse-chip.ts';
+import { VerseChipKeys } from '@/components/verses/verse-chip.ts';
 
 /** What capture mode's keys do beyond typing (wireframes/sermon.md "Capture mode"). */
 export interface CaptureKeys {
@@ -91,7 +91,6 @@ export function captureExtensions(options: {
     Placeholder.configure({ placeholder: ({ editor }) => options.placeholder(editor) }),
     Verse,
     VerseChipKeys,
-    VerseSnapshots,
     captureKeys(options.keys),
   ];
 }

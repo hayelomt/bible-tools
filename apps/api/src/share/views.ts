@@ -1,4 +1,12 @@
-import type { Lesson, Passage, QuestionStatus, Section, SectionBody, Series } from '@lamp/domain';
+import type {
+  Lesson,
+  Passage,
+  QuestionStatus,
+  Section,
+  SectionBody,
+  Series,
+  TranslationId,
+} from '@lamp/domain';
 
 /** What a shared page shows, read from the owner's rows (`shared-rows.service.ts`). */
 
@@ -46,4 +54,9 @@ export interface CommentaryView {
   sections: number;
   lessons: number;
   groups: { passage: Passage; entries: CommentaryEntry[] }[];
+  /**
+   * The owner's translation when it was worked out, which its chips quote (decision 97): a frozen
+   * link's stays as it was. Absent from a snapshot made before.
+   */
+  translation?: TranslationId;
 }

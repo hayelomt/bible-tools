@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { VerseReader, VerseRef } from '@lamp/domain';
 import { describe, expect, it } from 'vitest';
 import { withoutShareToken } from '../share-token.js';
 import { bodyHtml } from './body.js';
@@ -49,10 +50,42 @@ describe('bodyHtml', () => {
         },
       ],
     };
-    const out = bodyHtml(body, 2, (link) => (link.label === 'Here' ? '#top' : null)).value;
+    const out = bodyHtml(body, 2, (link) => (link.label === 'Here' ? '#top' : null), NO_TEXT).value;
     expect(out).toBe('<p><a href="#top">Here</a>&lt;Elsewhere&gt;</p>');
   });
+
+  it("quotes a chip's text in the owner's translation, and text from outside as it came", () => {
+    const rom = { book: 'ROM' as const, chapter: 8, verseStart: 28, display: 'Romans 8:28' };
+    const kjv: VerseReader = { translation: 'KJV', text: () => 'And we know…' };
+    const niv = {
+      ...rom,
+      translation: 'shared' as const,
+      versionLabel: 'NIV',
+      snapshotText: 'In all things…',
+    };
+    expect(bodyHtml(chips(rom, niv), 2, () => null, kjv).value.replaceAll(/\s+/g, ' ')).toBe(
+      '<p><span class="chip">Romans 8:28 (KJV)</span><span class="chip">Romans 8:28 (NIV)</span></p>' +
+        '<blockquote class="verse-quote"><strong>Romans 8:28 (KJV)</strong> And we know…</blockquote>' +
+        '<blockquote class="verse-quote"><strong>Romans 8:28 (NIV)</strong> In all things…</blockquote>',
+    );
+    // Without its book, a chip is its reference alone.
+    expect(bodyHtml(chips(rom), 2, () => null, NO_TEXT).value).not.toContain('blockquote');
+  });
 });
+
+/** A body of one paragraph holding these chips. */
+const chips = (...attrs: VerseRef[]) => ({
+  type: 'doc' as const,
+  content: [
+    {
+      type: 'paragraph' as const,
+      content: attrs.map((a) => ({ type: 'verse' as const, attrs: a })),
+    },
+  ],
+});
+
+/** A reader without the books: the BSB, no text. */
+const NO_TEXT: VerseReader = { translation: 'BSB', text: () => '' };
 
 describe('withoutShareToken', () => {
   it("hides a shared page's token in a logged URL", () => {

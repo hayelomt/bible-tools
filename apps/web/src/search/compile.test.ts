@@ -24,7 +24,7 @@ const rom = (chapter: number, verseStart?: number): Passage => ({
 });
 const verse = (p: Passage) => ({
   type: 'verse' as const,
-  attrs: { ...p, display: formatPassage(p), translation: 'BSB' as const },
+  attrs: { ...p, display: formatPassage(p) },
 });
 const body = (...content: Array<string | ReturnType<typeof verse>>): SectionBody => ({
   type: 'doc',

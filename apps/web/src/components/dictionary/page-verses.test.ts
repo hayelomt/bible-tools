@@ -16,7 +16,6 @@ const ref = (fields: Partial<VerseRef>): VerseRef => ({
   book: '2TH',
   chapter: 2,
   display: '',
-  translation: 'KJV',
   ...fields,
 });
 
@@ -31,20 +30,17 @@ it('gives a chapter its verses, numbered', async () => {
   expect(await chapterVerses('GEN', 1)).toEqual([]);
 });
 
-it('gives the KJV passages’ verses once each, in order, skipping other translations', async () => {
+it('gives the passages’ KJV verses once each, in order, skipping text from outside', async () => {
   const verses = await passagesVerses([
     ref({ verseStart: 6, verseEnd: 7 }),
-    ref({ verseStart: 1, translation: 'BSB' }),
+    ref({ verseStart: 1, translation: 'shared', snapshotText: 'a' }),
     ref({ verseStart: 7 }),
   ]);
   expect(verses.map((v) => v.verse)).toEqual([6, 7]);
 });
 
-it('stands in the snapshot for a passage whose book is not here', async () => {
-  const verses = await passagesVerses([
-    ref({ book: 'ROM', chapter: 1, verseStart: 13, snapshotText: 'but was let hitherto' }),
-  ]);
-  expect(verses).toEqual([{ book: 'ROM', chapter: 1, verse: 13, text: 'but was let hitherto' }]);
+it('gives none for a passage whose book is not here', async () => {
+  expect(await passagesVerses([ref({ book: 'ROM', chapter: 1, verseStart: 13 })])).toEqual([]);
 });
 
 it('loads the glossary once', async () => {

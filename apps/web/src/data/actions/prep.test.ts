@@ -23,7 +23,7 @@ const john = (chapter: number, verseStart?: number, verseEnd?: number): Passage 
   ...(verseStart !== undefined ? { verseStart } : {}),
   ...(verseEnd !== undefined ? { verseEnd } : {}),
 });
-const ref = (p: Passage) => ({ ...p, display: formatPassage(p), translation: 'BSB' as const });
+const ref = (p: Passage) => ({ ...p, display: formatPassage(p) });
 const body = (text: string, cites?: Passage): SectionBody => ({
   type: 'doc',
   content: [

@@ -14,6 +14,7 @@ import {
   hoverOpen,
   openChip,
 } from '@/components/verses/verse-chip.ts';
+import { useActiveTranslation } from '@/data/translation.ts';
 
 /**
  * A section body to read, not edit (the commentary, wireframes/thinking.md): its text as the
@@ -91,6 +92,7 @@ function Inline({ nodes }: { nodes: readonly InlineNode[] }) {
 
 /** A verse chip as in a note: a tap, Enter or resting the mouse on it opens the viewer. */
 function VerseChip({ verse }: { verse: VerseRef }) {
+  const active = useActiveTranslation();
   return (
     <button
       type="button"
@@ -102,7 +104,7 @@ function VerseChip({ verse }: { verse: VerseRef }) {
       onMouseEnter={(event) => hoverOpen(null, event.currentTarget, () => verse)}
       onMouseLeave={hoverLeave}
     >
-      {verse.display} · {translationLabel(verse)}
+      {verse.display} · {translationLabel(verse, active)}
     </button>
   );
 }

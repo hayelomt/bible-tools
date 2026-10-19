@@ -152,7 +152,7 @@ export function LessonDocument({ data, level = 1 }: { data: LessonForExport; lev
                 [{moment.label}]
               </p>
             )}
-            <PrintBody body={row.item.body} headingLevel={headingLevel} />
+            <PrintBody body={row.item.body} headingLevel={headingLevel} verses={data.verses} />
             {tags.length > 0 && (
               <p className="font-sans text-sm text-neutral-600 italic">
                 {tags.map(tagLabel).join(' · ')}

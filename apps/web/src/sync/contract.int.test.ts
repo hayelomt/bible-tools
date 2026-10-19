@@ -380,8 +380,6 @@ describe('the inbox on two devices', () => {
           chapter: 10,
           verseStart: 11,
           display: 'John 10:11',
-          translation: 'BSB',
-          snapshotText: 'I am the good shepherd.',
         },
         text: null,
         sourceUrl: 'https://www.bible.com/bible/3034/JHN.10.11.BSB',
@@ -547,7 +545,6 @@ describe('resurfacing on two devices', () => {
           chapter: 8,
           verseStart: 28,
           display: 'Romans 8:28',
-          translation: 'BSB' as const,
         },
       };
       const cited: SectionBody = { type: 'doc', content: [{ type: 'paragraph', content: [chip] }] };

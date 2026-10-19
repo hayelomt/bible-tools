@@ -5,8 +5,7 @@ import type { Node as PmNode } from '@tiptap/pm/model';
 import { type EditorState, Plugin, PluginKey, type Transaction } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { useSyncExternalStore } from 'react';
-import { bookState, snapshotText } from '@/data/bible.ts';
-import { activeTranslation, pasteChipsOn } from '@/data/translation.ts';
+import { pasteChipsOn } from '@/data/translation.ts';
 import { type PasteChip, readPaste } from '@/paste/read-paste.ts';
 import { matchVerseText } from '@/verse-match/client.ts';
 
@@ -172,7 +171,7 @@ async function read(view: EditorView, state: PasteState) {
       void read(view, current);
       return;
     }
-    const chips = readPaste(text, matches, activeTranslation()).map((chip) => ({
+    const chips = readPaste(text, matches).map((chip) => ({
       ...chip,
       at: { from: posAt(chip.from), to: posAt(chip.to) },
     }));
@@ -229,22 +228,13 @@ export function makePasteChips(editor: Editor, chips: readonly PlacedChip[]) {
   const { tr, schema } = editor.state;
   closeHistory(tr);
   for (const chip of chips.toSorted((a, b) => b.at.from - a.at.from)) {
-    tr.replaceWith(chip.at.from, chip.at.to, schema.nodes.verse!.create(chipAttrs(chip)));
+    tr.replaceWith(chip.at.from, chip.at.to, schema.nodes.verse!.create(chip.ref));
   }
   const rest = state.chips.filter((chip) => !chips.includes(chip));
   const left = mapped({ ...state, chips: rest }, tr);
   tr.setMeta(KEY, rest.length ? left : null);
   editor.view.dispatch(tr);
   editor.view.focus();
-}
-
-/** A chip from the book takes its text now if the book is here; else when it arrives. */
-function chipAttrs(chip: PasteChip) {
-  const { ref } = chip;
-  if (!chip.fromBook || ref.translation === 'shared' || ref.translation === 'pasted') return ref;
-  const book = bookState(ref.translation, ref.book);
-  const text = book.status === 'ready' ? snapshotText(book.text, ref, ref.translation) : '';
-  return text ? { ...ref, snapshotText: text } : ref;
 }
 
 /** Whether a paste is being read or offered: the verse list stays shut meanwhile. */

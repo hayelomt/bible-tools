@@ -9,11 +9,7 @@ import { passageRange, type VerseRef } from './verse-ref.ts';
 
 const NOW = '2026-10-13T04:05:06.789Z';
 const meta = (id: string) => ({ id, createdAt: NOW, updatedAt: NOW, rev: 0, deletedAt: null });
-const ref = (r: Omit<VerseRef, 'display' | 'translation'>): VerseRef => ({
-  ...r,
-  display: '',
-  translation: 'BSB',
-});
+const ref = (r: Omit<VerseRef, 'display'>): VerseRef => ({ ...r, display: '' });
 const ROM_8_28 = ref({ book: 'ROM', chapter: 8, verseStart: 28, verseEnd: 30 });
 const JHN_3 = ref({ book: 'JHN', chapter: 3 });
 

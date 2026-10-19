@@ -136,7 +136,6 @@ describe('reviewCount', () => {
       chapter: 10,
       verseStart: 27,
       display: 'John 10:27',
-      translation: 'BSB' as const,
     };
     const { item } = await memorise(ref, '2026-10-14', db);
     await memorise({ ...ref, verseStart: 28, display: 'John 10:28' }, '2026-10-14', db);

@@ -1,15 +1,8 @@
-import type { BookText } from '@lamp/bible-data';
-import {
-  type BookCode,
-  type TranslationId,
-  translationLabel,
-  translationName,
-  type VerseRef,
-} from '@lamp/domain';
+import { translationLabel, translationName, type VerseRef } from '@lamp/domain';
 import { type Editor, Extension, type NodeViewRenderer } from '@tiptap/core';
 import { NodeSelection, Selection } from '@tiptap/pm/state';
 import { useSyncExternalStore } from 'react';
-import { onBookArrived, snapshotText, whenBook } from '@/data/bible.ts';
+import { activeTranslation, onActiveTranslation } from '@/data/translation.ts';
 
 /** The chip open in the viewer, and where focus goes back to when it closes. */
 export interface OpenChip {
@@ -128,14 +121,12 @@ export function useOpenChip(): OpenChip | null {
 
 /** "John 10:9, Berean Standard Bible, verse. Show text." (UX-PATTERNS "Verse references"). */
 export function chipLabel(ref: Pick<VerseRef, 'display' | 'translation' | 'versionLabel'>): string {
-  return `${ref.display}, ${translationName(ref)}, verse. Show text.`;
+  return `${ref.display}, ${translationName(ref, activeTranslation())}, verse. Show text.`;
 }
 
-/** What shows for a chip without text: it's on its way, or, from outside, none came with it. */
+/** What shows for a chip without text: its book is on its way, or, from outside, none came with it. */
 export const missingText = (ref: Pick<VerseRef, 'translation'>): string =>
-  ref.translation === 'shared' || ref.translation === 'pasted'
-    ? 'No text came with it.'
-    : 'Text not downloaded yet.';
+  ref.translation ? 'No text came with it.' : 'Text not downloaded yet.';
 
 export const CHIP_CLASS =
   'cursor-pointer rounded-md bg-muted px-1 font-sans text-[0.9em] whitespace-nowrap hover:bg-accent';
@@ -144,7 +135,8 @@ const SELECTED_CLASS = ['ring-2', 'ring-primary'];
 
 /**
  * How a `verse` node shows in the editor (F3, wireframes/verses.md "Verse chip"): the display
- * reference and the translation label, read as a button. A tap or click opens the viewer without
+ * reference and the translation label, the one picked in Settings for the app's own text, read as
+ * a button. A tap or click opens the viewer without
  * moving the cursor (or opening the keyboard); on a laptop, so does resting the mouse on it. The
  * node is an atom, so the cursor and Backspace treat it as one unit.
  */
@@ -157,10 +149,11 @@ export const verseChipView: NodeViewRenderer = ({ node: initial, editor }) => {
   dom.dataset['slot'] = 'verse-chip';
   const render = () => {
     const ref = node.attrs as VerseRef;
-    dom.textContent = `${ref.display} · ${translationLabel(ref)}`;
+    dom.textContent = `${ref.display} · ${translationLabel(ref, activeTranslation())}`;
     dom.setAttribute('aria-label', chipLabel(ref));
   };
-  render();
+  // Called at once, and again when another translation is picked.
+  const stop = onActiveTranslation(render);
   // Keep focus (and the cursor) where it is; the click opens the chip.
   dom.addEventListener('mousedown', (event) => event.preventDefault());
   dom.addEventListener('click', () => openChip(editor, dom, node.attrs as VerseRef));
@@ -178,6 +171,7 @@ export const verseChipView: NodeViewRenderer = ({ node: initial, editor }) => {
     },
     selectNode: () => dom.classList.add(...SELECTED_CLASS),
     deselectNode: () => dom.classList.remove(...SELECTED_CLASS),
+    destroy: stop,
     // The editor leaves the pointer to the chip.
     stopEvent: (event) => /^(mouse|pointer|click|touch)/.test(event.type),
     ignoreMutation: () => true,
@@ -204,61 +198,4 @@ function openSelected({ editor }: { editor: Editor }): boolean {
   if (!(anchor instanceof HTMLElement)) return false;
   openChip(editor, anchor, selection.node.attrs as VerseRef);
   return true;
-}
-
-/**
- * A chip inserted before its book was here (still on its way, or not downloaded yet while offline)
- * holds no text; when the book arrives, it gets its snapshot (M2-11). Stored sections that aren't
- * open get theirs from `fillStoredSnapshots`.
- */
-export const VerseSnapshots = Extension.create<unknown, { stop?: () => void }>({
-  name: 'verseSnapshots',
-
-  addStorage() {
-    return {};
-  },
-
-  onCreate() {
-    const { editor } = this;
-    this.storage.stop = onBookArrived((translation, code) => {
-      if (!waitingFor(editor, translation, code)) return;
-      void whenBook(translation, code).then(
-        (text) => text && fillSnapshots(editor, translation, code, text),
-      );
-    });
-  },
-
-  onDestroy() {
-    this.storage.stop?.();
-  },
-});
-
-function isWaiting(ref: VerseRef, translation: TranslationId, code: BookCode): boolean {
-  return ref.book === code && !ref.snapshotText && ref.translation === translation;
-}
-
-function waitingFor(editor: Editor, translation: TranslationId, code: BookCode): boolean {
-  let found = false;
-  editor.state.doc.descendants((node) => {
-    if (node.type.name === 'verse' && isWaiting(node.attrs as VerseRef, translation, code)) {
-      found = true;
-    }
-    return !found;
-  });
-  return found;
-}
-
-function fillSnapshots(editor: Editor, translation: TranslationId, code: BookCode, text: BookText) {
-  if (editor.isDestroyed) return;
-  const { tr } = editor.state;
-  editor.state.doc.descendants((node, pos) => {
-    const ref = node.attrs as VerseRef;
-    if (node.type.name !== 'verse' || !isWaiting(ref, translation, code)) return;
-    // The node has every attribute, unset ones as null; a passage leaves them out.
-    const passage = Object.fromEntries(Object.entries(ref).filter(([, v]) => v !== null));
-    const snapshot = snapshotText(text, passage as VerseRef, translation);
-    if (snapshot) tr.setNodeAttribute(pos, 'snapshotText', snapshot);
-  });
-  // Not a step of its own for Undo: it completes the insert.
-  if (tr.docChanged) editor.view.dispatch(tr.setMeta('addToHistory', false));
 }

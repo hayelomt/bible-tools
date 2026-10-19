@@ -31,7 +31,7 @@ afterEach(async () => {
 
 const chip = (p: Passage) => ({
   type: 'verse' as const,
-  attrs: { ...p, display: formatPassage(p), translation: 'BSB' as const },
+  attrs: { ...p, display: formatPassage(p) },
 });
 const citing = (...passages: Passage[]): SectionBody => ({
   type: 'doc',

@@ -3,7 +3,7 @@ import { newLesson, rows } from './helpers.ts';
 
 interface Chip {
   type: 'verse';
-  attrs: { display: string; translation: string; snapshotText?: string };
+  attrs: { display: string; translation?: string; snapshotText?: string };
 }
 
 interface StoredSection {
@@ -43,7 +43,7 @@ async function startLesson(page: Page) {
   await expect(note(page)).toBeFocused();
 }
 
-test('references complete into chips with their text, offline too', async ({ page, context }) => {
+test('references complete into chips, offline too', async ({ page, context }) => {
   await withoutBook(page, '1JN');
   await startLesson(page);
   await page.keyboard.type('Paul says in Rom 8:28-30');
@@ -67,31 +67,31 @@ test('references complete into chips with their text, offline too', async ({ pag
     await page.keyboard.type(typed);
     await page.keyboard.press('Enter');
   }
-  // A book not downloaded yet goes in without its text (M2-11 downloads them all).
+  // A book not downloaded yet goes in all the same (M2-11 downloads them all).
   await page.keyboard.type(' 1 Jn 3');
   await expect(option(page, /^1 John 3/)).toContainText('Text not downloaded yet');
   await page.keyboard.press('Enter');
 
+  // Each chip is the passage alone: its text is read from the book (decision 97).
   await expect
     .poll(() => chips(page))
     .toEqual([
-      expect.objectContaining({
-        display: 'Romans 8:28–30',
-        translation: 'BSB',
-        snapshotText: expect.stringMatching(
-          /^And we know that God works all things together.*glorified\.$/,
-        ),
-      }),
-      expect.objectContaining({
-        display: 'Romans 8',
-        snapshotText: expect.stringMatching(/^Therefore, there is now no condemnation/),
-      }),
-      expect.objectContaining({
+      { book: 'ROM', chapter: 8, verseStart: 28, verseEnd: 30, display: 'Romans 8:28–30' },
+      { book: 'ROM', chapter: 8, display: 'Romans 8' },
+      {
+        book: 'ROM',
+        chapter: 8,
+        verseStart: 38,
+        chapterEnd: 9,
+        verseEnd: 5,
         display: 'Romans 8:38–9:5',
-        snapshotText: expect.stringMatching(/^For I am convinced.*Amen\.$/),
-      }),
-      { book: '1JN', chapter: 3, display: '1 John 3', translation: 'BSB' },
+      },
+      { book: '1JN', chapter: 3, display: '1 John 3' },
     ]);
+  const preview = note(page).locator('[data-verse-preview]');
+  await expect(preview).toContainText('And we know that God works all things together');
+  await expect(preview).toContainText('Therefore, there is now no condemnation');
+  await expect(preview).toContainText('Text not downloaded yet.');
 });
 
 test('Escape keeps the reference as typed', async ({ page }) => {
@@ -163,18 +163,18 @@ test('verses keep their KJV numbers, and a verse the BSB leaves out shows its no
     .poll(() => chips(page))
     .toEqual([
       expect.objectContaining({ display: 'Romans 16:25–27' }),
-      expect.objectContaining({
-        display: 'Acts 8:37',
-        snapshotText: '[Not in BSB: Some later manuscripts include this verse.]',
-      }),
+      expect.objectContaining({ display: 'Acts 8:37' }),
     ]);
+  await expect(note(page).locator('[data-verse-preview]')).toContainText(
+    '[Not in BSB: Some later manuscripts include this verse.]',
+  );
 });
 
 const chip = (page: Page, name: string) =>
   page.getByRole('button', { name: `${name}, Berean Standard Bible, verse. Show text.` });
 const viewer = (page: Page) => page.getByRole('dialog');
 
-test('a chip opens the text it captured, which never changes', async ({ page }) => {
+test('a chip opens its text, read from the book as it is now', async ({ page }) => {
   await startLesson(page);
   await page.keyboard.type('Rom 8:28');
   await page.keyboard.press('Enter');
@@ -193,7 +193,7 @@ test('a chip opens the text it captured, which never changes', async ({ page }) 
   await expect.poll(() => chips(page)).toHaveLength(1);
 
   // The BSB text changes (a corrected edition, say: a new file for the book in the manifest): the
-  // chip keeps what it captured.
+  // chip shows it, since it keeps no text of its own (decision 97).
   await page.route('**/bible/manifest.json', async (route) => {
     const manifest = (await (await route.fetch()).json()) as {
       translations: { BSB: { books: { ROM: { file: string } } } };
@@ -212,27 +212,41 @@ test('a chip opens the text it captured, which never changes', async ({ page }) 
   });
   await page.reload();
   await chip(page, 'Romans 8:28').click();
-  await expect(viewer(page)).toContainText(
-    'And we know that God works all things together for the good',
-  );
+  await expect(viewer(page)).toContainText('A corrected verse.');
   await page.keyboard.press('Escape');
-
-  // The new text is what a new chip captures.
-  await note(page).click();
-  await page.keyboard.press('End');
-  await page.keyboard.type(' Rom 8:28');
-  await expect(list(page)).toContainText('A corrected verse.');
-  await page.keyboard.press('Escape');
+  await expect(note(page).locator('[data-verse-preview]')).toContainText('A corrected verse.');
   await expect
     .poll(() => chips(page))
-    .toEqual([
-      expect.objectContaining({
-        display: 'Romans 8:28',
-        snapshotText: expect.stringMatching(
-          /^And we know that God works all things together for the good/,
-        ),
-      }),
-    ]);
+    .toEqual([{ book: 'ROM', chapter: 8, verseStart: 28, display: 'Romans 8:28' }]);
+});
+
+test('picking another translation changes every chip, its text and the quote under it', async ({
+  page,
+}) => {
+  await startLesson(page);
+  await page.keyboard.type('Paul says in Rom 8:28');
+  await page.keyboard.press('Enter');
+  const lesson = page.url();
+  const preview = note(page).locator('[data-verse-preview]');
+  await expect(preview).toContainText('Romans 8:28 · BSB');
+  await expect(preview).toContainText('And we know that God works all things together');
+
+  await page.goto('/settings');
+  await page.getByRole('radio', { name: 'KJV' }).click();
+  await expect(page.getByRole('radio', { name: 'KJV' })).toBeChecked();
+  await page.goto(lesson);
+  await expect(paragraphs(page)).toHaveText('Paul says in Romans 8:28 · KJV');
+  await expect(preview).toContainText('Romans 8:28 · KJV');
+  await expect(preview).toContainText('And we know that all things work together for good');
+  await page
+    .getByRole('button', { name: 'Romans 8:28, King James Version, verse. Show text.' })
+    .click();
+  await expect(viewer(page)).toContainText('And we know that all things work together for good');
+  await page.keyboard.press('Escape');
+  // Nothing stored changed.
+  await expect
+    .poll(() => chips(page))
+    .toEqual([{ book: 'ROM', chapter: 8, verseStart: 28, display: 'Romans 8:28' }]);
 });
 
 test('resting the mouse on a chip opens it; focus stays in the note', async ({ page }) => {
@@ -326,7 +340,7 @@ test('from the keyboard: arrow onto a chip, Enter opens it, Backspace deletes it
   await expect.poll(() => chips(page)).toEqual([]);
 });
 
-test('a chip inserted before its book was downloaded gets its text when it arrives', async ({
+test('a chip inserted before its book was downloaded shows its text when it arrives', async ({
   page,
   context,
 }) => {
@@ -337,26 +351,17 @@ test('a chip inserted before its book was downloaded gets its text when it arriv
   await page.keyboard.press('Enter');
   await chip(page, '1 John 3').click();
   await expect(viewer(page)).toContainText(
-    'Text not downloaded yet. It’s added when the Bible is downloaded.',
+    'Text not downloaded yet. It shows once the Bible is downloaded.',
   );
   await page.keyboard.press('Escape');
-  await expect
-    .poll(() => chips(page))
-    .toEqual([expect.not.objectContaining({ snapshotText: expect.anything() })]);
 
-  // Back online, the download goes on; the chip gets its text, in the note and as stored.
+  // Back online, the download goes on; the chip shows its text, under the note and opened.
   await letThrough();
   await context.setOffline(false);
-  await expect
-    .poll(() => chips(page), { timeout: 15_000 })
-    .toEqual([
-      expect.objectContaining({
-        display: '1 John 3',
-        snapshotText: expect.stringMatching(
-          /^Behold what manner of love the Father has given to us/,
-        ),
-      }),
-    ]);
+  await expect(note(page).locator('[data-verse-preview]')).toContainText(
+    'Behold what manner of love the Father',
+    { timeout: 15_000 },
+  );
   await chip(page, '1 John 3').click();
   await expect(viewer(page)).toContainText('Behold what manner of love the Father');
 });

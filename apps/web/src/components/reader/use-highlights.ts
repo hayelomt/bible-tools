@@ -3,8 +3,6 @@ import { toast } from '@lamp/ui/components/sonner';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef } from 'react';
-import { snapshotText, useBook } from '@/data/bible.ts';
-import { useActiveTranslation } from '@/data/translation.ts';
 import {
   createHighlight,
   type PromoteTarget,
@@ -24,8 +22,6 @@ import { reportWriteError } from '@/lib/run-write.ts';
  * verses aren't highlighted yet.
  */
 export function useHighlights(at: Chapter, selection: VerseSelection | null) {
-  const translation = useActiveTranslation();
-  const book = useBook(translation, at.book);
   const stored = useLiveQuery(
     () =>
       db.highlight
@@ -80,11 +76,7 @@ export function useHighlights(at: Chapter, selection: VerseSelection | null) {
     if (now?.start === from.start && now.end === from.end) idRef.current = id;
   }
 
-  function storedRef(current: VerseSelection) {
-    const text = book.status === 'ready' ? book.text : null;
-    const snapshot = text ? snapshotText(text, passageOf(at, current), translation) : '';
-    return highlightRef(at, current, translation, snapshot);
-  }
+  const storedRef = (current: VerseSelection) => highlightRef(at, current);
 
   function paint(colour: Highlight['colour']): Promise<void> {
     const current = selectionRef.current;
@@ -177,19 +169,10 @@ export function useHighlights(at: Chapter, selection: VerseSelection | null) {
     });
   }
 
-  /** The selected verses as a memory verse or chip takes them, with their text when it's here. */
+  /** The selected verses as a memory verse or chip takes them. */
   const selectedRef = selection ? storedRef(selection) : null;
 
   return { highlights, exact, promoted, selectedRef, paint, saveNote, promote, removeCurrent };
-}
-
-function passageOf(at: Chapter, selection: VerseSelection) {
-  return {
-    book: at.book,
-    chapter: at.chapter,
-    verseStart: selection.start,
-    ...(selection.end === selection.start ? {} : { verseEnd: selection.end }),
-  };
 }
 
 /** The section a highlight was added to, while it and its lesson are still there. */

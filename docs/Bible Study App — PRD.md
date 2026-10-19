@@ -79,7 +79,7 @@ Series contain lessons; lessons contain a tree of sections; a question can be pr
 | Series | id, title, description, kind (sermon series / book study / custom), createdAt | Optional grouping of lessons |
 | Lesson | id, seriesId?, title, date, kind (sermon / personal / group; called source until v1.8), speaker?, church?, mainPassages\[\] | Top-level container; mainPassages are verse references |
 | Section | id, lessonId, parentId?, order, body (rich text), createdAt, updatedAt | Tree, max two levels deep in UI; body holds inline verse chips |
-| Verse reference | book, chapter, verseStart?, chapterEnd?, verseEnd?, display, translation, snapshotText | Stored on every citing entity; book as canonical code (e.g. ROM); snapshotText frozen at capture; ranges may cross chapters |
+| Verse reference | book, chapter, verseStart?, chapterEnd?, verseEnd?, display; translation, versionLabel and snapshotText for text from outside only | Stored on every citing entity; book as canonical code (e.g. ROM); BSB and KJV text read in the translation picked in Settings, never stored (1.10); ranges may cross chapters |
 | Tag | id, name, isSeeded | Many-to-many with sections and lessons; 24 seeded themes ship with the app |
 | Takeaway | id, lessonId, text, createdAt | Short statements; shown in review queue |
 | Question | id, lessonId, text, status (open / answered / parked), answerSectionId? | Promotion creates a section and links it |
@@ -124,8 +124,8 @@ Each feature is a user story with acceptance criteria. F1–F16 are phase 1 (v1)
 **F3. Verse autocomplete with inline preview**
 
 - As a user, when I type a reference like `Rom 8:28-30` or `1 Jn 3`, I see a dropdown that completes it and shows the verse text below, so I never leave the note to look it up.
-- Accepts: parser handles book abbreviations and fuzzy names, chapter-only, ranged and cross-chapter references; selecting inserts a verse chip holding the normalised reference and snapshot text; chip expands to full text on tap; works offline with the BSB or KJV.
-- A chip always shows the text it was captured with, labelled with its translation.
+- Accepts: parser handles book abbreviations and fuzzy names, chapter-only, ranged and cross-chapter references; selecting inserts a verse chip holding the normalised reference; chip expands to full text on tap; works offline with the BSB or KJV.
+- A chip shows its text in the translation picked in Settings, labelled with it; picking the other changes every chip and the text shown under its paragraph (1.10).
 
 **F4. Tags**
 
@@ -304,7 +304,7 @@ Lamp ships two public-domain translations (decided 2026-10-15, replacing WEB; TE
 Rules that follow from this:
 
 - The repo never contains an API key.
-- Every verse chip stores which translation its snapshot came from and labels it in the UI.
+- Every verse chip is labelled in the UI with the translation its text is read in: the one picked in Settings, or the version text from outside came from.
 - Reference normalisation (book code, chapter, verse range) is translation-independent; only the text lookup varies.
 - Both translations number verses the KJV's way, so nothing typed is remapped. A verse the BSB leaves out keeps its number and shows the BSB's note.
 
@@ -326,7 +326,7 @@ Phase 1 is an offline-first PWA with a small sync server. Each device holds its 
 
 Schema decisions to lock before coding:
 
-1. Verse reference shape: `{ book, chapter, verseStart?, chapterEnd?, verseEnd?, display, translation, snapshotText }` with `book` as a canonical three-letter code.
+1. Verse reference shape: `{ book, chapter, verseStart?, chapterEnd?, verseEnd?, display }`, plus `translation`, `versionLabel?` and `snapshotText?` for text from outside, with `book` as a canonical three-letter code.
 2. Section tree: `parentId` plus a fractional `order` string so reordering never rewrites siblings.
 3. All ids are UUIDs generated on the device, and all rows carry `createdAt`, `updatedAt`, a server revision and a delete marker, for sync.
 
@@ -370,7 +370,7 @@ v2 replaces the earlier phase 2 plan. Share links and groups are F34 and F35; im
 
 - [x] ~~Confirm the current ESV API terms on caching and non-commercial use before milestone C.~~ ESV moved to phase 2, then dropped in v1.7.
 - [x] ~~Pick the front-end framework and the IndexedDB wrapper before milestone A.~~ React + Dexie (TECH-DESIGN §2).
-- [x] ~~Decide whether verse chips re-render from the live translation or always show the snapshot.~~ Snapshot (F3). "View in …" another downloaded translation was dropped in v1.7.
+- [x] ~~Decide whether verse chips re-render from the live translation or always show the snapshot.~~ Snapshot (F3); since 1.10, the live translation picked in Settings. "View in …" another downloaded translation was dropped in v1.7.
 - [x] ~~Settle the seeded tag list and whether tags are also applied at lesson level.~~ 24 themes; tags apply to lessons too (F4).
 - [x] ~~Versification: phase 1 maps KJV numbers onto WEB's (TECH-DESIGN §9); revisit for other translations when a second one is added in phase 2.~~ The BSB and KJV both use KJV numbering, so nothing is remapped (TECH-DESIGN §9).
 - [ ] Storage growth: the Bible text plus notes stays small; measure storage on a low-end phone before release.
@@ -401,3 +401,4 @@ v2 replaces the earlier phase 2 plan. Share links and groups are F34 and F35; im
 | 1.7 | 2026-10-17 | v2 scope. Position: study alongside other Bible apps rather than repeat them; reader stays minimal. Added F17–F35: inbox, share target, paste intelligence, "Open in…", YouVersion import, compile view, backlinks, question lineage, study-method templates, capture mode, inbox triage, source attachment, prep card, resurfacing, theme map, quarterly digest, Notion Markdown and handout export, read-only share links, groups with a shared questions queue. Milestones F–J, with F and G as the core. Dropped from the roadmap: ESV and further translations (BSB bundled, KJV optional), reading plans, streaks, audio, commentaries, Strong's, interlinear, friend feeds, teaching tools, importers other than YouVersion. Also: the PRD now says BSB and KJV where it said WEB (replaced 2026-10-15, TECH-DESIGN §15 #53), and the KJV → WEB verse mapping is gone; F3 drops viewing a chip in another translation; F33's handout prints dark on white like the F11 print view, and F34's shared pages use Lamplight in the reader's light or dark mode, since looks were removed in 1.6. "Phase 2 and beyond" becomes "Beyond v2". |
 | 1.8 | 2026-10-17 | The v2 data model follows TECH-DESIGN §17 (M8-02): links are derived from section bodies, question entries gain *parked*, built-in templates are part of the app and the default per lesson kind is a setting, the source is fields on the lesson, and visits and dismissals for resurfacing are added. The lesson's source (sermon / personal / group) becomes its kind. |
 | 1.9 | 2026-10-18 | Compile view (F22): a section citing several passages is shown in full once, under the first, with a pointer to it under the others, instead of in full under each (M10-03). |
+| 1.10 | 2026-10-19 | Verse chips (F3) read the BSB or KJV in the translation picked in Settings instead of keeping the text they were captured with: changing the setting changes every chip, its label and its preview, and the same for main passages, highlights, memory verses and inbox items. Only text from outside is stored (TECH-DESIGN §15 #97). |

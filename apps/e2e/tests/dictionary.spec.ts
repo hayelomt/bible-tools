@@ -2,8 +2,8 @@ import { expect, type Page, test } from '@playwright/test';
 import { newLesson } from './helpers.ts';
 
 // The KJV dictionary: its button in the reader while the KJV is the translation, the chapter's old
-// words and grammar notes, a search of the whole glossary, and the button in a lesson that cites
-// KJV text.
+// words and grammar notes, a search of the whole glossary, and the button in a lesson while its
+// verses read in the KJV.
 
 const button = (page: Page) => page.getByRole('button', { name: 'KJV dictionary' });
 const sheet = (page: Page) => page.getByRole('dialog', { name: 'KJV dictionary' });
@@ -57,25 +57,20 @@ test('the reader explains a chapter’s old words, and searches them all', async
   await expect(sheet(page).locator(term(page, 'let'))).toHaveCount(0);
 });
 
-test('a lesson that cites KJV text has the dictionary, whatever the translation', async ({
-  page,
-}) => {
-  // A BSB verse has nothing for it to explain.
-  await page.goto('/');
-  await newLesson(page, 'Hindered');
-  await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
-  await page.keyboard.type('Paul was hindered, Rom 1:13');
-  await page.keyboard.press('Enter');
-  await expect(note(page)).toContainText('Romans 1:13 · BSB');
-  await expect(button(page)).toHaveCount(0);
-
-  await useTranslation(page, 'KJV');
+test('a lesson has the dictionary while its verses read in the KJV', async ({ page }) => {
+  // In the BSB, a verse has nothing for it to explain.
   await page.goto('/');
   await newLesson(page, 'Let hitherto');
   const lesson = page.url();
   await page.getByRole('textbox', { name: 'Title', exact: true }).press('Enter');
   await page.keyboard.type('Paul was let, Rom 1:13');
   await page.keyboard.press('Enter');
+  await expect(note(page)).toContainText('Romans 1:13 · BSB');
+  await expect(button(page)).toHaveCount(0);
+
+  // The same chip reads in the KJV once it's picked (decision 97).
+  await useTranslation(page, 'KJV');
+  await page.goto(lesson);
   await expect(note(page)).toContainText('Romans 1:13 · KJV');
   await button(page).click();
   const letEntry = sheet(page)
@@ -84,9 +79,8 @@ test('a lesson that cites KJV text has the dictionary, whatever the translation'
   await expect(letEntry).toContainText('Romans 1:13');
   await page.keyboard.press('Escape');
 
-  // The chip keeps its KJV text when the translation changes, so the button stays.
   await useTranslation(page, 'BSB');
   await page.goto(lesson);
-  await expect(note(page)).toContainText('Romans 1:13 · KJV');
-  await expect(button(page)).toBeVisible();
+  await expect(note(page)).toContainText('Romans 1:13 · BSB');
+  await expect(button(page)).toHaveCount(0);
 });

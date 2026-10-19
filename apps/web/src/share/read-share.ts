@@ -1,12 +1,13 @@
 import type { VerseTextMatch } from '@lamp/bible-data';
 import {
   findReferences,
+  isAppTranslation,
   isBibleSite,
   type FoundReference,
   type Passage,
   passageRange,
+  type ShareSource,
   shareSource,
-  type TranslationId,
   type VerseRef,
 } from '@lamp/domain';
 
@@ -20,8 +21,6 @@ export interface ShareInput {
 /** One verse found in a share, as it would be put in the inbox. */
 export interface FoundVerse {
   ref: VerseRef;
-  /** Whether its translation and text are still to come from Lamp's own book. */
-  fromBook: boolean;
 }
 
 /** What the share screen shows and adds (wireframes/interop.md "Share landing"). */
@@ -40,14 +39,15 @@ const MAX_NOTE = 10_000;
 /**
  * Reads a share (F18, M9-06): its references (M9-03), the whole BSB or KJV verses in it (M9-04,
  * `matches`, which the caller asks the matcher for with `shareHints`), and the translation its
- * address or text names (M9-05).
- * - A verse whose text was matched gets that translation, and the text as it came is its
- *   snapshot (decided 2026-10-18).
+ * address or text names (M9-05). A chip of the app's own text is the passage alone, read in the
+ * translation picked in Settings (decision 97).
+ * - A verse whose text was matched is a chip of the app's own text.
  * - A reference from a Bible site or app (an address it recognises, or a version after the
  *   reference) gets the source's translation, and the rest of the text is the verse's text; with
- *   several references, that text is the note instead.
- * - A reference from anywhere else ("Look at John 3:16 for Sunday") is a chip in `translation`
- *   whose text comes from Lamp's book, and the rest of the text is the note.
+ *   several references, that text is the note instead. From the BSB or KJV, the chip is the
+ *   app's own text and the verse's text goes.
+ * - A reference from anywhere else ("Look at John 3:16 for Sunday") is a chip of the app's own
+ *   text, and the rest of the text is the note.
  * With no reference and no match, the address's passage counts (`bible.com/…/JHN.10.11`); with
  * none of those, the share is a note. A paste reads the same, with text from an unknown version
  * `pasted` instead of `shared`.
@@ -55,7 +55,6 @@ const MAX_NOTE = 10_000;
 export function readShare(
   input: ShareInput,
   matches: readonly VerseTextMatch[],
-  translation: TranslationId,
   /** What text from an unknown version is: `shared`, or `pasted` for a paste (§17.3). */
   outside: 'shared' | 'pasted' = 'shared',
 ): ShareReading {
@@ -74,20 +73,12 @@ export function readShare(
 
   // Spans that aren't the note: references (with a version label after them) and matched verses.
   const spans: Array<[number, number]> = [];
-  const verses: Array<FoundVerse & { at: number }> = [];
+  const verses: Array<FoundVerse & { at: number; matched: boolean }> = [];
   for (const match of matches) {
     // The verse's closing punctuation and quote go with it.
     const to = match.to + (/^[.,;:!?’”"')\]]*/u.exec(text.slice(match.to))?.[0].length ?? 0);
     spans.push([match.from, to]);
-    verses.push({
-      at: match.from,
-      fromBook: false,
-      ref: {
-        ...match.passage,
-        translation: match.translation as TranslationId,
-        snapshotText: tidy(text.slice(match.from, to)),
-      },
-    });
+    verses.push({ at: match.from, matched: true, ref: { ...match.passage } });
   }
   for (const found of references) {
     if (found.from >= 0) spans.push([found.from, labelEnd(text, found)]);
@@ -95,43 +86,40 @@ export function readShare(
     const ref = { ...found.ref };
     verses.push({
       at: found.from,
-      fromBook: !identified,
-      ref: identified
-        ? {
-            ...ref,
-            translation: source.translation,
-            ...(source.versionLabel && { versionLabel: source.versionLabel }),
-          }
-        : { ...ref, translation },
+      matched: false,
+      ref: identified ? fromSource(ref, source) : ref,
     });
   }
   if (verses.length === 0 && source.passage) {
-    verses.push({
-      at: 0,
-      fromBook: false,
-      ref: {
-        ...source.passage,
-        translation: source.translation,
-        ...(source.versionLabel && { versionLabel: source.versionLabel }),
-      },
-    });
+    verses.push({ at: 0, matched: false, ref: fromSource({ ...source.passage }, source) });
   }
   verses.sort((a, b) => a.at - b.at);
 
   let rest = tidy(without(text, spans));
   if (!/[\p{L}\p{N}]/u.test(rest)) rest = '';
-  // From a Bible site, one reference's rest is its verse text.
+  // From a Bible site, one reference's rest is its verse text: kept as it came from outside, and
+  // read from the book for the app's own.
   const only = verses.length === 1 ? verses[0]! : null;
-  if (only && identified && !only.ref.snapshotText && rest) {
-    only.ref.snapshotText = rest;
+  if (only && identified && !only.matched && rest) {
+    if (only.ref.translation) only.ref.snapshotText = rest;
     rest = '';
   }
 
   const note = verses.length > 0 ? rest || null : tidy(raw) || sourceUrl;
   return {
-    verses: verses.map(({ fromBook, ref }) => ({ fromBook, ref })),
+    verses: verses.map(({ ref }) => ({ ref })),
     note: note && note.length > MAX_NOTE ? note.slice(0, MAX_NOTE) : note,
     sourceUrl,
+  };
+}
+
+/** A reference in the source's translation: the app's own for the BSB or KJV (decision 97). */
+function fromSource(ref: VerseRef, source: ShareSource): VerseRef {
+  if (isAppTranslation(source.translation)) return ref;
+  return {
+    ...ref,
+    translation: source.translation,
+    ...(source.versionLabel && { versionLabel: source.versionLabel }),
   };
 }
 

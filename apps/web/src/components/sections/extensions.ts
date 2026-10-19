@@ -5,9 +5,10 @@ import { Plugin, Selection } from '@tiptap/pm/state';
 import { StarterKit } from '@tiptap/starter-kit';
 import { LinkSuggestion, NoteLink } from '@/components/links/note-link.ts';
 import { PasteChips } from '@/components/verses/paste-chips.ts';
-import { VerseChipKeys, verseChipView, VerseSnapshots } from '@/components/verses/verse-chip.ts';
+import { VerseChipKeys, verseChipView } from '@/components/verses/verse-chip.ts';
 import { VersePreviews } from '@/components/verses/verse-preview.ts';
 import { VerseSuggestion } from '@/components/verses/verse-suggestion.ts';
+import { activeTranslation } from '@/data/translation.ts';
 import { openInApp } from '@/lib/in-app-links.ts';
 
 /**
@@ -44,7 +45,8 @@ function verseField(name: string) {
 }
 
 /**
- * A verse reference inside a note, stored with its snapshot (F3). An atom: the cursor and Backspace
+ * A verse reference inside a note (F3): the passage, and text only when it came from outside
+ * (decision 97). An atom: the cursor and Backspace
  * treat it as one unit. `VerseSuggestion` inserts it; in the editor it's drawn by `verseChipView`,
  * and `renderHTML` is what copying it writes.
  */
@@ -82,7 +84,7 @@ export const Verse = Node.create({
         'data-verse': JSON.stringify(node.attrs),
         class: 'rounded-md bg-muted px-1 font-sans text-[0.9em] whitespace-nowrap',
       }),
-      `${node.attrs.display} · ${translationLabel(node.attrs as VerseRef)}`,
+      `${node.attrs.display} · ${translationLabel(node.attrs as VerseRef, activeTranslation())}`,
     ];
   },
 
@@ -204,7 +206,6 @@ export function sectionExtensions(options: {
     NoteLink,
     LinkSuggestion,
     VerseChipKeys,
-    VerseSnapshots,
     VersePreviews,
     PasteChips,
     InAppLinks,

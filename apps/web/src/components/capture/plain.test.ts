@@ -10,7 +10,6 @@ const verse = {
     chapter: 10,
     verseStart: 27,
     display: 'John 10:27',
-    translation: 'BSB' as const,
   },
 };
 

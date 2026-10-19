@@ -8,7 +8,7 @@ const item = (fields: Partial<MemoryItem>): MemoryItem => ({
   updatedAt: '2026-10-03T10:00:00.000Z',
   rev: 1,
   deletedAt: null,
-  ref: { book: 'JHN', chapter: 10, verseStart: 27, display: 'John 10:27', translation: 'BSB' },
+  ref: { book: 'JHN', chapter: 10, verseStart: 27, display: 'John 10:27' },
   ease: 2.5,
   interval: 0,
   nextReviewAt: '2026-10-14T00:00:00.000Z',

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BOOK_CODES, type BookCode } from './books.ts';
-import type { VerseRef } from './verse-ref.ts';
+import { refTranslation, type TranslationId, type VerseRef } from './verse-ref.ts';
 
 /**
  * "Open in…" (F20, TECH-DESIGN §17.11): the reading and study apps a chip can hand its passage to.
@@ -60,13 +60,18 @@ type ChipPassage = Pick<
 
 /**
  * The address that opens `ref` in `target` (F20): the target's own book code and version, in the
- * link for the kind of passage. A target without range links opens a range at its first verse, as
- * YouVersion and Blue Letter Bible need for a range across chapters (§17.11).
+ * link for the kind of passage; the app's own text in `active`, the translation picked in Settings.
+ * A target without range links opens a range at its first verse, as YouVersion and Blue Letter
+ * Bible need for a range across chapters (§17.11).
  */
-export function openInUrl(target: OpenInTargetSpec, ref: ChipPassage): string {
+export function openInUrl(
+  target: OpenInTargetSpec,
+  ref: ChipPassage,
+  active: TranslationId,
+): string {
   const version =
     (ref.versionLabel == null
-      ? target.versions[ref.translation]
+      ? target.versions[refTranslation(ref, active)]
       : target.versions[ref.versionLabel]) ?? target.versions['*']!;
   const links = { ...target.links, ...target.versionLinks?.[version] };
   const fields: Record<string, string | number> = {

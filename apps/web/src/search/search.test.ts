@@ -38,7 +38,7 @@ const ids: Record<string, string> = {};
 
 const verse = (p: Passage) => ({
   type: 'verse' as const,
-  attrs: { ...p, display: formatPassage(p), translation: 'BSB' as const },
+  attrs: { ...p, display: formatPassage(p) },
 });
 const body = (...content: Array<string | ReturnType<typeof verse>>): SectionBody => ({
   type: 'doc',
@@ -299,12 +299,7 @@ describe('verse index', () => {
   it('lists a highlight from the citation index, by the day it was stored', async () => {
     const row = await createHighlight(
       {
-        ref: {
-          ...ROM_8_28,
-          display: 'Romans 8:28',
-          translation: 'BSB',
-          snapshotText: 'We know that all things work together for good.',
-        },
+        ref: { ...ROM_8_28, display: 'Romans 8:28' },
         colour: 'yellow',
         note: 'memorise this',
         promotedSectionId: null,
@@ -322,7 +317,6 @@ describe('verse index', () => {
       colour: 'yellow',
       note: 'memorise this',
       passages: ['Romans 8:28'],
-      text: 'We know that all things work together for good.',
     });
 
     const john = parseQuery('John 10');

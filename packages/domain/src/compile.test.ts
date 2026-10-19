@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, type CompileSource, compileScopes, isWholeBook } from './compile.ts';
 import { formatPassage, type Passage, type VerseRef } from './verse-ref.ts';
 
-const chip = (p: Passage): VerseRef => ({ ...p, display: formatPassage(p), translation: 'BSB' });
+const chip = (p: Passage): VerseRef => ({ ...p, display: formatPassage(p) });
 const rom = (chapter: number, verseStart?: number, verseEnd?: number): Passage => ({
   book: 'ROM',
   chapter,

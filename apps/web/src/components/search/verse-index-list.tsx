@@ -1,8 +1,9 @@
-import { type MemoryItem, passageSlug, type Passage } from '@lamp/domain';
+import { type MemoryItem, passageSlug, type Passage, type VerseRef } from '@lamp/domain';
 import { buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { ChevronRight, X } from 'lucide-react';
+import { useReading } from '@/data/verse-text.ts';
 import { shortDate, today } from '@/lib/dates.ts';
 import type { VerseIndexEntry } from '@/search/results.ts';
 import { around } from '@/search/snippet.ts';
@@ -61,6 +62,12 @@ function readerParams({ book, chapter, verseStart }: Passage) {
   };
 }
 
+/** " — " and the verse's text as it reads now (decision 97), once it's here. */
+function TextAfter({ verse }: { verse: VerseRef }) {
+  const { text } = useReading(verse);
+  return text ? ` — ${text}` : null;
+}
+
 function HighlightRow({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'highlight' }> }) {
   return (
     <Link to="/read/$chapter" params={readerParams(entry.ref)} className={rowClass}>
@@ -71,7 +78,7 @@ function HighlightRow({ entry }: { entry: Extract<VerseIndexEntry, { kind: 'high
         </span>
         <span className="line-clamp-3 break-words">
           {entry.passages[0]}
-          {entry.text && ` — ${entry.text}`}
+          <TextAfter verse={entry.ref} />
         </span>
         {entry.note && (
           <span className="line-clamp-2 text-muted-foreground">Note: {entry.note}</span>
@@ -97,7 +104,7 @@ function MemoryRow({ item }: { item: MemoryItem }) {
           </span>
           <span className="line-clamp-3 break-words">
             {ref.display}
-            {ref.snapshotText && ` — ${ref.snapshotText}`}
+            <TextAfter verse={ref} />
           </span>
         </span>
         <ChevronRight aria-hidden className="mt-1 size-4 shrink-0 text-muted-foreground" />

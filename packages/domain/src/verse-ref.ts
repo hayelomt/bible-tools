@@ -16,7 +16,9 @@ export const TRANSLATION_NAMES: Record<TranslationId, string> = {
  * text from outside kept as it came. `shared` came with a share or an import; `pasted` was pasted
  * and matched neither the BSB nor the KJV. Lamp never fills or replaces their text.
  */
-export const CHIP_TRANSLATIONS = [...TRANSLATIONS, 'shared', 'pasted'] as const;
+export const OUTSIDE_TRANSLATIONS = ['shared', 'pasted'] as const;
+export type OutsideTranslation = (typeof OUTSIDE_TRANSLATIONS)[number];
+export const CHIP_TRANSLATIONS = [...TRANSLATIONS, ...OUTSIDE_TRANSLATIONS] as const;
 export type ChipTranslation = (typeof CHIP_TRANSLATIONS)[number];
 
 /** Whether the app has this translation's text: the BSB or the KJV, not text from outside. */
@@ -25,14 +27,37 @@ export const isAppTranslation = (translation: ChipTranslation): translation is T
 
 type ChipSource = Pick<VerseRef, 'translation' | 'versionLabel'>;
 
+/**
+ * The translation a reference reads in (decision 97): its own for text from outside, otherwise the
+ * one picked in Settings, `active`, so a change there changes every chip.
+ */
+export const refTranslation = (ref: ChipSource, active: TranslationId): ChipTranslation =>
+  ref.translation ?? active;
+
 /** The label a chip shows after its reference: "BSB", the source's version ("NIV"), or "shared". */
-export const translationLabel = (ref: ChipSource): string => ref.versionLabel ?? ref.translation;
+export const translationLabel = (ref: ChipSource, active: TranslationId): string =>
+  ref.versionLabel ?? refTranslation(ref, active);
 
 /** The chip's translation in full, for the viewer and screen readers: "Berean Standard Bible". */
-export function translationName(ref: ChipSource): string {
-  if (isAppTranslation(ref.translation)) return TRANSLATION_NAMES[ref.translation];
-  return ref.versionLabel ?? (ref.translation === 'shared' ? 'Shared text' : 'Pasted text');
+export function translationName(ref: ChipSource, active: TranslationId): string {
+  const translation = refTranslation(ref, active);
+  if (isAppTranslation(translation)) return TRANSLATION_NAMES[translation];
+  return ref.versionLabel ?? (translation === 'shared' ? 'Shared text' : 'Pasted text');
 }
+
+/**
+ * Where verse text is read (decision 97): the app's own text in `translation`, the one picked in
+ * Settings, from its books; text from outside is the chip's own.
+ */
+export interface VerseReader {
+  translation: TranslationId;
+  /** The passage's text in `translation`; empty when its book isn't here. */
+  text: (passage: Passage) => string;
+}
+
+/** A reference's text as it reads now; empty when there's none (its book isn't here). */
+export const refText = (ref: VerseRef, reader: VerseReader): string =>
+  ref.translation ? (ref.snapshotText ?? '') : reader.text(ref);
 
 /**
  * A passage, without the text: one verse, a verse range, a whole chapter, a chapter range or a
@@ -53,11 +78,14 @@ export interface Passage {
 export interface VerseRef extends Passage {
   /** "Romans 8:28–30", formatted from the fields by `formatPassage`. */
   display: string;
-  /** Which text the snapshot came from. */
-  translation: ChipTranslation;
+  /**
+   * Text from outside: where it came from. Absent for the app's own text, which isn't stored but
+   * read in the translation picked in Settings (`refTranslation`, decision 97).
+   */
+  translation?: OutsideTranslation;
   /** The version a `shared` or `pasted` text's source named ("NIV"), shown in place of it. */
   versionLabel?: string;
-  /** Frozen at capture (F3). */
+  /** Text from outside, kept as it came (F3); Lamp has no book for it. */
   snapshotText?: string;
 }
 

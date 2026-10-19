@@ -1,6 +1,6 @@
 import { compileScopes, keyBetween, type SectionBody, type VerseRef } from '@lamp/domain';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createLesson } from '@/data/actions/lessons.ts';
 import { action } from '@/data/action.ts';
 import { addQuestion, parkQuestion } from '@/data/actions/questions.ts';
@@ -12,6 +12,22 @@ import { LampDb } from '@/data/db.ts';
 import { ensureDevice } from '@/data/setup.ts';
 import { exportCommentary, exportLesson, exportLessonForNotion, exportSeries } from './load.ts';
 import { fileName, sectionMoment, sourceOf } from './markdown.ts';
+import { booksOf } from '@/test/books.ts';
+
+/** The BSB as these exports quote it. */
+const BOOKS = booksOf({
+  'JHN 10:9':
+    'I am the door. If anyone enters in by me, he will be saved, and will go in and go out, and will find pasture.',
+  'PSA 23:1': 'Yahweh is my shepherd: I shall lack nothing.',
+  'ROM 8:1': 'Therefore, there is now no condemnation for those who are in Christ Jesus.',
+  'ROM 8:28': 'And we know that God works all things together for the good of those who love Him.',
+  'ROM 8:38': 'For I am convinced that neither death nor life…',
+  'ROM 9:1': 'I speak the truth in Christ; I am not lying.',
+});
+vi.mock('@/data/bible.ts', async (original) => ({
+  ...(await original<typeof import('@/data/bible.ts')>()),
+  whenBook: (_: string, code: string) => Promise.resolve(BOOKS.get(code as never) ?? null),
+}));
 
 let db: LampDb;
 let dbCount = 0;
@@ -25,23 +41,8 @@ afterEach(async () => {
   await db.delete();
 });
 
-const JOHN_10_9: VerseRef = {
-  book: 'JHN',
-  chapter: 10,
-  verseStart: 9,
-  display: 'John 10:9',
-  translation: 'BSB',
-  snapshotText:
-    'I am the door. If anyone enters in by me, he will be saved, and will go in and go out, and will find pasture.',
-};
-const PSALM_23_1: VerseRef = {
-  book: 'PSA',
-  chapter: 23,
-  verseStart: 1,
-  display: 'Psalm 23:1',
-  translation: 'BSB',
-  snapshotText: 'Yahweh is my shepherd: I shall lack nothing.',
-};
+const JOHN_10_9: VerseRef = { book: 'JHN', chapter: 10, verseStart: 9, display: 'John 10:9' };
+const PSALM_23_1: VerseRef = { book: 'PSA', chapter: 23, verseStart: 1, display: 'Psalm 23:1' };
 
 const text = (value: string, ...marks: ('bold' | 'italic')[]) => ({
   type: 'text' as const,
@@ -74,7 +75,6 @@ async function goodShepherd(seriesId: string | null) {
           verseStart: 1,
           verseEnd: 18,
           display: 'John 10:1–18',
-          translation: 'BSB',
         },
       ],
     },
@@ -166,24 +166,16 @@ async function goodShepherd(seriesId: string | null) {
   return lesson;
 }
 
-const rom = (verseStart: number, snapshotText: string, chapter = 8): VerseRef => ({
+const rom = (verseStart: number, chapter = 8): VerseRef => ({
   book: 'ROM',
   chapter,
   verseStart,
   display: `Romans ${chapter}:${verseStart}`,
-  translation: 'BSB',
-  snapshotText,
 });
-const ROM_8_1 = rom(
-  1,
-  'Therefore, there is now no condemnation for those who are in Christ Jesus.',
-);
-const ROM_8_28 = rom(
-  28,
-  'And we know that God works all things together for the good of those who love Him.',
-);
-const ROM_8_38 = rom(38, 'For I am convinced that neither death nor life…');
-const ROM_9_1 = rom(1, 'I speak the truth in Christ; I am not lying.', 9);
+const ROM_8_1 = rom(1);
+const ROM_8_28 = rom(28);
+const ROM_8_38 = rom(38);
+const ROM_9_1 = rom(1, 9);
 
 async function lessonOn(title: string, date: string) {
   return createLesson(

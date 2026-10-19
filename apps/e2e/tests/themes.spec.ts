@@ -1,6 +1,5 @@
 import {
   citationsFor,
-  DEFAULT_TRANSLATION,
   ENTITY_SCHEMAS,
   type EntityRow,
   keysBetween,
@@ -24,7 +23,7 @@ const synced = () => ({ id: newId(), createdAt: NOW, updatedAt: NOW, rev: 0, del
 const chip = (reference: string) => {
   const parsed = parseReference(reference);
   if (!parsed.ok) throw new Error(`Not a reference: ${reference}`);
-  return { ...parsed.ref, translation: DEFAULT_TRANSLATION };
+  return { ...parsed.ref };
 };
 
 /** Grace three times in March on Romans and once in October on John; hope on a whole lesson. */

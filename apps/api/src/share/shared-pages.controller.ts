@@ -8,17 +8,20 @@ import type { ChipHref } from './render/body.js';
 import type { Page } from './render/page.js';
 import {
   commentaryPage,
+  commentaryRefs,
   handoutPage,
   lessonPage,
+  lessonRefs,
   notFoundPage,
   sectionAnchor,
   seriesPage,
 } from './render/pages.js';
 // Value imports, not `import type`: Nest resolves the constructor parameters from their classes.
+import { BibleTextService } from './bible-text.service.js';
 import { ShareLinksService } from './share-links.service.js';
 import { isShareToken } from './share-token.js';
 import { SharedRowsService } from './shared-rows.service.js';
-import type { CommentaryView } from './views.js';
+import type { CommentaryView, LessonView } from './views.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -37,6 +40,7 @@ export class SharedPagesController {
   constructor(
     private readonly links: ShareLinksService,
     private readonly rows: SharedRowsService,
+    private readonly bible: BibleTextService,
   ) {}
 
   @Get(':token')
@@ -58,18 +62,25 @@ export class SharedPagesController {
     const lesson = series?.lessons.find((l) => l.id === lessonId);
     if (!series || !lesson) return send(res, null);
     const base = `/s/${token}`;
+    const view = await this.rows.lessonView(link.userId, lesson);
     send(
       res,
       lessonPage(
-        await this.rows.lessonView(link.userId, lesson),
+        view,
         await this.seriesHref(
           link.userId,
           base,
           series.lessons.map((l) => l.id),
         ),
+        await this.lessonVerses(link.userId, view),
         { href: base, label: series.series.title },
       ),
     );
+  }
+
+  /** A reader of a lesson's chips, in the owner's translation (decision 97). */
+  private async lessonVerses(userId: string, view: LessonView) {
+    return this.bible.reader(await this.rows.translation(userId), lessonRefs(view));
   }
 
   private async target(link: StoredLink, token: string): Promise<Page | null> {
@@ -88,17 +99,23 @@ export class SharedPagesController {
             : own.has(targetId)
               ? `#${sectionAnchor(targetId)}`
               : null;
-        return lessonPage(view, href);
+        return lessonPage(view, href, await this.lessonVerses(link.userId, view));
       }
       case 'series': {
         const view = await this.rows.seriesView(link.userId, link.targetId!);
-        return view && seriesPage(view, (id) => `${base}/lessons/${id}`);
+        if (!view) return null;
+        const translation = await this.rows.translation(link.userId);
+        return seriesPage(view, (id) => `${base}/lessons/${id}`, translation);
       }
       case 'compile': {
         const view = link.live
           ? await this.rows.commentary(link.userId, link.passage as unknown as Passage)
           : (link.snapshot as unknown as CommentaryView);
-        return commentaryPage(view, link.live ? null : link.createdAt.toISOString().slice(0, 10));
+        // A frozen view quotes the translation it was made in.
+        const translation = view.translation ?? (await this.rows.translation(link.userId));
+        const verses = await this.bible.reader(translation, commentaryRefs(view));
+        const asOf = link.live ? null : link.createdAt.toISOString().slice(0, 10);
+        return commentaryPage(view, asOf, verses);
       }
       case 'handout': {
         // Frozen, but it goes when its lesson does.

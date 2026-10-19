@@ -15,6 +15,9 @@ import {
   type Series,
   threadOf,
   toPlainText,
+  TRANSLATIONS,
+  type TranslationId,
+  DEFAULT_TRANSLATION,
 } from '@lamp/domain';
 import { Injectable } from '@nestjs/common';
 // Value imports, not `import type`: Nest resolves the constructor parameters from their classes.
@@ -30,6 +33,18 @@ import type { CommentaryView, LessonView, SeriesView } from './views.js';
 @Injectable()
 export class SharedRowsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** The translation the owner picked in Settings, which the pages quote (decision 97). */
+  async translation(userId: string): Promise<TranslationId> {
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { defaultTranslation: true },
+    });
+    const picked = settings?.defaultTranslation;
+    return (TRANSLATIONS as readonly string[]).includes(picked ?? '')
+      ? (picked as TranslationId)
+      : DEFAULT_TRANSLATION;
+  }
 
   /** A live lesson of the owner's; null when it's gone. */
   async lesson(userId: string, id: string): Promise<Lesson | null> {
@@ -242,6 +257,7 @@ export class SharedRowsService {
       sections: own.length,
       lessons: new Set(own.map((s) => s.lessonId)).size,
       groups,
+      translation: await this.translation(userId),
     };
   }
 }

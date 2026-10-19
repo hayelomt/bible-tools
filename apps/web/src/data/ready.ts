@@ -2,6 +2,7 @@ import { readMode } from '@lamp/ui/themes/theme';
 import { startBackgroundWork } from './background.ts';
 import { db } from './db.ts';
 import { ensureDevice } from './setup.ts';
+import { followSettings } from './translation.ts';
 import { restoreUnsaved } from './unsaved.ts';
 
 /** The longest the background work waits for the first screen to finish drawing. */
@@ -11,12 +12,15 @@ let deviceReady: Promise<void> | undefined;
 
 /**
  * The device set up once, before the first screen shows (the app's or the print view's): its
- * rows and any unsaved text restored. The background work starts once the first screen is drawn
+ * rows and any unsaved text restored, and the translation picked in Settings read, which every
+ * chip quotes (decision 97). The background work starts once the first screen is drawn
  * (the browser is idle), so its worker and database reads don't hold that screen up.
  */
 export function whenDeviceReady(): Promise<void> {
   if (!deviceReady) {
-    deviceReady = ensureDevice(db, initialTheme()).then(() => restoreUnsaved(db));
+    deviceReady = ensureDevice(db, initialTheme())
+      .then(() => restoreUnsaved(db))
+      .then(followSettings);
     // A failed setup is shown by the route that waits for it.
     void deviceReady.then(
       () => whenIdle(startBackgroundWork),

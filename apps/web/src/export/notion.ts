@@ -46,6 +46,7 @@ export function notionMarkdown(data: LessonForExport): string {
       ...toNotionBlocks(row.item.body, {
         headingLevel: 2,
         links,
+        verses: data.verses,
         quoted: row.level > 0,
         lead: moment
           ? moment.href

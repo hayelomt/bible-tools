@@ -36,7 +36,7 @@ afterEach(async () => {
   await db.delete();
 });
 
-const ref = (p: Passage) => ({ ...p, display: formatPassage(p), translation: 'BSB' as const });
+const ref = (p: Passage) => ({ ...p, display: formatPassage(p) });
 const citing = (words: string, p?: Passage): SectionBody => ({
   type: 'doc',
   content: [

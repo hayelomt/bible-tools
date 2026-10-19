@@ -32,7 +32,7 @@ import { ReadLink } from '@/components/verses/passage-links.tsx';
 import { VerseText } from '@/components/verses/verse-text.tsx';
 import { VerseViewer } from '@/components/verses/verse-viewer.tsx';
 import { LAPTOP_QUERY } from '@/components/verses/verse-suggestions.tsx';
-import { snapshotText, useBook } from '@/data/bible.ts';
+import { quoteText, useBook } from '@/data/bible.ts';
 import { useActiveTranslation } from '@/data/translation.ts';
 import { db as appDb } from '@/data/db.ts';
 import { recordVisit } from '@/data/actions/resurface.ts';
@@ -384,7 +384,7 @@ function GroupVerse({ passage }: { passage: Passage }) {
   const translation = useActiveTranslation();
   const book = useBook(translation, passage.book);
   if (book.status !== 'ready' || !isAppTranslation(translation)) return null;
-  const text = snapshotText(book.text, passage, translation);
+  const text = quoteText(book.text, passage, translation);
   if (!text) return null;
   return (
     <VerseText

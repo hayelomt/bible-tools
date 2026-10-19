@@ -20,7 +20,7 @@ interface Item {
   text: string | null;
   ref: {
     display: string;
-    translation: string;
+    translation?: string;
     versionLabel?: string;
     snapshotText?: string;
   } | null;
@@ -50,12 +50,12 @@ test('the export imports into the inbox, and a second import adds nothing', asyn
     origin: 'import',
     colour: 'yellow',
     receivedAt: '2025-03-02T08:15:00.000Z',
-    // No text came with it: the BSB's.
-    ref: {
-      translation: 'BSB',
-      snapshotText: expect.stringContaining('For God so loved the world'),
-    },
+    // From the BSB: the passage alone, its text read from the book (decision 97).
+    ref: { book: 'JHN', chapter: 3, verseStart: 16, display: 'John 3:16' },
   });
+  expect(items.find((item) => item.ref?.display === 'John 3:16')?.ref).not.toHaveProperty(
+    'translation',
+  );
   expect(items.find((item) => item.ref?.display === 'Philippians 4:13')?.ref).toMatchObject({
     translation: 'shared',
     versionLabel: 'NIV',

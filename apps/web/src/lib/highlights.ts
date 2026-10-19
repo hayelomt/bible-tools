@@ -3,7 +3,6 @@ import {
   type Highlight,
   type Passage,
   passagesOverlap,
-  type TranslationId,
   type VerseRef,
 } from '@lamp/domain';
 import type { Chapter } from './chapters.ts';
@@ -27,20 +26,13 @@ export function selectionPassage(at: Chapter, selection: VerseSelection): Passag
   return passage;
 }
 
-/** A highlight's reference, with the verse text frozen like a chip's snapshot. */
-export function highlightRef(
-  at: Chapter,
-  selection: VerseSelection,
-  translation: TranslationId,
-  snapshot: string,
-): VerseRef {
+/**
+ * A highlight's reference: the passage alone, like a chip's, read in the translation picked in
+ * Settings (decision 97).
+ */
+export function highlightRef(at: Chapter, selection: VerseSelection): VerseRef {
   const passage = selectionPassage(at, selection);
-  return {
-    ...passage,
-    display: formatPassage(passage),
-    translation,
-    ...(snapshot ? { snapshotText: snapshot } : {}),
-  };
+  return { ...passage, display: formatPassage(passage) };
 }
 
 /**

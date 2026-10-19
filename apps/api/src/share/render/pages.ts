@@ -1,4 +1,11 @@
-import { citedRefs, formatPassage, type HandoutSnapshot, type Passage } from '@lamp/domain';
+import {
+  citedRefs,
+  formatPassage,
+  type HandoutSnapshot,
+  type Passage,
+  type TranslationId,
+  type VerseReader,
+} from '@lamp/domain';
 import type { CommentaryEntry, CommentaryView, LessonView, SeriesView } from '../views.js';
 import { bodyHtml, type ChipHref } from './body.js';
 import { type Html, markup } from './markup.js';
@@ -29,7 +36,7 @@ const sharedFrom = (credit: string | null) =>
 export const sectionAnchor = (id: string) => `s-${id}`;
 
 /** The lesson's document, as the print view lays it out. */
-function lessonArticle(view: LessonView, href: ChipHref): Html {
+function lessonArticle(view: LessonView, href: ChipHref, verses: VerseReader): Html {
   const { lesson } = view;
   const source = sourceOf(lesson);
   return markup`<article class="doc">
@@ -56,7 +63,7 @@ function lessonArticle(view: LessonView, href: ChipHref): Html {
         class="note${level === 1 ? ' reply' : ''}"
       >
         ${moment && markup`<p class="muted moment">[${moment}]</p>`}
-        ${bodyHtml(section.body, 2, href)}
+        ${bodyHtml(section.body, 2, href, verses)}
         ${tags.length > 0 && markup`<p class="muted tags">${tags.map(tagLabel).join(' · ')}</p>`}
       </section>`;
     })}
@@ -90,22 +97,46 @@ function lessonArticle(view: LessonView, href: ChipHref): Html {
   </article>`;
 }
 
+/** A lesson; `verses` reads its chips' text (`lessonRefs`). */
 export function lessonPage(
   view: LessonView,
   href: ChipHref,
+  verses: VerseReader,
   back?: { href: string; label: string },
 ): Page {
   return page({
     title: view.lesson.title,
-    main: markup`${back && markup`<a class="back" href="${back.href}">← ${back.label}</a>`}${lessonArticle(view, href)}`,
+    main: markup`${back && markup`<a class="back" href="${back.href}">← ${back.label}</a>`}${lessonArticle(view, href, verses)}`,
     footer: sharedFrom(
-      lessonsCredit([{ lesson: view.lesson, sections: view.rows.map((r) => r.section) }]),
+      lessonsCredit(
+        [{ lesson: view.lesson, sections: view.rows.map((r) => r.section) }],
+        verses.translation,
+      ),
     ),
   });
 }
 
-/** A series: its title and description, then its lessons in date order, each a page of its own. */
-export function seriesPage(view: SeriesView, lessonHref: (id: string) => string): Page {
+/** Every reference a lesson's page quotes: its main passages and its sections' chips. */
+export const lessonRefs = (view: LessonView) => [
+  ...view.lesson.mainPassages,
+  ...view.rows.flatMap((r) => citedRefs(r.section.body)),
+];
+
+/** Every reference a compile view quotes: the chips of the sections it shows in full. */
+export const commentaryRefs = (view: CommentaryView) =>
+  view.groups.flatMap((g) =>
+    g.entries.filter((e) => !e.shownUnder).flatMap((e) => citedRefs(e.body)),
+  );
+
+/**
+ * A series: its title and description, then its lessons in date order, each a page of its own.
+ * Credited in `translation`, the owner's.
+ */
+export function seriesPage(
+  view: SeriesView,
+  lessonHref: (id: string) => string,
+  translation: TranslationId,
+): Page {
   const { series, lessons } = view;
   return page({
     title: series.title,
@@ -130,7 +161,12 @@ export function seriesPage(view: SeriesView, lessonHref: (id: string) => string)
           )}
         </ol>`
       }`,
-    footer: sharedFrom(creditFor(lessons.flatMap((l) => l.mainPassages))),
+    footer: sharedFrom(
+      creditFor(
+        lessons.flatMap((l) => l.mainPassages),
+        translation,
+      ),
+    ),
   });
 }
 
@@ -150,9 +186,14 @@ function descriptionOf(description: string): Html {
 
 /**
  * A compile view, as the app's commentary (wireframes/thinking.md), with bylines as plain text.
- * `asOf` is the day a frozen link was made: "As of Friday 17 October 2026".
+ * `asOf` is the day a frozen link was made: "As of Friday 17 October 2026". `verses` reads its
+ * chips' text (`commentaryRefs`).
  */
-export function commentaryPage(view: CommentaryView, asOf: string | null): Page {
+export function commentaryPage(
+  view: CommentaryView,
+  asOf: string | null,
+  verses: VerseReader,
+): Page {
   const shown = new Set(
     view.groups.flatMap((g) => g.entries.filter((e) => !e.shownUnder).map((e) => e.sectionId)),
   );
@@ -175,11 +216,12 @@ export function commentaryPage(view: CommentaryView, asOf: string | null): Page 
     parts.push(
       markup`<section class="group">
         ${level === 2 ? markup`<h2 class="group-heading">${formatPassage(group.passage)}</h2>` : markup`<h3 class="group-heading">${formatPassage(group.passage)}</h3>`}
-        ${group.entries.map((entry) => commentaryEntry(entry, view.wholeBook ? 4 : 3, href))}
+        ${group.entries.map((entry) =>
+          commentaryEntry(entry, view.wholeBook ? 4 : 3, href, verses),
+        )}
       </section>`,
     );
   }
-  const sections = view.groups.flatMap((g) => g.entries.filter((e) => !e.shownUnder));
   return page({
     title: `Commentary on ${view.title}`,
     main: markup`<header>
@@ -192,11 +234,16 @@ export function commentaryPage(view: CommentaryView, asOf: string | null): Page 
         </div>
       </header>
       ${parts}`,
-    footer: sharedFrom(creditFor(sections.flatMap((e) => citedRefs(e.body)))),
+    footer: sharedFrom(creditFor(commentaryRefs(view), verses.translation)),
   });
 }
 
-function commentaryEntry(entry: CommentaryEntry, headingLevel: 3 | 4, href: ChipHref): Html {
+function commentaryEntry(
+  entry: CommentaryEntry,
+  headingLevel: 3 | 4,
+  href: ChipHref,
+  verses: VerseReader,
+): Html {
   const byline = `${entry.lessonTitle} · ${shortDateWithYear(entry.lessonDate)}`;
   const cls = entry.nested ? 'entry reply' : 'entry';
   if (entry.shownUnder) {
@@ -205,7 +252,7 @@ function commentaryEntry(entry: CommentaryEntry, headingLevel: 3 | 4, href: Chip
     </div>`;
   }
   return markup`<div id="${sectionAnchor(entry.sectionId)}" class="${cls}">
-    <div class="note">${bodyHtml(entry.body, headingLevel === 3 ? 4 : 5, href)}</div>
+    <div class="note">${bodyHtml(entry.body, headingLevel === 3 ? 4 : 5, href, verses)}</div>
     <p class="muted">${byline}</p>
     ${entry.also.length > 0 && markup`<p class="muted"><em>Also under ${entry.also.map((p: Passage) => formatPassage(p)).join(', ')}</em></p>`}
   </div>`;

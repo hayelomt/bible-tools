@@ -9,9 +9,9 @@ import {
   type Series,
   type Takeaway,
   toMarkdown,
-  isAppTranslation,
   TRANSLATION_NAMES,
   type TranslationId,
+  type VerseReader,
   type VerseRef,
 } from '@lamp/domain';
 import { outline } from '@/components/sections/outline.ts';
@@ -29,7 +29,8 @@ import { offsetLabel, offsetSeconds, pageLabel } from '@/lib/source-time.ts';
  * the rows.
  *
  * - Sections in the lesson's order; a reply is quoted under its section (`> `), so it shows
- *   indented. Verse chips read "John 10:9 (BSB)", with their text quoted after the paragraph.
+ *   indented. Verse chips read "John 10:9 (BSB)", with their text quoted after the paragraph: the
+ *   app's own in the translation picked in Settings (decision 97), read by `verses`.
  * - A section's tags follow it in italics; the lesson's are in its header with its passages.
  * - Takeaways as a list, questions as a task list: `[x]` answered, `[ ]` open or parked.
  * - A link chip links to the file its lesson's own export gets, with its current title (F23,
@@ -75,6 +76,8 @@ export interface LessonForExport {
   questions: QuestionView[];
   /** The targets of the link chips in its sections. */
   links?: LinkTargets;
+  /** Where its chips' text is read, with their books loaded (`verseReader`). */
+  verses: VerseReader;
 }
 
 /** One lesson; `level` is its title's heading level (2 inside a series). */
@@ -102,6 +105,7 @@ export function commentaryMarkdown(
   title: string,
   data: Commentary,
   wholeBook: boolean,
+  verses: VerseReader,
   links: LinkTargets = new Map(),
 ): string {
   const writer = linkWriter(links);
@@ -117,12 +121,17 @@ export function commentaryMarkdown(
       blocks.push(`## ${formatPassage({ book: group.passage.book, chapter })}`);
     }
     blocks.push(`${'#'.repeat(level)} ${formatPassage(group.passage)}`);
-    for (const entry of group.entries) blocks.push(commentaryEntry(entry, level + 1, writer));
+    for (const entry of group.entries) {
+      blocks.push(commentaryEntry(entry, level + 1, writer, verses));
+    }
   }
   const sections = data.groups.flatMap((g) =>
     g.entries.filter((e) => !e.shownUnder).map((e) => e.item.section),
   );
-  const credit = creditFor(sections.flatMap((s) => citedRefs(s.body)));
+  const credit = creditFor(
+    sections.flatMap((s) => citedRefs(s.body)),
+    verses.translation,
+  );
   return document([...blocks, ...(credit ? ['---', credit] : [])]);
 }
 
@@ -130,6 +139,7 @@ function commentaryEntry(
   entry: CompileGroup<CompiledNote>['entries'][number],
   level: number,
   links: LinkWriter,
+  verses: VerseReader,
 ) {
   const { section, lesson, nested } = entry.item;
   const byline = `*${escapeMarkdown(lesson.title)} · ${longDate(lesson.date)}*`;
@@ -140,7 +150,11 @@ function commentaryEntry(
     entry.also.length > 0
       ? `*Also under ${entry.also.map((p) => formatPassage(p)).join(', ')}*`
       : '';
-  const lines = [toMarkdown(section.body, { headingLevel: level, links }).trimEnd(), byline, also]
+  const lines = [
+    toMarkdown(section.body, { headingLevel: level, links, verses }).trimEnd(),
+    byline,
+    also,
+  ]
     .filter(Boolean)
     .join('\n\n');
   return nested ? quoted(lines) : lines;
@@ -162,7 +176,7 @@ function lessonBlocks(data: LessonForExport, level: number): string[] {
     const body = withMoment(
       row.item,
       lesson,
-      toMarkdown(row.item.body, { headingLevel: level + 1, links }).trimEnd(),
+      toMarkdown(row.item.body, { headingLevel: level + 1, links, verses: data.verses }).trimEnd(),
     );
     const tags = data.sectionTags.get(row.item.id) ?? [];
     const lines = [body, tags.length > 0 ? `*${tags.map(tagLabel).join(' · ')}*` : '']
@@ -297,19 +311,26 @@ function credits(lessons: LessonForExport[]): string[] {
  * when they quote none.
  */
 export function scriptureCredit(lessons: LessonForExport[]): string | null {
-  return creditFor(
-    lessons.flatMap(({ lesson, sections }) => [
-      ...lesson.mainPassages,
-      ...sections.flatMap((section) => citedRefs(section.body)),
-    ]),
+  const used = new Set(
+    lessons.flatMap(({ lesson, sections, verses }) =>
+      creditFor(
+        [...lesson.mainPassages, ...sections.flatMap((section) => citedRefs(section.body))],
+        verses.translation,
+      )
+        ? [verses.translation]
+        : [],
+    ),
   );
+  return creditLine(used);
 }
 
-/** The credit for the translations of `refs`; null when none is the app's. */
-function creditFor(refs: readonly VerseRef[]): string | null {
-  const used = new Set<TranslationId>();
-  for (const ref of refs) if (isAppTranslation(ref.translation)) used.add(ref.translation);
+/** The credit for the app's text among `refs`, read in `translation`; null when there's none. */
+function creditFor(refs: readonly VerseRef[], translation: TranslationId): string | null {
   // Text from outside isn't the app's to credit: it's labelled where it's quoted.
+  return creditLine(new Set(refs.some((ref) => !ref.translation) ? [translation] : []));
+}
+
+function creditLine(used: ReadonlySet<TranslationId>): string | null {
   if (used.size === 0) return null;
   const names = [...used].toSorted().map((id) => TRANSLATION_NAMES[id]);
   return `Scripture: ${names.join(', ')} (public domain).`;

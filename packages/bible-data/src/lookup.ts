@@ -1,4 +1,4 @@
-import type { Passage } from '@lamp/domain';
+import type { Passage, TranslationId } from '@lamp/domain';
 import type { BookText } from './book-text.ts';
 
 export interface VerseText {
@@ -30,10 +30,24 @@ export function passageVerses(book: BookText, p: Passage): VerseText[] {
   return verses;
 }
 
-/** The passage as one string, for a chip's snapshot: verse texts joined by spaces, empty ones skipped. */
+/** The passage as one string: verse texts joined by spaces, empty ones skipped. */
 export function passageText(book: BookText, p: Passage): string {
   return passageVerses(book, p)
     .map((v) => v.text)
     .filter(Boolean)
     .join(' ');
+}
+
+/**
+ * A passage's text as a chip quotes it (F3): its verse texts. The BSB leaves 16 verses empty (Acts
+ * 8:37 and others) with a note; on its own, such a verse quotes that note, marked (decided
+ * 2026-10-13), so a chip never shows nothing. In a range they're skipped.
+ */
+export function quoteText(book: BookText, passage: Passage, translation: TranslationId): string {
+  const text = passageText(book, passage);
+  if (text) return text;
+  const notes = passageVerses(book, passage)
+    .map((v) => book.n?.[`${v.chapter}:${v.verse}`])
+    .filter(Boolean);
+  return notes.length > 0 ? `[Not in ${translation}: ${[...new Set(notes)].join(' ')}]` : '';
 }

@@ -18,14 +18,12 @@ const ROM_8_28: VerseRef = {
   chapter: 8,
   verseStart: 28,
   display: 'Romans 8:28',
-  translation: 'BSB',
 };
 const JHN_10_9: VerseRef = {
   book: 'JHN',
   chapter: 10,
   verseStart: 9,
   display: 'John 10:9',
-  translation: 'BSB',
 };
 const withChip = (ref: VerseRef): SectionBody => ({
   type: 'doc',

@@ -42,10 +42,13 @@ beforeEach(async () => {
   client = await createClient(t);
 });
 
-const ROMANS_8_28_TEXT = {
-  ...ROMANS_8_28,
-  snapshotText: 'And we know that God works all things together for the good…',
-};
+/** The owner picks the KJV in Settings. */
+const pickKjv = (userId: string) =>
+  t.prisma.userSettings.upsert({
+    where: { userId },
+    update: { defaultTranslation: 'KJV' },
+    create: { userId, defaultTranslation: 'KJV' },
+  });
 
 /** Pushes rows and gives each its rev, by id. */
 async function push(account: Account, changes: { entity: string; row: Row }[]) {
@@ -76,7 +79,7 @@ async function owner() {
     body: {
       type: 'doc',
       content: [
-        ...bodyCiting(ROMANS_8_28_TEXT).content,
+        ...bodyCiting(ROMANS_8_28).content,
         ...bodyLinking('lesson', secret.id, 'Shepherd').content,
         { type: 'paragraph', content: [{ type: 'text', text: '<script>alert(1)</script>' }] },
       ],
@@ -144,6 +147,15 @@ describe('a lesson link', () => {
     expect(html).toContain('<li>Hold fast</li>');
     expect(html).toContain('Who can separate us?');
     expect(html).toContain('Scripture: Berean Standard Bible (public domain).');
+  });
+
+  it("quotes the app's text in the translation the owner picked (decision 97)", async () => {
+    const { account, shared } = await owner();
+    await pickKjv(account.id);
+    const html = await page(await share(account, { targetType: 'lesson', targetId: shared.id }));
+    expect(html).toContain('<span class="chip">Romans 8:28 (KJV)</span>');
+    expect(html).toContain('And we know that all things work together for good');
+    expect(html).toContain('Scripture: King James Version (public domain).');
   });
 
   it('escapes what the notes say', async () => {
@@ -242,7 +254,7 @@ describe('a compile view link', () => {
         'section',
         {
           ...theirs.section,
-          body: bodyCiting({ ...ROMANS_8_28, snapshotText: 'THEIRS' }),
+          body: bodyCiting({ ...ROMANS_8_28, translation: 'shared', snapshotText: 'THEIRS' }),
           updatedAt: LATER,
         },
         theirs.revs.get(theirs.section.id)!,
@@ -287,8 +299,10 @@ describe('a compile view link', () => {
         revs.get(section.id)!,
       ),
     ]);
+    await pickKjv(account.id);
     const after = await page(path);
     expect(after).toContain('2 sections in 2 lessons');
+    // In the translation it was made in.
     expect(after).toContain('And we know that God works');
     expect(after).not.toContain('No longer cited');
   });

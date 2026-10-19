@@ -15,7 +15,7 @@ function highlight(partial: Partial<Highlight> & Pick<Highlight, 'id' | 'updated
     createdAt: partial.updatedAt,
     rev: 0,
     deletedAt: null,
-    ref: { book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11', translation: 'BSB' },
+    ref: { book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11' },
     colour: 'yellow',
     note: null,
     promotedSectionId: null,
@@ -42,7 +42,6 @@ describe('highlight lookup', () => {
       verseStart: 9,
       verseEnd: 11,
       display: 'John 10:9–11',
-      translation: 'BSB',
     },
     colour: 'yellow',
   });
@@ -66,7 +65,6 @@ describe('highlight lookup', () => {
         verseStart: 11,
         verseEnd: 11,
         display: 'John 10:11',
-        translation: 'BSB',
       },
     });
     expect(highlightForSelection([doubled], at, { start: 11, end: 11 })?.id).toBe('c');
@@ -87,14 +85,12 @@ describe('highlightRef', () => {
       chapter: 10,
       verseStart: 11,
     });
-    expect(highlightRef(at, { start: 11, end: 12 }, 'BSB', 'I am the good shepherd.')).toEqual({
+    expect(highlightRef(at, { start: 11, end: 12 })).toEqual({
       book: 'JHN',
       chapter: 10,
       verseStart: 11,
       verseEnd: 12,
       display: 'John 10:11–12',
-      translation: 'BSB',
-      snapshotText: 'I am the good shepherd.',
     });
   });
 });

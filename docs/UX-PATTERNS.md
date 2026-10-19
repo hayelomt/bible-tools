@@ -218,10 +218,11 @@ count ("Delete all 3"). Focus starts on Cancel.
   "Romans 7:24–8:2". Abbreviations are for typing, not for display.
 - **Scripture text always carries its translation**: the chip (`John 10:9 · BSB`), the expanded
   chip ("Berean Standard Bible"), the reader header, the autocomplete preview, the verse index and
-  the export. The app has two translations (BSB and KJV), and a chip keeps the one it was captured
-  from.
-- **A chip shows its snapshot**, the text captured when it was inserted. It never changes, even if
-  the source text is corrected later.
+  the export. The app has two translations (BSB and KJV), and a chip reads in the one picked in
+  Settings.
+- **A chip shows its text as the Bible has it now**, in the translation picked in Settings: picking
+  the other changes every chip, its label and the text under its paragraph. Only text from outside
+  (`shared`, `pasted`) stays as it came.
 - A chip is one unit for the cursor and for Backspace, and screen readers hear it as a button:
   "John 10:9, Berean Standard Bible, verse. Show text."
 - **Labels for text from outside:** a shared chip whose translation can't be identified is labelled

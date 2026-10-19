@@ -3,8 +3,11 @@ import {
   isAppTranslation,
   type Passage,
   type TranslationId,
+  type VerseRef,
 } from '@lamp/domain';
 import { type BookState, type NumberedVerse, numberedVerses, useBook } from '@/data/bible.ts';
+import { useReading } from '@/data/verse-text.ts';
+import { missingText } from './verse-chip.ts';
 
 /** A verse number before its text, raised without making its line taller. */
 export const NUMBER_CLASS =
@@ -53,6 +56,30 @@ function NumberedText({
         : text}
     </p>
   );
+}
+
+interface RefTextProps {
+  verse: VerseRef;
+  className?: string;
+  /** What shows when there's no text; `missingText` by default. */
+  missing?: string;
+}
+
+/**
+ * A reference's text as it reads now (decision 97), numbered: the app's own in the translation
+ * picked in Settings, drawn again when that changes or its book arrives; text from outside as it
+ * came. Nothing while the book is on its way; `missing` when it can't be fetched, or when no text
+ * came from outside.
+ */
+export function RefText({ verse, className, missing }: RefTextProps) {
+  const { translation, text, book } = useReading(verse);
+  if (text) {
+    return (
+      <VerseText passage={verse} translation={translation} text={text} className={className} />
+    );
+  }
+  if (book?.status === 'loading') return <p className={className} aria-busy />;
+  return <p className="text-muted-foreground">{missing ?? missingText(verse)}</p>;
 }
 
 /** `VerseText` as plain DOM, for the editor's previews; drawn again when the book arrives. */

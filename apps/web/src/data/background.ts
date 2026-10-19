@@ -1,9 +1,7 @@
-import { onBookArrived } from './bible.ts';
 import { downloadBible } from './bible-download.ts';
 import { loadOpenInTable } from '@/open-in/table.ts';
 import { startSearchIndex } from '@/search/client.ts';
 import { syncEngine } from '@/sync/sync.ts';
-import { fillStoredSnapshotsSoon } from './snapshots.ts';
 import { followSettings, onActiveTranslation } from './translation.ts';
 
 /** The download waits this long after start, so the first screen has the connection first. */
@@ -13,9 +11,8 @@ let started = false;
 
 /**
  * Work the app does on its own once the device is set up (M2-11): the active translation downloads
- * in the background (again whenever the user picks another), and stored chips waiting for their
- * text get it as their book arrives. The search index (M4-05) is built in its worker, and sync
- * (M3-09) starts its triggers. The newest "Open in…" table (M9-10) is fetched.
+ * in the background (again whenever the user picks another). The search index (M4-05) is built in
+ * its worker, and sync (M3-09) starts its triggers. The newest "Open in…" table (M9-10) is fetched.
  */
 export function startBackgroundWork() {
   if (started) return;
@@ -23,8 +20,6 @@ export function startBackgroundWork() {
   startSearchIndex();
   syncEngine.start();
   void loadOpenInTable();
-  onBookArrived(() => fillStoredSnapshotsSoon());
-  fillStoredSnapshotsSoon();
   void followSettings().then(() => {
     let delay = DOWNLOAD_DELAY_MS;
     onActiveTranslation((translation) => {

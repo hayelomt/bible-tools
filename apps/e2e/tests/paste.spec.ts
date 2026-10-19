@@ -6,7 +6,7 @@ import { newLesson, rows } from './helpers.ts';
 
 interface Chip {
   type: 'verse';
-  attrs: { display: string; translation: string; versionLabel?: string; snapshotText?: string };
+  attrs: { display: string; translation?: string; versionLabel?: string; snapshotText?: string };
 }
 interface StoredSection {
   body: { content: { content?: (Chip | { type: 'text'; text: string })[] }[] };
@@ -32,7 +32,8 @@ const SITES: Array<[site: string, text: string, offer: string]> = [
   [
     'the YouVersion app (KJV, two verses)',
     'And we know that all things work together for good to them that love God, to them who are the called according to his purpose. For whom he did foreknow, he also did predestinate to be conformed to the image of his Son, that he might be the firstborn among many brethren.\nRomans 8:28-29 KJV',
-    'Romans 8:28–29 · KJV',
+    // A chip reads in the translation picked in Settings, the BSB here (decision 97).
+    'Romans 8:28–29 · BSB',
   ],
   [
     // The KJV isn't downloaded here, so its text can't be known without a reference.
@@ -83,13 +84,7 @@ test('a pasted verse becomes a chip with one tap, and Undo brings the paste back
   await expect(note(page).locator('p')).toHaveText('Jesus says: John 10:11 · BSB');
   await expect
     .poll(() => chips(page))
-    .toEqual([
-      expect.objectContaining({
-        display: 'John 10:11',
-        translation: 'BSB',
-        snapshotText: GOOD_SHEPHERD,
-      }),
-    ]);
+    .toEqual([{ book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11' }]);
 
   await page.keyboard.press('ControlOrMeta+Z');
   await expect(note(page).locator('p')).toHaveText(`Jesus says: “${GOOD_SHEPHERD}” John 10:11 BSB`);

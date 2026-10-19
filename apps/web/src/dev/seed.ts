@@ -1,7 +1,6 @@
 import {
   type Block,
   daysBetween,
-  DEFAULT_TRANSLATION,
   keysBetween,
   type Lesson,
   parseReference,
@@ -356,7 +355,7 @@ const dateDaysAgo = (days: number) => {
 function verseRef(reference: string): VerseRef {
   const parsed = parseReference(reference);
   if (!parsed.ok) throw new Error(`Seed reference doesn't parse: ${reference}`);
-  return { ...parsed.ref, translation: DEFAULT_TRANSLATION };
+  return { ...parsed.ref };
 }
 
 /** One line of a note, its `{chips}` as verse nodes. */

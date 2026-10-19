@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import {
   citationsFor,
-  DEFAULT_TRANSLATION,
   ENTITY_SCHEMAS,
   type EntityRow,
   keysBetween,
@@ -24,7 +23,7 @@ const synced = () => ({ id: newId(), createdAt: NOW, updatedAt: NOW, rev: 0, del
 function verseRef(reference: string) {
   const parsed = parseReference(reference);
   if (!parsed.ok) throw new Error(`Not a reference: ${reference}`);
-  return { ...parsed.ref, translation: DEFAULT_TRANSLATION };
+  return { ...parsed.ref };
 }
 
 /** A note's text as a section body, with `{Rom 8:28}` for a verse chip. */

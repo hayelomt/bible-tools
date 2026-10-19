@@ -32,7 +32,6 @@ const LESSON = {
       verseStart: 1,
       verseEnd: 2,
       display: 'John 10:1–2',
-      translation: 'BSB',
     },
     { book: 'PSA', chapter: 23, display: 'Psalm 23', translation: 'pasted' },
   ],
@@ -50,6 +49,7 @@ const DATA: LessonForExport = {
   tags: ['grace'],
   takeaways: [{ id: 't', text: 'He knows them.' }] as LessonForExport['takeaways'],
   questions: [{ id: 'q', text: 'Who?', status: 'answered' }] as LessonForExport['questions'],
+  verses: { translation: 'BSB', text: () => '' },
 };
 
 const JOHN = {
@@ -82,6 +82,16 @@ describe('handoutOf', () => {
 
   it('prints a passage without its book as its reference', () => {
     expect(handoutOf(DATA, [null, null]).passages[0]!.verses).toBeNull();
+  });
+
+  it('labels the passages in the translation picked in Settings', () => {
+    const kjv = { ...DATA, verses: { translation: 'KJV' as const, text: () => '' } };
+    const handout = handoutOf(kjv, [JOHN, null]);
+    expect(handout.passages.map((p) => p.label)).toEqual([
+      'John 10:1–2 (KJV)',
+      'Psalm 23 (pasted)',
+    ]);
+    expect(handout.credit).toBe('Scripture: King James Version (public domain). Made with Lamp.');
   });
 });
 

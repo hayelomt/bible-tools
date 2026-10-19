@@ -1,12 +1,12 @@
-import { type HandoutSnapshot, isAppTranslation } from '@lamp/domain';
+import type { HandoutSnapshot } from '@lamp/domain';
 import { whenBook } from '@/data/bible.ts';
 import { db as appDb, type LampDb } from '@/data/db.ts';
 import { handoutOf } from './handout.ts';
 import { lessonForExport } from './load.ts';
 
 /**
- * A lesson's handout as its share link keeps it (M13-03): built here, since the main passages'
- * text comes from this device's Bible, and the server has none. Null when the lesson is gone.
+ * A lesson's handout as its share link keeps it (M13-03): built here, as the handout prints, its
+ * passages in the translation picked in Settings. Null when the lesson is gone.
  */
 export async function handoutSnapshot(
   lessonId: string,
@@ -16,7 +16,7 @@ export async function handoutSnapshot(
   if (!data) return null;
   const books = await Promise.all(
     data.lesson.mainPassages.map((ref) =>
-      isAppTranslation(ref.translation) ? whenBook(ref.translation, ref.book) : null,
+      ref.translation ? null : whenBook(data.verses.translation, ref.book),
     ),
   );
   const { title, details, passages, notes, takeaways, questions, credit } = handoutOf(data, books);

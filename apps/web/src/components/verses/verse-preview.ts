@@ -1,11 +1,13 @@
-import { isAppTranslation, translationLabel, type VerseRef } from '@lamp/domain';
+import type { VerseRef } from '@lamp/domain';
 import { type Editor, Extension } from '@tiptap/core';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { useEffect } from 'react';
-import { bookState, onBookArrived } from '@/data/bible.ts';
+import { onBookArrived } from '@/data/bible.ts';
+import { activeTranslation, onActiveTranslation } from '@/data/translation.ts';
 import { useSettings } from '@/data/use-settings.ts';
+import { type Reading, readRef } from '@/data/verse-text.ts';
 import { missingText } from './verse-chip.ts';
 import { verseTextNodes } from './verse-text.tsx';
 
@@ -34,8 +36,9 @@ function redraw(editor: Editor) {
 
 /**
  * With the setting on, each paragraph's verse chips show their text under it, numbered, as a quote
- * that isn't part of the note (wireframes/verses.md "Verse text in notes"). It's the snapshot, as
- * the chip's viewer shows it, and is drawn again when a chip's book arrives (its numbers).
+ * that isn't part of the note (wireframes/verses.md "Verse text in notes"). It's the text the
+ * chip's viewer shows, in the translation picked in Settings (decision 97), and is drawn again
+ * when that changes or a chip's book arrives.
  */
 export const VersePreviews = Extension.create<unknown, { stop?: () => void }>({
   name: 'versePreviews',
@@ -47,7 +50,17 @@ export const VersePreviews = Extension.create<unknown, { stop?: () => void }>({
   onCreate() {
     const { editor } = this;
     editors.add(editor);
-    this.storage.stop = onBookArrived(() => enabled && redraw(editor));
+    const stopBooks = onBookArrived(() => enabled && redraw(editor));
+    let first = true;
+    const stopTranslation = onActiveTranslation(() => {
+      // Called at once with the translation the plugin starts from.
+      if (!first && enabled) redraw(editor);
+      first = false;
+    });
+    this.storage.stop = () => {
+      stopBooks();
+      stopTranslation();
+    };
   },
 
   onDestroy() {
@@ -71,6 +84,7 @@ export const VersePreviews = Extension.create<unknown, { stop?: () => void }>({
 
 function previews(doc: PmNode): DecorationSet {
   if (!enabled) return DecorationSet.empty;
+  const active = activeTranslation();
   const widgets: Decoration[] = [];
   doc.descendants((node, pos) => {
     if (!node.isTextblock) return true;
@@ -79,11 +93,15 @@ function previews(doc: PmNode): DecorationSet {
       if (child.type.name === 'verse') refs.push(child.attrs as VerseRef);
     });
     if (refs.length > 0) {
+      const readings = refs.map((ref) => ({ ref, ...readRef(ref, active) }));
       widgets.push(
-        Decoration.widget(pos + node.nodeSize, () => previewDom(refs), {
-          // Kept while the chips and their books are the same, so typing doesn't redraw it.
-          key: refs
-            .map((r) => `${r.display}|${r.snapshotText ?? ''}|${bookOf(r)?.status ?? 'outside'}`)
+        Decoration.widget(pos + node.nodeSize, () => previewDom(readings), {
+          // Kept while the chips, their translation and books are the same, so typing doesn't
+          // redraw it.
+          key: readings
+            .map(
+              (r) => `${r.ref.display}|${r.translation}|${r.text ?? ''}|${r.book?.status ?? '-'}`,
+            )
             .join('\n'),
           side: -1,
           ignoreSelection: true,
@@ -95,23 +113,23 @@ function previews(doc: PmNode): DecorationSet {
   return DecorationSet.create(doc, widgets);
 }
 
-function previewDom(refs: VerseRef[]): HTMLElement {
+function previewDom(readings: (Reading & { ref: VerseRef })[]): HTMLElement {
   const dom = document.createElement('div');
   dom.contentEditable = 'false';
   dom.dataset.versePreview = '';
   // Set apart from the note: a tinted card, smaller italic text, so it never reads as typed.
   dom.className =
     'my-2 flex flex-col gap-3 rounded-r-lg border-l-[3px] border-primary/60 bg-muted/70 px-3 py-2.5 text-[0.9em] leading-relaxed select-none';
-  for (const ref of refs) {
+  for (const { ref, translation, text: quote, book } of readings) {
     const item = document.createElement('div');
     const label = document.createElement('div');
     label.className =
       'mb-0.5 font-sans text-[0.7rem] font-medium tracking-wide text-primary uppercase';
-    label.textContent = `${ref.display} · ${translationLabel(ref)}`;
+    label.textContent = `${ref.display} · ${ref.versionLabel ?? translation}`;
     const text = document.createElement('div');
-    if (ref.snapshotText) {
+    if (quote) {
       text.className = 'text-foreground/80 italic';
-      text.append(...verseTextNodes(bookOf(ref), ref, ref.snapshotText));
+      text.append(...verseTextNodes(book, ref, quote));
     } else {
       text.className = 'font-sans text-sm text-muted-foreground';
       text.textContent = missingText(ref);
@@ -121,7 +139,3 @@ function previewDom(refs: VerseRef[]): HTMLElement {
   }
   return dom;
 }
-
-/** The book that numbers the chip's verses; none for text from outside. */
-const bookOf = (ref: VerseRef) =>
-  isAppTranslation(ref.translation) ? bookState(ref.translation, ref.book) : null;

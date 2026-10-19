@@ -1,6 +1,6 @@
 import type { BookText } from '@lamp/bible-data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { bookState, numberedVerses, snapshotText, whenBook } from './bible.ts';
+import { bookState, numberedVerses, quoteText, whenBook } from './bible.ts';
 
 // Acts 8 in miniature: verse 3 is one the BSB leaves out.
 const BOOK: BookText = {
@@ -8,21 +8,21 @@ const BOOK: BookText = {
   n: { '8:3': 'Some later manuscripts include this verse.' },
 };
 
-describe('snapshotText', () => {
+describe('quoteText', () => {
   it('joins the verses of the passage', () => {
-    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 1, verseEnd: 2 }, 'BSB')).toBe(
+    expect(quoteText(BOOK, { book: 'ACT', chapter: 8, verseStart: 1, verseEnd: 2 }, 'BSB')).toBe(
       'One. Two.',
     );
   });
 
   it('skips a verse left out in a range', () => {
-    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 2, verseEnd: 4 }, 'BSB')).toBe(
+    expect(quoteText(BOOK, { book: 'ACT', chapter: 8, verseStart: 2, verseEnd: 4 }, 'BSB')).toBe(
       'Two. Four.',
     );
   });
 
   it('gives the note, marked, for a verse left out on its own', () => {
-    expect(snapshotText(BOOK, { book: 'ACT', chapter: 8, verseStart: 3 }, 'BSB')).toBe(
+    expect(quoteText(BOOK, { book: 'ACT', chapter: 8, verseStart: 3 }, 'BSB')).toBe(
       '[Not in BSB: Some later manuscripts include this verse.]',
     );
   });

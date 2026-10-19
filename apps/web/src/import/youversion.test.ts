@@ -12,17 +12,21 @@ import {
 // that format until the real M8-05 export arrives.
 
 const items = (): ImportedItem[] => exportRecords(fixture).flatMap((r) => recordItems(r) ?? []);
-/** Each item as "John 3:16 · BSB · yellow · note". */
+/** Each item as "John 3:16 · NIV · yellow · note"; "· Lamp" for the app's own text. */
 const line = ({ ref, text, colour }: ImportedItem) =>
-  [ref ? `${ref.display} · ${ref.versionLabel ?? ref.translation}` : '(note)', colour, text]
+  [
+    ref ? `${ref.display} · ${ref.versionLabel ?? ref.translation ?? 'Lamp'}` : '(note)',
+    colour,
+    text,
+  ]
     .filter(Boolean)
     .join(' · ');
 
 describe('the YouVersion export (guessed format)', () => {
   it('reads each highlight and note of the fixture', () => {
     expect(items().map(line)).toEqual([
-      'John 3:16 · BSB · yellow',
-      'Romans 7:24–8:2 · KJV · green',
+      'John 3:16 · Lamp · yellow',
+      'Romans 7:24–8:2 · Lamp · green',
       'Psalm 23:1 · NIV · Read this before the funeral.\nHe restores my soul.',
       'Psalm 23:4 · NIV',
       'Philippians 4:13 · NIV · pink',
@@ -30,7 +34,7 @@ describe('the YouVersion export (guessed format)', () => {
       'John 1:1 · shared · Ask Ann about the Greek in this one.',
       '(note) · Sermon idea: waiting well.',
       // Twice in the file: skipped when written (importInboxItems).
-      'John 3:16 · BSB · yellow',
+      'John 3:16 · Lamp · yellow',
     ]);
   });
 

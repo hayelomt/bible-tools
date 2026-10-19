@@ -24,23 +24,11 @@ function matched(
 }
 
 describe('readShare', () => {
-  it('reads a YouVersion share: the matched verse with its text, no note', () => {
+  it('reads a YouVersion share: the matched verse as the passage alone, no note', () => {
     const text = `“${GOOD_SHEPHERD}”\nJohn 10:11 BSB\n\nhttps://bible.com/bible/3034/jhn.10.11.BSB`;
-    const reading = readShare({ text }, [matched(text, GOOD_SHEPHERD, 'John 10:11')], 'KJV');
+    const reading = readShare({ text }, [matched(text, GOOD_SHEPHERD, 'John 10:11')]);
     expect(reading).toEqual({
-      verses: [
-        {
-          fromBook: false,
-          ref: {
-            book: 'JHN',
-            chapter: 10,
-            verseStart: 11,
-            display: 'John 10:11',
-            translation: 'BSB',
-            snapshotText: GOOD_SHEPHERD,
-          },
-        },
-      ],
+      verses: [{ ref: { book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11' } }],
       note: null,
       sourceUrl: 'https://bible.com/bible/3034/jhn.10.11.BSB',
     });
@@ -51,11 +39,9 @@ describe('readShare', () => {
     const reading = readShare(
       { text: `${niv}\nJohn 3:16 NIV`, url: 'https://bible.com/bible/111/jhn.3.16.NIV' },
       [],
-      'BSB',
     );
     expect(reading.verses).toEqual([
       {
-        fromBook: false,
         ref: {
           book: 'JHN',
           chapter: 3,
@@ -77,7 +63,6 @@ describe('readShare', () => {
         url: 'https://biblehub.com/psalms/23-1.htm',
       },
       [],
-      'BSB',
     );
     expect(reading.verses[0]!.ref).toMatchObject({
       display: 'Psalm 23:1',
@@ -87,22 +72,19 @@ describe('readShare', () => {
     expect(reading.verses[0]!.ref).not.toHaveProperty('versionLabel');
   });
 
-  it('makes a reference from elsewhere a chip from the book, and the rest a note', () => {
-    const reading = readShare({ text: 'Look at John 3:16 for Sunday' }, [], 'KJV');
+  it("makes a reference from elsewhere a chip of the app's text, and the rest a note", () => {
+    const reading = readShare({ text: 'Look at John 3:16 for Sunday' }, []);
     expect(reading.verses).toEqual([
-      {
-        fromBook: true,
-        ref: { book: 'JHN', chapter: 3, verseStart: 16, display: 'John 3:16', translation: 'KJV' },
-      },
+      { ref: { book: 'JHN', chapter: 3, verseStart: 16, display: 'John 3:16' } },
     ]);
     expect(reading.note).toBe('Look at for Sunday');
   });
 
   it('finds a verse from its text alone', () => {
     const text = `Read this today: ${GOOD_SHEPHERD} Then pray.`;
-    const reading = readShare({ text }, [matched(text, GOOD_SHEPHERD, 'John 10:11')], 'BSB');
-    expect(reading.verses).toMatchObject([
-      { ref: { display: 'John 10:11', translation: 'BSB', snapshotText: GOOD_SHEPHERD } },
+    const reading = readShare({ text }, [matched(text, GOOD_SHEPHERD, 'John 10:11', 'KJV')]);
+    expect(reading.verses).toEqual([
+      { ref: { book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11' } },
     ]);
     expect(reading.note).toBe('Read this today:  Then pray.'.replace(':  ', ': '));
   });
@@ -113,7 +95,6 @@ describe('readShare', () => {
         text: 'Sermon notes: Romans 8:28, 38–39; Psalm 23:1 (ESV) — the shepherd who never leaves.',
       },
       [],
-      'BSB',
     );
     expect(
       reading.verses.map((v) => [v.ref.display, v.ref.translation, v.ref.versionLabel]),
@@ -128,28 +109,39 @@ describe('readShare', () => {
 
   it('takes the passage from the address when the text names none', () => {
     const reading = readShare(
-      { text: 'A verse for today', url: 'https://www.bible.com/bible/3034/JHN.10.11.BSB' },
+      { text: 'A verse for today', url: 'https://www.bible.com/bible/111/JHN.10.11.NIV' },
       [],
-      'KJV',
     );
     expect(reading.verses).toMatchObject([
-      { ref: { display: 'John 10:11', translation: 'BSB', snapshotText: 'A verse for today' } },
+      { ref: { display: 'John 10:11', versionLabel: 'NIV', snapshotText: 'A verse for today' } },
     ]);
   });
 
+  it("drops the verse's text from the BSB or KJV: the chip reads it from the book", () => {
+    const reading = readShare(
+      { text: 'A verse for today', url: 'https://www.bible.com/bible/3034/JHN.10.11.BSB' },
+      [],
+    );
+    expect(reading).toEqual({
+      verses: [{ ref: { book: 'JHN', chapter: 10, verseStart: 11, display: 'John 10:11' } }],
+      note: null,
+      sourceUrl: 'https://www.bible.com/bible/3034/JHN.10.11.BSB',
+    });
+  });
+
   it('reads the title when the text has no reference', () => {
-    const reading = readShare({ title: 'John 10:11', text: 'Lovely sermon on this' }, [], 'BSB');
+    const reading = readShare({ title: 'John 10:11', text: 'Lovely sermon on this' }, []);
     expect(reading.verses.map((v) => v.ref.display)).toEqual(['John 10:11']);
     expect(reading.note).toBe('Lovely sermon on this');
   });
 
   it('keeps a share without a verse as a note', () => {
-    expect(readShare({ text: 'Look up "hesed" before Sunday.' }, [], 'BSB')).toEqual({
+    expect(readShare({ text: 'Look up "hesed" before Sunday.' }, [])).toEqual({
       verses: [],
       note: 'Look up "hesed" before Sunday.',
       sourceUrl: null,
     });
-    expect(readShare({ url: 'https://example.com/post' }, [], 'BSB')).toEqual({
+    expect(readShare({ url: 'https://example.com/post' }, [])).toEqual({
       verses: [],
       note: 'https://example.com/post',
       sourceUrl: 'https://example.com/post',
@@ -158,7 +150,7 @@ describe('readShare', () => {
 
   it('drops verse numbers and loose spacing from the shared text', () => {
     const text = '1 The LORD is my shepherd; I shall not want.\n\n2 He maketh me to lie down';
-    const reading = readShare({ text: `Psalm 23:1-2 KJV ${text}` }, [], 'BSB');
+    const reading = readShare({ text: `Psalm 23:1-2 NKJV ${text}` }, []);
     expect(reading.verses[0]!.ref.snapshotText).toBe(
       'The LORD is my shepherd; I shall not want.\nHe maketh me to lie down',
     );
@@ -178,7 +170,7 @@ describe('shareHints', () => {
 describe('readShare for a paste', () => {
   it('labels text from another version `pasted`', () => {
     const niv = 'For God so loved the world that he gave his one and only Son';
-    const reading = readShare({ text: `John 3:16 NIV ${niv}` }, [], 'BSB', 'pasted');
+    const reading = readShare({ text: `John 3:16 NIV ${niv}` }, [], 'pasted');
     expect(reading.verses[0]!.ref).toMatchObject({
       translation: 'pasted',
       versionLabel: 'NIV',
@@ -186,13 +178,13 @@ describe('readShare for a paste', () => {
     });
   });
 
-  it('still names BSB and KJV', () => {
-    const reading = readShare(
-      { text: 'Psalm 23:1 KJV The LORD is my shepherd' },
-      [],
-      'BSB',
-      'pasted',
-    );
-    expect(reading.verses[0]!.ref.translation).toBe('KJV');
+  it("still takes BSB and KJV as the app's text", () => {
+    const reading = readShare({ text: 'Psalm 23:1 KJV The LORD is my shepherd' }, [], 'pasted');
+    expect(reading.verses[0]!.ref).toEqual({
+      book: 'PSA',
+      chapter: 23,
+      verseStart: 1,
+      display: 'Psalm 23:1',
+    });
   });
 });

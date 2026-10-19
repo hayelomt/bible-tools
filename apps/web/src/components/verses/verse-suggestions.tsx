@@ -2,7 +2,7 @@
 import type { ParsedPassage, TranslationId } from '@lamp/domain';
 import { cn } from 'cn';
 import { useEffect, useId, useLayoutEffect, useState } from 'react';
-import { snapshotText, useBook } from '@/data/bible.ts';
+import { quoteText, useBook } from '@/data/bible.ts';
 import { useActiveTranslation } from '@/data/translation.ts';
 import { useKeyboardInset } from '@/lib/use-keyboard.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
@@ -151,7 +151,7 @@ function Preview({ passage, translation }: { passage: ParsedPassage; translation
       <VerseText
         passage={passage}
         translation={translation}
-        text={snapshotText(book.text, passage, translation)}
+        text={quoteText(book.text, passage, translation)}
         className="line-clamp-3"
       />
     );

@@ -4,8 +4,6 @@ import { PluginKey } from '@tiptap/pm/state';
 import { ReactRenderer } from '@tiptap/react';
 import { Suggestion, type SuggestionProps } from '@tiptap/suggestion';
 import { shift } from '@floating-ui/dom';
-import { bookState, snapshotText } from '@/data/bible.ts';
-import { activeTranslation } from '@/data/translation.ts';
 import { typingLink } from '@/components/links/note-link.ts';
 import { pasteOffered } from './paste-chips.ts';
 import { findReference, type ReferenceEntry, referenceEntries } from './find-reference.ts';
@@ -17,18 +15,11 @@ export type VerseSuggestionProps = SuggestionProps<ReferenceEntry, PassageEntry>
 const KEY = new PluginKey('verseSuggestion');
 
 /**
- * A chip's attributes for a passage, in the active translation, with its text when the book is
- * here. Still on its way, or not downloaded (offline), the chip goes in without its text, which
- * `VerseSnapshots` adds when the book arrives.
+ * A chip's attributes for a passage: the passage alone. Its text isn't stored but read in the
+ * translation picked in Settings (decision 97).
  */
 export function chipFor(ref: ParsedPassage): VerseRef {
-  const translation = activeTranslation();
-  const book = bookState(translation, ref.book);
-  return {
-    ...ref,
-    translation,
-    ...(book.status === 'ready' && { snapshotText: snapshotText(book.text, ref, translation) }),
-  };
+  return { ...ref };
 }
 /** An atom (a chip) in the text before the cursor; not a letter or digit, so a reference starts after it. */
 const LEAF = '￼';
@@ -36,8 +27,8 @@ const LEAF = '￼';
 /**
  * The verse autocomplete (F3, TECH-DESIGN §8.3, wireframes/verses.md): when the text just before
  * the cursor is a reference, a list offers the passages it could be, with the text of the selected
- * one in the active translation. Enter or a tap replaces the typed text with a `verse` chip holding the passage and
- * its snapshot; Escape closes the list and keeps the text. The list never takes focus.
+ * one in the active translation. Enter or a tap replaces the typed text with a `verse` chip holding
+ * the passage; Escape closes the list and keeps the text. The list never takes focus.
  *
  * It runs before the section keys (priority), so Enter, Escape and the arrows go to the list
  * while it has something to insert.

@@ -3,17 +3,19 @@ import {
   type InlineNode,
   type Mark,
   type NoteLinkAttrs,
+  refText,
   type SectionBody,
   type TextBlock,
   translationLabel,
+  type VerseReader,
   type VerseRef,
 } from '@lamp/domain';
 import { type Html, markup } from './markup.js';
 
 /**
  * A section body on a shared page, as the app's print view shows it (print-body.tsx): a verse chip
- * reads "John 10:9 (BSB)" in the sentence, and the text it carries is quoted after the paragraph.
- * The server has no Bible text, so a chip without its own text is its reference alone.
+ * reads "John 10:9 (BSB)" in the sentence, and its text is quoted after the paragraph: the app's
+ * own read by `verses` in the owner's translation (decision 97), text from outside as it came.
  */
 
 /**
@@ -23,13 +25,19 @@ import { type Html, markup } from './markup.js';
  */
 export type ChipHref = (link: NoteLinkAttrs) => string | null;
 
-export function bodyHtml(body: SectionBody, headingLevel: 2 | 3 | 4 | 5, href: ChipHref): Html {
-  return blocks(body.content, { headingLevel, href });
+export function bodyHtml(
+  body: SectionBody,
+  headingLevel: 2 | 3 | 4 | 5,
+  href: ChipHref,
+  verses: VerseReader,
+): Html {
+  return blocks(body.content, { headingLevel, href, verses });
 }
 
 interface Context {
   headingLevel: 2 | 3 | 4 | 5;
   href: ChipHref;
+  verses: VerseReader;
 }
 
 function blocks(list: readonly Block[], context: Context): Html {
@@ -65,10 +73,12 @@ function blockHtml(block: Block, context: Context): Html {
 function textBlock(block: TextBlock, context: Context): Html {
   const nodes = block.content ?? [];
   if (nodes.length === 0) return markup``;
-  const quotes = nodes.flatMap((node) =>
-    node.type === 'verse' && node.attrs.snapshotText ? [verseQuote(node.attrs)] : [],
-  );
-  const inner = inline(nodes, context.href);
+  const quotes = nodes.flatMap((node) => {
+    if (node.type !== 'verse') return [];
+    const text = refText(node.attrs, context.verses).trim();
+    return text ? [verseQuote(node.attrs, text, context.verses)] : [];
+  });
+  const inner = inline(nodes, context);
   const line =
     block.type === 'heading' ? headingOf(context.headingLevel, inner) : markup`<p>${inner}</p>`;
   return markup`${line}${quotes}`;
@@ -87,20 +97,21 @@ function headingOf(level: Context['headingLevel'], inner: Html): Html {
   }
 }
 
-const verseLabel = (ref: VerseRef) => `${ref.display} (${translationLabel(ref)})`;
+const verseLabel = (ref: VerseRef, verses: VerseReader) =>
+  `${ref.display} (${translationLabel(ref, verses.translation)})`;
 
 /** "**John 10:9 (BSB)** I am the door…", quoted. */
-function verseQuote(ref: VerseRef): Html {
+function verseQuote(ref: VerseRef, text: string, verses: VerseReader): Html {
   // On one line: the quote keeps its text's line breaks (`white-space: pre-line`).
-  const label = markup`<strong>${verseLabel(ref)}</strong>`;
-  return markup`<blockquote class="verse-quote">${label} ${ref.snapshotText!.trim()}</blockquote>`;
+  const label = markup`<strong>${verseLabel(ref, verses)}</strong>`;
+  return markup`<blockquote class="verse-quote">${label} ${text}</blockquote>`;
 }
 
-function inline(nodes: readonly InlineNode[], href: ChipHref): Html {
+function inline(nodes: readonly InlineNode[], { href, verses }: Context): Html {
   return markup`${nodes.map((node) => {
     switch (node.type) {
       case 'verse':
-        return markup`<span class="chip">${verseLabel(node.attrs)}</span>`;
+        return markup`<span class="chip">${verseLabel(node.attrs, verses)}</span>`;
       case 'noteLink': {
         const to = href(node.attrs);
         return to === null ? node.attrs.label : markup`<a href="${to}">${node.attrs.label}</a>`;

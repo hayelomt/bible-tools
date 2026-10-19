@@ -20,6 +20,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@lamp/bible-data": "workspace:*",
     "@lamp/domain": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",

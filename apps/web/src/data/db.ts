@@ -25,7 +25,14 @@ import type {
   Template,
   UserSettings,
 } from '@lamp/domain';
-import { ALL_RESURFACING, NO_DEFAULT_TEMPLATES, newId, OPEN_IN_TARGETS } from '@lamp/domain';
+import {
+  ALL_RESURFACING,
+  chipsWithoutAppText,
+  NO_DEFAULT_TEMPLATES,
+  newId,
+  OPEN_IN_TARGETS,
+  withoutAppText,
+} from '@lamp/domain';
 import { Dexie, type DexieOptions, type Table, type Transaction } from 'dexie';
 
 /** The entities stored one row per id; settings are one row per device. */
@@ -285,11 +292,47 @@ export class LampDb extends Dexie {
       });
     // M12-08: the digest draft, on the device only (not synced, so nothing to queue).
     this.version(13).stores({ digestDraft: 'quarter' });
+    // Decision 97: a reference keeps no BSB or KJV translation or snapshot, in stored rows, queued
+    // changes and digest drafts; the server's schema refuses them. Not queued themselves: the
+    // server's rows are changed by its own migration.
+    this.version(14).upgrade(async (tx) => {
+      for (const entity of REF_ENTITIES) {
+        await tx
+          .table(entity)
+          .toCollection()
+          .modify((row: object) => withoutStoredText(row));
+      }
+      await tx
+        .table('digestDraft')
+        .toCollection()
+        .modify((draft: { sections: object[] }) => {
+          draft.sections = chipsWithoutAppText(draft.sections);
+        });
+      await tx
+        .table('outbox')
+        .filter((entry: OutboxEntry) => entry.op === 'upsert')
+        .modify((entry: OutboxEntry) => {
+          const row = (entry as { row?: object }).row;
+          if (row && (REF_ENTITIES as readonly string[]).includes(entry.entity)) {
+            withoutStoredText(row);
+          }
+        });
+    });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
     return this.table(entity);
   }
+}
+
+/** The entities whose rows hold references: in a body, a `ref` or the main passages. */
+const REF_ENTITIES = ['section', 'lesson', 'highlight', 'memoryItem', 'inboxItem'] as const;
+
+/** Version 14: a row's references without the app's own text (decision 97), changed in place. */
+function withoutStoredText(row: { body?: unknown; ref?: unknown; mainPassages?: unknown }) {
+  if (row.body) row.body = chipsWithoutAppText(row.body);
+  if (row.ref) row.ref = withoutAppText(row.ref);
+  if (Array.isArray(row.mainPassages)) row.mainPassages = row.mainPassages.map(withoutAppText);
 }
 
 /** Version 12's settings at their defaults: every rule on, no digest yet. */

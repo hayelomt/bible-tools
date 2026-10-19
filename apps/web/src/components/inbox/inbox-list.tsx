@@ -1,12 +1,4 @@
-import {
-  type InboxItem,
-  type InboxOrigin,
-  isAppTranslation,
-  type Tag,
-  type TranslationId,
-  translationLabel,
-  type VerseRef,
-} from '@lamp/domain';
+import { type InboxItem, type InboxOrigin, type Tag, type VerseRef } from '@lamp/domain';
 import { Button } from '@lamp/ui/components/button';
 import { Checkbox } from '@lamp/ui/components/checkbox';
 import {
@@ -26,7 +18,7 @@ import {
   inboxItemTags,
   inboxItemTitle,
 } from '@/data/actions/inbox.ts';
-import { snapshotText, useBook } from '@/data/bible.ts';
+import { useReading } from '@/data/verse-text.ts';
 import { receivedLabel, shortDate, today } from '@/lib/dates.ts';
 import { count } from '@/lib/labels.ts';
 import { useToday } from '@/lib/use-today.ts';
@@ -268,29 +260,24 @@ function ItemMenu({ label, triage }: { label: string; triage: ReturnType<typeof 
   );
 }
 
-/** `⟦Romans 8:28 · BSB⟧` and the verse's text: the snapshot, or the book's while it has none. */
+/**
+ * `⟦Romans 8:28 · BSB⟧` and the verse's text, in the translation picked in Settings for the app's
+ * own (decision 97).
+ */
 export function ChipLine({ verse }: { verse: VerseRef }) {
+  const { translation, text, book } = useReading(verse);
   return (
     <div className="flex flex-col gap-1">
       <span className="self-start" data-slot="verse-chip">
-        {verse.display} · {translationLabel(verse)}
+        {verse.display} · {verse.versionLabel ?? translation}
       </span>
-      {verse.snapshotText ? (
-        <p className="line-clamp-3 break-words">{verse.snapshotText}</p>
-      ) : isAppTranslation(verse.translation) ? (
-        <BookText verse={verse} translation={verse.translation} />
+      {text ? (
+        <p className="line-clamp-3 break-words">{text}</p>
+      ) : book?.status === 'missing' ? (
+        <p className="text-sm text-muted-foreground">Text not downloaded yet.</p>
       ) : null}
     </div>
   );
-}
-
-function BookText({ verse, translation }: { verse: VerseRef; translation: TranslationId }) {
-  const book = useBook(translation, verse.book);
-  if (book.status === 'loading') return null;
-  if (book.status === 'missing') {
-    return <p className="text-sm text-muted-foreground">Text not downloaded yet.</p>;
-  }
-  return <p className="line-clamp-3 break-words">{snapshotText(book.text, verse, translation)}</p>;
 }
 
 /** "bible.com" from a shared address; nothing for none. */

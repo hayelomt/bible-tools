@@ -1,11 +1,4 @@
-import {
-  isAppTranslation,
-  keyBetween,
-  type Lesson,
-  newId,
-  type Section,
-  type VerseRef,
-} from '@lamp/domain';
+import { keyBetween, type Lesson, newId, type Section, type VerseRef } from '@lamp/domain';
 import { Button } from '@lamp/ui/components/button';
 import {
   Dialog,
@@ -32,12 +25,11 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 're
 import { outline } from '@/components/sections/outline.ts';
 import { referenceEntries } from '@/components/verses/find-reference.ts';
 import { chipFor } from '@/components/verses/verse-suggestion.ts';
-import { VerseText } from '@/components/verses/verse-text.tsx';
+import { RefText } from '@/components/verses/verse-text.tsx';
 import { VerseViewer } from '@/components/verses/verse-viewer.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
 import { setSourceStart, startCapture } from '@/data/actions/capture.ts';
 import { removeSection } from '@/data/actions/sections.ts';
-import { snapshotText, useBook } from '@/data/bible.ts';
 import { db, SYNC_STATE_KEY } from '@/data/db.ts';
 import { lessonSections } from '@/data/queries.ts';
 import { runWrite } from '@/lib/run-write.ts';
@@ -404,24 +396,7 @@ function PinnedPassage({ passage }: { passage: VerseRef }) {
 }
 
 function PassageText({ passage }: { passage: VerseRef }) {
-  const translation = isAppTranslation(passage.translation) ? passage.translation : 'BSB';
-  const book = useBook(translation, passage.book);
-  if (passage.snapshotText) {
-    return (
-      <VerseText passage={passage} translation={passage.translation} text={passage.snapshotText} />
-    );
-  }
-  if (book.status === 'loading') return null;
-  if (book.status === 'missing') {
-    return <p className="text-sm text-muted-foreground">Text not downloaded yet.</p>;
-  }
-  return (
-    <VerseText
-      passage={passage}
-      translation={translation}
-      text={snapshotText(book.text, passage, translation)}
-    />
-  );
+  return <RefText verse={passage} />;
 }
 
 /**

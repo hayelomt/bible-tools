@@ -22,8 +22,6 @@ const ref = {
   verseStart: 11,
   verseEnd: 12,
   display: 'John 10:11–12',
-  translation: 'BSB' as const,
-  snapshotText: 'I am the good shepherd. He who is a hired hand…',
 };
 
 beforeEach(async () => {
@@ -170,7 +168,6 @@ describe('promoting a highlight', () => {
           verseStart: 11,
           verseEnd: 12,
           display: 'John 10:11–12',
-          translation: 'BSB',
         },
       ],
     });

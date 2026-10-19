@@ -57,14 +57,14 @@ describe('openInUrl', () => {
       'https://example.com/PSA23;kjv',
     ],
   ] as const)('builds %s', (_, passage, url) => {
-    expect(openInUrl(full, { ...passage, translation: 'KJV' })).toBe(url);
+    expect(openInUrl(full, passage, 'KJV')).toBe(url);
   });
 
   it("reads an editor's chip, whose unset fields are null", () => {
     const chip = { book: 'ROM', chapter: 8, verseStart: 28, chapterEnd: null, verseEnd: 30 };
-    expect(openInUrl(full, { ...chip, translation: 'BSB', versionLabel: null } as never)).toBe(
-      'https://example.com/Ro8.28-30;kjv',
-    );
+    expect(
+      openInUrl(full, { ...chip, translation: null, versionLabel: null } as never, 'BSB'),
+    ).toBe('https://example.com/Ro8.28-30;kjv');
   });
 
   it('opens a range at its first verse when the target has no range links', () => {
@@ -73,33 +73,34 @@ describe('openInUrl', () => {
       chapter: 8,
       verseStart: 28,
       verseEnd: 30,
-      translation: 'KJV',
     } as const;
-    expect(openInUrl(few, range)).toBe('https://example.org/kjv/ROM/8-28.htm');
+    expect(openInUrl(few, range, 'KJV')).toBe('https://example.org/kjv/ROM/8-28.htm');
     expect(
-      openInUrl(few, { ...range, chapter: 7, verseStart: 24, chapterEnd: 8, verseEnd: 2 }),
+      openInUrl(few, { ...range, chapter: 7, verseStart: 24, chapterEnd: 8, verseEnd: 2 }, 'KJV'),
     ).toBe('https://example.org/kjv/ROM/7-24.htm');
   });
 
   it('uses the links for the version where they differ', () => {
-    expect(openInUrl(few, { book: 'JHN', chapter: 3, verseStart: 16, translation: 'BSB' })).toBe(
+    expect(openInUrl(few, { book: 'JHN', chapter: 3, verseStart: 16 }, 'BSB')).toBe(
       'https://example.org/bsb/JHN/3.htm#16',
     );
     // Only the links it changes: the chapter link is the target's own.
-    expect(openInUrl(few, { book: 'JHN', chapter: 3, translation: 'BSB' })).toBe(
+    expect(openInUrl(few, { book: 'JHN', chapter: 3 }, 'BSB')).toBe(
       'https://example.org/bsb/JHN/3.htm',
     );
   });
 
   it("opens a chip from outside in its labelled version, else the target's default", () => {
     const john = { book: 'JHN', chapter: 3, verseStart: 16 } as const;
-    expect(openInUrl(full, { ...john, translation: 'shared', versionLabel: 'NIV' })).toBe(
+    expect(openInUrl(full, { ...john, translation: 'shared', versionLabel: 'NIV' }, 'BSB')).toBe(
       'https://example.com/Jn3.16;niv',
     );
-    expect(openInUrl(full, { ...john, translation: 'pasted', versionLabel: 'MSG' })).toBe(
+    expect(openInUrl(full, { ...john, translation: 'pasted', versionLabel: 'MSG' }, 'BSB')).toBe(
       'https://example.com/Jn3.16',
     );
-    expect(openInUrl(full, { ...john, translation: 'shared' })).toBe('https://example.com/Jn3.16');
+    expect(openInUrl(full, { ...john, translation: 'shared' }, 'BSB')).toBe(
+      'https://example.com/Jn3.16',
+    );
   });
 });
 

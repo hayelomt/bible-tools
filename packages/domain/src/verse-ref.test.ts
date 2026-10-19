@@ -4,6 +4,9 @@ import {
   isAppTranslation,
   translationLabel,
   translationName,
+  refText,
+  type VerseReader,
+  type VerseRef,
   type Passage,
   checkPassage,
   formatPassage,
@@ -166,14 +169,25 @@ describe('passage slugs', () => {
 });
 
 describe('chip translations', () => {
-  it('labels a chip with its translation, or the version its source named', () => {
-    expect(translationLabel({ translation: 'BSB' })).toBe('BSB');
-    expect(translationLabel({ translation: 'shared', versionLabel: 'NIV' })).toBe('NIV');
-    expect(translationLabel({ translation: 'pasted' })).toBe('pasted');
-    expect(translationName({ translation: 'KJV' })).toBe('King James Version');
-    expect(translationName({ translation: 'shared', versionLabel: 'ESV' })).toBe('ESV');
-    expect(translationName({ translation: 'shared' })).toBe('Shared text');
-    expect(translationName({ translation: 'pasted' })).toBe('Pasted text');
+  it("labels the app's text in the translation picked, text from outside as it came", () => {
+    expect(translationLabel({}, 'BSB')).toBe('BSB');
+    expect(translationLabel({}, 'KJV')).toBe('KJV');
+    expect(translationLabel({ translation: 'shared', versionLabel: 'NIV' }, 'BSB')).toBe('NIV');
+    expect(translationLabel({ translation: 'pasted' }, 'BSB')).toBe('pasted');
+    expect(translationName({}, 'KJV')).toBe('King James Version');
+    expect(translationName({ translation: 'shared', versionLabel: 'ESV' }, 'BSB')).toBe('ESV');
+    expect(translationName({ translation: 'shared' }, 'BSB')).toBe('Shared text');
+    expect(translationName({ translation: 'pasted' }, 'BSB')).toBe('Pasted text');
+  });
+
+  it("reads the app's text from the books, and text from outside from the chip", () => {
+    const reader: VerseReader = { translation: 'KJV', text: (p) => `${p.book} ${p.chapter}` };
+    const ref: VerseRef = { book: 'ROM', chapter: 8, display: 'Romans 8' };
+    expect(refText(ref, reader)).toBe('ROM 8');
+    expect(refText({ ...ref, translation: 'shared', snapshotText: 'All things' }, reader)).toBe(
+      'All things',
+    );
+    expect(refText({ ...ref, translation: 'pasted' }, reader)).toBe('');
   });
 
   it('knows which translations the app has text for', () => {

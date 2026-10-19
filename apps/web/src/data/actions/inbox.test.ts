@@ -47,8 +47,6 @@ const ref = {
   chapter: 8,
   verseStart: 28,
   display: 'Romans 8:28',
-  translation: 'BSB' as const,
-  snapshotText: 'And we know that God works all things together for the good…',
 };
 
 const DAY = '2026-10-17';
@@ -185,7 +183,7 @@ describe('sending an item to a lesson', () => {
   it('makes a new personal lesson titled from the item, which Undo removes too', async () => {
     const item = await addInboxItem({ origin: 'share', ref, text: null }, db);
     const placement = await sendToLesson([item.id], { newLesson: { date: DAY } }, db);
-    const { snapshotText: _text, ...passage } = ref;
+    const passage = ref;
     expect(placement.lesson).toMatchObject({
       title: 'Romans 8:28',
       date: DAY,

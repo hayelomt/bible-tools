@@ -1,6 +1,5 @@
 import {
   citationsFor,
-  DEFAULT_TRANSLATION,
   ENTITY_SCHEMAS,
   type EntityRow,
   keysBetween,
@@ -24,7 +23,7 @@ const TODAY = new Date('2026-10-19T09:00:00');
 const NOW = TODAY.toISOString();
 const synced = () => ({ id: newId(), createdAt: NOW, updatedAt: NOW, rev: 0, deletedAt: null });
 
-/** The verse texts the chips captured (BSB). */
+/** The verse texts the chips quote (BSB), as the exports read them from the book. */
 const TEXT: Record<string, string> = {
   'Rom 8:22':
     'We know that the whole creation has been groaning together in the pains of childbirth until the present time.',
@@ -35,8 +34,7 @@ const TEXT: Record<string, string> = {
 function verseRef(reference: string) {
   const parsed = parseReference(reference);
   if (!parsed.ok) throw new Error(`Not a reference: ${reference}`);
-  const snapshotText = TEXT[reference];
-  return { ...parsed.ref, translation: DEFAULT_TRANSLATION, ...(snapshotText && { snapshotText }) };
+  return { ...parsed.ref };
 }
 
 /** A note's text as a section body, with `{Rom 8:28}` for a verse chip. */
