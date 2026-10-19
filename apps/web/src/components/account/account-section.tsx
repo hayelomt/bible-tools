@@ -18,7 +18,7 @@ import { FormError, linkClass, OfflineNote } from './fields.tsx';
 
 /**
  * Settings → Account (wireframes/shell.md "Settings"): an invitation for a guest, never a blocker.
- * Devices (M3-12) list the account's devices; account deletion joins it with M3-03's screen.
+ * Devices (M3-12) list the account’s devices; Delete account is at the foot of Settings.
  */
 export function AccountSection() {
   const account = useAccount().data;

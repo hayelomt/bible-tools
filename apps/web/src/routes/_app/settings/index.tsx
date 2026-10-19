@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { linkClass } from '@/components/account/fields.tsx';
 import { AccountSection } from '@/components/account/account-section.tsx';
+import { DeleteAccount } from '@/components/account/delete-account.tsx';
 import { ApiStatus } from '@/components/api-status.tsx';
 import { BibleSettings } from '@/components/bible-status.tsx';
 import { YouVersionImport } from '@/components/import/youversion-import.tsx';
@@ -14,6 +15,7 @@ import { RemoveNotes } from '@/components/remove-notes.tsx';
 import { StorageStatus } from '@/components/storage-status.tsx';
 import { VersePreviewSetting } from '@/components/verse-preview-setting.tsx';
 import { useSettings } from '@/data/use-settings.ts';
+import { useAccount } from '@/lib/account.ts';
 import packageJson from '../../../../package.json' with { type: 'json' };
 
 const SOURCE_URL = 'https://github.com/hayelomt/bible-tools';
@@ -26,6 +28,7 @@ export const Route = createFileRoute('/_app/settings/')({
 /** One scrolling page in sections (wireframes/shell.md "Settings"). */
 function Settings() {
   const settings = useSettings();
+  const account = useAccount().data;
   return (
     <div className="flex flex-col gap-8">
       <AccountSection />
@@ -80,8 +83,16 @@ function Settings() {
           </a>{' '}
           and the King James Version, both public domain
         </p>
+        <Link to="/guide" className={linkClass}>
+          User guide ›
+        </Link>
+        <Link to="/privacy" className={linkClass}>
+          Privacy ›
+        </Link>
         <ApiStatus />
       </PageSection>
+      {/* At the very end, in the destructive colour (wireframes/shell.md). */}
+      {account && <DeleteAccount email={account.email} />}
     </div>
   );
 }

@@ -3,13 +3,17 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { CliError } from '../src/admin/cli-error.js';
 import { CliModule } from '../src/admin/cli.module.js';
 import { PasswordInput } from '../src/admin/password-input.js';
+import { ShareLinkRevokeCommand } from '../src/admin/share-link.commands.js';
 import {
   UserCreateCommand,
+  UserDeleteCommand,
   UserDisableCommand,
   UserEnableCommand,
   UserVerifyCommand,
 } from '../src/admin/user.commands.js';
 import { verifyPassword } from '../src/auth/passwords.js';
+import { hashToken } from '../src/auth/tokens.js';
+import { shareToken } from '../src/share/share-token.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { type TestApp, createTestApp } from './int/app.js';
 import { truncateAll } from './int/db.js';
@@ -24,9 +28,11 @@ let password = PASSWORD;
 const readPassword = vi.fn<PasswordInput['read']>(async () => password);
 let commands: {
   create: UserCreateCommand;
+  delete: UserDeleteCommand;
   disable: UserDisableCommand;
   enable: UserEnableCommand;
   verify: UserVerifyCommand;
+  revoke: ShareLinkRevokeCommand;
 };
 let output: string[];
 
@@ -41,9 +47,11 @@ beforeAll(async () => {
   prisma = cli.get(PrismaService);
   commands = {
     create: cli.get(UserCreateCommand),
+    delete: cli.get(UserDeleteCommand),
     disable: cli.get(UserDisableCommand),
     enable: cli.get(UserEnableCommand),
     verify: cli.get(UserVerifyCommand),
+    revoke: cli.get(ShareLinkRevokeCommand),
   };
   return () => cli.close();
 });
@@ -164,7 +172,69 @@ describe('user:verify', () => {
   });
 });
 
+describe('user:delete', () => {
+  it('asks for --yes, then deletes the account and its rows, and no other', async () => {
+    const userId = await signUp('reader@example.com');
+    const otherId = await signUp('other@example.com');
+    await prisma.lesson.create({ data: { userId, title: 'Lesson', date: new Date() } });
+    await prisma.lesson.create({ data: { userId: otherId, title: 'Theirs', date: new Date() } });
+
+    await expect(commands.delete.run(['Reader@example.com'])).rejects.toThrow(
+      new CliError(
+        'This deletes reader@example.com and all its notes, for good. Run it again with --yes.',
+      ),
+    );
+    await expect(prisma.user.count()).resolves.toBe(2);
+
+    await commands.delete.run(['Reader@example.com'], { yes: true });
+    expect(output).toEqual(['Deleted reader@example.com and all its data.']);
+    await expect(prisma.user.findUnique({ where: { id: userId } })).resolves.toBeNull();
+    await expect(prisma.lesson.count({ where: { userId } })).resolves.toBe(0);
+    await expect(prisma.lesson.count({ where: { userId: otherId } })).resolves.toBe(1);
+    await login('reader@example.com').expect(401);
+  });
+});
+
+/** A share link of the user's, stored as the API stores one, and its token. */
+async function link(userId: string): Promise<{ id: string; token: string }> {
+  const lesson = await prisma.lesson.create({
+    data: { userId, title: 'Lesson', date: new Date() },
+  });
+  const row = await prisma.shareLink.create({
+    data: { userId, targetType: 'lesson', targetId: lesson.id, live: true, tokenHash: 'x' },
+  });
+  const token = shareToken('test secret', row.id);
+  await prisma.shareLink.update({ where: { id: row.id }, data: { tokenHash: hashToken(token) } });
+  return { id: row.id, token };
+}
+
+describe('share-link:revoke', () => {
+  it('turns off the link at an address or a token, once', async () => {
+    const userId = await signUp('reader@example.com');
+    const first = await link(userId);
+    const second = await link(userId);
+
+    await commands.revoke.run([`https://lamp.example/s/${first.token}?x=1`]);
+    expect(output).toEqual(['Revoked the lesson link of reader@example.com.']);
+    await commands.revoke.run([first.token]);
+    expect(output.at(-1)).toBe('The lesson link of reader@example.com was already revoked.');
+    const rows = await prisma.shareLink.findMany({ orderBy: { createdAt: 'asc' } });
+    expect(rows.find((r) => r.id === first.id)?.revokedAt).toBeInstanceOf(Date);
+    expect(rows.find((r) => r.id === second.id)?.revokedAt).toBeNull();
+  });
+
+  it('names an address that is not a link', async () => {
+    await expect(commands.revoke.run(['https://lamp.example/lessons'])).rejects.toThrow(
+      new CliError('That is not a share link’s address'),
+    );
+    await expect(commands.revoke.run([shareToken('test secret', 'nothing')])).rejects.toThrow(
+      new CliError('No share link has that address'),
+    );
+  });
+});
+
 it.each([
+  ['user:delete', () => commands.delete],
   ['user:disable', () => commands.disable],
   ['user:enable', () => commands.enable],
   ['user:verify', () => commands.verify],

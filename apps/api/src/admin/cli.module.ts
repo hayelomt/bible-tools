@@ -3,8 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { envFilePaths, envSchema } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { NewPasswordQuestions, PasswordInput } from './password-input.js';
+import { ShareLinkRevokeCommand } from './share-link.commands.js';
 import {
   UserCreateCommand,
+  UserDeleteCommand,
   UserDisableCommand,
   UserEnableCommand,
   UserVerifyCommand,
@@ -23,7 +25,9 @@ import {
   providers: [
     NewPasswordQuestions,
     PasswordInput,
+    ShareLinkRevokeCommand,
     UserCreateCommand,
+    UserDeleteCommand,
     UserDisableCommand,
     UserEnableCommand,
     UserVerifyCommand,

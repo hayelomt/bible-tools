@@ -617,6 +617,7 @@ It then copies the release to `/srv/lamp/releases/<version>`, runs `prisma migra
 - The push body size is capped, and the size of each entity field is capped by Zod.
 - Caddy sets CSP (`default-src 'self'`; scripts by hash for the theme snippet), HSTS, `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`.
 - Account deletion needs the current password again, removes every row the user owns in one transaction and ends all sessions.
+- *Built in M13-05 (2026-10-19):* the privacy note and the user guide are routes in the app (`/privacy`, `/guide`, `components/doc-page.tsx`), under Settings → About for guests too, so they read offline and describe the server they came from: its host, and `privacy@` that host as the contact (by convention, as mail comes from `noreply@` it; no variable). Settings ends with **Delete account…** (`components/account/delete-account.tsx`, the M3-03 wireframe: the password and DELETE typed in, then the device keeps its notes as at sign-out). The operator's side is `docs/OPERATIONS.md`, with two commands for it: `user:delete <email> --yes` (the same cascade as `DELETE /api/account`) and `share-link:revoke <address>` (by the token's hash, naming the owner). Tests: `admin.int.test.ts`, `account.spec.ts`.
 
 ## 13. Local development
 

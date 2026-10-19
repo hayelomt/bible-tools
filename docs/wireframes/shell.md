@@ -140,8 +140,17 @@ New sections join the page, between Bible and Review unless noted. Each is drawn
 │ SHARING                              │  ← signed in only
 │ Shared links                     3 › │  ← sharing.md (M13-04)
 │ Weekly email of group activity [○ ]  │  ← sharing.md (M13-12); once in a group
-│ Privacy and sharing                › │  ← M13-05
+│                                      │
+│ ABOUT                                │
+│ …                                    │
+│ User guide                         › │  ← M13-05: in the app, so they read offline
+│ Privacy                            › │
 ```
+
+The privacy note (`/privacy`) and the user guide (`/guide`) are pages in the app, under About, for
+guests too (built 2026-10-19, M13-05; Shared links stayed under Account, where M13-04 put it). The
+note names the server it came from and `privacy@` its host. Delete account is at the very end, for
+an account (M3-03's dialog, built with the note).
 
 ## Appearance (M2-03, M2-15)
 

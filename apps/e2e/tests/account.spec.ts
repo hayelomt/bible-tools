@@ -137,3 +137,61 @@ test('offline, the forms keep what was typed and the notes keep working', async 
   await expect(page.getByRole('button', { name: 'New lesson' })).toBeVisible();
   await context.setOffline(false);
 });
+
+test('Delete account asks for the password and DELETE, and keeps the notes on the device', async ({
+  page,
+}) => {
+  const email = `delete.${RUN}@example.com`;
+  await page.goto('/');
+  await newLesson(page, 'Kept on the device');
+  await page.goto('/signup');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+
+  await page.goto('/settings');
+  await page.getByRole('button', { name: 'Delete account…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete your account?' });
+  const remove = dialog.getByRole('button', { name: 'Delete account' });
+  await expect(remove).toBeDisabled();
+  await dialog.getByLabel('Password', { exact: true }).fill('not my password');
+  await dialog.getByLabel('Type DELETE to confirm').fill('DELETE');
+  await remove.click();
+  await expect(dialog.getByText("That isn't your current password.")).toBeVisible();
+
+  await dialog.getByLabel('Password', { exact: true }).fill(PASSWORD);
+  await remove.click();
+  await expect(
+    page.getByText('Account deleted. Notes on this device stay until you remove them.'),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sign up' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Delete account…' })).toHaveCount(0);
+
+  await page.goto('/signin');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveText('The email or password is wrong.');
+  await page.goto('/');
+  await expect(page.getByText('Kept on the device')).toBeVisible();
+});
+
+test('the privacy note and the user guide open from Settings', async ({ page }) => {
+  await page.goto('/settings');
+  await page.getByRole('link', { name: 'Privacy ›' }).click();
+  await expect(page.getByRole('heading', { name: 'Privacy', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Share links' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Groups' })).toBeVisible();
+  // privacy@ this server's host, as mail comes from noreply@ it.
+  const host = new URL(page.url()).hostname;
+  await expect(page.getByRole('link', { name: `privacy@${host}` }).first()).toHaveAttribute(
+    'href',
+    `mailto:privacy@${host}`,
+  );
+  await page.getByRole('link', { name: 'Back' }).click();
+  await page.getByRole('link', { name: 'User guide ›' }).click();
+  await expect(page.getByRole('heading', { name: 'Study with a group' })).toBeVisible();
+  await page.getByRole('link', { name: 'privacy note' }).click();
+  await expect(page.getByRole('heading', { name: 'Deleting your data' })).toBeVisible();
+});

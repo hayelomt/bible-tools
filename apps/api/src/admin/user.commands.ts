@@ -140,6 +140,31 @@ export class UserVerifyCommand extends UserCommand {
   }
 }
 
+@Command({
+  name: 'user:delete',
+  arguments: '<email>',
+  description:
+    'Delete an account and every row it owns, as Delete account in the app does (a deletion request). Needs --yes.',
+})
+export class UserDeleteCommand extends UserCommand {
+  async run([email = '']: string[], options: { yes?: boolean } = {}): Promise<void> {
+    const user = await this.findUser(email);
+    if (!options.yes) {
+      throw new CliError(
+        `This deletes ${user.email} and all its notes, for good. Run it again with --yes.`,
+      );
+    }
+    // Every table with a user_id cascades from the user, as for Delete account (§7.2).
+    await this.prisma.user.deleteMany({ where: { id: user.id } });
+    console.log(`Deleted ${user.email} and all its data.`);
+  }
+
+  @Option({ flags: '--yes', description: 'confirm the deletion' })
+  parseYes(): boolean {
+    return true;
+  }
+}
+
 function isRole(value: string): value is Role {
   return (USER_ROLES as readonly string[]).includes(value);
 }

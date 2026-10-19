@@ -1,6 +1,7 @@
 import {
   type ChangePasswordRequest,
   type CreateShareLinkRequest,
+  type DeleteAccountRequest,
   type Device,
   type ForgotPasswordRequest,
   type HealthResponse,
@@ -130,6 +131,11 @@ export async function resetPassword(body: ResetPasswordRequest): Promise<void> {
 
 export async function changePassword(body: ChangePasswordRequest): Promise<void> {
   await request('POST', '/api/auth/change-password', body);
+}
+
+/** `DELETE /api/account` (§7.2): the account and everything in it, from the server. */
+export async function deleteAccount(body: DeleteAccountRequest): Promise<void> {
+  await request('DELETE', '/api/account', body);
 }
 
 /** `POST /api/sync/push` (§6.2). */

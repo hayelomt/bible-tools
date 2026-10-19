@@ -150,11 +150,18 @@ explains one.
 | `pnpm cli user:disable <email>`               | Stops the account from signing in and signs out all its devices. Its data stays.  |
 | `pnpm cli user:enable <email>`                | Lets a disabled account sign in again.                                            |
 | `pnpm cli user:verify <email>`                | Marks the account's email verified without the link, so it can sync.              |
+| `pnpm cli user:delete <email> --yes`          | Deletes the account and all its data, as Delete account in the app does.          |
+| `pnpm cli share-link:revoke <address>`        | Turns off a share link, given its address or token, and names its account.        |
 
 `user:create` asks for the password twice, hidden; it is never taken as an argument, so it stays
 out of the shell history. In a script, pipe it in instead: `printf '%s\n' "$PASSWORD" | pnpm cli
 user:create reader@example.com`. The same rules as sign-up apply (at least 10 characters, not a
 common password). Emails match in any case. A command that refuses prints why and exits with 1.
+
+Running a server for other people brings duties: a `privacy@` mailbox, answering deletion
+requests, and acting on reports about shared pages and groups.
+[docs/OPERATIONS.md](docs/OPERATIONS.md) sets them out. The app's privacy note and user guide are
+in Settings → About.
 
 ## Contributing
 

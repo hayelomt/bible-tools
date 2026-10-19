@@ -16,6 +16,8 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppSplatRouteImport } from './routes/_app/$'
 import { Route as AppCheckEmailRouteImport } from './routes/_app/check-email'
 import { Route as AppForgotPasswordRouteImport } from './routes/_app/forgot-password'
+import { Route as AppGuideRouteImport } from './routes/_app/guide'
+import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppResetPasswordRouteImport } from './routes/_app/reset-password'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as AppShareRouteImport } from './routes/_app/share'
@@ -83,6 +85,16 @@ const AppCheckEmailRoute = AppCheckEmailRouteImport.update({
 const AppForgotPasswordRoute = AppForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGuideRoute = AppGuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrivacyRoute = AppPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => AppRoute,
 } as any)
 const AppResetPasswordRoute = AppResetPasswordRouteImport.update({
@@ -277,6 +289,8 @@ export interface FileRoutesByFullPath {
   '/$': typeof AppSplatRoute
   '/check-email': typeof AppCheckEmailRoute
   '/forgot-password': typeof AppForgotPasswordRoute
+  '/guide': typeof AppGuideRoute
+  '/privacy': typeof AppPrivacyRoute
   '/reset-password': typeof AppResetPasswordRoute
   '/search': typeof AppSearchRoute
   '/share': typeof AppShareRoute
@@ -319,6 +333,8 @@ export interface FileRoutesByTo {
   '/$': typeof AppSplatRoute
   '/check-email': typeof AppCheckEmailRoute
   '/forgot-password': typeof AppForgotPasswordRoute
+  '/guide': typeof AppGuideRoute
+  '/privacy': typeof AppPrivacyRoute
   '/reset-password': typeof AppResetPasswordRoute
   '/search': typeof AppSearchRoute
   '/share': typeof AppShareRoute
@@ -364,6 +380,8 @@ export interface FileRoutesById {
   '/_app/$': typeof AppSplatRoute
   '/_app/check-email': typeof AppCheckEmailRoute
   '/_app/forgot-password': typeof AppForgotPasswordRoute
+  '/_app/guide': typeof AppGuideRoute
+  '/_app/privacy': typeof AppPrivacyRoute
   '/_app/reset-password': typeof AppResetPasswordRoute
   '/_app/search': typeof AppSearchRoute
   '/_app/share': typeof AppShareRoute
@@ -409,6 +427,8 @@ export interface FileRouteTypes {
     | '/$'
     | '/check-email'
     | '/forgot-password'
+    | '/guide'
+    | '/privacy'
     | '/reset-password'
     | '/search'
     | '/share'
@@ -451,6 +471,8 @@ export interface FileRouteTypes {
     | '/$'
     | '/check-email'
     | '/forgot-password'
+    | '/guide'
+    | '/privacy'
     | '/reset-password'
     | '/search'
     | '/share'
@@ -495,6 +517,8 @@ export interface FileRouteTypes {
     | '/_app/$'
     | '/_app/check-email'
     | '/_app/forgot-password'
+    | '/_app/guide'
+    | '/_app/privacy'
     | '/_app/reset-password'
     | '/_app/search'
     | '/_app/share'
@@ -590,6 +614,20 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof AppForgotPasswordRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/guide': {
+      id: '/_app/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof AppGuideRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/privacy': {
+      id: '/_app/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof AppPrivacyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/reset-password': {
@@ -851,6 +889,8 @@ interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
   AppCheckEmailRoute: typeof AppCheckEmailRoute
   AppForgotPasswordRoute: typeof AppForgotPasswordRoute
+  AppGuideRoute: typeof AppGuideRoute
+  AppPrivacyRoute: typeof AppPrivacyRoute
   AppResetPasswordRoute: typeof AppResetPasswordRoute
   AppSearchRoute: typeof AppSearchRoute
   AppShareRoute: typeof AppShareRoute
@@ -889,6 +929,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
   AppCheckEmailRoute: AppCheckEmailRoute,
   AppForgotPasswordRoute: AppForgotPasswordRoute,
+  AppGuideRoute: AppGuideRoute,
+  AppPrivacyRoute: AppPrivacyRoute,
   AppResetPasswordRoute: AppResetPasswordRoute,
   AppSearchRoute: AppSearchRoute,
   AppShareRoute: AppShareRoute,

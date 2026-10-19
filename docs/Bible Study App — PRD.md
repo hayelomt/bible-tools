@@ -376,7 +376,7 @@ v2 replaces the earlier phase 2 plan. Share links and groups are F34 and F35; im
 - [ ] Storage growth: the Bible text plus notes stays small; measure storage on a low-end phone before release.
 - [x] ~~Licence for the project itself (MIT or Apache-2.0) and a contributor guide.~~ MIT; the contributor guide is a backlog task.
 - [x] ~~Theme preset names and colours.~~ The reading-room set: Parchment, Vellum, Olive, Slate, Cedar, Midnight; colours tuned in the UX pass. (Superseded 2026-10-16: one theme.)
-- [ ] Notes are personal: hosting them needs a privacy note for users (what is stored, who can see it, how to delete it) before a public deployment.
+- [x] ~~Notes are personal: hosting them needs a privacy note for users (what is stored, who can see it, how to delete it) before a public deployment.~~ In the app at Settings → About → Privacy (M13-05).
 
 **v2**
 
@@ -385,7 +385,7 @@ v2 replaces the earlier phase 2 plan. Share links and groups are F34 and F35; im
 - [ ] Deep-link URL formats for Blue Letter Bible, Bible Hub and Logos need verifying before F20; keep them in a config table so they can be updated without a release.
 - [ ] Verse-text matching for paste (F19) against BSB and KJV only; text from other translations will not match and keeps its reference only when one is present.
 - [x] Compile view ordering when a section cites several passages: shown once, under its first passage, with a pointer under the others (decided 2026-10-18, M10-03; TECH-DESIGN decision 76).
-- [ ] Groups bring moderation and data-deletion duties for the operator; the privacy note from v1 must cover public threads and comments before J ships.
+- [x] ~~Groups bring moderation and data-deletion duties for the operator; the privacy note from v1 must cover public threads and comments before J ships.~~ The note covers share links, group threads and comments; the operator's process is `docs/OPERATIONS.md` (M13-05).
 
 ## Change log
 
