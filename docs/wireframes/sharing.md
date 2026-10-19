@@ -166,6 +166,8 @@ and in the sidebar under SERIES, with a count of what's new.
 ├──────────────────────────────────────┤
 │ Name     [ Thursday group        ]   │
 │ Series   [ John                ▾ ]   │
+│ Your name in this group              │
+│          [ Ann                   ]   │  ← what members see; never the email
 │                                      │
 │ Members will see the lessons in John │
 │ and what's added to their group      │
@@ -196,7 +198,7 @@ and in the sidebar under SERIES, with a count of what's new.
 └──────────────────────────────────────┘
 ```
 
-**Invite** shows the link to copy or share:
+**Invite** (the owner only; members don't see the button) shows the link to copy or share:
 
 ```text
 │ Anyone with this link can join       │
@@ -215,6 +217,9 @@ and in the sidebar under SERIES, with a count of what's new.
 │ together. Members see what you add   │
 │ to the group thread, and your        │
 │ comments. Your own notes stay yours. │
+│                                      │
+│ Your name in this group              │
+│ [ Ben                            ]   │
 │                                      │
 │ [ Join group ]                       │
 └──────────────────────────────────────┘
@@ -241,12 +246,13 @@ and in the sidebar under SERIES, with a count of what's new.
 └──────────────────────────────────────┘
 ```
 
-- **Remove** asks: "Remove Ben from Thursday group? Ben loses access on their next sync."
-  `[ Cancel ] [ Remove Ben ]`. What happens to their public sections is settled in M13-06; the
-  dialog says it.
+- **Remove** asks: "Remove Ben from Thursday group? Ben loses access on their next sync. What
+  they added to the group goes back to their own notes, and their comments are deleted."
+  `[ Cancel ] [ Remove Ben ]` (decision 98, TECH-DESIGN §17.12).
 - **Make owner** asks: "Make Ben the owner of Thursday group? You'll be a member." `[ Make owner ]`.
-- **Leave** asks: "Leave Thursday group? Your own notes stay on your devices." The owner can't
-  leave until they make someone else owner, and the dialog says so.
+- **Leave** asks: "Leave Thursday group? What you added to it goes back to your own notes, and
+  your comments are deleted." The owner can't leave until they make someone else owner, and the
+  dialog says so; the last member leaving deletes the group, and the dialog says that instead.
 - **Loading:** skeleton rows after 300 ms. **Error (offline):** "Members need a connection."
 
 ## Lesson in a group: public and private threads (M13-08)
