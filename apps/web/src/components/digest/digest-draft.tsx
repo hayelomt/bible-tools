@@ -11,7 +11,7 @@ import { useNavigate } from '@tanstack/react-router';
 import type { Editor } from '@tiptap/react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Ellipsis } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { NotFoundScreen } from '@/components/error-screen.tsx';
 import { ExportDialog } from '@/components/export-dialog.tsx';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
@@ -28,7 +28,20 @@ import { type DraftNavigation, DraftSection } from './draft-section.tsx';
  * Discard draft.
  */
 export function DigestDraftScreen({ quarter }: { quarter: Quarter }) {
-  const draft = useLiveQuery(async () => (await db.digestDraft.get(quarter)) ?? null, [quarter]);
+  const readFrom = useRef<number | null>(null);
+  const draft = useLiveQuery(async () => {
+    readFrom.current ??= performance.now();
+    return (await db.digestDraft.get(quarter)) ?? null;
+  }, [quarter]);
+  // The draft's time, from reading IndexedDB to its sections drawn (`digest.spec.ts`).
+  const marked = useRef(false);
+  useEffect(() => {
+    if (!draft || marked.current) return;
+    marked.current = true;
+    performance.mark('lamp:digest-draft-ready', {
+      detail: { ms: performance.now() - (readFrom.current ?? 0) },
+    });
+  }, [draft]);
   if (draft === undefined) return <ScreenSkeleton />;
   if (draft === null) {
     return (

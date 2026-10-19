@@ -194,6 +194,18 @@ describe('the digest of a quarter (M12-07)', () => {
       'Memory verses\n2 added, 1 reviewed.',
       'Commentaries that grew\nJohn 10 (+2) · Psalm 23 (+1) · John 1 (+1)',
     ]);
+    // Each chapter links to its commentary, not a chip that would preview the whole chapter.
+    const grew = digestSections(digest, 'https://lamp.test').at(-1)!.content.at(-1)!;
+    expect(grew.type).toBe('paragraph');
+    expect('content' in grew && grew.content?.slice(0, 4)).toMatchObject([
+      {
+        text: 'John 10',
+        marks: [{ type: 'link', attrs: { href: 'https://lamp.test/compile/JHN.10' } }],
+      },
+      { text: ' (+2)' },
+      { text: ' · ' },
+      { text: 'Psalm 23', marks: [{ attrs: { href: 'https://lamp.test/compile/PSA.23' } }] },
+    ]);
   });
 
   it('is none for a quarter without lessons, and plain for one with little in it', async () => {

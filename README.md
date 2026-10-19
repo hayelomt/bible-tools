@@ -105,22 +105,36 @@ pnpm dev                                  # web on http://localhost:5173, API on
 
 ### Commands
 
-| Command                                              | What it does                                                          |
-| ---------------------------------------------------- | --------------------------------------------------------------------- |
-| `pnpm dev`                                           | Web app and API with reload                                           |
-| `pnpm lint` · `pnpm typecheck` · `pnpm format:check` | Static checks                                                         |
-| `pnpm test`                                          | Unit tests                                                            |
-| `pnpm test:int`                                      | API integration tests; resets `lamp_test_dev`                         |
-| `pnpm e2e`                                           | Builds the apps and runs Playwright (Chromium); resets `lamp_e2e_dev` |
-| `pnpm build`                                         | Production build of everything                                        |
-| `pnpm db:seed`                                       | A demo user with a few lessons in `lamp_dev`                          |
+| Command                                              | What it does                                                                                   |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                           | Web app and API with reload                                                                    |
+| `pnpm lint` · `pnpm typecheck` · `pnpm format:check` | Static checks                                                                                  |
+| `pnpm test`                                          | Unit tests                                                                                     |
+| `pnpm test:int`                                      | API integration tests; resets `lamp_test_dev`                                                  |
+| `pnpm e2e`                                           | Builds the apps and runs Playwright (Chromium; Firefox for the handout); resets `lamp_e2e_dev` |
+| `pnpm build`                                         | Production build of everything                                                                 |
+| `pnpm db:seed`                                       | A demo user with a few lessons in `lamp_dev`                                                   |
 
 Notes live in the browser until sync arrives (M3), so the server seed doesn't show in the app. To
 try the app with data, open <http://localhost:5173/dev/seed> under `pnpm dev`: it clears this
 browser's database, seeds a month of lessons (series, replies, verse chips, tags, takeaways,
 questions in each status), or adds 5,000 generated sections. Dev builds only.
 
-`pnpm e2e` needs Chromium once: `pnpm --filter @lamp/e2e exec playwright install chromium`.
+`pnpm e2e` needs the browsers once: `pnpm --filter @lamp/e2e exec playwright install chromium firefox`.
+
+### Performance
+
+Two years of notes (207 lessons, 2,484 sections, 2,713 tags, 80 memory verses), from the first
+read of IndexedDB to the screen drawn, median of three opens in Chrome on a phone-sized window
+(`themes.spec.ts`, `digest.spec.ts`; measured 2026-10-19 on the development machine). The budget
+is 200 ms at 4× (TECH-DESIGN §14, decision 94).
+
+| Screen                    | CPU 4× (mid-range phone) | CPU 6× (low-end phone) |
+| ------------------------- | ------------------------ | ---------------------- |
+| Theme map, by month       | 118 ms                   | 222 ms                 |
+| Theme map, by book        | 167 ms                   | 312 ms                 |
+| Quarterly digest, drafted | 124 ms                   | 276 ms                 |
+| Quarterly digest, opened  | 140 ms                   | 269 ms                 |
 
 ### Admin CLI
 

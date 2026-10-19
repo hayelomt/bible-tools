@@ -54,6 +54,10 @@
   --color-highlight-green: var(--highlight-green);
   --color-highlight-blue: var(--highlight-blue);
   --color-highlight-pink: var(--highlight-pink);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
   /* One font for everything: `font-serif` and `font-mono` resolve to it too. */
   --font-sans: 'Inter Tight Variable', ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-sans);
@@ -120,6 +124,14 @@
   --highlight-green: oklch(0.91 0.07 140);
   --highlight-blue: oklch(0.9 0.05 235);
   --highlight-pink: oklch(0.89 0.055 355);
+  /*
+   * The theme map's heat grid (M12-10), 1–2 notes to 10+: amber deepening on cream. Each step is a
+   * cell on its own, so each reads at 3:1 on the page, and each is clearly darker than the last.
+   */
+  --heat-1: oklch(0.62 0.11 70);
+  --heat-2: oklch(0.53 0.11 64);
+  --heat-3: oklch(0.44 0.1 58);
+  --heat-4: oklch(0.35 0.08 52);
   color-scheme: light;
 }
 
@@ -129,6 +141,11 @@
   --highlight-green: oklch(0.4 0.06 145);
   --highlight-blue: oklch(0.4 0.06 240);
   --highlight-pink: oklch(0.4 0.07 355);
+  /* In the evening study the lamp brightens instead: 10+ is the lit amber. */
+  --heat-1: oklch(0.535 0.1 62);
+  --heat-2: oklch(0.635 0.12 68);
+  --heat-3: oklch(0.73 0.13 72);
+  --heat-4: oklch(0.83 0.14 78);
   color-scheme: dark;
 }
 

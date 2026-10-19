@@ -14,6 +14,7 @@ import { Sidebar } from './sidebar.tsx';
 import { ShellSlots, useSlotRef } from './slots.tsx';
 import { ImportToasts } from '@/components/import/youversion-import.tsx';
 import { UpdatePrompt } from './update-prompt.tsx';
+import { setInAppNavigate } from '@/lib/in-app-links.ts';
 import { isTyping } from '@/lib/is-typing.ts';
 import { newLessonTarget } from '@/lib/new-lesson.ts';
 import { useSyncAccount } from '@/sync/sync.ts';
@@ -29,6 +30,7 @@ export const LAPTOP = '(min-width: 1024px)';
  */
 export function AppShell() {
   useShortcuts();
+  useInAppLinks();
   useThemeSync();
   useSyncAccount();
   const laptop = useMediaQuery(LAPTOP);
@@ -115,6 +117,15 @@ function AppToaster() {
 
 function PanelSlot() {
   return <div ref={useSlotRef('panel')} className="w-64 shrink-0 pt-10 empty:hidden" />;
+}
+
+/** Links in notes to the app's own pages open in it (`lib/in-app-links.ts`). */
+function useInAppLinks() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    setInAppNavigate((href) => void navigate({ href }));
+    return () => setInAppNavigate(undefined);
+  }, [navigate]);
 }
 
 /**

@@ -23,13 +23,19 @@ export const DIGEST_TAG = 'digest';
  * ended, once per account. Nothing for a quarter already drafted on any device (the synced
  * `lastDigestQuarter`), or with no lessons. The draft and the setting are written together.
  */
-export function draftDigest(today: string, db: LampDb = appDb): Promise<DigestDraft | null> {
+export async function draftDigest(today: string, db: LampDb = appDb): Promise<DigestDraft | null> {
   const quarter = lastQuarter(today);
+  const drafted = async (from: LampDb) => {
+    const last = (await from.userSettings.get(SETTINGS_KEY))?.lastDigestQuarter;
+    return !!last && last >= quarter;
+  };
+  if (await drafted(db)) return null;
+  // Read before the write, which locks every table: the screen's own reads needn't wait for it.
+  const digest = await digestFor(quarter, db);
+  if (!digest) return null;
   return action(db, async (w) => {
-    const settings = await w.db.userSettings.get(SETTINGS_KEY);
-    if (settings?.lastDigestQuarter && settings.lastDigestQuarter >= quarter) return null;
-    const digest = await digestFor(quarter, w.db);
-    if (!digest) return null;
+    // Another tab may have drafted it meanwhile.
+    if (await drafted(w.db)) return null;
     const now = new Date().toISOString();
     const draft: DigestDraft = {
       quarter,

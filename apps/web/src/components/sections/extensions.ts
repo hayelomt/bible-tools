@@ -1,13 +1,14 @@
 import { translationLabel, type VerseRef } from '@lamp/domain';
 import { type Editor, Extension, type Extensions, mergeAttributes, Node } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
-import { Selection } from '@tiptap/pm/state';
+import { Plugin, Selection } from '@tiptap/pm/state';
 import { StarterKit } from '@tiptap/starter-kit';
 import { LinkSuggestion, NoteLink } from '@/components/links/note-link.ts';
 import { PasteChips } from '@/components/verses/paste-chips.ts';
 import { VerseChipKeys, verseChipView, VerseSnapshots } from '@/components/verses/verse-chip.ts';
 import { VersePreviews } from '@/components/verses/verse-preview.ts';
 import { VerseSuggestion } from '@/components/verses/verse-suggestion.ts';
+import { openInApp } from '@/lib/in-app-links.ts';
 
 /**
  * The editor for one section (TECH-DESIGN §8.3), set up to produce only what a section body allows
@@ -206,6 +207,32 @@ export function sectionExtensions(options: {
     VerseSnapshots,
     VersePreviews,
     PasteChips,
+    InAppLinks,
     sectionKeys(options.handlers),
   ];
 }
+
+/**
+ * A click on a link to one of the app's own pages opens it, as a link chip opens its lesson; other
+ * links stay text to edit (`openOnClick: false`). The digest's commentaries are such links.
+ */
+const InAppLinks = Extension.create({
+  name: 'inAppLinks',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        props: {
+          handleClick: (_view, _pos, event) => {
+            if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
+              return false;
+            }
+            const link = (event.target as Element | null)?.closest?.('a[href]');
+            if (!(link instanceof HTMLAnchorElement) || !openInApp(link.href)) return false;
+            event.preventDefault();
+            return true;
+          },
+        },
+      }),
+    ];
+  },
+});

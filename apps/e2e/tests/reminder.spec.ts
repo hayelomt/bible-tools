@@ -12,7 +12,9 @@ test('a browser that can’t remind says the Review tab’s count stands in', as
   await expect(review).toContainText(
     'This browser can’t send reminders. The Review tab shows a count instead.',
   );
-  await expect(review.getByRole('switch')).toHaveCount(0);
+  // No reminder switch; the resurfacing rules' switches (M12-01) are still there.
+  await expect(review.getByRole('switch', { name: /Weekly reminder/ })).toHaveCount(0);
+  await expect(review.getByRole('switch')).toHaveCount(3);
 });
 
 test.describe('with the service worker, in a tab', () => {

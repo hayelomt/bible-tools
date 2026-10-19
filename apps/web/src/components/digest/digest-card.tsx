@@ -27,8 +27,19 @@ function useDraftDigest() {
       const state = await db.syncState.get(SYNC_STATE_KEY);
       if (checked || (state?.ownerUserId && phase !== 'synced')) return;
       checked = true;
-      // Nothing when another device's draft, pulled since, set `lastDigestQuarter` already.
-      runWrite(draftDigest(today()), 'the digest draft');
+      // Nothing when another device's draft, pulled since, set `lastDigestQuarter` already. Timed
+      // from the first read to the draft stored, for the budget check (`digest.spec.ts`).
+      const from = performance.now();
+      runWrite(
+        draftDigest(today()).then((draft) => {
+          if (draft) {
+            performance.mark('lamp:digest-ready', {
+              detail: { ms: performance.now() - from, sections: draft.sections.length },
+            });
+          }
+        }),
+        'the digest draft',
+      );
     })();
   }, [phase]);
 }

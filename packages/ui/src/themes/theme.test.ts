@@ -211,6 +211,40 @@ describe('Lamplight', () => {
   });
 });
 
+/** The heat grid's steps, 1–2 notes to 10+ (the theme map, M12-10). */
+const HEAT = ['heat-1', 'heat-2', 'heat-3', 'heat-4'];
+/** What a cell sits on: the page, a card, and a phone row's hover. */
+const HEAT_SURFACES = ['background', 'card', 'muted'];
+/** Each step against the one below it, so the scale reads in order without the numbers. */
+const HEAT_STEP = 1.4;
+
+describe('the heat grid', () => {
+  it.each(MODES)('%s: every step is a cell that reads on its surface', (mode) => {
+    const values = tokens(mode);
+    const color = (token: string) => oklchToRgba(values.get(token)!);
+    // A cell with no notes is a dot in muted-foreground, which reads as text does.
+    const failures = [...HEAT, 'muted-foreground'].flatMap((step) =>
+      HEAT_SURFACES.map((surface) => ({
+        label: `${step} on ${surface}`,
+        ratio: contrast(color(step), color(surface)),
+      })).filter(({ ratio }) => ratio < NON_TEXT),
+    );
+    expect(failures.map(({ label, ratio }) => `${label}: ${ratio.toFixed(2)}`)).toEqual([]);
+  });
+
+  it.each(MODES)('%s: each step stands apart from the last, away from the page', (mode) => {
+    const values = tokens(mode);
+    const color = (token: string) => oklchToRgba(values.get(token)!);
+    const ratios = HEAT.map((step) => contrast(color(step), color('background')));
+    expect(ratios).toEqual(ratios.toSorted((a, b) => a - b));
+    for (const [i, step] of HEAT.slice(1).entries()) {
+      expect(contrast(color(step), color(HEAT[i]!)), `${HEAT[i]} to ${step}`).toBeGreaterThan(
+        HEAT_STEP,
+      );
+    }
+  });
+});
+
 function outsideGamut(values: Map<string, string>): string[] {
   return [...values]
     .filter(([name]) => name !== 'radius')

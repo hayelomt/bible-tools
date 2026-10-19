@@ -96,13 +96,16 @@ export function CommentaryScreen({
   );
   const data = full ?? first;
   useScreenReady('commentary', data !== undefined);
-  // Opening it is a visit (F30), which takes a repeated verse out of Review for six months.
+  // Opening it is a visit (F30), which takes a repeated verse out of Review for six months. It's
+  // written once the first screen is read: the write locks every table, and the first read would
+  // wait behind it (M12-11, the budget in `compile.spec.ts`).
   const visited = scope ? passageSlug(scope) : null;
+  const shown = data !== undefined;
   useEffect(() => {
-    if (scope) runWrite(recordVisit(scope), 'a commentary visit');
+    if (scope && shown) runWrite(recordVisit(scope), 'a commentary visit');
     // The scope is a new object each render; its slug says when it changes.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [visited]);
+  }, [visited, shown]);
 
   if (!scope || !scopes) {
     return (

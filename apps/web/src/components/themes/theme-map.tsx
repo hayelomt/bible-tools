@@ -1,10 +1,9 @@
 import { BOOK_CODES, type BookCode, getBook } from '@lamp/domain';
 import { Button, buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
-import { cn } from 'cn';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { Segmented } from '@/components/segmented.tsx';
 import { ScreenTitle } from '@/components/shell/slots.tsx';
@@ -40,13 +39,17 @@ const VIEW_LABELS: Record<ThemeView, string> = { month: 'By month', book: 'By bo
 /** Rows shown at first, the most used tags; "Show all" lists the rest. */
 const TAGS_SHOWN = 12;
 
-/** A heat step's look; the count is always in the cell's name too (UX-PATTERNS). */
+/**
+ * A heat step's look, from the theme's heat tokens (`theme.test.ts` checks them in both modes); the
+ * count is always in the cell's name too (UX-PATTERNS).
+ */
 const HEAT_CLASSES = [
-  'bg-transparent',
-  'bg-primary/20',
-  'bg-primary/45',
-  'bg-primary/70',
-  'bg-primary',
+  // None: a dot in the middle, 2 px across.
+  'bg-[radial-gradient(circle,var(--color-muted-foreground)_1px,transparent_1.5px)]',
+  'bg-heat-1',
+  'bg-heat-2',
+  'bg-heat-3',
+  'bg-heat-4',
 ] as const;
 
 const MONTH = new Intl.DateTimeFormat('en-GB', {
@@ -82,7 +85,13 @@ export function ThemeMapScreen({
   onView: (view: ThemeView) => void;
 }) {
   const day = today();
-  const data = useLiveQuery(() => themeData(), []);
+  const readFrom = useRef<number | null>(null);
+  const read = useLiveQuery(() => {
+    readFrom.current ??= performance.now();
+    return themeData(undefined, { books: view === 'book' });
+  }, [view]);
+  // From the month view, the books are read again before the book view shows.
+  const data = read && (view === 'month' || read.withBooks) ? read : undefined;
   const laptop = useMediaQuery(LAPTOP_QUERY);
   const slow = useAfter(300);
   const [all, setAll] = useState(false);
@@ -95,6 +104,17 @@ export function ThemeMapScreen({
       : byBook(data.tags, data.items)
     : undefined;
   const shown = rows && (all ? rows : rows.slice(0, TAGS_SHOWN));
+
+  // The first grid's time, from reading IndexedDB to drawn, for the budget check
+  // (`themes.spec.ts`).
+  const marked = useRef(false);
+  useEffect(() => {
+    if (!data || marked.current) return;
+    marked.current = true;
+    performance.mark('lamp:theme-map-ready', {
+      detail: { ms: performance.now() - (readFrom.current ?? 0), items: data.items.length },
+    });
+  }, [data]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -159,14 +179,11 @@ function Empty({ hasTags, view }: { hasTags: boolean; view: ThemeView }) {
 }
 
 /** One cell's look: a plain dot for none, a coloured block otherwise. */
-function Cell({ n, className }: { n: number; className?: string }) {
-  const step = heatStep(n);
-  return step === 0 ? (
-    <span aria-hidden className={cn('flex items-center justify-center', className)}>
-      <span className="size-0.5 rounded-full bg-muted-foreground/60" />
-    </span>
-  ) : (
-    <span aria-hidden className={cn('block rounded-[2px]', HEAT_CLASSES[step], className)} />
+function Cell({ n, className }: { n: number; className: string }) {
+  // One element a cell, the dot drawn as its background, and its classes joined without `cn`:
+  // two years' grid by book is over a thousand cells (M12-11).
+  return (
+    <span aria-hidden className={`block rounded-[2px] ${HEAT_CLASSES[heatStep(n)]} ${className}`} />
   );
 }
 

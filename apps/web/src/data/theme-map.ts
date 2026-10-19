@@ -1,5 +1,6 @@
 import { BOOK_CODES, type BookCode, type Lesson, type Tag } from '@lamp/domain';
 import { db as appDb, type LampDb } from './db.ts';
+import { eachByIndex } from './idb.ts';
 
 /**
  * The theme map (F31, wireframes/reflection.md "Theme map"): tags against months and against the
@@ -92,36 +93,47 @@ export function heatStep(count: number): number {
   return HEAT_STEPS.findLastIndex((step) => count >= step.from);
 }
 
-const live = <T extends { deletedAt: string | null }>(row: T | undefined): row is T =>
-  !!row && row.deletedAt === null;
+const isLive = (row: { deletedAt: string | null }) => row.deletedAt === null;
 
 /** The theme map's data: every live tag, and everything with one in a live lesson. */
 export interface ThemeData {
   tags: Tag[];
   items: TaggedItem[];
+  /** Whether the items have their books. */
+  withBooks: boolean;
 }
 
-export async function themeData(db: LampDb = appDb): Promise<ThemeData> {
-  const [tags, sectionTags, lessonTags] = await Promise.all([
-    db.tag.filter(live).toArray(),
-    db.sectionTag.filter(live).toArray(),
-    db.lessonTag.filter(live).toArray(),
+/**
+ * Read for two years of notes within the lesson-open budget (M12-11, `themes.spec.ts`): whole
+ * tables with `getAll` and filtered here, since Dexie's `filter`, `anyOf` and `bulkGet` step
+ * through rows one request at a time; and each lesson's section ids without their bodies, from the
+ * index in one transaction (`eachByIndex`). A section's tags are removed with it, so a live tag link is to a live section.
+ * `books` false leaves the books out, which only the view by book needs.
+ */
+export async function themeData(
+  db: LampDb = appDb,
+  { books: withBooks = true }: { books?: boolean } = {},
+): Promise<ThemeData> {
+  const [tags, sectionTags, lessonTags, lessons, citations] = await Promise.all([
+    db.tag.toArray(),
+    db.sectionTag.toArray(),
+    db.lessonTag.toArray(),
+    db.lesson.toArray(),
+    withBooks ? db.citation.toArray() : [],
+    // So that a change to any section reads the map again.
+    db.section.count(),
   ]);
-  const sections = new Map(
-    (await db.section.bulkGet([...new Set(sectionTags.map((l) => l.sectionId))]))
-      .filter(live)
-      .map((s) => [s.id, s]),
-  );
-  const lessonIds = new Set([
-    ...lessonTags.map((l) => l.lessonId),
-    ...[...sections.values()].map((s) => s.lessonId),
-  ]);
-  const lessons = new Map<string, Lesson>(
-    (await db.lesson.bulkGet([...lessonIds])).filter(live).map((l) => [l.id, l]),
-  );
-  const sources = [...sections.keys(), ...lessons.keys()];
+  const live = new Map<string, Lesson>(lessons.flatMap((l) => (isLive(l) ? [[l.id, l]] : [])));
+  const lessonIds = [...live.keys()];
+  const sectionIds = await eachByIndex<string>(db, 'section', 'lessonId', lessonIds, 'keys');
+  const lessonOf = new Map<string, Lesson>();
+  for (const [i, ids] of sectionIds.entries()) {
+    const lesson = live.get(lessonIds[i]!)!;
+    for (const id of ids) lessonOf.set(id, lesson);
+  }
+
   const books = new Map<string, Set<BookCode>>();
-  for (const citation of await db.citation.where('sourceId').anyOf(sources).toArray()) {
+  for (const citation of citations) {
     // A lesson's own citations are its main passages; a section's, its chips.
     if (citation.sourceType !== 'section' && citation.sourceType !== 'lesson') continue;
     let cited = books.get(citation.sourceId);
@@ -132,20 +144,19 @@ export async function themeData(db: LampDb = appDb): Promise<ThemeData> {
 
   const items: TaggedItem[] = [];
   for (const link of sectionTags) {
-    const section = sections.get(link.sectionId);
-    const lesson = section && lessons.get(section.lessonId);
-    if (!section || !lesson) continue;
+    const lesson = isLive(link) && lessonOf.get(link.sectionId);
+    if (!lesson) continue;
     items.push({
       tagId: link.tagId,
       kind: 'section',
-      id: section.id,
+      id: link.sectionId,
       lessonId: lesson.id,
       date: lesson.date,
-      books: booksOf(section.id),
+      books: booksOf(link.sectionId),
     });
   }
   for (const link of lessonTags) {
-    const lesson = lessons.get(link.lessonId);
+    const lesson = isLive(link) && live.get(link.lessonId);
     if (!lesson) continue;
     items.push({
       tagId: link.tagId,
@@ -156,5 +167,5 @@ export async function themeData(db: LampDb = appDb): Promise<ThemeData> {
       books: booksOf(lesson.id),
     });
   }
-  return { tags, items };
+  return { tags: tags.filter(isLive), items, withBooks };
 }

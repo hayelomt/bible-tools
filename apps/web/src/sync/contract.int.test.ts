@@ -526,6 +526,11 @@ describe('templates on two devices', () => {
 describe('resurfacing on two devices', () => {
   it('a dismissal or a commentary visit on one holds on the other', async () => {
     const { email, first: laptop } = await signUp('Firefox on macOS');
+    // The rules saved, so the account has settings to pull: a device's defaults are its own.
+    await updateSettings(
+      { resurfacing: { yearAgo: true, repeatedVerse: true, staleQuestion: true } },
+      laptop.db,
+    );
     // A lesson in this week a year ago, and a verse cited in three lessons.
     const day = today();
     const year = Number(day.slice(0, 4)) - 1;

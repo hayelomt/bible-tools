@@ -1,24 +1,27 @@
 import {
-  DEFAULT_TRANSLATION,
   dueDate,
   formatPassage,
+  passageSlug,
   type Grown,
   grewMost,
   type InlineNode,
   type Lesson,
+  type Citation,
+  type LessonTag,
   type Question,
+  type Section,
+  type SectionTag,
   type Quarter,
   quarterDays,
   quarterLabel,
   type SectionBody,
   type Series,
-  type TranslationId,
 } from '@lamp/domain';
 import { addDays, dayAndMonth, today as todayOn } from '@/lib/dates.ts';
 import { count } from '@/lib/labels.ts';
-import { db as appDb, type LampDb, SETTINGS_KEY } from './db.ts';
-import { questionViews } from './question-status.ts';
-import { themeData } from './theme-map.ts';
+import { db as appDb, type LampDb } from './db.ts';
+import { eachByIndex } from './idb.ts';
+import { viewOf } from './question-status.ts';
 
 /**
  * The quarterly digest (F32, M12-07, wireframes/reflection.md "Quarterly digest"): what a quarter
@@ -48,23 +51,30 @@ export interface Digest {
   memory: { added: number; reviewed: number };
   /** The chapters whose commentaries gained the most sections from them. */
   grew: Grown[];
-  /** The translation its verse chips are in. */
-  translation: TranslationId;
 }
 
 const live = <T extends { deletedAt: string | null }>(row: T | undefined): row is T =>
   !!row && row.deletedAt === null;
+const isLive = (row: { deletedAt: string | null }) => row.deletedAt === null;
 
 /** The local day of a time, as the device saw it. */
 const dayOf = (iso: string) => todayOn(new Date(iso));
 
-/** The quarter's digest; null for a quarter with no lessons, which gets none. */
+/**
+ * The quarter's digest; null for a quarter with no lessons, which gets none. Read for two years
+ * of notes within the lesson-open budget (M12-11, `digest.spec.ts`): whole tables with `getAll`,
+ * filtered here, where every row is needed, and the quarter's own sections, tags and citations
+ * lesson by lesson through their indexes, in one transaction each (`eachByIndex`).
+ */
 export async function digestFor(quarter: Quarter, db: LampDb = appDb): Promise<Digest | null> {
   const [first, last] = quarterDays(quarter);
   const within = (day: string) => day >= first && day <= last;
-  const lessons = (await db.lesson.filter((l) => live(l) && within(l.date)).toArray()).toSorted(
-    (a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt),
+  const allLessons = new Map(
+    (await db.lesson.toArray()).filter(isLive).map((l) => [l.id, l] as const),
   );
+  const lessons = [...allLessons.values()]
+    .filter((l) => within(l.date))
+    .toSorted((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
   if (lessons.length === 0) return null;
   const lessonIds = new Set(lessons.map((l) => l.id));
 
@@ -86,26 +96,46 @@ export async function digestFor(quarter: Quarter, db: LampDb = appDb): Promise<D
         (a.series?.title ?? '').localeCompare(b.series?.title ?? ''),
     );
 
-  const { tags, items } = await themeData(db);
-  const tagCounts = new Map<string, number>();
-  for (const item of items) {
-    if (lessonIds.has(item.lessonId))
-      tagCounts.set(item.tagId, (tagCounts.get(item.tagId) ?? 0) + 1);
-  }
-  const topTags = tags
-    .flatMap((tag) =>
-      tagCounts.has(tag.id) ? [{ name: tag.name, count: tagCounts.get(tag.id)! }] : [],
+  // The quarter's lessons, each with its sections, section tags, lesson tags and citations.
+  const ids = lessons.map((l) => l.id);
+  const [sectionLists, lessonTagLists, citationLists] = await Promise.all([
+    eachByIndex<Section>(db, 'section', 'lessonId', ids),
+    eachByIndex<LessonTag>(db, 'lessonTag', 'lessonId', ids),
+    eachByIndex<Citation>(db, 'citation', 'lessonId', ids),
+  ]);
+  const liveSections = sectionLists.flat().filter(isLive);
+  const sectionTags = (
+    await eachByIndex<SectionTag>(
+      db,
+      'sectionTag',
+      'sectionId',
+      liveSections.map((s) => s.id),
     )
+  ).flat();
+
+  // As the tag page counts: a tagged section, or a lesson tagged as a whole.
+  const tagCounts = new Map<string, number>();
+  for (const link of [...sectionTags, ...lessonTagLists.flat()]) {
+    if (isLive(link)) tagCounts.set(link.tagId, (tagCounts.get(link.tagId) ?? 0) + 1);
+  }
+  const tags = (await db.tag.bulkGet([...tagCounts.keys()])).filter(live);
+  const topTags = tags
+    .map((tag) => ({ name: tag.name, count: tagCounts.get(tag.id)! }))
     .toSorted((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     .slice(0, TOP_TAGS);
 
-  const allLessons = new Map(
-    (await db.lesson.filter(live).toArray()).map((l) => [l.id, l] as const),
+  const [questionRows, entries] = await Promise.all([
+    db.question.toArray(),
+    db.questionEntry.toArray(),
+  ]);
+  const answerIds = [...new Set(entries.flatMap((e) => (e.sectionId ? [e.sectionId] : [])))];
+  const answerSections = new Map(
+    (await db.section.bulkGet(answerIds)).filter(live).map((s) => [s.id, s] as const),
   );
-  const questions = await questionViews(
-    await db.question.filter((q) => live(q) && allLessons.has(q.lessonId)).toArray(),
-    db,
-  );
+  const status = { entries, sections: answerSections };
+  const questions = questionRows
+    .filter((q) => isLive(q) && allLessons.has(q.lessonId))
+    .map((q) => viewOf(q, status));
   const answered = questions.filter((q) => {
     if (q.status !== 'answered') return false;
     const answer = q.entries.findLast((e) => e.kind === 'answered');
@@ -124,30 +154,17 @@ export async function digestFor(quarter: Quarter, db: LampDb = appDb): Promise<D
     }));
 
   const memory = { added: 0, reviewed: 0 };
-  for (const item of await db.memoryItem.filter(live).toArray()) {
+  for (const item of (await db.memoryItem.toArray()).filter(isLive)) {
     if (within(dayOf(item.createdAt))) memory.added++;
     // The latest review was `interval` days before the next one is due.
     if (item.reviewCount > 0 && within(addDays(dueDate(item), -item.interval))) memory.reviewed++;
   }
 
-  const sections = new Set(
-    (
-      await db.section
-        .where('lessonId')
-        .anyOf([...lessonIds])
-        .toArray()
-    )
-      .filter(live)
-      .map((s) => s.id),
-  );
-  const citations = (
-    await db.citation
-      .where('lessonId')
-      .anyOf([...lessonIds])
-      .toArray()
-  ).filter((c) => c.sourceType === 'section' && sections.has(c.sourceId));
+  const sections = new Set(liveSections.map((s) => s.id));
+  const citations = citationLists
+    .flat()
+    .filter((c) => c.sourceType === 'section' && sections.has(c.sourceId));
 
-  const settings = await db.userSettings.get(SETTINGS_KEY);
   return {
     quarter,
     title: quarterLabel(quarter),
@@ -158,7 +175,6 @@ export async function digestFor(quarter: Quarter, db: LampDb = appDb): Promise<D
     open,
     memory,
     grew: grewMost(citations),
-    translation: settings?.defaultTranslation ?? DEFAULT_TRANSLATION,
   };
 }
 
@@ -194,18 +210,29 @@ function lessonsLine({ lessons, bySeries }: Digest): string {
 
 /**
  * The digest as the draft's sections, each under its heading: lesson titles as link chips, and
- * the chapters that grew as verse chips, so each opens what it names. Ordinary text to edit.
+ * the chapters that grew as links to their commentaries (decided in M12-11: a chapter chip would
+ * preview the whole chapter), so each opens what it names. Ordinary text to edit. Without an
+ * `origin` (outside a browser) the chapters are plain text.
  */
-export function digestSections(digest: Digest): SectionBody[] {
+export function digestSections(
+  digest: Digest,
+  origin: string | undefined = globalThis.location?.origin,
+): SectionBody[] {
   const { memory } = digest;
-  const grew = digest.grew.flatMap(({ passage, sections }, i): InlineNode[] => [
-    ...(i > 0 ? [text(' · ')] : []),
-    {
-      type: 'verse',
-      attrs: { ...passage, display: formatPassage(passage), translation: digest.translation },
-    },
-    text(` (+${sections})`),
-  ]);
+  const grew = digest.grew.flatMap(({ passage, sections }, i): InlineNode[] => {
+    const name = formatPassage(passage);
+    return [
+      ...(i > 0 ? [text(' · ')] : []),
+      origin
+        ? {
+            type: 'text',
+            text: name,
+            marks: [{ type: 'link', attrs: { href: `${origin}/compile/${passageSlug(passage)}` } }],
+          }
+        : text(name),
+      text(` (+${sections})`),
+    ];
+  });
   return [
     doc(
       heading('Lessons and series'),
