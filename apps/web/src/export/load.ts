@@ -1,6 +1,9 @@
 import {
   isWholeBook,
+  keysBetween,
   type Lesson,
+  type Quarter,
+  quarterDays,
   linkedTargets,
   type Passage,
   type Section,
@@ -25,6 +28,7 @@ import {
   type LinkTargets,
   seriesMarkdown,
 } from './markdown.ts';
+import { notionMarkdown } from './notion.ts';
 
 /** A finished export: what to call the file, and what's in it. */
 export interface Exported {
@@ -122,6 +126,19 @@ export async function exportLesson(id: string, db: LampDb = appDb): Promise<Expo
   };
 }
 
+/** A lesson as Markdown for Notion (M12-06), for the clipboard; null when it's gone. */
+export async function exportLessonForNotion(
+  id: string,
+  db: LampDb = appDb,
+): Promise<Exported | null> {
+  const data = await lessonForExport(id, db);
+  if (!data) return null;
+  return {
+    fileName: fileName(data.lesson.title, data.lesson.date),
+    markdown: notionMarkdown(data),
+  };
+}
+
 /** A series and its lessons, in date order, as Markdown; null when it's gone. */
 export async function exportSeries(id: string, db: LampDb = appDb): Promise<Exported | null> {
   const data = await seriesForExport(id, db);
@@ -129,6 +146,51 @@ export async function exportSeries(id: string, db: LampDb = appDb): Promise<Expo
   return {
     fileName: fileName(data.series.title),
     markdown: seriesMarkdown(data.series, data.lessons),
+  };
+}
+
+/**
+ * A digest draft as Markdown (F32, M12-08), as its lesson will export once kept: dated the
+ * quarter's last day, tagged #digest. Null when the draft is gone.
+ */
+export async function exportDigestDraft(
+  quarter: Quarter,
+  db: LampDb = appDb,
+): Promise<Exported | null> {
+  const draft = await db.digestDraft.get(quarter);
+  if (!draft) return null;
+  const date = quarterDays(quarter)[1];
+  const lesson = {
+    id: quarter,
+    title: draft.title,
+    date,
+    kind: 'personal',
+    seriesId: null,
+    speaker: null,
+    church: null,
+    mainPassages: [],
+    sourceType: null,
+    sourceTitle: null,
+    sourceAuthor: null,
+    sourceUrl: null,
+    sourceStartedAt: null,
+  } as unknown as Lesson;
+  const keys = keysBetween(null, null, draft.sections.length);
+  const sections = draft.sections.map(
+    ({ id, body }, i) =>
+      ({ id, body, lessonId: quarter, parentId: null, orderKey: keys[i]! }) as unknown as Section,
+  );
+  return {
+    fileName: fileName(draft.title, date),
+    markdown: lessonMarkdown({
+      lesson,
+      sections,
+      sectionTags: new Map(),
+      tags: ['digest'],
+      takeaways: [],
+      questions: [],
+      links: await linkTargets(sections, db),
+    }),
   };
 }
 

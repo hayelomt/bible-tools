@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@lamp/ui/components/dialog';
 import { toast } from '@lamp/ui/components/sonner';
-import { Copy, FileDown, Printer } from 'lucide-react';
+import { ClipboardCopy, Copy, FileDown, Printer, ScrollText } from 'lucide-react';
 import type { Exported } from '@/export/load.ts';
 
 interface ExportDialogProps {
@@ -21,12 +21,17 @@ interface ExportDialogProps {
   load: () => Promise<Exported | null>;
   /** Opens the print view, which opens the print dialog; without it, the export is Markdown only. */
   onPrint?: () => void;
+  /** Reads the Markdown for Notion (M12-06), which a lesson has. */
+  loadNotion?: () => Promise<Exported | null>;
+  /** Opens the one-page handout (M12-05), which a lesson has. */
+  onHandout?: () => void;
 }
 
 /**
  * Export (F11, wireframes/export.md "Export menu"), from a lesson's, a series' or a commentary's
  * `⋯`: a Markdown file, downloaded at once and offline, or the same Markdown copied; or the print
- * view, to print or save as a PDF (M6-06), which the commentary doesn't have.
+ * view, to print or save as a PDF (M6-06), which the commentary doesn't have. A lesson also copies
+ * for Notion (M12-06) and prints as a one-page handout (M12-05).
  */
 export function ExportDialog({
   open,
@@ -35,10 +40,12 @@ export function ExportDialog({
   description = 'Markdown and print keep the notes, verses, tags and questions.',
   load,
   onPrint,
+  loadNotion,
+  onHandout,
 }: ExportDialogProps) {
-  async function run(use: (exported: Exported) => Promise<void> | void) {
+  async function run(use: (exported: Exported) => Promise<void> | void, read = load) {
     try {
-      const exported = await load();
+      const exported = await read();
       if (!exported) return;
       await use(exported);
       onOpenChange(false);
@@ -78,6 +85,21 @@ export function ExportDialog({
             <Copy aria-hidden />
             Copy as Markdown
           </Button>
+          {loadNotion && (
+            <Button
+              variant="outline"
+              className="justify-start pointer-coarse:min-h-11"
+              onClick={() =>
+                void run(async ({ markdown }) => {
+                  await navigator.clipboard.writeText(markdown);
+                  toast('Copied for Notion.');
+                }, loadNotion)
+              }
+            >
+              <ClipboardCopy aria-hidden />
+              Copy for Notion
+            </Button>
+          )}
           {onPrint && (
             <Button
               variant="outline"
@@ -89,6 +111,19 @@ export function ExportDialog({
             >
               <Printer aria-hidden />
               Print or save as PDF
+            </Button>
+          )}
+          {onHandout && (
+            <Button
+              variant="outline"
+              className="justify-start pointer-coarse:min-h-11"
+              onClick={() => {
+                onOpenChange(false);
+                onHandout();
+              }}
+            >
+              <ScrollText aria-hidden />
+              Handout (one page)
             </Button>
           )}
         </div>

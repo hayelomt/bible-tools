@@ -17,7 +17,7 @@ import { MoveToSeriesDialog } from '@/components/series/move-to-series-dialog.ts
 import { SaveAsTemplateDialog } from '@/components/templates/save-as-template-dialog.tsx';
 import { deleteLesson } from '@/data/actions/lessons.ts';
 import { sectionCount } from '@/data/queries.ts';
-import { exportLesson } from '@/export/load.ts';
+import { exportLesson, exportLessonForNotion } from '@/export/load.ts';
 import { count } from '@/lib/labels.ts';
 
 /**
@@ -56,9 +56,17 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
         onOpenChange={close}
         title={`Export “${lesson.title}”`}
         load={() => exportLesson(lesson.id)}
+        loadNotion={() => exportLessonForNotion(lesson.id)}
         onPrint={() =>
           void navigate({
             to: '/lessons/$lessonId/print',
+            params: { lessonId: lesson.id },
+            search: { print: true },
+          })
+        }
+        onHandout={() =>
+          void navigate({
+            to: '/lessons/$lessonId/handout',
             params: { lessonId: lesson.id },
             search: { print: true },
           })

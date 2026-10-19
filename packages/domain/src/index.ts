@@ -171,7 +171,9 @@ export {
   type TextBlock,
   type TextNode,
   escapeMarkdown,
+  type NotionOptions,
   toMarkdown,
+  toNotionBlocks,
   toPlainText,
   type VerseNode,
 } from './doc.ts';
@@ -317,3 +319,4 @@ export {
   type PushResult,
   pushResultSchema,
 } from './schemas/sync.ts';
+export * from './digest.ts';

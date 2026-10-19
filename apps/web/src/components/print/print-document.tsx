@@ -32,11 +32,23 @@ interface PrintPageProps {
   /** Opens the print dialog once, as the page shows (from Export); then `onPrinted`. */
   printNow: boolean;
   onPrinted: () => void;
+  /** Said in the bar, on screen only: what the handout leaves out. */
+  notice?: string | null;
+  /** The children are a page of their own (the handout's sheet), not on the white column. */
+  bare?: boolean;
   children: ReactNode;
 }
 
 /** Back and Print over a white page; only the page prints. */
-export function PrintPage({ back, title, printNow, onPrinted, children }: PrintPageProps) {
+export function PrintPage({
+  back,
+  title,
+  printNow,
+  onPrinted,
+  notice,
+  bare = false,
+  children,
+}: PrintPageProps) {
   useDocumentTitle(title);
   const asked = useRef(false);
   useEffect(() => {
@@ -54,14 +66,23 @@ export function PrintPage({ back, title, printNow, onPrinted, children }: PrintP
           <ArrowLeft aria-hidden />
           Back
         </Link>
+        {notice && (
+          <output className="min-w-0 flex-1 text-sm text-muted-foreground">{notice}</output>
+        )}
         <Button onClick={() => window.print()}>
           <Printer aria-hidden />
           Print
         </Button>
       </div>
-      <main className="mx-auto max-w-[46rem] bg-white px-5 py-8 text-neutral-900 sm:my-6 sm:px-12 sm:py-12 sm:shadow-md print:m-0 print:max-w-none print:p-0 print:shadow-none">
-        {children}
-      </main>
+      {bare ? (
+        <main className="mx-auto max-w-[210mm] px-4 py-6 print:m-0 print:max-w-none print:p-0">
+          {children}
+        </main>
+      ) : (
+        <main className="mx-auto max-w-[46rem] bg-white px-5 py-8 text-neutral-900 sm:my-6 sm:px-12 sm:py-12 sm:shadow-md print:m-0 print:max-w-none print:p-0 print:shadow-none">
+          {children}
+        </main>
+      )}
     </div>
   );
 }

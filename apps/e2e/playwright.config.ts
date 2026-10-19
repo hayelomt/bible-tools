@@ -29,8 +29,12 @@ export default defineConfig({
       origins: [{ origin: WEB_URL, localStorage: [{ name: 'lamp.welcomed', value: 'e2e' }] }],
     },
   },
-  // Chromium only; Safari/iPhone is checked by hand on a real device.
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Chromium, and Firefox for the handout's one page (M12-05); Safari/iPhone is checked by hand
+  // on a real device.
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: 'handout.spec.ts' },
+  ],
   webServer: [
     {
       command: 'node dist/main.js',

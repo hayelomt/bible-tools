@@ -185,7 +185,7 @@ function lessonBlocks(data: LessonForExport, level: number): string[] {
 }
 
 /** A link that can't end its Markdown early: brackets and spaces percent-encoded. */
-const safeHref = (url: string) =>
+export const safeHref = (url: string) =>
   url.replaceAll(/[()<> ]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 
 /** The lesson's header lines, in one paragraph with hard breaks. */
@@ -263,7 +263,7 @@ export function tagLabel(name: string): string {
   return `#${name}`;
 }
 
-function questionLine(question: QuestionView): string {
+export function questionLine(question: QuestionView): string {
   const text = escapeMarkdown(question.text);
   if (question.status === 'answered') return `- [x] ${text}`;
   return question.status === 'parked' ? `- [ ] ${text} *(parked)*` : `- [ ] ${text}`;

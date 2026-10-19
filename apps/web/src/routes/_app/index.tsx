@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { LessonList } from '@/components/lesson/lesson-list.tsx';
+import { DigestCard } from '@/components/digest/digest-card.tsx';
 import { PrepCard } from '@/components/lesson/prep-card.tsx';
 import { SeriesDialog } from '@/components/series/series-dialog.tsx';
 import { Welcome } from '@/components/welcome.tsx';
@@ -25,7 +26,7 @@ export const Route = createFileRoute('/_app/')({
 
 /**
  * The lessons home (F1, wireframes/lessons.md "Lessons home"): "New lesson" first and one tap,
- * the prep card under it (F29), the recent lessons, then the series. A new device first picks its mode (`Welcome`), then a first
+ * the digest card (F32) and the prep card (F29) under it, the recent lessons, then the series. A new device first picks its mode (`Welcome`), then a first
  * run shows a welcome that leads to the first lesson.
  */
 function LessonsHome() {
@@ -67,6 +68,7 @@ function LessonsHome() {
       ) : (
         <>
           <div className="flex flex-col *:w-full">{newLesson}</div>
+          <DigestCard />
           <PrepCard />
           <PageSection title="Recent">
             <LessonList lessons={lessons.slice(0, RECENT)} series={series} />

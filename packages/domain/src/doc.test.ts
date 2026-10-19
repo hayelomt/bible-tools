@@ -13,6 +13,7 @@ import {
   type SectionBody,
   escapeMarkdown,
   toMarkdown,
+  toNotionBlocks,
   toPlainText,
 } from './doc.ts';
 import type { VerseRef } from './verse-ref.ts';
@@ -315,6 +316,53 @@ Same idea as The Good Shepherd.
       content: [item('one'), { type: 'listItem', content: [p(text('two')), p(text('more'))] }],
     } as Block);
     expect(toMarkdown(body)).toBe('1. one\n2. two\n\n   more\n');
+  });
+});
+
+describe('toNotionBlocks', () => {
+  it('writes verse text as a quote with its reference under it, and quotes one level only', () => {
+    expect(toNotionBlocks(RICH)).toEqual([
+      '## Called according to his purpose',
+      'Paul says Romans 8:28 (BSB) — ***all*** things.',
+      '> We know that all things work together for good for those who love God.',
+      '— Romans 8:28 (BSB)',
+      '- Context: John 3 (BSB)\n- Read the [notes](https://example.org/notes)\n    3. nested',
+      '> Nothing can separate us. Romans 8:38–9:5 (BSB)',
+      '> For I am persuaded…\n> …who is over all, God, blessed forever. Amen.',
+      '— Romans 8:38–9:5 (BSB)',
+      'Same idea as The Good Shepherd.',
+    ]);
+  });
+
+  it('quotes a reply whole, its headings in bold and its lists as lines of text', () => {
+    expect(toNotionBlocks(RICH, { quoted: true, after: '#hope' })).toEqual([
+      '> **Called according to his purpose**\n>\n> Paul says Romans 8:28 (BSB) — ***all*** things.',
+      '> We know that all things work together for good for those who love God.',
+      '— Romans 8:28 (BSB)',
+      '> • Context: John 3 (BSB)\n>\n> • Read the [notes](https://example.org/notes)\n>\n> (3) nested\n>\n> Nothing can separate us. Romans 8:38–9:5 (BSB)',
+      '> For I am persuaded…\n> …who is over all, God, blessed forever. Amen.',
+      '— Romans 8:38–9:5 (BSB)',
+      '> Same idea as The Good Shepherd.\n>\n> #hope',
+    ]);
+  });
+
+  it('puts a lead before the first paragraph, or above a heading', () => {
+    const lead = '[09:45](https://youtu.be/x?t=585)';
+    expect(toNotionBlocks(doc(p(text('The door'))), { lead })).toEqual([`${lead} The door`]);
+    expect(toNotionBlocks(RICH, { lead })[0]).toBe(lead);
+    expect(toNotionBlocks(emptyBody(), { lead, quoted: true })).toEqual([`> ${lead}`]);
+  });
+
+  it('gives the verse after a list item that cites it', () => {
+    const body = doc({
+      type: 'bulletList',
+      content: [{ type: 'listItem', content: [p(text('See '), verse(ROM_8_28))] }],
+    });
+    expect(toNotionBlocks(body)).toEqual([
+      '- See Romans 8:28 (BSB)',
+      '> We know that all things work together for good for those who love God.',
+      '— Romans 8:28 (BSB)',
+    ]);
   });
 });
 

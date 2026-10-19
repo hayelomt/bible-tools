@@ -54,7 +54,7 @@ jobs:
       - uses: ./.github/actions/setup
       - uses: ./.github/actions/postgres
       - name: Install Chromium
-        run: pnpm --filter @lamp/e2e exec playwright install --with-deps chromium
+        run: pnpm --filter @lamp/e2e exec playwright install --with-deps chromium firefox
       - run: pnpm e2e
       - name: Upload the Playwright report
         if: failure()

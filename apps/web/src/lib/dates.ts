@@ -55,6 +55,11 @@ export function monthLabel(date: string, now = new Date()): string {
   return date.startsWith(String(now.getFullYear())) ? month : `${month} ${date.slice(0, 4)}`;
 }
 
+/** "Sun 12 Oct", never with the year: for a list under a heading that has it. */
+export function dayAndMonth(date: string): string {
+  return withoutCommas(SHORT.format(asUtc(date)));
+}
+
 /** "Sun 12 Oct 2026", always with the year: for a printed page, which outlives the year. */
 export function shortDateWithYear(date: string): string {
   return withoutCommas(SHORT_WITH_YEAR.format(asUtc(date)));

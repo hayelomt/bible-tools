@@ -10,7 +10,7 @@ import { addTag } from '@/data/actions/tags.ts';
 import { createTakeaway } from '@/data/actions/takeaways.ts';
 import { LampDb } from '@/data/db.ts';
 import { ensureDevice } from '@/data/setup.ts';
-import { exportCommentary, exportLesson, exportSeries } from './load.ts';
+import { exportCommentary, exportLesson, exportLessonForNotion, exportSeries } from './load.ts';
 import { fileName, sectionMoment, sourceOf } from './markdown.ts';
 
 let db: LampDb;
@@ -274,6 +274,12 @@ describe('Markdown export', () => {
     const exported = await exportLesson(lesson.id, db);
     expect(exported?.fileName).toBe('2026-10-12-the-good-shepherd.md');
     await expect(exported?.markdown).toMatchFileSnapshot('./golden/lesson.md');
+  });
+
+  it('writes a lesson for Notion as the golden file shows (M12-06)', async () => {
+    const lesson = await goodShepherd(null);
+    const exported = await exportLessonForNotion(lesson.id, db);
+    await expect(exported?.markdown).toMatchFileSnapshot('./golden/lesson-notion.md');
   });
 
   it('writes a series with its lessons in date order', async () => {

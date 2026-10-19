@@ -1,0 +1,44 @@
+# The Good Shepherd
+
+Monday 12 October 2026 · Sermon · Pastor Ann, Grace Chapel
+
+John 10:1–18 · #grace
+
+Sermon: Sunday service · https://youtu.be/abc123
+
+[09:45](https://youtu.be/abc123?t=585) Jesus is the door John 10:9 (BSB): **salvation** and pasture.
+
+> I am the door. If anyone enters in by me, he will be saved, and will go in and go out, and will find pasture.
+
+— John 10:9 (BSB)
+
+Tags: #hope · #Holy Spirit
+
+> [p. 112] Compare Psalm 23:1 (BSB): the same shepherd.
+
+> Yahweh is my shepherd: I shall lack nothing.
+
+— Psalm 23:1 (BSB)
+
+> • He leads
+
+[35:02](https://youtu.be/abc123?t=2102)
+
+## Who are the “other sheep”?
+
+Other flocks, \*one\* shepherd.
+
+## Takeaways
+
+- He knows his sheep by name.
+- \# Not a heading
+
+## Questions
+
+- [x] Who are the “other sheep”?
+- [ ] What is the door?
+- [ ] Thief vs hired hand? *(parked)*
+
+---
+
+Scripture: Berean Standard Bible (public domain).

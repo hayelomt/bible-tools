@@ -106,6 +106,7 @@ export async function removeNotes(db: LampDb, owner: Owner | null): Promise<void
     await db.citation.clear();
     await db.link.clear();
     await db.outbox.clear();
+    await db.digestDraft.clear();
     await resetSettings(db);
     const now = new Date().toISOString();
     for (const name of SEED_TAGS) {
@@ -190,6 +191,10 @@ export async function copyNotes(db: LampDb, owner: Owner): Promise<void> {
       await queueCreate(db, entity, copy);
       changed.push({ entity, id: copy.id });
     }
+    // A digest draft's link chips point at the copies too.
+    await db.digestDraft.toCollection().modify((draft) => {
+      draft.sections = draft.sections.map((s) => ({ ...s, body: relinked(s.body, ids) }));
+    });
     await resetSettings(db);
     await handOver(db, owner);
   });

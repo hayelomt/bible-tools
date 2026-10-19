@@ -126,6 +126,20 @@ export function useBook(translation: TranslationId, code: BookCode): BookState {
   return useSyncExternalStore(subscribe, () => bookState(translation, code));
 }
 
+/**
+ * Several books' texts, as `useBook` gives one: for a list that can change length (a lesson's main
+ * passages), which can't call a hook per book.
+ */
+export function useBooks(
+  wanted: readonly { translation: TranslationId; book: BookCode }[],
+): BookState[] {
+  // A string, so an unchanged set of states is the same snapshot.
+  useSyncExternalStore(subscribe, () =>
+    wanted.map((w) => bookState(w.translation, w.book).status).join(),
+  );
+  return wanted.map((w) => bookState(w.translation, w.book));
+}
+
 /** A verse of a snapshot, with its number: "28", or "9:1" where a new chapter starts. */
 export interface NumberedVerse {
   label: string;

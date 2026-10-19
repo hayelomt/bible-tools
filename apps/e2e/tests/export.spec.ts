@@ -76,6 +76,19 @@ test('a lesson downloads as a Markdown file offline, and copies as Markdown', as
   await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'Copied.' })).toBeVisible();
   await expect(dialog).toBeHidden();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(markdown);
+
+  // For Notion (M12-06): the verse text quoted with its reference under it, still offline.
+  await page.getByRole('button', { name: 'Lesson actions' }).click();
+  await page.getByRole('menuitem', { name: 'Export…' }).click();
+  await dialog.getByRole('button', { name: 'Copy for Notion' }).click();
+  await expect(
+    page.locator('[data-sonner-toast]').filter({ hasText: 'Copied for Notion.' }),
+  ).toBeVisible();
+  const notion = await page.evaluate(() => navigator.clipboard.readText());
+  expect(notion).toMatch(/^# The Good Shepherd\n\n\w+day \d+ \w+ \d{4} · Sermon\n\n/);
+  expect(notion).toContain('Jesus is the door John 10:9 (BSB) salvation and pasture.');
+  expect(notion).toMatch(/\n\n> I am the gate\. .+\n\n— John 10:9 \(BSB\)\n\n/);
+  expect(notion).toContain('## Takeaways\n\n- He knows his sheep by name.');
 });
 
 test('a series downloads with its lessons', async ({ page }) => {

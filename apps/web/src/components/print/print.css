@@ -13,3 +13,37 @@
     color-scheme: light;
   }
 }
+
+/*
+ * The handout (M12-05): a box A4 and Letter both hold inside the margins above. On screen it's on
+ * a sheet of paper, scaled down to the window; printed, it's the page's content as it is.
+ */
+.handout-frame {
+  overflow: hidden;
+}
+
+.handout-paper {
+  width: 210mm;
+  padding: 18mm 16mm;
+  transform: scale(var(--sheet-scale, 1));
+  transform-origin: top left;
+}
+
+.handout-box {
+  width: 178mm;
+  height: 242mm;
+}
+
+@media print {
+  .handout-frame {
+    height: auto !important;
+    overflow: visible;
+  }
+
+  .handout-paper {
+    width: auto;
+    padding: 0;
+    transform: none;
+    box-shadow: none;
+  }
+}

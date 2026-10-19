@@ -396,3 +396,161 @@ function escapeLineStart(line: string): string {
     .replace(/^(#{1,6}(?:\s|$)|[-+](?:\s|$))/, '\\$1')
     .replace(/^(\d+)([.)])(?=\s|$)/, '$1\\$2');
 }
+
+export interface NotionOptions {
+  /** `##` by default: Notion has three heading levels, and the lesson's title takes the first. */
+  headingLevel?: number;
+  links?: LinkWriter;
+  /** A reply: the whole body is a quote, its headings in bold. */
+  quoted?: boolean;
+  /** Markdown put before the first paragraph, or on a line of its own above anything else. */
+  lead?: string;
+  /** A line of Markdown after the body, in its quote for a reply (the section's tags). */
+  after?: string;
+}
+
+/** One Notion block's worth of content, before it's written. */
+type NotionItem =
+  | { type: 'line'; text: string; quote: boolean }
+  | { type: 'list'; lines: string[] }
+  | { type: 'verse'; ref: VerseRef };
+
+/**
+ * A section body as Markdown that pastes into Notion with its structure (F33, M12-06): the blocks
+ * Notion makes from a paste, separated by blank lines. Nothing is nested in a quote, since Notion
+ * doesn't keep it: a reply or a quote is one level of quote, with its headings in bold and its
+ * list items as "•" lines. Verse text is a quote of its own, the reference under it as a caption:
+ * "> I am the door…" then "— John 10:9 (BSB)".
+ */
+export function toNotionBlocks(
+  body: SectionBody,
+  { headingLevel = 2, links, quoted = false, lead, after }: NotionOptions = {},
+): string[] {
+  const items: NotionItem[] = [];
+  notionItems(body.content, { heading: '#'.repeat(headingLevel), links }, quoted, items);
+  if (lead) {
+    const first = items[0];
+    if (first?.type === 'line' && body.content[0]?.type === 'paragraph') {
+      first.text = `${lead} ${first.text}`;
+    } else {
+      items.unshift({ type: 'line', text: lead, quote: quoted });
+    }
+  }
+  if (after) items.push({ type: 'line', text: after, quote: quoted });
+
+  const blocks: string[] = [];
+  let quote: string[] = [];
+  const endQuote = () => {
+    if (quote.length > 0) blocks.push(quote.join('\n>\n'));
+    quote = [];
+  };
+  for (const item of items) {
+    if (item.type === 'line' && item.quote) {
+      quote.push(
+        item.text
+          .split('\n')
+          .map((line) => `> ${line}`.trimEnd())
+          .join('\n'),
+      );
+      continue;
+    }
+    endQuote();
+    if (item.type === 'line') blocks.push(item.text);
+    else if (item.type === 'list') blocks.push(item.lines.join('\n'));
+    else {
+      const text = escapeText(item.ref.snapshotText!.trim()).split(/\r?\n/);
+      blocks.push(
+        text.map((line) => `> ${line}`.trimEnd()).join('\n'),
+        `— ${verseLabel(item.ref)}`,
+      );
+    }
+  }
+  endQuote();
+  return blocks;
+}
+
+function notionItems(
+  blocks: readonly Block[],
+  context: Context,
+  quote: boolean,
+  items: NotionItem[],
+): void {
+  for (const block of blocks) {
+    switch (block.type) {
+      case 'paragraph':
+      case 'heading': {
+        const text = inlineToMarkdown(block.content ?? [], context.links);
+        if (text) {
+          const line =
+            block.type === 'paragraph'
+              ? escapeLineStart(text)
+              : quote
+                ? `**${text}**`
+                : `${context.heading} ${text}`;
+          items.push({ type: 'line', text: line, quote });
+        }
+        for (const node of block.content ?? []) {
+          if (node.type === 'verse' && node.attrs.snapshotText) {
+            items.push({ type: 'verse', ref: node.attrs });
+          }
+        }
+        break;
+      }
+      case 'blockquote':
+        notionItems(block.content, context, true, items);
+        break;
+      case 'bulletList':
+      case 'orderedList': {
+        const verses: NotionItem[] = [];
+        const lines = notionList(block, 0, context, quote, verses);
+        if (quote) for (const text of lines) items.push({ type: 'line', text, quote });
+        else if (lines.length > 0) items.push({ type: 'list', lines });
+        items.push(...verses);
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * A list's lines, its nested lists indented under their item; in a quote, "•" and "(1)" lines
+ * that Notion keeps as text. The verses its items quote go after the list, in `verses`.
+ */
+function notionList(
+  list: BulletList | OrderedList,
+  nesting: number,
+  context: Context,
+  quote: boolean,
+  verses: NotionItem[],
+): string[] {
+  const start = list.type === 'orderedList' ? (list.attrs?.start ?? 1) : 1;
+  const indent = quote ? '' : '    '.repeat(nesting);
+  return list.content.flatMap((item, i) => {
+    const marker =
+      list.type === 'bulletList'
+        ? quote
+          ? '• '
+          : '- '
+        : quote
+          ? `(${start + i}) `
+          : `${start + i}. `;
+    const lines: string[] = [];
+    for (const block of item.content) {
+      if (block.type === 'bulletList' || block.type === 'orderedList') {
+        lines.push(...notionList(block, nesting + 1, context, quote, verses));
+        continue;
+      }
+      const inner: NotionItem[] = [];
+      notionItems([block], context, true, inner);
+      for (const entry of inner) {
+        if (entry.type === 'verse') verses.push(entry);
+        else if (entry.type === 'line') {
+          lines.push(
+            `${indent}${lines.length === 0 ? marker : ' '.repeat(marker.length)}${entry.text}`,
+          );
+        }
+      }
+    }
+    return lines;
+  });
+}

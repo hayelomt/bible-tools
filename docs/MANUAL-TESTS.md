@@ -220,3 +220,27 @@ steps 1 and 3, and fix or log each problem as a task before M10 starts.
    from YouVersion. The count matches the highlights and notes in YouVersion; the Inbox shows one
    **YouVersion import** row; its `⋯` → **Dismiss all from this import…** asks, and Undo brings
    them back.
+
+## The handout in Safari, and a lesson pasted into Notion (M12-05, M12-06)
+
+Checks the handout (TECH-DESIGN §8.7) in Safari, which E2E can't run, and the Notion export in
+Notion itself. E2E prints the handout to PDF in Chromium (one A4 page and one Letter page) and lays
+it out for print in Firefox (`handout.spec.ts`). Last run 2026-10-19 in Playwright's Chromium and
+Firefox only: ten sections fit at 11 pt with the passage’s text, thirty still at 11 pt, and eighty
+left four note headings out at 9 pt, saying so in the bar. Use the installed app, or a production
+build, on a Mac in Safari and on an iPhone; and a Notion page in a browser or the Notion app.
+
+1. Open a lesson with a main passage (say John 10:1–18), ten or more sections, takeaways and
+   questions. Turn off the connection.
+2. `⋯` → **Export…** → **Handout (one page)**. A sheet of paper shows the lesson's details, the
+   passage with its text in small type, "Notes" with each section's first line, the takeaways and
+   questions, and "Made with Lamp." at the foot. The print dialog opens on top.
+3. In the dialog, choose A4, then US Letter: the preview is one page each time, nothing cut off at
+   the foot, no Back or Print. Save as PDF and check the PDF has one page.
+4. Add sections until the bar says "Too long for one page: … note headings left out.", and print
+   again: still one page.
+5. **Notion:** turn the connection back on, `⋯` → **Export…** → **Copy for Notion**, and paste into
+   an empty Notion page. The title is a heading; each header line is a line of its own; each verse
+   chip's text is a quote block with "— John 10:9 (BSB)" under it; a reply is a quote; section
+   tags read "Tags: #hope"; Takeaways is a heading over a bulleted list and Questions over to-dos,
+   the answered ones ticked. Note anything shown with a stray `\` or `>`, and fix or log it.

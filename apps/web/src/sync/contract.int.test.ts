@@ -2,6 +2,7 @@ import {
   apiErrorSchema,
   ENTITY_NAMES,
   keyBetween,
+  lastQuarter,
   type MeResponse,
   meResponseSchema,
   MIN_CLIENT_VERSION,
@@ -10,6 +11,7 @@ import {
   type PushRequest,
   type PushResponse,
   pushResponseSchema,
+  quarterDays,
   type Section,
   type SectionBody,
 } from '@lamp/domain';
@@ -44,6 +46,7 @@ import {
   removeSection,
   updateSection,
 } from '@/data/actions/sections.ts';
+import { draftDigest } from '@/data/actions/digest.ts';
 import { dismissResurfaced, recordVisit } from '@/data/actions/resurface.ts';
 import { updateSettings } from '@/data/actions/settings.ts';
 import { addTag, removeTag } from '@/data/actions/tags.ts';
@@ -556,6 +559,24 @@ describe('resurfacing on two devices', () => {
     await settle(laptop, phone);
     await expectIdentical(email, laptop, phone);
     expect(await rules(phone.db)).toEqual([]);
+  });
+});
+
+describe('the digest on two devices', () => {
+  it('is drafted once per quarter for the account, not once per device', async () => {
+    const { email, first: laptop } = await signUp('Firefox on macOS');
+    const day = today();
+    const [first] = quarterDays(lastQuarter(day));
+    await createLesson({ ...LESSON, title: 'Last quarter', date: first }, laptop.db);
+    const phone = await signIn(email, 'Safari on iOS');
+    await settle(laptop, phone);
+
+    expect(await draftDigest(day, laptop.db)).not.toBeNull();
+    await settle(laptop, phone);
+    await expectIdentical(email, laptop, phone);
+    expect(await draftDigest(day, phone.db)).toBeNull();
+    expect(await phone.db.digestDraft.count()).toBe(0);
+    expect(await laptop.db.digestDraft.count()).toBe(1);
   });
 });
 

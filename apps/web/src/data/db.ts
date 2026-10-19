@@ -11,11 +11,13 @@ import type {
   Link,
   MemoryItem,
   PassageVisit,
+  Quarter,
   Question,
   QuestionEntry,
   QuestionEntryKind,
   ResurfaceDismissal,
   Section,
+  SectionBody,
   SectionTag,
   Series,
   Tag,
@@ -68,6 +70,20 @@ interface RetiredSettings {
   look?: string;
 }
 
+/**
+ * A quarterly digest's draft (F32, M12-08), on this device only until it's kept as a lesson
+ * (decided in M12-08): the synced `lastDigestQuarter` says it was drafted, so no other device
+ * drafts it again. One row per quarter.
+ */
+export interface DigestDraft {
+  quarter: Quarter;
+  title: string;
+  /** The draft's sections, in order; the last starts empty, for a note of one's own. */
+  sections: { id: string; body: SectionBody }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const SYNC_STATE_KEY = 'device';
 export const SETTINGS_KEY = 'settings';
 
@@ -101,6 +117,7 @@ export class LampDb extends Dexie {
   link!: Table<Link, string>;
   outbox!: Table<OutboxEntry, number>;
   syncState!: Table<SyncState, string>;
+  digestDraft!: Table<DigestDraft, string>;
 
   /** Tests pass fake-indexeddb in `options`. */
   constructor(name = 'lamp', options?: DexieOptions) {
@@ -266,6 +283,8 @@ export class LampDb extends Dexie {
             if (row) withReflection(row);
           });
       });
+    // M12-08: the digest draft, on the device only (not synced, so nothing to queue).
+    this.version(13).stores({ digestDraft: 'quarter' });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
