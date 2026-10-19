@@ -170,10 +170,11 @@ const ROWS: { [E in EntityName]: unknown } = {
       ],
     },
   },
+  groupVisit: { ...meta(18), groupId: id(20), seenRev: 12 },
 };
 
 describe('entity schemas', () => {
-  it('cover the 17 synced entities', () => {
+  it('cover the 18 synced entities', () => {
     expect(ENTITY_NAMES).toEqual(Object.keys(ROWS));
   });
 
@@ -473,7 +474,13 @@ describe('auth schemas', () => {
   });
 
   it('describes the signed-in user', () => {
-    const me = { id: id(1), email: 'reader@example.com', emailVerifiedAt: null, role: 'user' };
+    const me = {
+      id: id(1),
+      email: 'reader@example.com',
+      emailVerifiedAt: null,
+      role: 'user',
+      groupDigest: false,
+    };
     expect(meResponseSchema.parse(me)).toEqual(me);
     expect(meResponseSchema.safeParse({ ...me, passwordHash: 'x' }).success).toBe(false);
   });

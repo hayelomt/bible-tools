@@ -8,14 +8,16 @@ import { allGroups } from '@/data/groups.ts';
 import { useAccount } from '@/lib/account.ts';
 import { count } from '@/lib/labels.ts';
 import { CreateGroupDialog } from './create-group-dialog.tsx';
+import { useFreshByGroup } from './fresh-count.ts';
 
 /**
- * GROUPS on the Lessons home (wireframes/sharing.md "Groups"): each group with its members, and
- * `+ New`. Only for an account, since a group lives on the server; a guest sees none.
+ * GROUPS on the Lessons home (wireframes/sharing.md "Groups"): each group with its members and
+ * what's new in it (M13-11), and `+ New`. Only for an account, since a group lives on the server; a guest sees none.
  */
 export function GroupsSection() {
   const account = useAccount().data;
   const groups = useLiveQuery(() => allGroups(), []);
+  const fresh = useFreshByGroup();
   const [creating, setCreating] = useState(false);
   if (!account && !groups?.length) return null;
   return (
@@ -41,6 +43,11 @@ export function GroupsSection() {
                   {group.name}
                   <span className="text-muted-foreground"> · {count(group.members, 'member')}</span>
                 </span>
+                {(fresh.get(group.id) ?? 0) > 0 && (
+                  <span className="shrink-0 text-sm font-medium text-primary">
+                    {fresh.get(group.id)} new
+                  </span>
+                )}
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               </Link>
             </li>

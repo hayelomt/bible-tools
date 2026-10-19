@@ -55,5 +55,10 @@ export const meResponseSchema = z.strictObject({
   email: z.email(),
   emailVerifiedAt: timestampSchema.nullable(),
   role: z.enum(USER_ROLES),
+  /**
+   * The weekly email of group activity (M13-12): off until the user turns it on. Off for an
+   * account the app mirrored before there was one.
+   */
+  groupDigest: z.boolean().default(false),
 });
 export type MeResponse = z.infer<typeof meResponseSchema>;

@@ -22,15 +22,18 @@ datasource db {
 
 // role: user | admin
 model User {
-  id              String    @id @default(uuid(7)) @db.Uuid
-  email           String    @unique @db.Citext
-  passwordHash    String    @map("password_hash")
-  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
-  role            String    @default("user")
-  syncRev         BigInt    @default(0) @map("sync_rev")
-  disabledAt      DateTime? @map("disabled_at") @db.Timestamptz(3)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                String    @id @default(uuid(7)) @db.Uuid
+  email             String    @unique @db.Citext
+  passwordHash      String    @map("password_hash")
+  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  role              String    @default("user")
+  syncRev           BigInt    @default(0) @map("sync_rev")
+  disabledAt        DateTime? @map("disabled_at") @db.Timestamptz(3)
+  // The weekly email of group activity (M13-12): off until turned on; when it last went out.
+  groupDigest       Boolean   @default(false) @map("group_digest")
+  groupDigestSentAt DateTime? @map("group_digest_sent_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   sessions        Session[]
   emailTokens     EmailToken[]
@@ -58,6 +61,7 @@ model User {
   shareLinks      ShareLink[]
   groupMembers    GroupMember[]
   comments        Comment[]
+  groupVisits     GroupVisit[]
 
   @@map("user")
 }
@@ -163,17 +167,22 @@ model GroupSeries {
 // it. An index, not a copy: the rows are read from their tables when pulled. entity: group |
 // member | series | lesson | section | question | comment.
 model GroupFeed {
-  groupId  String  @map("group_id") @db.Uuid
+  groupId  String   @map("group_id") @db.Uuid
   entity   String
-  entityId String  @map("entity_id") @db.Uuid
+  entityId String   @map("entity_id") @db.Uuid
   rev      BigInt
-  gone     Boolean @default(false)
+  gone     Boolean  @default(false)
+  // When the row first reached the group (M13-11, M13-12): what's new to a member, and to the
+  // weekly email, is what was added since.
+  addedRev BigInt   @map("added_rev")
+  addedAt  DateTime @default(now()) @map("added_at") @db.Timestamptz(3)
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@id([groupId, entity, entityId])
   @@index([groupId, rev])
   @@index([entity, entityId])
+  @@index([groupId, addedAt])
   @@map("group_feed")
 }
 
@@ -197,6 +206,24 @@ model Comment {
   @@index([sectionId])
   @@index([groupId])
   @@map("comment")
+}
+
+// How far a member has read a group's activity (M13-11): their own synced row, one per group (its
+// id derived from the pair). No foreign key to the group: a visit outlives leaving, as a lesson does.
+model GroupVisit {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  groupId   String    @map("group_id") @db.Uuid
+  seenRev   BigInt    @map("seen_rev")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@map("group_visit")
 }
 
 // kind: verify | reset

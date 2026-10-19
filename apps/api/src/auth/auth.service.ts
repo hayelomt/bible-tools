@@ -226,6 +226,7 @@ export function toMe(user: User): MeResponse {
     email: user.email,
     emailVerifiedAt: user.emailVerifiedAt?.toISOString() ?? null,
     role: user.role as MeResponse['role'],
+    groupDigest: user.groupDigest,
   };
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { commentBody, commentBodySchema, commentText, MAX_COMMENT_LENGTH } from './comments.ts';
-import { newId, ownLessonId } from './ids.ts';
+import { groupVisitId, newId, ownLessonId } from './ids.ts';
 import { idSchema } from './schemas/common.ts';
 
 describe('commentBody', () => {
@@ -69,5 +69,17 @@ describe('ownLessonId', () => {
     expect(id.slice(0, 13)).toBe(groupLessonId.slice(0, 13));
     expect(await ownLessonId(newId(), groupLessonId)).not.toBe(id);
     expect(await ownLessonId(userId, newId())).not.toBe(id);
+  });
+});
+
+describe('groupVisitId', () => {
+  it('is the same UUIDv7 for the same pair, and not the own lesson’s', async () => {
+    const userId = newId();
+    const groupId = newId();
+    const id = await groupVisitId(userId, groupId);
+    expect(idSchema.safeParse(id).success).toBe(true);
+    expect(id).toBe(await groupVisitId(userId, groupId));
+    expect(id.slice(0, 13)).toBe(groupId.slice(0, 13));
+    expect(await ownLessonId(userId, groupId)).not.toBe(id);
   });
 });

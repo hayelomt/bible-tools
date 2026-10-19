@@ -54,6 +54,15 @@ member's posts back to that member's own notes and deletes their comments. If th
 problem, disable the account as above. Their group then keeps going without them, and a member
 becomes the owner (TECH-DESIGN §17.12).
 
+### "Stop sending me these emails"
+
+The only email Lamp sends unasked is the weekly email of group activity, and only to members who
+turned it on. The API sends it itself, on Mondays from 00:00 UTC; there's nothing to schedule. Every
+one has a "Stop these emails" link that works signed out, and Settings → Groups turns it off. If
+someone can't use either, `user:disable` isn't the answer: ask them for the address and turn it off
+with `UPDATE "user" SET group_digest = false WHERE email = '…'`, a server-only column no device
+syncs.
+
 ## What not to do
 
 - Don't read notes to look for trouble. Act on what's reported to you.

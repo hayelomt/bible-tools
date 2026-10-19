@@ -21,11 +21,15 @@ interface Entry {
   entityId: string;
   rev: bigint;
   gone: boolean;
+  addedRev: bigint;
 }
 
 /** A feed row as stored: its entity is one of `GROUP_ENTITIES` (a check constraint). */
-const entries = (rows: { entity: string; entityId: string; rev: bigint; gone: boolean }[]) =>
-  rows as Entry[];
+const entries = (rows: (Omit<Entry, 'entity'> & { entity: string })[]) => rows as Entry[];
+
+type WithoutRev<T> = T extends unknown ? Omit<T, 'addedRev'> : never;
+/** A row's projection, before the feed's `addedRev` is put beside it. */
+type Projection = WithoutRev<Extract<GroupPulledRow, { addedRev: number }>>;
 
 const ORDER = new Map(GROUP_ENTITIES.map((entity, i) => [entity, i]));
 
@@ -128,7 +132,7 @@ async function rowsOf(tx: Tx, groupId: string, wanted: Entry[]): Promise<GroupPu
   const questions = await tx.question.findMany({ where: { id: { in: ids('question') } } });
   const comments = await tx.comment.findMany({ where: { id: { in: ids('comment') } } });
 
-  const rows = new Map<string, GroupPulledRow>();
+  const rows = new Map<string, Projection>();
   if (group) {
     rows.set(feedKey('group', group.id), {
       entity: 'group',
@@ -233,8 +237,10 @@ async function rowsOf(tx: Tx, groupId: string, wanted: Entry[]): Promise<GroupPu
       },
     });
   }
-  return wanted.map(
-    ({ entity, entityId }) =>
-      rows.get(feedKey(entity, entityId)) ?? { entity, id: entityId, gone: true as const },
-  );
+  return wanted.map(({ entity, entityId, addedRev }): GroupPulledRow => {
+    const projection = rows.get(feedKey(entity, entityId));
+    return projection
+      ? { ...projection, addedRev: Number(addedRev) }
+      : { entity, id: entityId, gone: true };
+  });
 }

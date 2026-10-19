@@ -2,6 +2,7 @@ import type {
   Change,
   Citation,
   Comment,
+  GroupVisit,
   EntityName,
   EntityRow,
   GroupComment,
@@ -103,9 +104,9 @@ export interface DigestDraft {
 /**
  * Rows from a group's feed (§17.12): every member's, the user's own included, kept apart from the
  * user's notes. Nothing reads them as notes: they aren't cited, linked, searched, exported, copied
- * or pushed.
+ * or pushed. `addedRev` is the feed's revision when the row reached the group (M13-11).
  */
-export type InGroup<T> = T & { groupId: string };
+export type InGroup<T> = T & { groupId: string; addedRev: number };
 
 /** How far the device has read a group's feed. */
 export interface GroupSync {
@@ -141,6 +142,7 @@ export class LampDb extends Dexie {
   passageVisit!: Table<PassageVisit, string>;
   resurfaceDismissal!: Table<ResurfaceDismissal, string>;
   comment!: Table<Comment, string>;
+  groupVisit!: Table<GroupVisit, string>;
   /** One row, under `SETTINGS_KEY`. */
   userSettings!: Table<UserSettings, string>;
   citation!: Table<Citation, string>;
@@ -392,6 +394,25 @@ export class LampDb extends Dexie {
               notInGroup(entry.entity, row);
             }
           });
+      });
+    // M13-11: each member's visit to a group, and when each group row reached it. The group stores
+    // are pulled again from the start, so every row has its `addedRev`; nothing in them is the
+    // user's own.
+    this.version(17)
+      .stores({ groupVisit: 'id, groupId' })
+      .upgrade(async (tx) => {
+        for (const table of [
+          'group',
+          'groupMember',
+          'groupSeries',
+          'groupLesson',
+          'groupSection',
+          'groupQuestion',
+          'groupComment',
+          'groupSync',
+        ]) {
+          await tx.table(table).clear();
+        }
       });
   }
 

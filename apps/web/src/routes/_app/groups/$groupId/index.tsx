@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronRight, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NotFoundScreen } from '@/components/error-screen.tsx';
+import { GroupActivity } from '@/components/groups/group-activity.tsx';
 import { GroupMenu } from '@/components/groups/group-menu.tsx';
 import { InviteDialog } from '@/components/groups/invite-dialog.tsx';
 import { PageSection } from '@/components/page-section.tsx';
@@ -25,7 +26,7 @@ const rowClass =
 
 /**
  * A group's page (wireframes/sharing.md "The group page"): its series, Invite (owner), its
- * questions (M13-10) and its members. M13-11 adds its activity.
+ * activity (M13-11), its questions (M13-10) and its members.
  */
 function GroupScreen() {
   const { groupId } = Route.useParams();
@@ -96,6 +97,7 @@ function GroupScreen() {
           Invite people
         </Button>
       )}
+      {account && <GroupActivity groupId={group.id} groupName={group.name} me={account.id} />}
       <Link to="/groups/$groupId/questions" params={{ groupId }} className={rowClass}>
         <span className="min-w-0 flex-1">
           Questions <span className="text-muted-foreground">· {open ?? 0} open</span>

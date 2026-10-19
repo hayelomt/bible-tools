@@ -119,6 +119,8 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
   },
   // Its section may be another member's: checked against the group's feed (§17.12).
   comment: { model: model((tx) => tx.comment), refs: {}, times: SYNC_TIMES },
+  // `groupId` may name a group the user has left, or one that's gone: nothing to check.
+  groupVisit: { model: model((tx) => tx.groupVisit), refs: {}, times: SYNC_TIMES },
 };
 
 /** Columns stored as a `date`, which the device has as `YYYY-MM-DD`. */
@@ -129,7 +131,7 @@ const SERVER_COLUMNS = new Set(['userId', 'rev', 'bodyRev', 'bodyDevice']);
 
 /**
  * A stored row as the device has it, without `rev`: times become ISO strings, a date `YYYY-MM-DD`,
- * and retired columns are left out.
+ * a revision a number, and retired columns are left out.
  */
 export function toRow<E extends EntityName>(entity: E, stored: object): SyncRow<E> {
   const retired =
@@ -137,7 +139,9 @@ export function toRow<E extends EntityName>(entity: E, stored: object): SyncRow<
   const row: Record<string, unknown> = {};
   for (const [column, value] of Object.entries(stored)) {
     if (SERVER_COLUMNS.has(column) || retired.includes(column)) continue;
-    if (!(value instanceof Date)) row[column] = value;
+    // A feed revision (`seenRev`), as a rev is everywhere else on the wire.
+    if (typeof value === 'bigint') row[column] = Number(value);
+    else if (!(value instanceof Date)) row[column] = value;
     else {
       row[column] = DATE_COLUMNS.has(column)
         ? value.toISOString().slice(0, 10)

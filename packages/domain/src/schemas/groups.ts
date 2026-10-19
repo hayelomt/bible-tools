@@ -88,6 +88,24 @@ export type GroupMemberParams = z.infer<typeof groupMemberParamsSchema>;
 export const groupSeriesParamsSchema = z.strictObject({ id: z.uuid(), seriesId: z.uuid() });
 export type GroupSeriesParams = z.infer<typeof groupSeriesParamsSchema>;
 
+// --- The weekly email (M13-12) ----------------------------------------------------------------
+
+/** `PUT /api/account/group-digest`: the weekly email of group activity on or off. */
+export const groupDigestRequestSchema = z.strictObject({ on: z.boolean() });
+export type GroupDigestRequest = z.infer<typeof groupDigestRequestSchema>;
+
+/**
+ * An unsubscribe link's token: the user's id and an HMAC of it, base64url, so the link works
+ * signed out and only turns off that user's email.
+ */
+export const unsubscribeTokenSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[A-Za-z0-9_-]{43}$/);
+
+/** `POST /api/email/unsubscribe?token=…`: from the app's page, or a mail app's one-click. */
+export const unsubscribeQuerySchema = z.object({ token: unsubscribeTokenSchema });
+export type UnsubscribeQuery = z.infer<typeof unsubscribeQuerySchema>;
+
 // --- The feed --------------------------------------------------------------------------------
 
 export const groupInfoSchema = z.strictObject({
@@ -181,16 +199,23 @@ export const GROUP_ENTITIES = [
 ] as const;
 export type GroupEntity = (typeof GROUP_ENTITIES)[number];
 
-/** A row of the feed changed since the cursor, or one members must drop. */
+/**
+ * A row of the feed changed since the cursor, or one members must drop. `addedRev` is the feed's
+ * revision when the row first reached the group (M13-11): what's new to a member is what was added
+ * after their last visit, so an edit doesn't bring an old reply back.
+ */
+const pulled = <E extends GroupEntity, S extends z.ZodType>(entity: E, row: S) =>
+  z.strictObject({ entity: z.literal(entity), row, addedRev: revSchema });
+
 export const groupPulledRowSchema = z.union([
   z.discriminatedUnion('entity', [
-    z.strictObject({ entity: z.literal('group'), row: groupInfoSchema }),
-    z.strictObject({ entity: z.literal('member'), row: groupMemberSchema }),
-    z.strictObject({ entity: z.literal('series'), row: groupSeriesSchema }),
-    z.strictObject({ entity: z.literal('lesson'), row: groupLessonSchema }),
-    z.strictObject({ entity: z.literal('section'), row: groupSectionSchema }),
-    z.strictObject({ entity: z.literal('question'), row: groupQuestionSchema }),
-    z.strictObject({ entity: z.literal('comment'), row: groupCommentSchema }),
+    pulled('group', groupInfoSchema),
+    pulled('member', groupMemberSchema),
+    pulled('series', groupSeriesSchema),
+    pulled('lesson', groupLessonSchema),
+    pulled('section', groupSectionSchema),
+    pulled('question', groupQuestionSchema),
+    pulled('comment', groupCommentSchema),
   ]),
   z.strictObject({ entity: z.enum(GROUP_ENTITIES), id: idSchema, gone: z.literal(true) }),
 ]);

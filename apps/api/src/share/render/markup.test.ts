@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { VerseReader, VerseRef } from '@lamp/domain';
 import { describe, expect, it } from 'vitest';
-import { withoutShareToken } from '../share-token.js';
+import { withoutTokens } from '../share-token.js';
 import { bodyHtml } from './body.js';
 import { markup, trusted } from './markup.js';
 import { page } from './page.js';
@@ -87,12 +87,15 @@ const chips = (...attrs: VerseRef[]) => ({
 /** A reader without the books: the BSB, no text. */
 const NO_TEXT: VerseReader = { translation: 'BSB', text: () => '' };
 
-describe('withoutShareToken', () => {
+describe('withoutTokens', () => {
   it("hides a shared page's token in a logged URL", () => {
     const token = 'k3J9'.padEnd(43, 'x');
-    expect(withoutShareToken(`/s/${token}`)).toBe('/s/…');
-    expect(withoutShareToken(`/s/${token}/lessons/1`)).toBe('/s/…/lessons/1');
-    expect(withoutShareToken('/api/sync/pull')).toBe('/api/sync/pull');
+    expect(withoutTokens(`/s/${token}`)).toBe('/s/…');
+    expect(withoutTokens(`/s/${token}/lessons/1`)).toBe('/s/…/lessons/1');
+    expect(withoutTokens('/api/sync/pull')).toBe('/api/sync/pull');
+    expect(withoutTokens('/api/email/unsubscribe?token=abc.def&x=1')).toBe(
+      '/api/email/unsubscribe?token=…&x=1',
+    );
   });
 });
 

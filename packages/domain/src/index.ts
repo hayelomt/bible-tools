@@ -100,7 +100,7 @@ export {
   templateStructureSchema,
   templateSummary,
 } from './templates.ts';
-export { newId, ownLessonId } from './ids.ts';
+export { groupVisitId, newId, ownLessonId } from './ids.ts';
 export { SEED_TAGS } from './seed-tags.ts';
 export {
   addDays,
@@ -319,6 +319,8 @@ export {
   type AnswerKind,
   type Comment,
   commentSchema,
+  type GroupVisit,
+  groupVisitSchema,
   NOT_IN_GROUP,
   VISIBILITIES,
   type Visibility,
@@ -356,3 +358,13 @@ export {
 } from './schemas/sync.ts';
 export * from './digest.ts';
 export * from './schemas/groups.ts';
+export {
+  ACTIVITY_KINDS,
+  type ActivityComment,
+  type ActivityItem,
+  type ActivityKind,
+  type ActivityQuestion,
+  type ActivitySection,
+  activityLine,
+  groupActivity,
+} from './group-activity.ts';

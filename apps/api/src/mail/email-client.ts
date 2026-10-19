@@ -14,6 +14,7 @@ export interface SendEmail {
   subject: string;
   text: string;
   html: string;
+  headers?: Record<string, string>;
 }
 
 /** Resend's response shape: errors are returned, not thrown. */

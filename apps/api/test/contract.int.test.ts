@@ -37,6 +37,7 @@ const ENTITY_TABLES: Record<EntityName, string> = {
   passageVisit: 'passage_visit',
   resurfaceDismissal: 'resurface_dismissal',
   comment: 'comment',
+  groupVisit: 'group_visit',
 };
 
 /** Columns only the server has. */
@@ -69,7 +70,14 @@ const CONTRACTS: Contract[] = [
   {
     table: 'user',
     schema: meResponseSchema,
-    serverOnly: ['password_hash', 'sync_rev', 'disabled_at', 'created_at', 'updated_at'],
+    serverOnly: [
+      'password_hash',
+      'sync_rev',
+      'disabled_at',
+      'group_digest_sent_at',
+      'created_at',
+      'updated_at',
+    ],
   },
 ];
 

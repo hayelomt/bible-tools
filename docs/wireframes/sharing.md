@@ -366,3 +366,15 @@ Email digests are off by default, in Settings → Groups:
 ```
 
 - **Empty (activity):** "Nothing new. Replies and new questions in Thursday group show here."
+
+*Built (M13-11, M13-12, 2026-10-19):* ACTIVITY lists every new row and at least ten in all, latest
+first: "Ben replied to your section in The Good Shepherd · 2 h ago", "Ben commented on your section
+in …", "Cara asked "Why a gate?" in …", each opening the lesson's group thread. New rows have a dot
+and stay marked while the page is open; the heading says "Activity · 2 new". "2 new" is on the
+group's row on the Lessons home and in the sidebar until the group is opened. What's new is what
+reached the group after the last visit on any device (decision 106). The switch needs a verified
+email and a connection, and says so in its line. The email lists the same rows for the week, per
+group, with a link to each group and "Stop these emails" (decisions 103–105); the link opens
+`/unsubscribe`, which asks "Stop the weekly email of group activity?" with [ Stop the emails ], then
+"You won't get the weekly email of group activity any more. To get it again, turn it on in Settings
+→ Groups."; a broken link says "This link doesn't work. Turn the email off in Settings → Groups."

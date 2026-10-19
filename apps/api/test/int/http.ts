@@ -14,6 +14,8 @@ export interface Client {
   delete(path: string, body?: object, token?: string): request.Test;
   /** A PATCH from the site itself, like `post`. */
   patch(path: string, body?: object, token?: string): request.Test;
+  /** A PUT from the site itself, like `post`. */
+  put(path: string, body?: object, token?: string): request.Test;
 }
 
 let nextIp = 1;
@@ -46,6 +48,7 @@ export async function createClient(t: TestApp): Promise<Client> {
     post: (path, body, token) => fromSite(request(origin).post(path), body, token),
     delete: (path, body, token) => fromSite(request(origin).delete(path), body, token),
     patch: (path, body, token) => fromSite(request(origin).patch(path), body, token),
+    put: (path, body, token) => fromSite(request(origin).put(path), body, token),
   };
 }
 

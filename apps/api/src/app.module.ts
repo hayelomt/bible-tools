@@ -11,7 +11,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { GroupsModule } from './groups/groups.module.js';
 import { ShareModule } from './share/share.module.js';
 import { SyncModule } from './sync/sync.module.js';
-import { withoutShareToken } from './share/share-token.js';
+import { withoutTokens } from './share/share-token.js';
 
 @Module({
   imports: [
@@ -37,7 +37,7 @@ import { withoutShareToken } from './share/share-token.js';
           autoLogging: { ignore: (req) => req.url === '/api/health' },
           // A shared page's address is its token: logged as /s/… only (§12).
           serializers: {
-            req: (req: { url?: string }) => ({ ...req, url: withoutShareToken(req.url) }),
+            req: (req: { url?: string }) => ({ ...req, url: withoutTokens(req.url) }),
           },
         },
       }),

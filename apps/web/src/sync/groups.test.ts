@@ -15,18 +15,22 @@ const NOW = '2026-10-19T09:00:00.000Z';
 
 const group = (id = GROUP, name = 'Thursday group') => ({
   entity: 'group' as const,
+  addedRev: 1,
   row: { id, name, createdAt: NOW },
 });
 const member = {
   entity: 'member' as const,
+  addedRev: 1,
   row: { id: MEMBER, userId: USER, displayName: 'Ann', role: 'owner' as const, joinedAt: NOW },
 };
 const series = {
   entity: 'series' as const,
+  addedRev: 1,
   row: { id: SERIES, userId: USER, title: 'John', description: '', kind: 'book_study' as const },
 };
 const lesson = {
   entity: 'lesson' as const,
+  addedRev: 1,
   row: {
     id: LESSON,
     userId: USER,
@@ -81,7 +85,11 @@ describe('syncGroups', () => {
     });
     expect(asked).toEqual([0, 1]);
     expect(await db.group.get(GROUP)).toEqual(group().row);
-    expect(await db.groupMember.get(MEMBER)).toEqual({ ...member.row, groupId: GROUP });
+    expect(await db.groupMember.get(MEMBER)).toEqual({
+      ...member.row,
+      groupId: GROUP,
+      addedRev: 1,
+    });
     expect(await db.groupLesson.where({ seriesId: SERIES }).count()).toBe(1);
     expect(await db.groupSync.get(GROUP)).toEqual({ groupId: GROUP, cursor: 2 });
 

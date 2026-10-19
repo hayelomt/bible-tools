@@ -9,9 +9,10 @@ import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { Segmented } from '@/components/segmented.tsx';
 import { ScreenTitle } from '@/components/shell/slots.tsx';
 import { db } from '@/data/db.ts';
-import { groupQuestionQueue, type ThreadQuestion } from '@/data/group-thread.ts';
+import { groupQuestionQueue } from '@/data/group-thread.ts';
 import { useAccount } from '@/lib/account.ts';
 import { shortDate } from '@/lib/dates.ts';
+import { threadLink } from '@/lib/groups.ts';
 
 export const Route = createFileRoute('/_app/groups/$groupId/questions')({
   staticData: { back: '..' },
@@ -20,18 +21,6 @@ export const Route = createFileRoute('/_app/groups/$groupId/questions')({
 
 type Tab = 'open' | 'answered';
 const TABS = ['open', 'answered'] as const;
-
-/** Where a group question's lesson opens: its owner's own lesson, or the group's view of it. */
-function lessonLink(groupId: string, question: ThreadQuestion, me: string, answer: boolean) {
-  const search = { thread: 'group' as const, ...(answer ? { groupAnswer: question.id } : {}) };
-  return question.lessonOwnerId === me
-    ? ({ to: '/lessons/$lessonId', params: { lessonId: question.groupLessonId }, search } as const)
-    : ({
-        to: '/groups/$groupId/lessons/$lessonId',
-        params: { groupId, lessonId: question.groupLessonId },
-        search,
-      } as const);
-}
 
 /**
  * The group's questions (F35, M13-10, wireframes/sharing.md "Group questions"): every question
@@ -79,7 +68,7 @@ function GroupQuestionsScreen() {
                 <StatusIcon status={question.status} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <Link
-                    {...lessonLink(groupId, question, me, false)}
+                    {...threadLink(groupId, question, me)}
                     className="flex items-start gap-2 rounded-md outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
                     <span className="min-w-0 flex-1 break-words">{question.text}</span>
@@ -95,7 +84,7 @@ function GroupQuestionsScreen() {
                   {line && <p className="text-sm text-muted-foreground">{line}</p>}
                   {question.status !== 'answered' && (
                     <Link
-                      {...lessonLink(groupId, question, me, true)}
+                      {...threadLink(groupId, question, me, question.id)}
                       className={buttonVariants({
                         variant: 'outline',
                         size: 'sm',

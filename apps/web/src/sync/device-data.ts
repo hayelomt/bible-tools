@@ -53,6 +53,7 @@ const REFS: Readonly<Record<RowEntity, Readonly<Record<string, RowEntity>>>> = {
   passageVisit: {},
   resurfaceDismissal: {},
   comment: { sectionId: 'section' },
+  groupVisit: {},
 };
 const OPTIONAL_REFS = new Set([
   'lesson.seriesId',
@@ -170,8 +171,8 @@ export async function copyNotes(db: LampDb, owner: Owner): Promise<void> {
     const ids = new Map([...kept].map((id) => [id, newId()]));
     const copies: Array<[RowEntity, AnyRow]> = [];
     for (const entity of ROW_ENTITIES) {
-      // A comment is in another account's group, which this one isn't in (§17.12).
-      if (entity === 'comment') continue;
+      // A comment, or a visit, is in another account's group, which this one isn't in (§17.12).
+      if (entity === 'comment' || entity === 'groupVisit') continue;
       for (const row of rows.get(entity)!) {
         if (!kept.has(row.id)) continue;
         const copy: AnyRow = { ...row, id: ids.get(row.id)!, rev: 0 };

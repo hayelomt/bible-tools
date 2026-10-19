@@ -24,6 +24,7 @@ import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as AppShareRouteImport } from './routes/_app/share'
 import { Route as AppSigninRouteImport } from './routes/_app/signin'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
+import { Route as AppUnsubscribeRouteImport } from './routes/_app/unsubscribe'
 import { Route as AppVerifyEmailRouteImport } from './routes/_app/verify-email'
 import { Route as DevSeedRouteImport } from './routes/dev.seed'
 import { Route as AppCompilePassageRouteImport } from './routes/_app/compile/$passage'
@@ -131,6 +132,11 @@ const AppSigninRoute = AppSigninRouteImport.update({
 const AppSignupRoute = AppSignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUnsubscribeRoute = AppUnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => AppRoute,
 } as any)
 const AppVerifyEmailRoute = AppVerifyEmailRouteImport.update({
@@ -336,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/share': typeof AppShareRoute
   '/signin': typeof AppSigninRoute
   '/signup': typeof AppSignupRoute
+  '/unsubscribe': typeof AppUnsubscribeRoute
   '/verify-email': typeof AppVerifyEmailRoute
   '/dev/seed': typeof DevSeedRoute
   '/compile/$passage': typeof AppCompilePassageRoute
@@ -386,6 +393,7 @@ export interface FileRoutesByTo {
   '/share': typeof AppShareRoute
   '/signin': typeof AppSigninRoute
   '/signup': typeof AppSignupRoute
+  '/unsubscribe': typeof AppUnsubscribeRoute
   '/verify-email': typeof AppVerifyEmailRoute
   '/dev/seed': typeof DevSeedRoute
   '/compile/$passage': typeof AppCompilePassageRoute
@@ -439,6 +447,7 @@ export interface FileRoutesById {
   '/_app/share': typeof AppShareRoute
   '/_app/signin': typeof AppSigninRoute
   '/_app/signup': typeof AppSignupRoute
+  '/_app/unsubscribe': typeof AppUnsubscribeRoute
   '/_app/verify-email': typeof AppVerifyEmailRoute
   '/dev/seed': typeof DevSeedRoute
   '/_app/': typeof AppIndexRoute
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/signin'
     | '/signup'
+    | '/unsubscribe'
     | '/verify-email'
     | '/dev/seed'
     | '/compile/$passage'
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/signin'
     | '/signup'
+    | '/unsubscribe'
     | '/verify-email'
     | '/dev/seed'
     | '/compile/$passage'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/_app/share'
     | '/_app/signin'
     | '/_app/signup'
+    | '/_app/unsubscribe'
     | '/_app/verify-email'
     | '/dev/seed'
     | '/_app/'
@@ -745,6 +757,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof AppSignupRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/unsubscribe': {
+      id: '/_app/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof AppUnsubscribeRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/verify-email': {
@@ -1014,6 +1033,7 @@ interface AppRouteChildren {
   AppShareRoute: typeof AppShareRoute
   AppSigninRoute: typeof AppSigninRoute
   AppSignupRoute: typeof AppSignupRoute
+  AppUnsubscribeRoute: typeof AppUnsubscribeRoute
   AppVerifyEmailRoute: typeof AppVerifyEmailRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCompilePassageRoute: typeof AppCompilePassageRoute
@@ -1060,6 +1080,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppShareRoute: AppShareRoute,
   AppSigninRoute: AppSigninRoute,
   AppSignupRoute: AppSignupRoute,
+  AppUnsubscribeRoute: AppUnsubscribeRoute,
   AppVerifyEmailRoute: AppVerifyEmailRoute,
   AppIndexRoute: AppIndexRoute,
   AppCompilePassageRoute: AppCompilePassageRoute,

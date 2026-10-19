@@ -51,7 +51,7 @@ function safeName(address: string): string {
 }
 
 /** A multipart/alternative message in 8-bit UTF-8, so the links read as they are in the file. */
-function toEml(id: string, { from, to, subject, text, html }: SendEmail): string {
+function toEml(id: string, { from, to, subject, text, html, headers = {} }: SendEmail): string {
   const boundary = `lamp-${id}`;
   const part = (type: string, body: string) =>
     [
@@ -67,6 +67,7 @@ function toEml(id: string, { from, to, subject, text, html }: SendEmail): string
     `Subject: ${encodeHeader(subject)}`,
     `Date: ${new Date().toUTCString()}`,
     `Message-ID: <${id}@lamp.local>`,
+    ...Object.entries(headers).map(([name, value]) => `${name}: ${value}`),
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     '',

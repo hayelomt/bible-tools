@@ -103,6 +103,7 @@ export const changeSchema = z.discriminatedUnion('entity', [
   changeOf('passageVisit', ENTITY_SCHEMAS.passageVisit.omit({ rev: true })),
   changeOf('resurfaceDismissal', ENTITY_SCHEMAS.resurfaceDismissal.omit({ rev: true })),
   changeOf('comment', ENTITY_SCHEMAS.comment.omit({ rev: true })),
+  changeOf('groupVisit', ENTITY_SCHEMAS.groupVisit.omit({ rev: true })),
 ]);
 export type Change = z.infer<typeof changeSchema>;
 
@@ -209,6 +210,7 @@ export const pulledRowSchema = z.discriminatedUnion('entity', [
   pulledRowOf('passageVisit'),
   pulledRowOf('resurfaceDismissal'),
   pulledRowOf('comment'),
+  pulledRowOf('groupVisit'),
 ]);
 export type PulledRow = z.infer<typeof pulledRowSchema>;
 

@@ -70,6 +70,11 @@ function Guide() {
             with who asked and who answered.
           </li>
           <li>
+            <strong>Activity</strong> on the group’s page shows replies and comments to your
+            sections and new questions; the group’s row says how many are new until you open it. For
+            a weekly email of the same, turn on Settings → Groups → Weekly email of group activity.
+          </li>
+          <li>
             <strong>Leave group…</strong> is under Members. What you added goes back to your own
             notes, and your comments are deleted. An owner first makes another member the owner.
           </li>

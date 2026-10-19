@@ -1,15 +1,13 @@
 import {
   type GroupPulledRow,
-  groupIdResponseSchema,
   groupPullResponseSchema,
-  inviteResponseSchema,
-  ownLessonId,
   pullResponseSchema,
   type PulledRow,
 } from '@lamp/domain';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { type TestApp, createTestApp } from './int/app.js';
 import { truncateAll } from './int/db.js';
+import { ownLesson, shared, twoInAGroup } from './int/groups.js';
 import { type Client, createClient } from './int/http.js';
 import {
   type Account,
@@ -17,16 +15,13 @@ import {
   CLIENT_VERSION,
   commentRow,
   LATER,
-  lessonRow,
   NOW,
   PULL_DEVICE,
   pushOk,
   questionRow,
   remove,
-  type Row,
   sectionRow,
   signUp,
-  synced,
   upsert,
 } from './int/sync.js';
 
@@ -53,52 +48,7 @@ beforeEach(async () => {
 
 const LATEST = '2026-10-13T12:00:00.000Z';
 
-/** Ann's series John with one lesson, a group around it, and Ben, who joined. */
-async function group() {
-  const ann = await signUp(t, client);
-  const series = { ...synced(), title: 'John', description: '', kind: 'book_study' };
-  const lesson = lessonRow({ title: 'The Good Shepherd', seriesId: series.id });
-  await pushOk(client, ann, [upsert('series', series), upsert('lesson', lesson)]);
-  const created = await client
-    .post(
-      '/api/groups',
-      { name: 'Thursday group', seriesId: series.id, displayName: 'Ann' },
-      ann.token,
-    )
-    .expect(201);
-  const groupId = groupIdResponseSchema.parse(created.body).groupId;
-  const invite = inviteResponseSchema.parse(
-    (await client.get(`/api/groups/${groupId}/invite`, ann.token).expect(200)).body,
-  ).url;
-  const ben = await signUp(t, client);
-  await client
-    .post(
-      '/api/invites/join',
-      { token: new URL(invite).searchParams.get('token'), displayName: 'Ben' },
-      ben.token,
-    )
-    .expect(200);
-  return { ann, ben, groupId, series, lesson };
-}
-
-/** A member's own lesson for a group lesson (decision 99): its id derived from the pair. */
-async function ownLesson(account: Account, groupLesson: Row): Promise<Row> {
-  return lessonRow({
-    id: await ownLessonId(account.id, groupLesson.id),
-    title: groupLesson.title,
-    groupLessonId: groupLesson.id,
-  });
-}
-
-/** A section in the group thread. */
-const shared = (lessonId: string, groupId: string, text: string, fields: object = {}) =>
-  sectionRow(lessonId, {
-    body: bodyOf(text),
-    visibility: 'group',
-    groupId,
-    sharedAt: NOW,
-    ...fields,
-  });
+const group = () => twoInAGroup(t, client);
 
 const groupPull = (account: Account, groupId: string, cursor = 0) =>
   client.get(

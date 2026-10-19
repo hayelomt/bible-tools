@@ -55,8 +55,10 @@ import { dismissResurfaced, recordVisit } from '@/data/actions/resurface.ts';
 import { updateSettings } from '@/data/actions/settings.ts';
 import { addTag, removeTag } from '@/data/actions/tags.ts';
 import { createTemplate, templateByKey } from '@/data/actions/templates.ts';
+import { markGroupSeen } from '@/data/actions/group-activity.ts';
 import { addComment, addToThread, answerInGroup, askInGroup } from '@/data/actions/group-thread.ts';
 import { createSeries } from '@/data/actions/series.ts';
+import { groupActivityOf } from '@/data/group-activity.ts';
 import { groupQuestionQueue, memberThread, threadOf, threadView } from '@/data/group-thread.ts';
 import { lessonSections } from '@/data/queries.ts';
 import { createTakeaway, updateTakeaway } from '@/data/actions/takeaways.ts';
@@ -726,6 +728,21 @@ describe('two users in one group (M13-08 to M13-10)', () => {
     expect((await idsOn(ben)).has(annPrivate.id)).toBe(false);
     expect((await idsOn(ann)).has(benPublic.id)).toBe(true);
     expect((await idsOn(ann)).has(comment.id)).toBe(true);
+
+    // M13-11: Ben's reply, comment and question are new in Ann's activity; opening the group
+    // marks them seen, and her visit syncs.
+    const activity = await groupActivityOf(groupId, annId, ann.db);
+    expect(activity.items.map((i) => [i.kind, i.who, i.isNew])).toEqual([
+      ['question', 'Ben', true],
+      ['comment', 'Ben', true],
+      ['reply', 'Ben', true],
+    ]);
+    expect(activity.items.find((i) => i.kind === 'reply')?.id).toBe(benPublic.id);
+    await markGroupSeen(groupId, annId, ann.db);
+    await syncAll(ann, ben);
+    expect((await groupActivityOf(groupId, annId, ann.db)).fresh).toBe(0);
+    expect(await ann.db.outbox.count()).toBe(0);
+    expect((await groupActivityOf(groupId, (await me(ben)).id, ben.db)).items).toEqual([]);
 
     // Ann answers; the queue on Ben's device says so.
     const answer = await answerInGroup(annTarget, question, {}, ann.db);

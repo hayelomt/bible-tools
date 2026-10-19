@@ -194,6 +194,7 @@ async function fillAccount(userId: string): Promise<void> {
     p.comment.create({
       data: { userId, sectionId: section.id, groupId: crypto.randomUUID(), body: {} },
     }),
+    p.groupVisit.create({ data: { userId, groupId: crypto.randomUUID(), seenRev: 3 } }),
     p.citation.create({
       data: {
         userId,

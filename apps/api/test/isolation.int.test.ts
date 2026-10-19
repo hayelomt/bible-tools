@@ -1,10 +1,14 @@
 import {
   apiErrorSchema,
   devicesResponseSchema,
+  groupIdResponseSchema,
+  groupPullResponseSchema,
+  inviteResponseSchema,
   type EntityName,
   meResponseSchema,
   newId,
   NOT_IN_GROUP,
+  ownLessonId,
   pullResponseSchema,
   shareLinksResponseSchema,
 } from '@lamp/domain';
@@ -21,6 +25,7 @@ import {
   bodyLinking,
   CLIENT_VERSION,
   commentRow,
+  questionRow,
   DEVICE_ID,
   JOHN_3_16,
   LATER,
@@ -141,6 +146,8 @@ function rowOf(entity: RowEntity, to: Rows): Row {
     case 'comment':
       // On their own section, in a group they're not in: kept, and seen by no one (§17.12).
       return commentRow(to.section!.id, newId());
+    case 'groupVisit':
+      return { ...synced(), groupId: newId(), seenRev: 3 };
   }
 }
 
@@ -184,17 +191,33 @@ async function fill(account: Account) {
     .expect(201);
   // A group around the series, which isn't synced either (M13-07): the group, its member, its
   // series and its feed.
-  await client
+  const created = await client
     .post(
       '/api/groups',
       { name: 'Thursday group', seriesId: rows.series!.id, displayName: 'Ann' },
       account.token,
     )
     .expect(201);
+  const groupId = groupIdResponseSchema.parse(created.body).groupId;
+  // What the account adds to the group's thread: a section, a question and a comment on it.
+  const shared = { visibility: 'group', groupId, sharedAt: NOW };
+  const section = sectionRow(rows.lesson!.id, { ...shared, orderKey: 'a1' });
+  const group = {
+    id: groupId,
+    section,
+    question: questionRow(rows.lesson!.id, { visibility: 'group', groupId }),
+    comment: commentRow(section.id, groupId),
+  };
+  const threads = await pushOk(client, account, [
+    upsert('section', group.section),
+    upsert('question', group.question),
+    upsert('comment', group.comment),
+  ]);
+  expect(threads.map((r) => r.status)).toEqual(['applied', 'applied', 'applied']);
   const revs = Object.fromEntries(
     ROW_ENTITIES.map((entity, i) => [entity, (results[i] as { rev: number }).rev]),
   ) as Record<RowEntity, number>;
-  return { rows: rows as Record<RowEntity, Row>, revs, changes };
+  return { rows: rows as Record<RowEntity, Row>, revs, changes, group };
 }
 
 /** The tables with a `user_id` column; with `user`, every model (checked below). */
@@ -207,14 +230,24 @@ async function ownedTables(): Promise<string[]> {
 }
 
 /**
- * The group tables with no `user_id` (§17.12), and how to find the rows of the account's groups:
- * the groups it's a member of.
+ * The group tables with no `user_id` (§17.12), found from the schema as the `user_id` tables are:
+ * `group` itself, and every table with a `group_id`. A group's rows are the account's when it's a
+ * member of the group.
  */
-const GROUP_TABLES: Record<string, string> = {
-  group: 'id',
-  group_series: 'group_id',
-  group_feed: 'group_id',
-};
+async function groupTables(): Promise<Record<string, string>> {
+  const rows = await t.prisma.$queryRaw<{ table_name: string }[]>`
+    SELECT table_name FROM information_schema.columns c
+    WHERE table_schema = 'public' AND column_name = 'group_id'
+      AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns u
+        WHERE u.table_schema = 'public' AND u.table_name = c.table_name AND u.column_name = 'user_id'
+      )
+    ORDER BY table_name`;
+  return Object.fromEntries([
+    ['group', 'id'],
+    ...rows.map((r) => [r.table_name, 'group_id'] as const),
+  ]);
+}
 
 /** Every row the account has in every table, its `user` row and its groups' included, as stored. */
 async function everything(userId: string): Promise<Record<string, unknown[]>> {
@@ -233,7 +266,7 @@ async function everything(userId: string): Promise<Record<string, unknown[]>> {
   ] as const) {
     all[table] = await read(table, `r."${column}" = $1::uuid`);
   }
-  for (const [table, column] of Object.entries(GROUP_TABLES)) {
+  for (const [table, column] of Object.entries(await groupTables())) {
     all[table] = await read(
       table,
       `r."${column}" IN (SELECT group_id FROM group_member WHERE user_id = $1::uuid)`,
@@ -258,15 +291,51 @@ async function expectUntouched({ theirs, before }: Theirs) {
   expect(meResponseSchema.parse(me.body).id).toBe(theirs.id);
 }
 
+/** Me, a member of their group, joined through its invite; what they hold is read again after. */
+async function memberOf(their: Theirs): Promise<{ mine: Signed; their: Theirs }> {
+  const mine = await signUp();
+  const { url } = inviteResponseSchema.parse(
+    (await client.get(`/api/groups/${their.group.id}/invite`, their.theirs.token).expect(200)).body,
+  );
+  await client
+    .post(
+      '/api/invites/join',
+      { token: new URL(url).searchParams.get('token'), displayName: 'Ben' },
+      mine.token,
+    )
+    .expect(200);
+  return { mine, their: await readAgain(their) };
+}
+
+/** What they hold now, as the state that mustn't change from here on. */
+const readAgain = async (their: Theirs): Promise<Theirs> => ({
+  ...their,
+  before: await everything(their.theirs.id),
+});
+
+const groupPull = (account: Account, groupId: string) =>
+  client.get(`/api/groups/${groupId}/pull?cursor=0&clientVersion=${CLIENT_VERSION}`, account.token);
+
+/** My own lesson for their group lesson (decision 99), pushed. */
+async function ownLessonFor(mine: Account, their: Theirs): Promise<Row> {
+  const own = lessonRow({
+    id: await ownLessonId(mine.id, their.rows.lesson.id),
+    title: 'The Good Shepherd',
+    groupLessonId: their.rows.lesson.id,
+  });
+  const [result] = await pushOk(client, mine, [upsert('lesson', own)]);
+  expect(result).toMatchObject({ status: 'applied' });
+  return own;
+}
+
 const snake = (model: string) =>
   model.replace(/[A-Z]/g, (c, i) => (i ? '_' : '') + c.toLowerCase());
 
 describe('the fixture', () => {
   it('reaches every model', async () => {
     const tables = Object.values(Prisma.ModelName).map(snake).toSorted();
-    expect(['user', ...(await ownedTables()), ...Object.keys(GROUP_TABLES)].toSorted()).toEqual(
-      tables,
-    );
+    const groups = Object.keys(await groupTables());
+    expect(['user', ...(await ownedTables()), ...groups].toSorted()).toEqual(tables);
     const { before } = await theirAccount();
     expect(Object.entries(before).filter(([, rows]) => rows.length === 0)).toEqual([]);
   });
@@ -276,7 +345,7 @@ describe('groups', () => {
   it("their group is closed to me: its feed, its invite's address and every change", async () => {
     const their = await theirAccount();
     const mine = await signUp();
-    const { id: groupId } = await t.prisma.group.findFirstOrThrow();
+    const groupId = their.group.id;
     const member = await t.prisma.groupMember.findFirstOrThrow({ where: { groupId } });
     const mySeries = { ...synced(), title: 'Mine', description: '', kind: 'custom' };
     await pushOk(client, mine, [upsert('series', mySeries)]);
@@ -307,6 +376,140 @@ describe('groups', () => {
       )
       .expect(404);
     expect(member.userId).toBe(their.theirs.id);
+    await expectUntouched(their);
+  });
+
+  it('as a member, I read their group rows, and none of their private ones', async () => {
+    const { mine, their } = await memberOf(await theirAccount());
+    const groupId = their.group.id;
+    const page = groupPullResponseSchema.parse((await groupPull(mine, groupId).expect(200)).body);
+    const members = await t.prisma.groupMember.findMany({ where: { groupId } });
+    expect(page.rows.map((r) => ('row' in r ? r.row.id : r.id)).toSorted()).toEqual(
+      [
+        groupId,
+        ...members.map((m) => m.id),
+        their.rows.series.id,
+        their.rows.lesson.id,
+        their.group.section.id,
+        their.group.question.id,
+        their.group.comment.id,
+      ].toSorted(),
+    );
+    // My own pull is mine: the group, and none of their rows.
+    const pulled = pullResponseSchema.parse(
+      (
+        await client
+          .get(`/api/sync/pull?cursor=0&clientVersion=${CLIENT_VERSION}&${PULL_DEVICE}`, mine.token)
+          .expect(200)
+      ).body,
+    );
+    expect(pulled.rows).toEqual([]);
+    expect(pulled.groups.map((g) => g.id)).toEqual([groupId]);
+    await expectUntouched(their);
+  });
+
+  it("as a member, I can't reach their private rows, nor change their group rows", async () => {
+    const joined = await memberOf(await theirAccount());
+    const { mine } = joined;
+    const own = await ownLessonFor(mine, joined.their);
+    const their = await readAgain(joined.their);
+    const groupId = their.group.id;
+    const shared = { visibility: 'group', groupId, sharedAt: NOW };
+    // Their private section and question, named from my group rows.
+    const reaching = [
+      upsert('section', sectionRow(own.id, { ...shared, replyToId: their.rows.section.id })),
+      upsert(
+        'section',
+        sectionRow(own.id, {
+          ...shared,
+          answersQuestionId: their.rows.question.id,
+          answerKind: 'full',
+        }),
+      ),
+      upsert('comment', commentRow(their.rows.section.id, groupId)),
+    ];
+    const reached = await pushOk(client, mine, reaching);
+    expect(reached).toEqual(
+      reaching.map(() => expect.objectContaining({ errorCode: 'REFERENCE_NOT_FOUND' })),
+    );
+    // Their group rows are theirs: an edit or a delete of each is refused.
+    const rows = {
+      section: their.group.section,
+      question: their.group.question,
+      comment: their.group.comment,
+    };
+    for (const [entity, row] of Object.entries(rows) as [RowEntity, Row][]) {
+      const [edit] = await pushOk(client, mine, [upsert(entity, { ...row, updatedAt: LATER }, 1)]);
+      const [gone] = await pushOk(client, mine, [remove(entity, row.id, 1)]);
+      expect([edit, gone]).toEqual([
+        expect.objectContaining({ errorCode: 'ID_TAKEN' }),
+        expect.objectContaining({ errorCode: 'ID_TAKEN' }),
+      ]);
+    }
+    await expectUntouched(their);
+  });
+
+  it('a former member writes nothing into the feed, and their group is closed to them', async () => {
+    const joined = await memberOf(await theirAccount());
+    const { mine } = joined;
+    const own = await ownLessonFor(mine, joined.their);
+    const groupId = joined.their.group.id;
+    const shared = { visibility: 'group', groupId, sharedAt: NOW };
+    await pushOk(client, mine, [upsert('section', sectionRow(own.id, shared))]);
+    await client.post(`/api/groups/${groupId}/leave`, {}, mine.token).expect(204);
+    const their = await readAgain(joined.their);
+
+    // What I typed offline before hearing I'd left: kept, as my own notes, and seen by no one.
+    const section = sectionRow(own.id, { ...shared, orderKey: 'a1' });
+    const question = questionRow(own.id, { visibility: 'group', groupId });
+    const comment = commentRow(their.group.section.id, groupId);
+    const results = await pushOk(client, mine, [
+      upsert('section', section),
+      upsert('question', question),
+      upsert('comment', comment),
+    ]);
+    expect(results.map((r) => r.status)).toEqual(['applied', 'applied', 'applied']);
+    await expect(
+      t.prisma.section.findUniqueOrThrow({ where: { id: section.id } }),
+    ).resolves.toMatchObject({ visibility: 'private', groupId: null });
+    await expect(
+      t.prisma.question.findUniqueOrThrow({ where: { id: question.id } }),
+    ).resolves.toMatchObject({ visibility: 'private', groupId: null });
+
+    expect(errorCode(await groupPull(mine, groupId).expect(404))).toBe('NOT_FOUND');
+    const at = `/api/groups/${groupId}`;
+    for (const call of [
+      client.get(`${at}/invite`, mine.token),
+      client.post(`${at}/leave`, {}, mine.token),
+      client.patch(at, { name: 'Mine now' }, mine.token),
+    ]) {
+      expect(errorCode(await call.expect(404))).toBe('NOT_FOUND');
+    }
+    // Their group, its feed and its rev as they were.
+    await expectUntouched(their);
+  });
+
+  it('no endpoint of my group reaches into theirs', async () => {
+    const their = await theirAccount();
+    const mine = await signUp();
+    const mySeries = { ...synced(), title: 'Mine', description: '', kind: 'custom' };
+    await pushOk(client, mine, [upsert('series', mySeries)]);
+    const created = await client
+      .post('/api/groups', { name: 'Mine', seriesId: mySeries.id, displayName: 'Me' }, mine.token)
+      .expect(201);
+    const at = `/api/groups/${groupIdResponseSchema.parse(created.body).groupId}`;
+    const theirMember = await t.prisma.groupMember.findFirstOrThrow({
+      where: { groupId: their.group.id },
+    });
+    for (const call of [
+      client.post(`${at}/series`, { seriesId: their.rows.series.id }, mine.token),
+      client.delete(`${at}/series/${their.rows.series.id}`, {}, mine.token),
+      client.delete(`${at}/members/${their.theirs.id}`, {}, mine.token),
+      client.delete(`${at}/members/${theirMember.id}`, {}, mine.token),
+      client.post(`${at}/owner`, { userId: their.theirs.id }, mine.token),
+    ]) {
+      expect(errorCode(await call.expect(404))).toBe('NOT_FOUND');
+    }
     await expectUntouched(their);
   });
 });

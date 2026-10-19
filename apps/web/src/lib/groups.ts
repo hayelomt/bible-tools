@@ -43,3 +43,23 @@ export function useMyMembership(groupId: string, userId: string | undefined) {
     [groupId, userId],
   );
 }
+
+/**
+ * Where a group lesson's thread opens: its owner's own lesson, or the group's view of it; with
+ * `answer`, an answer to that group question started (M13-10).
+ */
+export function threadLink(
+  groupId: string,
+  lesson: { groupLessonId: string; lessonOwnerId: string | null },
+  me: string,
+  answer?: string,
+) {
+  const search = { thread: 'group' as const, ...(answer ? { groupAnswer: answer } : {}) };
+  return lesson.lessonOwnerId === me
+    ? ({ to: '/lessons/$lessonId', params: { lessonId: lesson.groupLessonId }, search } as const)
+    : ({
+        to: '/groups/$groupId/lessons/$lessonId',
+        params: { groupId, lessonId: lesson.groupLessonId },
+        search,
+      } as const);
+}

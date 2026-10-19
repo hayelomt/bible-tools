@@ -460,3 +460,37 @@ describe('Dexie version 16', () => {
     await upgraded.delete();
   });
 });
+
+describe('Dexie version 17', () => {
+  it("drops the group stores and their cursors, so they're pulled again with addedRev", async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(16).stores({
+      lesson: 'id, seriesId, date, groupLessonId',
+      group: 'id',
+      groupMember: 'id, groupId',
+      groupSection: 'id, groupId, groupLessonId',
+      groupSync: 'groupId',
+    });
+    const lesson = { id: id(1), title: 'Mine', rev: 3 };
+    await old.table('lesson').put(lesson);
+    await old.table('group').put({ id: id(2), name: 'Thursday group' });
+    await old.table('groupMember').put({ id: id(3), groupId: id(2), userId: id(4) });
+    await old.table('groupSection').put({ id: id(5), groupId: id(2), groupLessonId: id(6) });
+    await old.table('groupSync').put({ groupId: id(2), cursor: 12 });
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    expect(await upgraded.lesson.get(id(1))).toEqual(lesson);
+    for (const table of [
+      upgraded.group,
+      upgraded.groupMember,
+      upgraded.groupSection,
+      upgraded.groupSync,
+      upgraded.groupVisit,
+    ]) {
+      expect(await table.count()).toBe(0);
+    }
+    await upgraded.delete();
+  });
+});

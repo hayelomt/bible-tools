@@ -17,9 +17,11 @@ import {
   moveToMyNotes,
   shareWithGroup,
 } from './actions/group-thread.ts';
+import { markGroupSeen } from './actions/group-activity.ts';
 import { createLesson } from './actions/lessons.ts';
 import { createSection } from './actions/sections.ts';
 import { LampDb } from './db.ts';
+import { freshByGroup, groupActivityOf } from './group-activity.ts';
 import {
   groupQuestionQueue,
   memberThread,
@@ -47,21 +49,25 @@ const text = (t: string): SectionBody => ({
 
 /** Ann's group, as Ben's device pulls it: Ann's lesson, a section and question of hers. */
 const annRows: GroupPulledRow[] = [
-  { entity: 'group', row: { id: GROUP, name: 'Thursday group', createdAt: NOW } },
+  { entity: 'group', addedRev: 1, row: { id: GROUP, name: 'Thursday group', createdAt: NOW } },
   {
     entity: 'member',
+    addedRev: 1,
     row: { id: id(901), userId: ANN, displayName: 'Ann', role: 'owner', joinedAt: NOW },
   },
   {
     entity: 'member',
+    addedRev: 1,
     row: { id: id(902), userId: BEN, displayName: 'Ben', role: 'member', joinedAt: NOW },
   },
   {
     entity: 'series',
+    addedRev: 1,
     row: { id: SERIES, userId: ANN, title: 'John', description: '', kind: 'book_study' },
   },
   {
     entity: 'lesson',
+    addedRev: 1,
     row: {
       id: LESSON,
       userId: ANN,
@@ -85,6 +91,7 @@ const annRows: GroupPulledRow[] = [
 
 const annSection = (n: number, body: string, fields: object = {}): GroupPulledRow => ({
   entity: 'section',
+  addedRev: 1,
   row: {
     id: id(n),
     userId: ANN,
@@ -138,6 +145,7 @@ describe('the group stores', () => {
       annSection(1, 'The door'),
       {
         entity: 'question',
+        addedRev: 1,
         row: {
           id: id(2),
           userId: ANN,
@@ -149,6 +157,7 @@ describe('the group stores', () => {
       },
       {
         entity: 'comment',
+        addedRev: 1,
         row: {
           id: id(3),
           userId: ANN,
@@ -282,6 +291,7 @@ describe('group questions', () => {
     const { place, target } = await asBen([
       {
         entity: 'question',
+        addedRev: 1,
         row: {
           id: id(2),
           userId: ANN,
@@ -380,5 +390,123 @@ describe('threadOf', () => {
     });
     const other = await createLesson({ ...lesson, id: undefined, seriesId: null }, db);
     expect(await threadOf(other, db)).toBeNull();
+  });
+});
+
+describe('activity', () => {
+  it("lists replies and comments to the user's sections, and others' questions, as new until seen", async () => {
+    const { target } = await asBen();
+    const mine = await addToThread(target, { body: text('Psalm 23') }, db);
+    // What happened since: Ann replies to Ben's section, comments on it and asks a question; her
+    // own section and a reply to it aren't for Ben.
+    const later = (rows: GroupPulledRow[], rev: number) =>
+      syncGroups(db, [{ id: GROUP, rev }], async () => page(rows, rev));
+    const replyRow = annSection(5, 'Yes, the shepherd', { replyToId: mine.id, sharedAt: LATER });
+    await later(
+      [
+        { ...replyRow, addedRev: 2 },
+        { ...annSection(6, 'An aside', { sharedAt: LATER }), addedRev: 2 },
+        {
+          entity: 'comment',
+          addedRev: 3,
+          row: {
+            id: id(7),
+            userId: ANN,
+            sectionId: mine.id,
+            body: commentBody('Psalm 23:4 too'),
+            createdAt: LATER,
+            updatedAt: LATER,
+          },
+        },
+        {
+          entity: 'question',
+          addedRev: 4,
+          row: {
+            id: id(8),
+            userId: ANN,
+            groupLessonId: LESSON,
+            text: 'Why a gate?',
+            createdAt: LATER,
+            updatedAt: LATER,
+          },
+        },
+      ],
+      4,
+    );
+    const activity = await groupActivityOf(GROUP, BEN, db);
+    expect(activity.items.map((i) => [i.kind, i.who, i.lessonTitle, i.isNew])).toEqual([
+      ['question', 'Ann', 'The Good Shepherd', true],
+      ['comment', 'Ann', 'The Good Shepherd', true],
+      ['reply', 'Ann', 'The Good Shepherd', true],
+    ]);
+    expect(activity.fresh).toBe(3);
+    expect((await freshByGroup(BEN, db)).get(GROUP)).toBe(3);
+
+    // Opening the group: seen, as a visit that syncs.
+    await markGroupSeen(GROUP, BEN, db);
+    expect((await groupActivityOf(GROUP, BEN, db)).fresh).toBe(0);
+    const visits = await db.outbox.where({ entity: 'groupVisit' }).toArray();
+    expect(visits).toHaveLength(1);
+    expect(await db.groupVisit.toArray()).toEqual([
+      expect.objectContaining({ groupId: GROUP, seenRev: 4 }),
+    ]);
+    // Seen again with nothing new writes nothing.
+    await markGroupSeen(GROUP, BEN, db);
+    expect(await db.outbox.where({ entity: 'groupVisit' }).count()).toBe(1);
+
+    // An edit doesn't make the reply new again; a new question is.
+    await later(
+      [
+        {
+          ...annSection(5, 'Yes, the good shepherd', { replyToId: mine.id, updatedAt: LATER }),
+          addedRev: 2,
+        },
+        {
+          entity: 'question',
+          addedRev: 5,
+          row: {
+            id: id(9),
+            userId: ANN,
+            groupLessonId: LESSON,
+            text: 'And the thief?',
+            createdAt: LATER,
+            updatedAt: LATER,
+          },
+        },
+      ],
+      5,
+    );
+    const after = await groupActivityOf(GROUP, BEN, db);
+    expect(after.items.filter((i) => i.isNew).map((i) => i.text)).toEqual(['And the thief?']);
+  });
+
+  it('starts from when the user joined, so an old group doesn’t open with everything new', async () => {
+    await syncGroups(db, [{ id: GROUP, rev: 9 }], async () =>
+      page(
+        [
+          ...annRows.map((row) =>
+            'row' in row && row.entity === 'member' && row.row.userId === BEN
+              ? { ...row, addedRev: 9 }
+              : row,
+          ),
+          {
+            entity: 'question',
+            addedRev: 4,
+            row: {
+              id: id(8),
+              userId: ANN,
+              groupLessonId: LESSON,
+              text: 'Why a gate?',
+              createdAt: NOW,
+              updatedAt: NOW,
+            },
+          },
+        ],
+        9,
+      ),
+    );
+    const activity = await groupActivityOf(GROUP, BEN, db);
+    expect(activity.items).toHaveLength(1);
+    expect(activity.fresh).toBe(0);
   });
 });

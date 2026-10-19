@@ -38,7 +38,7 @@ export async function applyGroupPage(
       const table = db.table(STORES[pulled.entity]);
       if ('gone' in pulled) await table.delete(pulled.id);
       else if (pulled.entity === 'group') await db.group.put(pulled.row);
-      else await table.put({ ...pulled.row, groupId });
+      else await table.put({ ...pulled.row, groupId, addedRev: pulled.addedRev });
     }
     await db.groupSync.put({ groupId, cursor: page.nextCursor });
   });

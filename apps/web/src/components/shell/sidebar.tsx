@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Settings } from 'lucide-react';
+import { useFreshByGroup } from '@/components/groups/fresh-count.ts';
 import { allGroups } from '@/data/groups.ts';
 import { allSeries } from '@/data/queries.ts';
 import { NavCount } from './nav-count.tsx';
@@ -15,6 +16,7 @@ const itemClass =
 export function Sidebar() {
   const series = useLiveQuery(() => allSeries(), []);
   const groups = useLiveQuery(() => allGroups(), []);
+  const fresh = useFreshByGroup();
 
   return (
     <aside
@@ -63,6 +65,11 @@ export function Sidebar() {
               <li key={g.id}>
                 <Link to="/groups/$groupId" params={{ groupId: g.id }} className={itemClass}>
                   <span className="truncate">{g.name}</span>
+                  {(fresh.get(g.id) ?? 0) > 0 && (
+                    <span className="ml-auto shrink-0 text-xs font-medium text-primary">
+                      {fresh.get(g.id)} new
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

@@ -10,6 +10,7 @@ const ACCOUNT = {
   email: 'reader@example.com',
   emailVerifiedAt: '2026-10-01T00:00:00.000Z',
   role: 'user',
+  groupDigest: false,
 };
 const UNVERIFIED = { ...ACCOUNT, emailVerifiedAt: null };
 

@@ -137,6 +137,7 @@ export const PARENT_COLUMNS: Readonly<Record<EntityName, readonly string[]>> = {
   resurfaceDismissal: [],
   // Its section may be another member's, which no push of the author's restores.
   comment: [],
+  groupVisit: [],
 };
 
 /**

@@ -33,7 +33,20 @@ export async function nextGroupRev(tx: Tx, groupId: string): Promise<bigint | nu
   return row?.sync_rev ?? null;
 }
 
-/** Writes the entries at `rev`, each replacing what the group had for that row. */
+/**
+ * Locks the group's row until the transaction ends without taking a revision, for a push that may
+ * change nothing members see (§17.12). False when the group doesn't exist.
+ */
+export async function lockGroup(tx: Tx, groupId: string): Promise<boolean> {
+  const rows = await tx.$queryRaw<{ id: string }[]>`
+    SELECT id FROM "group" WHERE id = ${groupId}::uuid FOR UPDATE`;
+  return rows.length > 0;
+}
+
+/**
+ * Writes the entries at `rev`, each replacing what the group had for that row. A row new to the
+ * group is added at `rev`, and keeps that (`added_rev`, `added_at`) through later changes.
+ */
 export async function writeFeed(
   tx: Tx,
   groupId: string,
@@ -42,8 +55,8 @@ export async function writeFeed(
 ): Promise<void> {
   if (entries.length === 0) return;
   await tx.$executeRaw`
-    INSERT INTO group_feed (group_id, entity, entity_id, rev, gone)
-    SELECT ${groupId}::uuid, t.entity, t.entity_id, ${rev}, t.gone
+    INSERT INTO group_feed (group_id, entity, entity_id, rev, gone, added_rev)
+    SELECT ${groupId}::uuid, t.entity, t.entity_id, ${rev}, t.gone, ${rev}
     FROM unnest(
       ${entries.map((e) => e.entity)}::text[],
       ${entries.map((e) => e.entityId)}::uuid[],
@@ -260,7 +273,9 @@ async function liveInFeed(tx: Tx, groupId: string, refs: readonly FeedRef[]): Pr
 }
 
 /**
- * Brings the group's feed up to date at `rev`, the group already locked (§17.12): each of
+ * Brings the group's feed up to date at `rev`, the group already locked (§17.12), or with no `rev`
+ * at the next one, taken only if anything changes, so a push members can't see (a former member's)
+ * doesn't move the group on: each of
  * `changed` goes out as it now is, or as gone once the group can't see it; each of `others` only
  * when whether the group can see it changed (a lesson's sections when it's deleted, everything of a
  * member who leaves). A row the group never saw never enters its feed, not even as gone.
@@ -268,7 +283,7 @@ async function liveInFeed(tx: Tx, groupId: string, refs: readonly FeedRef[]): Pr
 export async function settle(
   tx: Tx,
   groupId: string,
-  rev: bigint,
+  rev: bigint | null,
   changed: readonly FeedRef[],
   others: readonly FeedRef[] = [],
 ): Promise<void> {
@@ -286,7 +301,9 @@ export async function settle(
       entries.push({ entity, entityId: id, gone: true });
     }
   }
-  await writeFeed(tx, groupId, rev, entries);
+  if (entries.length === 0) return;
+  const at = rev ?? (await nextGroupRev(tx, groupId));
+  if (at !== null) await writeFeed(tx, groupId, at, entries);
 }
 
 /**
@@ -430,7 +447,6 @@ export async function refreshFeed(
     }
   }
   for (const [groupId, refs] of [...byGroup].toSorted(([a], [b]) => a.localeCompare(b))) {
-    const rev = await nextGroupRev(tx, groupId);
-    if (rev !== null) await settle(tx, groupId, rev, refs.changed, refs.others);
+    if (await lockGroup(tx, groupId)) await settle(tx, groupId, null, refs.changed, refs.others);
   }
 }

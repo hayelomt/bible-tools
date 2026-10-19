@@ -3,6 +3,7 @@ import { linkClass } from '@/components/account/fields.tsx';
 import { AccountSection } from '@/components/account/account-section.tsx';
 import { DeleteAccount } from '@/components/account/delete-account.tsx';
 import { ApiStatus } from '@/components/api-status.tsx';
+import { DigestSetting } from '@/components/groups/digest-setting.tsx';
 import { BibleSettings } from '@/components/bible-status.tsx';
 import { YouVersionImport } from '@/components/import/youversion-import.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
@@ -57,6 +58,11 @@ function Settings() {
           <ReviewWindowSetting value={settings.reviewWindowDays} />
           <ResurfacingSetting value={settings.resurfacing} />
           <ReminderSetting />
+        </PageSection>
+      )}
+      {account && (
+        <PageSection title="Groups">
+          <DigestSetting account={account} />
         </PageSection>
       )}
       <PageSection title="Import">

@@ -63,7 +63,7 @@ export class NetworkError extends Error {
 }
 
 async function request(
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   path: string,
   body?: unknown,
 ): Promise<Response> {
@@ -220,6 +220,16 @@ export async function addGroupSeries(groupId: string, seriesId: string): Promise
 
 export async function removeGroupSeries(groupId: string, seriesId: string): Promise<void> {
   await request('DELETE', `/api/groups/${groupId}/series/${seriesId}`);
+}
+
+/** `PUT /api/account/group-digest`: the weekly email of group activity on or off (M13-12). */
+export async function setGroupDigest(on: boolean): Promise<void> {
+  await request('PUT', '/api/account/group-digest', { on });
+}
+
+/** `POST /api/email/unsubscribe?token=…`: the weekly email's link, signed out. */
+export async function unsubscribe(token: string): Promise<void> {
+  await request('POST', `/api/email/unsubscribe?token=${encodeURIComponent(token)}`);
 }
 
 /** `GET /api/account/devices`: the devices signed in to the account (§6.6). */

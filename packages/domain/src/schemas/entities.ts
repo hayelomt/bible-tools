@@ -221,6 +221,17 @@ export const commentSchema = z.strictObject({
   body: commentBodySchema,
 });
 
+/**
+ * How far the user has read a group's activity (F35, M13-11, §17.12): the feed revision their
+ * devices had when they last opened the group. One per user and group, its id derived from the
+ * pair (`groupVisitId`), so every device writes the same row; the later visit wins.
+ */
+export const groupVisitSchema = z.strictObject({
+  ...synced,
+  groupId: idSchema,
+  seenRev: revSchema,
+});
+
 /** One of the user's own study-method templates (F25, §17.6); the built-ins are code. */
 export const templateSchema = z.strictObject({
   ...synced,
@@ -378,6 +389,7 @@ export const ENTITY_SCHEMAS = {
   passageVisit: passageVisitSchema,
   resurfaceDismissal: resurfaceDismissalSchema,
   comment: commentSchema,
+  groupVisit: groupVisitSchema,
 } as const;
 
 export type EntityName = keyof typeof ENTITY_SCHEMAS;
@@ -413,4 +425,5 @@ export type Citation = z.infer<typeof citationSchema>;
 export type Visibility = (typeof VISIBILITIES)[number];
 export type AnswerKind = (typeof ANSWER_KINDS)[number];
 export type Comment = z.infer<typeof commentSchema>;
+export type GroupVisit = z.infer<typeof groupVisitSchema>;
 export type EntityRow<E extends EntityName = EntityName> = z.infer<(typeof ENTITY_SCHEMAS)[E]>;

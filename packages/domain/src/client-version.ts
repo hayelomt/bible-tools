@@ -53,9 +53,9 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
   },
   {
     minClientVersion: '0.7.0',
-    fingerprint: 'add110b5',
+    fingerprint: 'afaae833',
     change:
-      "M13 (groups, §17.12): the user pull lists the user's groups, and each group's feed is pulled on its own; a member's own lesson for a group lesson, group sections and questions, comments on them, and answers to group questions",
+      "M13 (groups, §17.12): the user pull lists the user's groups, and each group's feed is pulled on its own; a member's own lesson for a group lesson, group sections and questions, comments on them, answers to group questions, and each member's visit to a group with when each feed row reached it",
   },
 ];
 

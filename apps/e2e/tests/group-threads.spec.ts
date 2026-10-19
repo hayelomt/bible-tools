@@ -135,9 +135,23 @@ test("a lesson's group thread, its comments, and the group's questions", async (
   await expect(page.getByRole('button', { name: '1 comment' })).toBeVisible();
   await expect(page.getByText('Still unsure.')).toHaveCount(0);
 
-  // She answers from the group's questions.
+  // Her group says what's new (M13-11): Ben's reply, comment and question, seen once opened.
   await page.goto('/');
-  await page.getByRole('link', { name: 'Thursday group · 2 members' }).click();
+  const groupRow = page.getByRole('main').getByRole('link', { name: /Thursday group · 2 members/ });
+  await expect(groupRow).toContainText('3 new');
+  await groupRow.click();
+  await expect(page.getByRole('heading', { name: 'Activity · 3 new' })).toBeVisible();
+  await expect(page.getByText('Ben replied to your section in The Good Shepherd')).toBeVisible();
+  await expect(page.getByText('Ben commented on your section in The Good Shepherd')).toBeVisible();
+  await expect(
+    page.getByText('Ben asked “Who are the other sheep?” in The Good Shepherd'),
+  ).toBeVisible();
+  await pushed(page);
+  await page.goto('/');
+  await expect(groupRow).not.toContainText('new');
+
+  // She answers from the group's questions.
+  await groupRow.click();
   await page.getByRole('link', { name: 'Questions · 1 open' }).click();
   await expect(page.getByText('Ben · The Good Shepherd', { exact: false })).toBeVisible();
   await page.getByRole('link', { name: 'Answer' }).click();
@@ -152,6 +166,18 @@ test("a lesson's group thread, its comments, and the group's questions", async (
   await ben.page.getByRole('link', { name: 'Questions · 0 open' }).click();
   await ben.page.getByRole('radio', { name: 'Answered 1' }).click();
   await expect(ben.page.getByText('Answered by Ann', { exact: false })).toBeVisible();
+
+  // Ben asks for the weekly email (M13-12); a link that wasn't made for him doesn't work.
+  await ben.page.goto('/settings');
+  const weekly = ben.page.getByRole('switch', { name: /Weekly email of group activity/ });
+  await expect(weekly).not.toBeChecked();
+  await weekly.click();
+  await expect(weekly).toBeChecked();
+  await ben.page.reload();
+  await expect(weekly).toBeChecked();
+  await ben.page.goto('/unsubscribe?token=not-a-token');
+  await ben.page.getByRole('button', { name: 'Stop the emails' }).click();
+  await expect(ben.page.getByText('This link doesn’t work.', { exact: false })).toBeVisible();
 
   await ann.context.close();
   await ben.context.close();

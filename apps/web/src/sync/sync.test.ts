@@ -71,6 +71,7 @@ const ACCOUNT: MeResponse = {
   email: 'reader@example.com',
   emailVerifiedAt: NOW,
   role: 'user',
+  groupDigest: false,
 };
 
 /**

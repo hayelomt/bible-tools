@@ -7,6 +7,7 @@ const me = {
   email: 'you@example.com',
   emailVerifiedAt: null,
   role: 'user',
+  groupDigest: false,
 };
 
 afterEach(() => vi.unstubAllGlobals());

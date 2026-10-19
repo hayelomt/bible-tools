@@ -56,6 +56,7 @@ const NOUNS: Record<EntityName, string> = {
   passageVisit: 'Commentary visit',
   resurfaceDismissal: 'Dismissed item',
   comment: 'Comment',
+  groupVisit: 'Group visit',
 };
 
 /** The outbox's refused changes, oldest first, described for the sync panel. */
@@ -143,6 +144,8 @@ async function describe(db: LampDb, entry: OutboxEntry): Promise<RejectedChange>
       return { ...base, what: 'A dismissed item in Review', target: null };
     case 'comment':
       return { ...base, what: 'A comment in a group', target: null };
+    case 'groupVisit':
+      return { ...base, what: 'What you’ve seen in a group', target: null };
     case 'highlight':
     case 'memoryItem':
       // Their screens come in M5 and M6.
