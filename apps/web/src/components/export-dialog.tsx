@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@lamp/ui/components/dialog';
 import { toast } from '@lamp/ui/components/sonner';
-import { ClipboardCopy, Copy, FileDown, Printer, ScrollText } from 'lucide-react';
+import { ClipboardCopy, Copy, FileDown, Link2, Printer, ScrollText } from 'lucide-react';
 import type { Exported } from '@/export/load.ts';
 
 interface ExportDialogProps {
@@ -25,13 +25,15 @@ interface ExportDialogProps {
   loadNotion?: () => Promise<Exported | null>;
   /** Opens the one-page handout (M12-05), which a lesson has. */
   onHandout?: () => void;
+  /** Opens Share link for the handout (M13-04), which a lesson has. */
+  onShareHandout?: () => void;
 }
 
 /**
  * Export (F11, wireframes/export.md "Export menu"), from a lesson's, a series' or a commentary's
  * `⋯`: a Markdown file, downloaded at once and offline, or the same Markdown copied; or the print
  * view, to print or save as a PDF (M6-06), which the commentary doesn't have. A lesson also copies
- * for Notion (M12-06) and prints as a one-page handout (M12-05).
+ * for Notion (M12-06), prints as a one-page handout (M12-05) and shares it by link (M13-04).
  */
 export function ExportDialog({
   open,
@@ -42,6 +44,7 @@ export function ExportDialog({
   onPrint,
   loadNotion,
   onHandout,
+  onShareHandout,
 }: ExportDialogProps) {
   async function run(use: (exported: Exported) => Promise<void> | void, read = load) {
     try {
@@ -124,6 +127,19 @@ export function ExportDialog({
             >
               <ScrollText aria-hidden />
               Handout (one page)
+            </Button>
+          )}
+          {onShareHandout && (
+            <Button
+              variant="outline"
+              className="justify-start pointer-coarse:min-h-11"
+              onClick={() => {
+                onOpenChange(false);
+                onShareHandout();
+              }}
+            >
+              <Link2 aria-hidden />
+              Share the handout…
             </Button>
           )}
         </div>

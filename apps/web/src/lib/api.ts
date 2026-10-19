@@ -1,5 +1,6 @@
 import {
   type ChangePasswordRequest,
+  type CreateShareLinkRequest,
   type Device,
   type ForgotPasswordRequest,
   type HealthResponse,
@@ -9,6 +10,7 @@ import {
   type PushRequest,
   type PushResponse,
   type ResetPasswordRequest,
+  type ShareLink,
   type SignupRequest,
   type VerifyEmailRequest,
   apiErrorSchema,
@@ -17,6 +19,8 @@ import {
   meResponseSchema,
   pullResponseSchema,
   pushResponseSchema,
+  shareLinkSchema,
+  shareLinksResponseSchema,
 } from '@lamp/domain';
 import { version } from '../../package.json';
 
@@ -160,4 +164,21 @@ export async function fetchDevices(): Promise<Device[]> {
 /** `DELETE /api/account/devices/:id`: signs that device out; it keeps its notes. */
 export async function signOutDevice(id: string): Promise<void> {
   await request('DELETE', `/api/account/devices/${id}`);
+}
+
+/** `GET /api/share-links`: the account's share links (F34), newest first. */
+export async function fetchShareLinks(): Promise<ShareLink[]> {
+  const res = await request('GET', '/api/share-links');
+  return shareLinksResponseSchema.parse(await res.json()).links;
+}
+
+/** `POST /api/share-links`: a new link; `409 SHARE_LINK_EXISTS` when the target has one. */
+export async function createShareLink(body: CreateShareLinkRequest): Promise<ShareLink> {
+  const res = await request('POST', '/api/share-links', body);
+  return shareLinkSchema.parse(await res.json());
+}
+
+/** `DELETE /api/share-links/:id`: turns the link off for good. */
+export async function revokeShareLink(id: string): Promise<void> {
+  await request('DELETE', `/api/share-links/${id}`);
 }

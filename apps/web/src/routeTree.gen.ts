@@ -39,6 +39,7 @@ import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/ind
 import { Route as AppSettingsDevicesRouteImport } from './routes/_app/settings/devices'
 import { Route as AppSettingsOpenInRouteImport } from './routes/_app/settings/open-in'
 import { Route as AppSettingsPasswordRouteImport } from './routes/_app/settings/password'
+import { Route as AppSettingsSharedLinksRouteImport } from './routes/_app/settings/shared-links'
 import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
 import { Route as AppThemesIndexRouteImport } from './routes/_app/themes/index'
 import { Route as AppThemesTagIdRouteImport } from './routes/_app/themes/$tagId'
@@ -199,6 +200,11 @@ const AppSettingsPasswordRoute = AppSettingsPasswordRouteImport.update({
   path: '/settings/password',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsSharedLinksRoute = AppSettingsSharedLinksRouteImport.update({
+  id: '/settings/shared-links',
+  path: '/settings/shared-links',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTagsTagIdRoute = AppTagsTagIdRouteImport.update({
   id: '/tags/$tagId',
   path: '/tags/$tagId',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/settings/devices': typeof AppSettingsDevicesRoute
   '/settings/open-in': typeof AppSettingsOpenInRoute
   '/settings/password': typeof AppSettingsPasswordRoute
+  '/settings/shared-links': typeof AppSettingsSharedLinksRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/themes/$tagId': typeof AppThemesTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/settings/devices': typeof AppSettingsDevicesRoute
   '/settings/open-in': typeof AppSettingsOpenInRoute
   '/settings/password': typeof AppSettingsPasswordRoute
+  '/settings/shared-links': typeof AppSettingsSharedLinksRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
   '/themes/$tagId': typeof AppThemesTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/_app/settings/devices': typeof AppSettingsDevicesRoute
   '/_app/settings/open-in': typeof AppSettingsOpenInRoute
   '/_app/settings/password': typeof AppSettingsPasswordRoute
+  '/_app/settings/shared-links': typeof AppSettingsSharedLinksRoute
   '/_app/tags/$tagId': typeof AppTagsTagIdRoute
   '/_app/themes/$tagId': typeof AppThemesTagIdRoute
   '/_app/verses/$passage': typeof AppVersesPassageRoute
@@ -418,6 +427,7 @@ export interface FileRouteTypes {
     | '/settings/devices'
     | '/settings/open-in'
     | '/settings/password'
+    | '/settings/shared-links'
     | '/tags/$tagId'
     | '/themes/$tagId'
     | '/verses/$passage'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/settings/devices'
     | '/settings/open-in'
     | '/settings/password'
+    | '/settings/shared-links'
     | '/tags/$tagId'
     | '/themes/$tagId'
     | '/verses/$passage'
@@ -503,6 +514,7 @@ export interface FileRouteTypes {
     | '/_app/settings/devices'
     | '/_app/settings/open-in'
     | '/_app/settings/password'
+    | '/_app/settings/shared-links'
     | '/_app/tags/$tagId'
     | '/_app/themes/$tagId'
     | '/_app/verses/$passage'
@@ -741,6 +753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsPasswordRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/shared-links': {
+      id: '/_app/settings/shared-links'
+      path: '/settings/shared-links'
+      fullPath: '/settings/shared-links'
+      preLoaderRoute: typeof AppSettingsSharedLinksRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/tags/$tagId': {
       id: '/_app/tags/$tagId'
       path: '/tags/$tagId'
@@ -850,6 +869,7 @@ interface AppRouteChildren {
   AppSettingsDevicesRoute: typeof AppSettingsDevicesRoute
   AppSettingsOpenInRoute: typeof AppSettingsOpenInRoute
   AppSettingsPasswordRoute: typeof AppSettingsPasswordRoute
+  AppSettingsSharedLinksRoute: typeof AppSettingsSharedLinksRoute
   AppTagsTagIdRoute: typeof AppTagsTagIdRoute
   AppThemesTagIdRoute: typeof AppThemesTagIdRoute
   AppVersesPassageRoute: typeof AppVersesPassageRoute
@@ -887,6 +907,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsDevicesRoute: AppSettingsDevicesRoute,
   AppSettingsOpenInRoute: AppSettingsOpenInRoute,
   AppSettingsPasswordRoute: AppSettingsPasswordRoute,
+  AppSettingsSharedLinksRoute: AppSettingsSharedLinksRoute,
   AppTagsTagIdRoute: AppTagsTagIdRoute,
   AppThemesTagIdRoute: AppThemesTagIdRoute,
   AppVersesPassageRoute: AppVersesPassageRoute,

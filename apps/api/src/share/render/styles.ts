@@ -64,13 +64,15 @@ blockquote > * + * { margin-top: 0.75rem; }
 .chip { font-weight: 500; }
 ul, ol { padding-left: 1.5rem; }
 li + li { margin-top: 0.25rem; }
-li > * + * { margin-top: 0.75rem; }
+/* A list item in a note holds blocks: a paragraph, then a nested list or a quote. */
+.note li > * + * { margin-top: 0.75rem; }
 .questions { list-style: none; padding: 0; }
 .questions li { display: flex; gap: 0.5rem; }
 .sr-only {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip: rect(0 0 0 0); white-space: nowrap;
 }
+.description { margin-bottom: 1.5rem; }
 .lessons { list-style: none; padding: 0; }
 .lessons li { display: flex; gap: 1rem; }
 .lessons .date { flex: 0 0 8.5rem; color: var(--muted-foreground); font-size: 0.9375rem; }
@@ -120,6 +122,7 @@ li > * + * { margin-top: 0.75rem; }
 .handout-box .notes span {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
 }
+.handout-box .questions { padding-left: 0; }
 .handout-box .questions li { gap: 0.5em; }
 .handout-box .credit {
   margin-top: 1.2em; padding-top: 0.4em; border-top: 1px solid #d4d4d4;

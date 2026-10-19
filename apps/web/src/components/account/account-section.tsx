@@ -96,6 +96,9 @@ function SignedIn({
       <Link to="/settings/devices" className={linkClass}>
         Devices{devices?.length ? ` · ${count(devices.length, 'device')}` : ''} ›
       </Link>
+      <Link to="/settings/shared-links" className={linkClass}>
+        Shared links ›
+      </Link>
       <Link to="/settings/password" className={linkClass}>
         Change password ›
       </Link>

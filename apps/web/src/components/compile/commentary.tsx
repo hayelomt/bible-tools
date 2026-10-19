@@ -24,6 +24,7 @@ import { ArrowUp, ChevronRight, Ellipsis } from 'lucide-react';
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { NotFoundScreen } from '@/components/error-screen.tsx';
 import { ExportDialog } from '@/components/export-dialog.tsx';
+import { ShareLinkDialog } from '@/components/share-links/share-link-dialog.tsx';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { Segmented } from '@/components/segmented.tsx';
 import { ScreenActions, ScreenTitle, SidePanel } from '@/components/shell/slots.tsx';
@@ -161,10 +162,11 @@ export function CommentaryScreen({
   );
 }
 
-/** The `⋯`: Export (Markdown only) and Read the passage. */
+/** The `⋯`: Export (Markdown only), Share link (M13-04) and Read the passage. */
 function CommentaryMenu({ scope, title }: { scope: Passage; title: string }) {
   const navigate = useNavigate();
   const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const { book, chapter, verseStart } = scope;
   return (
     <>
@@ -176,6 +178,7 @@ function CommentaryMenu({ scope, title }: { scope: Passage; title: string }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem onClick={() => setExporting(true)}>Export…</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setSharing(true)}>Share link…</DropdownMenuItem>
           <DropdownMenuItem
             onClick={() =>
               void navigate({
@@ -200,6 +203,12 @@ function CommentaryMenu({ scope, title }: { scope: Passage; title: string }) {
         title={`Export the commentary on ${title}`}
         description="Markdown keeps every section with its verses, lesson and date."
         load={() => exportCommentary(scope)}
+      />
+      <ShareLinkDialog
+        open={sharing}
+        onOpenChange={setSharing}
+        target={{ targetType: 'compile', passage: scope }}
+        title={title}
       />
     </>
   );
