@@ -38,7 +38,8 @@ self.addEventListener('activate', (event) => {
 // Every address in the app is the same page; the router shows the screen.
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL('index.html'), {
-    denylist: [/^\/api\//, /^\/bible\//],
+    // Shared pages (`/s/…`, F34) are the API's, for readers without the app.
+    denylist: [/^\/api\//, /^\/bible\//, /^\/s\//],
   }),
 );
 

@@ -54,9 +54,12 @@ function prismaMessage(message: string): string {
   return lines.length <= 2 ? lines.join('\n') : `${lines[0]}\n${lines.at(-1)}`;
 }
 
-/** A URL without its query string or fragment. */
+/**
+ * A URL without its query string or fragment, and with a shared page's token hidden (`/s/…`):
+ * both can hold something that opens a page or an account.
+ */
 export function withoutQuery(url: string): string {
-  return url.split(/[?#]/, 1)[0] ?? '';
+  return (url.split(/[?#]/, 1)[0] ?? '').replace(/\/s\/[A-Za-z0-9_-]{43}(?=\/|$)/, '/s/…');
 }
 
 /** A span as Sentry streams it (the default `traceLifecycle`). */

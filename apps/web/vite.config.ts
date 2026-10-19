@@ -180,7 +180,8 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    proxy: { '/api': { target: apiUrl } },
+    // Shared pages (F34) are the API's too: `^/s/`, a pattern, so `/series` and `/settings` aren't.
+    proxy: { '/api': { target: apiUrl }, '^/s/': { target: apiUrl } },
   },
   // Not Vite's default (4173), which other projects on the machine use.
   preview: { port: 4573, strictPort: true },

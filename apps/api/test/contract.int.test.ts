@@ -73,7 +73,13 @@ const CONTRACTS: Contract[] = [
 ];
 
 /** Tables that never leave the server, so they have no schema. */
-const SERVER_ONLY_TABLES = ['_prisma_migrations', 'session', 'email_token', 'sync_change'];
+const SERVER_ONLY_TABLES = [
+  '_prisma_migrations',
+  'session',
+  'email_token',
+  'sync_change',
+  'share_link',
+];
 
 /** The JSON Schema types each Postgres column type may appear as on the wire. */
 const WIRE_TYPES: Record<string, string> = {

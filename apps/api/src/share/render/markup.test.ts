@@ -1,0 +1,77 @@
+import { createHash } from 'node:crypto';
+import { describe, expect, it } from 'vitest';
+import { withoutShareToken } from '../share-token.js';
+import { bodyHtml } from './body.js';
+import { markup, trusted } from './markup.js';
+import { page } from './page.js';
+
+describe('markup', () => {
+  it('escapes text and keeps markup made with it', () => {
+    const text = `<b>"Tom" & 'Jerry'</b>`;
+    expect(markup`<p title="${text}">${text}${markup`<br />`}${trusted('<hr>')}</p>`.value).toBe(
+      '<p title="&lt;b&gt;&quot;Tom&quot; &amp; &#39;Jerry&#39;&lt;/b&gt;">' +
+        '&lt;b&gt;&quot;Tom&quot; &amp; &#39;Jerry&#39;&lt;/b&gt;<br /><hr></p>',
+    );
+  });
+
+  it('leaves out nothing-values and joins lists', () => {
+    expect(markup`${null}${undefined}${false}${['a', markup`<i>b</i>`, 3]}`.value).toBe(
+      'a<i>b</i>3',
+    );
+  });
+});
+
+describe('bodyHtml', () => {
+  it('links a chip only where the page covers it, and never takes a link mark to javascript:', () => {
+    const body = {
+      type: 'doc' as const,
+      content: [
+        {
+          type: 'paragraph' as const,
+          content: [
+            {
+              type: 'noteLink' as const,
+              attrs: {
+                targetType: 'lesson' as const,
+                targetId: '0199e0a0-0000-7000-8000-000000000001',
+                label: 'Here',
+              },
+            },
+            {
+              type: 'noteLink' as const,
+              attrs: {
+                targetType: 'lesson' as const,
+                targetId: '0199e0a0-0000-7000-8000-000000000002',
+                label: '<Elsewhere>',
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const out = bodyHtml(body, 2, (link) => (link.label === 'Here' ? '#top' : null)).value;
+    expect(out).toBe('<p><a href="#top">Here</a>&lt;Elsewhere&gt;</p>');
+  });
+});
+
+describe('withoutShareToken', () => {
+  it("hides a shared page's token in a logged URL", () => {
+    const token = 'k3J9'.padEnd(43, 'x');
+    expect(withoutShareToken(`/s/${token}`)).toBe('/s/…');
+    expect(withoutShareToken(`/s/${token}/lessons/1`)).toBe('/s/…/lessons/1');
+    expect(withoutShareToken('/api/sync/pull')).toBe('/api/sync/pull');
+  });
+});
+
+describe('page', () => {
+  it('allows exactly its script and style, by their hashes', () => {
+    const script = 'print()';
+    const { html, csp } = page({ title: 'T', main: 'M', script });
+    const hash = createHash('sha256').update(script).digest('base64');
+    expect(html).toContain(`<script>${script}</script>`);
+    expect(csp).toContain(`script-src 'sha256-${hash}'`);
+    const style = /<style>([\s\S]*?)<\/style>/.exec(html)![1]!;
+    const styleHash = createHash('sha256').update(style).digest('base64');
+    expect(csp).toContain(`style-src 'sha256-${styleHash}'`);
+  });
+});

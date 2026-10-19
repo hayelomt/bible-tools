@@ -8,7 +8,9 @@ import { AuthModule } from './auth/auth.module.js';
 import { type Env, envFilePaths, envSchema } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { ShareModule } from './share/share.module.js';
 import { SyncModule } from './sync/sync.module.js';
+import { withoutShareToken } from './share/share-token.js';
 
 @Module({
   imports: [
@@ -32,6 +34,10 @@ import { SyncModule } from './sync/sync.module.js';
             return id;
           },
           autoLogging: { ignore: (req) => req.url === '/api/health' },
+          // A shared page's address is its token: logged as /s/… only (§12).
+          serializers: {
+            req: (req: { url?: string }) => ({ ...req, url: withoutShareToken(req.url) }),
+          },
         },
       }),
     }),
@@ -39,6 +45,7 @@ import { SyncModule } from './sync/sync.module.js';
     AuthModule,
     AccountModule,
     SyncModule,
+    ShareModule,
     HealthModule,
   ],
 })

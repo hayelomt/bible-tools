@@ -25,6 +25,7 @@ describe('env validation', () => {
       DATABASE_URL,
       SIGNUP_ENABLED: true,
       APP_URL: 'http://localhost:5173',
+      SHARE_LINK_SECRET: 'lamp-development-share-link-secret-not-for-production',
     });
   });
 
@@ -37,14 +38,20 @@ describe('env validation', () => {
     );
   });
 
-  it('in production, needs an https APP_URL and a Resend key', () => {
+  it('in production, needs an https APP_URL, a Resend key and a share link secret', () => {
     const production = { DATABASE_URL, NODE_ENV: 'production' };
     const issues = envSchema.safeParse(production).error?.issues.map((i) => i.path.join('.'));
-    expect(issues).toEqual(['APP_URL', 'RESEND_API_KEY']);
-    const ready = { ...production, APP_URL: 'https://lamp.example', RESEND_API_KEY: 're_123' };
+    expect(issues).toEqual(['APP_URL', 'RESEND_API_KEY', 'SHARE_LINK_SECRET']);
+    const ready = {
+      ...production,
+      APP_URL: 'https://lamp.example',
+      RESEND_API_KEY: 're_123',
+      SHARE_LINK_SECRET: 'k'.repeat(32),
+    };
     expect(envSchema.safeParse(ready).success).toBe(true);
     expect(envSchema.safeParse({ ...ready, APP_URL: 'http://lamp.example' }).success).toBe(false);
     expect(envSchema.safeParse({ ...ready, RESEND_API_KEY: 'sk_123' }).success).toBe(false);
+    expect(envSchema.safeParse({ ...ready, SHARE_LINK_SECRET: 'short' }).success).toBe(false);
   });
 
   it('reads SIGNUP_ENABLED as a true/false string', () => {

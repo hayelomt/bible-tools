@@ -1,6 +1,6 @@
 import type { ErrorEvent } from '@sentry/nestjs';
 import { describe, expect, it } from 'vitest';
-import { scrubEvent } from './sentry-scrub.js';
+import { scrubEvent, withoutQuery } from './sentry-scrub.js';
 
 describe('scrubEvent', () => {
   it('removes bodies, cookies, the query string and secret headers, keeping the route', () => {
@@ -51,5 +51,15 @@ describe('scrubEvent', () => {
   it('leaves an event without a request alone', () => {
     const event: ErrorEvent = { type: undefined, message: 'Boom' };
     expect(scrubEvent(event)).toEqual({ type: undefined, message: 'Boom' });
+  });
+});
+
+describe('withoutQuery', () => {
+  it("drops the query and hides a shared page's token", () => {
+    const token = 'a'.repeat(43);
+    expect(withoutQuery(`https://lamp.example/s/${token}/lessons/1?x=1`)).toBe(
+      'https://lamp.example/s/…/lessons/1',
+    );
+    expect(withoutQuery('/api/sync/pull?cursor=3')).toBe('/api/sync/pull');
   });
 });
