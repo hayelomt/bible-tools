@@ -3,6 +3,7 @@ import {
   type EntityRow,
   type InlineNode,
   newId,
+  NOT_IN_GROUP,
   type Section,
   type SectionBody,
   SEED_TAGS,
@@ -51,6 +52,7 @@ const REFS: Readonly<Record<RowEntity, Readonly<Record<string, RowEntity>>>> = {
   template: {},
   passageVisit: {},
   resurfaceDismissal: {},
+  comment: { sectionId: 'section' },
 };
 const OPTIONAL_REFS = new Set([
   'lesson.seriesId',
@@ -168,9 +170,15 @@ export async function copyNotes(db: LampDb, owner: Owner): Promise<void> {
     const ids = new Map([...kept].map((id) => [id, newId()]));
     const copies: Array<[RowEntity, AnyRow]> = [];
     for (const entity of ROW_ENTITIES) {
+      // A comment is in another account's group, which this one isn't in (§17.12).
+      if (entity === 'comment') continue;
       for (const row of rows.get(entity)!) {
         if (!kept.has(row.id)) continue;
         const copy: AnyRow = { ...row, id: ids.get(row.id)!, rev: 0 };
+        // What was shared with that account's groups comes over as private notes.
+        if (entity === 'lesson' || entity === 'section' || entity === 'question') {
+          Object.assign(copy, NOT_IN_GROUP[entity]);
+        }
         for (const column of Object.keys(REFS[entity])) {
           const id = row[column] as string | null | undefined;
           if (id != null) copy[column] = ids.get(id) ?? null;

@@ -4,9 +4,17 @@ import { buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, CircleDot } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
+import { GroupQuestions } from '@/components/groups/group-questions.tsx';
+import { GroupThread } from '@/components/groups/group-thread.tsx';
+import {
+  type ThreadMode,
+  ThreadSwitch,
+  useGroupThread,
+} from '@/components/groups/thread-switch.tsx';
 import { type SectionRequest, SectionList } from '@/components/sections/section-list.tsx';
 import { ScreenActions, ScreenTitle, SidePanel } from '@/components/shell/slots.tsx';
 import type { LessonFields } from '@/data/actions/lessons.ts';
+import type { ThreadPlace } from '@/data/group-thread.ts';
 import { longDate, today } from '@/lib/dates.ts';
 import { KIND_LABELS } from '@/lib/labels.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
@@ -37,6 +45,18 @@ interface LessonEditorProps {
    * question thread's Answer and Add a partial answer).
    */
   answer?: { questionId: string; partial: boolean } | '';
+  /**
+   * The lesson's group thread (§17.12), when it's in a shared series: the switch shows, and `mode`
+   * says which thread is open.
+   */
+  group?: {
+    place: ThreadPlace;
+    me: string;
+    mode: ThreadMode;
+    onModeChange: (mode: ThreadMode) => void;
+    /** A group question to answer as the thread opens (the queue's Answer). */
+    answer?: string;
+  };
 }
 
 /** What a new lesson starts with (wireframes/lessons.md): today, a sermon, no series. */
@@ -62,7 +82,7 @@ function newLesson(seriesId?: string): LessonFields {
  * the title, large, then a line with the date and kind that opens the details. On a wide laptop
  * the details sit in the side panel instead. Everything saves as it's typed; there's no Save.
  */
-export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEditorProps) {
+export function LessonEditor({ id, lesson, seriesId, reveal, answer, group }: LessonEditorProps) {
   const saver = useLessonSaver(id, lesson, () => newLesson(seriesId));
   const { values, save, flush, saving } = saver;
   const [title, setTitle] = useState(values.title);
@@ -91,27 +111,44 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
   const detailsId = useId();
   // An empty title isn't stored; the stored one stays until a new one is typed.
   const missingTitle = lesson !== null && !title.trim();
+  const thread = useGroupThread(group?.place, group?.me, group?.answer);
+  const inThread = group?.mode === 'group';
 
   // Takeaways and questions belong to a stored lesson, like its sections. On a phone they're added
   // with the + button and show only once there's one, so an empty lesson stays uncluttered.
-  const extras = lesson && (
-    <>
-      <Takeaways ref={takeaways} lessonId={id} hideWhenEmpty={!wide} reveal={reveal?.takeaway} />
-      <Questions
-        ref={questions}
-        lessonId={id}
-        hideWhenEmpty={!wide}
-        reveal={reveal?.question}
-        onAnswer={(questionId) =>
-          setRequest({ kind: 'answer', questionId, partial: false, seq: (request?.seq ?? 0) + 1 })
-        }
-        onShowAnswer={(sectionId) =>
-          setRequest({ kind: 'reveal', sectionId, seq: (request?.seq ?? 0) + 1 })
-        }
-      />
-      <LessonLinkedFrom lessonId={id} />
-    </>
-  );
+  // In the group thread, its questions; the lesson's own takeaways and questions are in My notes.
+  const extras =
+    lesson &&
+    (inThread && group ? (
+      <>
+        {thread.view && (
+          <GroupQuestions
+            place={group.place}
+            questions={thread.view.questions}
+            onAnswer={(question) => thread.answer(question)}
+          />
+        )}
+        <LessonLinkedFrom lessonId={id} />
+      </>
+    ) : (
+      <>
+        <Takeaways ref={takeaways} lessonId={id} hideWhenEmpty={!wide} reveal={reveal?.takeaway} />
+        <Questions
+          ref={questions}
+          lessonId={id}
+          privateOnly={group !== undefined}
+          hideWhenEmpty={!wide}
+          reveal={reveal?.question}
+          onAnswer={(questionId) =>
+            setRequest({ kind: 'answer', questionId, partial: false, seq: (request?.seq ?? 0) + 1 })
+          }
+          onShowAnswer={(sectionId) =>
+            setRequest({ kind: 'reveal', sectionId, seq: (request?.seq ?? 0) + 1 })
+          }
+        />
+        <LessonLinkedFrom lessonId={id} />
+      </>
+    ));
 
   return (
     // On a phone the page ends with room for the + button, so it never covers the last line.
@@ -129,7 +166,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
             </>
           )}
         </output>
-        {lesson && (
+        {lesson && !inThread && (
           // Capture mode (F26, M11-01), one tap from the lesson.
           <Link
             to="/lessons/$lessonId/capture"
@@ -210,6 +247,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
         )}
       </p>
       <SourceLine source={values} />
+      {lesson && group && <ThreadSwitch value={group.mode} onChange={group.onModeChange} />}
 
       {wide ? (
         <SidePanel>
@@ -230,7 +268,12 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
       )}
 
       {/* Sections belong to a stored lesson, so they show once the title is typed. */}
-      {lesson && (
+      {lesson && inThread && group && thread.view && (
+        <div className="mt-4">
+          <GroupThread place={group.place} view={thread.view} request={thread.request} />
+        </div>
+      )}
+      {lesson && !inThread && (
         <div className="mt-4">
           <SectionList
             lessonId={id}
@@ -239,6 +282,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
             focusFirst={focusFirst}
             request={request}
             onSavingChange={setSectionsSaving}
+            group={group && { id: group.place.groupId, name: group.place.groupName }}
           />
         </div>
       )}
@@ -246,11 +290,13 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer }: LessonEdi
       {!wide && extras && (
         <>
           <div className="mt-8 flex flex-col gap-8 empty:hidden">{extras}</div>
-          <AddButton
-            onAddTakeaway={() => takeaways.current?.add()}
-            onAddQuestion={() => questions.current?.add()}
-            onRevisitQuestion={() => questions.current?.revisit()}
-          />
+          {!inThread && (
+            <AddButton
+              onAddTakeaway={() => takeaways.current?.add()}
+              onAddQuestion={() => questions.current?.add()}
+              onRevisitQuestion={() => questions.current?.revisit()}
+            />
+          )}
         </>
       )}
     </div>

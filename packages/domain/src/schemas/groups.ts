@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { idSchema, lineSchema, revSchema, timestampSchema } from './common.ts';
-import { lessonSchema, seriesSchema } from './entities.ts';
+import {
+  commentSchema,
+  lessonSchema,
+  questionSchema,
+  sectionSchema,
+  seriesSchema,
+} from './entities.ts';
 import { clientVersionSchema } from './sync.ts';
 
 /**
@@ -125,13 +131,54 @@ export const groupLessonSchema = lessonSchema
   })
   .extend({ userId: idSchema });
 
+/**
+ * A section in the group's thread (M13-08): the author's, in the group lesson or in their own lesson
+ * for it, so `groupLessonId` is worked out from its lesson. Never its tags, conflicts or order.
+ */
+export const groupSectionSchema = sectionSchema
+  .pick({
+    id: true,
+    parentId: true,
+    replyToId: true,
+    sharedAt: true,
+    body: true,
+    sourceAt: true,
+    sourcePage: true,
+    answersQuestionId: true,
+    answerKind: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({ userId: idSchema, groupLessonId: idSchema });
+
+/** A question asked in the group's thread (M13-08), for its queue (M13-10); never its entries. */
+export const groupQuestionSchema = questionSchema
+  .pick({ id: true, text: true, createdAt: true, updatedAt: true })
+  .extend({ userId: idSchema, groupLessonId: idSchema });
+
+/** A comment on a group section (M13-09). */
+export const groupCommentSchema = commentSchema
+  .pick({ id: true, sectionId: true, body: true, createdAt: true, updatedAt: true })
+  .extend({ userId: idSchema });
+
 export type GroupInfo = z.infer<typeof groupInfoSchema>;
 export type GroupMember = z.infer<typeof groupMemberSchema>;
 export type GroupSeries = z.infer<typeof groupSeriesSchema>;
 export type GroupLesson = z.infer<typeof groupLessonSchema>;
+export type GroupSection = z.infer<typeof groupSectionSchema>;
+export type GroupQuestion = z.infer<typeof groupQuestionSchema>;
+export type GroupComment = z.infer<typeof groupCommentSchema>;
 
 /** What a feed carries, parents first: the order of a page within one rev. */
-export const GROUP_ENTITIES = ['group', 'member', 'series', 'lesson'] as const;
+export const GROUP_ENTITIES = [
+  'group',
+  'member',
+  'series',
+  'lesson',
+  'section',
+  'question',
+  'comment',
+] as const;
 export type GroupEntity = (typeof GROUP_ENTITIES)[number];
 
 /** A row of the feed changed since the cursor, or one members must drop. */
@@ -141,6 +188,9 @@ export const groupPulledRowSchema = z.union([
     z.strictObject({ entity: z.literal('member'), row: groupMemberSchema }),
     z.strictObject({ entity: z.literal('series'), row: groupSeriesSchema }),
     z.strictObject({ entity: z.literal('lesson'), row: groupLessonSchema }),
+    z.strictObject({ entity: z.literal('section'), row: groupSectionSchema }),
+    z.strictObject({ entity: z.literal('question'), row: groupQuestionSchema }),
+    z.strictObject({ entity: z.literal('comment'), row: groupCommentSchema }),
   ]),
   z.strictObject({ entity: z.enum(GROUP_ENTITIES), id: idSchema, gone: z.literal(true) }),
 ]);

@@ -12,6 +12,7 @@ import { Prisma, type User } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { toRow } from '../sync/entity-tables.js';
 import { assertSupportedClient, assertVerified } from '../sync/sync-access.js';
+import { type FeedRef, feedKey, visibility } from './feed.js';
 
 type Tx = Prisma.TransactionClient;
 
@@ -74,9 +75,14 @@ export class GroupPullService {
         );
         const rows = await rowsOf(tx, groupId, pageEntries);
         const visible = cursor === 0n ? rows.filter((row) => !('gone' in row)) : rows;
+        // The last page ends at the group's rev, past any rev that changed nothing here (an
+        // invite made again), so the device doesn't ask again.
+        const group = await tx.group.findUnique({ where: { id: groupId } });
+        const last = pageEntries.at(-1)?.rev ?? cursor;
+        const end = !hasMore && group && group.syncRev > last ? group.syncRev : last;
         return {
           rows: visible,
-          nextCursor: pageEntries.length > 0 ? Number(pageEntries.at(-1)!.rev) : query.cursor,
+          nextCursor: Number(end),
           hasMore,
           remaining: await tx.groupFeed.count({ where }),
         };
@@ -106,26 +112,31 @@ async function page(
 
 /** Each entry as its projection, if the group may still see it, or as gone. */
 async function rowsOf(tx: Tx, groupId: string, wanted: Entry[]): Promise<GroupPulledRow[]> {
+  const asked = wanted
+    .filter((e) => !e.gone)
+    .map((e): FeedRef => ({ entity: e.entity, id: e.entityId }));
+  const { visible, threads } = await visibility(tx, groupId, asked);
   const ids = (entity: GroupEntity) =>
-    wanted.filter((e) => e.entity === entity && !e.gone).map((e) => e.entityId);
-  const [group, members, shared, lessons] = await Promise.all([
-    tx.group.findUnique({ where: { id: groupId } }),
-    tx.groupMember.findMany({ where: { groupId, id: { in: ids('member') } } }),
-    tx.groupSeries.findMany({ where: { groupId }, include: { series: true } }),
-    tx.lesson.findMany({ where: { id: { in: ids('lesson') }, deletedAt: null } }),
-  ]);
-  const series = new Map(
-    shared.filter((s) => s.series.deletedAt === null).map((s) => [s.seriesId, s.series]),
-  );
+    asked.filter((r) => r.entity === entity && visible.has(feedKey(entity, r.id))).map((r) => r.id);
+  const group = visible.has(feedKey('group', groupId))
+    ? await tx.group.findUnique({ where: { id: groupId } })
+    : null;
+  const members = await tx.groupMember.findMany({ where: { id: { in: ids('member') } } });
+  const series = await tx.series.findMany({ where: { id: { in: ids('series') } } });
+  const lessons = await tx.lesson.findMany({ where: { id: { in: ids('lesson') } } });
+  const sections = await tx.section.findMany({ where: { id: { in: ids('section') } } });
+  const questions = await tx.question.findMany({ where: { id: { in: ids('question') } } });
+  const comments = await tx.comment.findMany({ where: { id: { in: ids('comment') } } });
+
   const rows = new Map<string, GroupPulledRow>();
   if (group) {
-    rows.set(`group:${group.id}`, {
+    rows.set(feedKey('group', group.id), {
       entity: 'group',
       row: { id: group.id, name: group.name, createdAt: group.createdAt.toISOString() },
     });
   }
   for (const m of members) {
-    rows.set(`member:${m.id}`, {
+    rows.set(feedKey('member', m.id), {
       entity: 'member',
       row: {
         id: m.id,
@@ -136,22 +147,22 @@ async function rowsOf(tx: Tx, groupId: string, wanted: Entry[]): Promise<GroupPu
       },
     });
   }
-  for (const s of series.values()) {
-    rows.set(`series:${s.id}`, {
+  for (const stored of series) {
+    const s = toRow('series', stored);
+    rows.set(feedKey('series', s.id), {
       entity: 'series',
       row: {
         id: s.id,
-        userId: s.userId,
+        userId: stored.userId,
         title: s.title,
         description: s.description,
-        kind: s.kind as 'custom',
+        kind: s.kind,
       },
     });
   }
   for (const stored of lessons) {
-    if (!stored.seriesId || !series.has(stored.seriesId)) continue;
     const lesson = toRow('lesson', stored);
-    rows.set(`lesson:${stored.id}`, {
+    rows.set(feedKey('lesson', stored.id), {
       entity: 'lesson',
       row: {
         id: lesson.id,
@@ -173,8 +184,57 @@ async function rowsOf(tx: Tx, groupId: string, wanted: Entry[]): Promise<GroupPu
       },
     });
   }
+  for (const stored of sections) {
+    const section = toRow('section', stored);
+    rows.set(feedKey('section', stored.id), {
+      entity: 'section',
+      row: {
+        id: section.id,
+        userId: stored.userId,
+        groupLessonId: threads.get(feedKey('section', stored.id))!,
+        parentId: section.parentId,
+        replyToId: section.replyToId,
+        sharedAt: section.sharedAt,
+        body: section.body,
+        sourceAt: section.sourceAt,
+        sourcePage: section.sourcePage,
+        answersQuestionId: section.answersQuestionId,
+        answerKind: section.answerKind,
+        createdAt: section.createdAt,
+        updatedAt: section.updatedAt,
+      },
+    });
+  }
+  for (const stored of questions) {
+    const question = toRow('question', stored);
+    rows.set(feedKey('question', stored.id), {
+      entity: 'question',
+      row: {
+        id: question.id,
+        userId: stored.userId,
+        groupLessonId: threads.get(feedKey('question', stored.id))!,
+        text: question.text,
+        createdAt: question.createdAt,
+        updatedAt: question.updatedAt,
+      },
+    });
+  }
+  for (const stored of comments) {
+    const comment = toRow('comment', stored);
+    rows.set(feedKey('comment', stored.id), {
+      entity: 'comment',
+      row: {
+        id: comment.id,
+        userId: stored.userId,
+        sectionId: comment.sectionId,
+        body: comment.body,
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt,
+      },
+    });
+  }
   return wanted.map(
     ({ entity, entityId }) =>
-      rows.get(`${entity}:${entityId}`) ?? { entity, id: entityId, gone: true as const },
+      rows.get(feedKey(entity, entityId)) ?? { entity, id: entityId, gone: true as const },
   );
 }

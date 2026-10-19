@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_app/groups/$groupId/series/$seriesId')({
 
 /**
  * A series shared into the group, as its members see it: its lessons by date. The owner's own
- * lessons open as usual; another member's open read-only (M13-08 adds the threads).
+ * lessons open as usual; another member's open on the group's thread (M13-08).
  */
 function GroupSeriesScreen() {
   const { groupId, seriesId } = Route.useParams();

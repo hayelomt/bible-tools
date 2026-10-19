@@ -7,3 +7,18 @@ import { v7 } from 'uuid';
 export function newId(): string {
   return v7();
 }
+
+/**
+ * The id of a user's own lesson for a group lesson (decision 99, §17.12): a UUIDv7 with the group
+ * lesson's time bits, the rest from the SHA-256 of the pair, so every device of the user makes the
+ * same row, even offline.
+ */
+export async function ownLessonId(userId: string, groupLessonId: string): Promise<string> {
+  const data = new TextEncoder().encode(`own-lesson:${userId}:${groupLessonId}`);
+  const digest = new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', data));
+  const hex = [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  const time = groupLessonId.replaceAll('-', '').slice(0, 12);
+  const variant = ((Number.parseInt(hex[15]!, 16) & 0x3) | 0x8).toString(16);
+  const rest = `${time}7${hex.slice(0, 3)}${variant}${hex.slice(3, 18)}`;
+  return `${rest.slice(0, 8)}-${rest.slice(8, 12)}-${rest.slice(12, 16)}-${rest.slice(16, 20)}-${rest.slice(20, 32)}`;
+}

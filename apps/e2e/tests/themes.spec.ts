@@ -51,6 +51,7 @@ function fewNotes(tagIds: Map<string, string>): Seed {
       sourceAuthor: null,
       sourceUrl: null,
       sourceStartedAt: null,
+      groupLessonId: null,
       mainPassages: [],
     });
     seed.lesson.push(lesson);
@@ -77,6 +78,12 @@ function fewNotes(tagIds: Map<string, string>): Seed {
         conflictDevice: null,
         sourceAt: null,
         sourcePage: null,
+        visibility: 'private',
+        groupId: null,
+        sharedAt: null,
+        replyToId: null,
+        answersQuestionId: null,
+        answerKind: null,
       });
       seed.section.push(section);
       seed.sectionTag.push(

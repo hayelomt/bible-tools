@@ -5,6 +5,7 @@ import {
   isCitingEntity,
   linksFor,
   newId,
+  NOT_IN_GROUP,
   type UserSettings,
 } from '@lamp/domain';
 import { emitLocalWrite, emitRowsChanged, type RowRef } from './changes.ts';
@@ -12,7 +13,12 @@ import { type LampDb, type RowEntity, SETTINGS_KEY, SYNC_STATE_KEY } from './db.
 
 /** The fields every synced row carries, which the writer fills in. */
 type Meta = 'id' | 'createdAt' | 'updatedAt' | 'rev' | 'deletedAt';
-export type NewRow<E extends RowEntity> = Omit<EntityRow<E>, Meta> & { id?: string };
+/** The group columns (§17.12): a new row is private, outside any group, unless they say otherwise. */
+type GroupColumns<E extends RowEntity> = E extends keyof typeof NOT_IN_GROUP
+  ? keyof (typeof NOT_IN_GROUP)[E] & keyof EntityRow<E>
+  : never;
+export type NewRow<E extends RowEntity> = Omit<EntityRow<E>, Meta | GroupColumns<E>> &
+  Partial<Pick<EntityRow<E>, GroupColumns<E>>> & { id?: string };
 export type RowPatch<E extends RowEntity> = Partial<Omit<EntityRow<E>, Meta>>;
 export type SettingsPatch = Partial<Omit<UserSettings, 'rev' | 'updatedAt'>>;
 
@@ -92,6 +98,7 @@ class TransactionWriter implements Writer {
 
   async create<E extends RowEntity>(entity: E, fields: NewRow<E>): Promise<EntityRow<E>> {
     const row = {
+      ...(NOT_IN_GROUP as Partial<Record<RowEntity, object>>)[entity],
       ...fields,
       id: fields.id ?? newId(),
       createdAt: this.now,

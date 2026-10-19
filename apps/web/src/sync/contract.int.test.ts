@@ -5,6 +5,8 @@ import {
   groupPullResponseSchema,
   keyBetween,
   lastQuarter,
+  newId,
+  ownLessonId,
   type MeResponse,
   meResponseSchema,
   MIN_CLIENT_VERSION,
@@ -53,6 +55,9 @@ import { dismissResurfaced, recordVisit } from '@/data/actions/resurface.ts';
 import { updateSettings } from '@/data/actions/settings.ts';
 import { addTag, removeTag } from '@/data/actions/tags.ts';
 import { createTemplate, templateByKey } from '@/data/actions/templates.ts';
+import { addComment, addToThread, answerInGroup, askInGroup } from '@/data/actions/group-thread.ts';
+import { createSeries } from '@/data/actions/series.ts';
+import { groupQuestionQueue, memberThread, threadOf, threadView } from '@/data/group-thread.ts';
 import { lessonSections } from '@/data/queries.ts';
 import { createTakeaway, updateTakeaway } from '@/data/actions/takeaways.ts';
 import { LampDb, type RowEntity, SETTINGS_KEY, SYNC_STATE_KEY } from '@/data/db.ts';
@@ -629,6 +634,127 @@ describe('links on two devices', () => {
     await settle(laptop, phone);
     expect(await from(phone)).toEqual([]);
     await expectIdentical(email, laptop, phone);
+  });
+});
+
+/** Every row a device holds anywhere, its own and its groups', by id. */
+async function idsOn(on: Device): Promise<Set<string>> {
+  const ids = new Set<string>();
+  for (const table of on.db.tables) {
+    if (table.name === 'outbox' || table.name === 'syncState') continue;
+    for (const row of (await table.toArray()) as { id?: string }[]) if (row.id) ids.add(row.id);
+  }
+  return ids;
+}
+
+/** Syncs each account's device in turn, a few rounds, so each has pulled the others' changes. */
+async function syncAll(...all: Device[]): Promise<void> {
+  for (let round = 0; round < 2; round++) for (const each of all) await sync(each);
+}
+
+describe('two users in one group (M13-08 to M13-10)', () => {
+  it('public sections, comments and questions reach both; private notes never leave their owner', async () => {
+    const { first: ann } = await signUp('Firefox on macOS');
+    const series = await createSeries(
+      { id: newId(), title: 'John', description: '', kind: 'book_study' },
+      ann.db,
+    );
+    const lesson = await createLesson(
+      { ...LESSON, title: 'The Good Shepherd', seriesId: series.id },
+      ann.db,
+    );
+    await sync(ann);
+    const { groupId } = (await ann.api.call('POST', '/api/groups', {
+      name: 'Thursday group',
+      seriesId: series.id,
+      displayName: 'Ann',
+    })) as { groupId: string };
+    const { url } = (await ann.api.call('GET', `/api/groups/${groupId}/invite`)) as { url: string };
+    const { first: ben } = await signUp('Safari on iOS');
+    await ben.api.call('POST', '/api/invites/join', {
+      token: new URL(url).searchParams.get('token'),
+      displayName: 'Ben',
+    });
+    await syncAll(ann, ben);
+
+    // Ann, on her own lesson; Ben, in a lesson of his own for it, made with his first note.
+    const annPlace = (await threadOf((await ann.db.lesson.get(lesson.id))!, ann.db))!;
+    const groupLesson = (await ben.db.groupLesson.get(lesson.id))!;
+    const benPlace = (await memberThread(
+      groupLesson,
+      await ownLessonId((await me(ben)).id, lesson.id),
+      ben.db,
+    ))!;
+    const annTarget = { groupId, lessonId: lesson.id, own: null };
+    const benTarget = { groupId, lessonId: benPlace.ownLessonId, own: benPlace.own };
+    const annPublic = await addToThread(
+      annTarget,
+      { body: body('The door is the way in') },
+      ann.db,
+    );
+    const annPrivate = await createSection(
+      newSection(lesson.id, 'a5', 'Ask Ben about this'),
+      ann.db,
+    );
+    await syncAll(ann, ben);
+    const benPublic = await addToThread(
+      benTarget,
+      { body: body('Like Psalm 23'), replyToId: annPublic.id },
+      ben.db,
+    );
+    const benPrivate = await createSection(
+      newSection(benPlace.ownLessonId, 'a5', 'Still unsure'),
+      ben.db,
+    );
+    const comment = await addComment(annPublic.id, groupId, 'And John 10:9', ben.db);
+    const question = await askInGroup(benTarget, 'Who are the other sheep?', ben.db);
+    await syncAll(ann, ben);
+
+    const annId = (await me(ann)).id;
+    const annView = await threadView(annPlace, annId, ann.db);
+    expect(
+      annView.items.map((item) => [item.entry.author, item.replies.map((r) => r.author)]),
+    ).toEqual([['You', ['Ben']]]);
+    expect(annView.comments.get(annPublic.id)?.map((c) => c.author)).toEqual(['Ben']);
+    expect(annView.questions.map((q) => [q.text, q.author, q.status])).toEqual([
+      ['Who are the other sheep?', 'Ben', 'open'],
+    ]);
+    const benView = await threadView(benPlace, (await me(ben)).id, ben.db);
+    expect(benView.items[0]?.entry).toMatchObject({ id: annPublic.id, author: 'Ann' });
+    // Private notes stay on their owner's devices, in no store of the other's.
+    expect((await idsOn(ann)).has(benPrivate.id)).toBe(false);
+    expect((await idsOn(ben)).has(annPrivate.id)).toBe(false);
+    expect((await idsOn(ann)).has(benPublic.id)).toBe(true);
+    expect((await idsOn(ann)).has(comment.id)).toBe(true);
+
+    // Ann answers; the queue on Ben's device says so.
+    const answer = await answerInGroup(annTarget, question, {}, ann.db);
+    await updateSection(
+      answer.id,
+      {
+        body: {
+          ...answer.body,
+          content: [answer.body.content[0]!, ...body('The Gentiles').content],
+        },
+      },
+      ann.db,
+    );
+    await syncAll(ann, ben);
+    const queue = await groupQuestionQueue(groupId, (await me(ben)).id, ben.db);
+    expect(queue.map((q) => [q.status, q.answeredBy])).toEqual([['answered', ['Ann']]]);
+
+    // Ben leaves: his posts are his notes again, and Ann's device drops them.
+    await ben.api.call('POST', `/api/groups/${groupId}/leave`);
+    await syncAll(ann, ben);
+    expect((await idsOn(ann)).has(benPublic.id)).toBe(false);
+    expect((await idsOn(ann)).has(comment.id)).toBe(false);
+    expect(await ben.db.group.count()).toBe(0);
+    expect(await ben.db.section.get(benPublic.id)).toMatchObject({
+      visibility: 'private',
+      groupId: null,
+    });
+    expect((await ben.db.comment.get(comment.id))?.deletedAt).not.toBeNull();
+    expect((await threadView(annPlace, annId, ann.db)).items[0]?.replies).toEqual([]);
   });
 });
 

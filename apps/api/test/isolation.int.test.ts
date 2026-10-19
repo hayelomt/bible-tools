@@ -4,6 +4,7 @@ import {
   type EntityName,
   meResponseSchema,
   newId,
+  NOT_IN_GROUP,
   pullResponseSchema,
   shareLinksResponseSchema,
 } from '@lamp/domain';
@@ -19,6 +20,7 @@ import {
   type Account,
   bodyLinking,
   CLIENT_VERSION,
+  commentRow,
   DEVICE_ID,
   JOHN_3_16,
   LATER,
@@ -123,7 +125,7 @@ function rowOf(entity: RowEntity, to: Rows): Row {
     case 'takeaway':
       return { ...synced(), text: 'Hold fast', ...refs };
     case 'question':
-      return { ...synced(), text: 'Why?', ...refs };
+      return { ...synced(), text: 'Why?', ...NOT_IN_GROUP.question, ...refs };
     case 'questionEntry':
       return { ...synced(), kind: 'answered', ...refs };
     case 'template':
@@ -136,6 +138,9 @@ function rowOf(entity: RowEntity, to: Rows): Row {
     case 'lessonTag':
     case 'inboxItemTag':
       return { ...synced(), ...refs };
+    case 'comment':
+      // On their own section, in a group they're not in: kept, and seen by no one (§17.12).
+      return commentRow(to.section!.id, newId());
   }
 }
 

@@ -141,6 +141,7 @@ export function twoYearsOfNotes(tagIds: Map<string, string>, today = localToday(
         sourceAuthor: null,
         sourceUrl: null,
         sourceStartedAt: null,
+        groupLessonId: null,
         mainPassages: [chip(n)],
       });
       seed.lesson.push(lesson);
@@ -167,6 +168,12 @@ export function twoYearsOfNotes(tagIds: Map<string, string>, today = localToday(
           conflictDevice: null,
           sourceAt: null,
           sourcePage: null,
+          visibility: 'private',
+          groupId: null,
+          sharedAt: null,
+          replyToId: null,
+          answersQuestionId: null,
+          answerKind: null,
         });
         sections.push(section);
         // All but the last have a tag, nine of them used most; every third has a second.
@@ -189,6 +196,12 @@ export function twoYearsOfNotes(tagIds: Map<string, string>, today = localToday(
               conflictDevice: null,
               sourceAt: null,
               sourcePage: null,
+              visibility: 'private',
+              groupId: null,
+              sharedAt: null,
+              replyToId: null,
+              answersQuestionId: null,
+              answerKind: null,
             }),
           );
         }
@@ -206,6 +219,8 @@ export function twoYearsOfNotes(tagIds: Map<string, string>, today = localToday(
         lessonId: lesson.id,
         text: `What does point ${(n % SECTIONS) + 1} of ${lesson.title} mean?`,
         splitFromId: null,
+        visibility: 'private',
+        groupId: null,
       });
       seed.question.push(question);
       const entry = (entryKind: 'asked' | 'answered', when: string, sectionId: string | null) =>

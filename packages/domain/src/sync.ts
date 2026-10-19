@@ -135,6 +135,8 @@ export const PARENT_COLUMNS: Readonly<Record<EntityName, readonly string[]>> = {
   template: [],
   passageVisit: [],
   resurfaceDismissal: [],
+  // Its section may be another member's, which no push of the author's restores.
+  comment: [],
 };
 
 /**
@@ -159,6 +161,13 @@ export function conflictedCopy(
     // The same moment in the source as the section it was copied from.
     sourceAt: section.sourceAt,
     sourcePage: section.sourcePage,
+    // In the same thread, next to it; one answer to a question is enough.
+    visibility: section.visibility,
+    groupId: section.groupId,
+    sharedAt: section.sharedAt,
+    replyToId: section.replyToId,
+    answersQuestionId: null,
+    answerKind: null,
     createdAt: copy.time,
     updatedAt: copy.time,
     deletedAt: null,

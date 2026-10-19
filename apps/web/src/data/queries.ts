@@ -35,9 +35,22 @@ export const byDate = (a: Lesson, b: Lesson) =>
   a.createdAt.localeCompare(b.createdAt) ||
   a.id.localeCompare(b.id);
 
+/**
+ * The user's lessons to list: live, and not their own lesson for a group lesson of a group they're
+ * in, which opens from the group (§17.12). Once the group is gone it's an ordinary lesson.
+ */
+async function listedLessons(db: LampDb): Promise<Lesson[]> {
+  const [lessons, groupLessons] = await Promise.all([
+    db.lesson.filter(notDeleted).toArray(),
+    db.groupLesson.toCollection().primaryKeys(),
+  ]);
+  const inGroups = new Set(groupLessons);
+  return lessons.filter((l) => l.groupLessonId === null || !inGroups.has(l.groupLessonId));
+}
+
 /** Every lesson, newest first. */
 export async function allLessons(db: LampDb = appDb): Promise<Lesson[]> {
-  const lessons = await db.lesson.filter(notDeleted).toArray();
+  const lessons = await listedLessons(db);
   return lessons.toSorted(byDate).toReversed();
 }
 
@@ -73,7 +86,7 @@ export async function lessonsAndSeries(
 ): Promise<{ lessons: Lesson[]; series: SeriesSummary[] }> {
   const [series, lessons] = await Promise.all([
     db.series.filter(notDeleted).toArray(),
-    db.lesson.filter(notDeleted).toArray(),
+    listedLessons(db),
   ]);
   return {
     lessons: lessons.toSorted(byDate).toReversed(),

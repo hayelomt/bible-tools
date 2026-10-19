@@ -2,6 +2,7 @@ import {
   type EntityName,
   MIN_CLIENT_VERSION,
   newId,
+  NOT_IN_GROUP,
   type PushResult,
   pushResponseSchema,
 } from '@lamp/domain';
@@ -47,6 +48,7 @@ export const lessonRow = (fields: object = {}): Row => ({
   sourceUrl: null,
   sourceStartedAt: null,
   mainPassages: [ROMANS_8],
+  groupLessonId: null,
   ...fields,
 });
 
@@ -96,7 +98,30 @@ export const sectionRow = (lessonId: string, fields: object = {}): Row => ({
   conflictDevice: null,
   sourceAt: null,
   sourcePage: null,
+  ...NOT_IN_GROUP.section,
   ...fields,
+});
+
+/** A question, private unless `fields` say otherwise. */
+export const questionRow = (lessonId: string, fields: object = {}): Row => ({
+  ...synced(),
+  lessonId,
+  text: 'Who are the other sheep?',
+  splitFromId: null,
+  ...NOT_IN_GROUP.question,
+  ...fields,
+});
+
+/** A comment on a group section. */
+export const commentRow = (
+  sectionId: string,
+  groupId: string,
+  text = 'Like the sheepfold',
+): Row => ({
+  ...synced(),
+  sectionId,
+  groupId,
+  body: bodyOf(text),
 });
 
 export const tagRow = (name: string): Row => ({ ...synced(), name, isSeeded: false });

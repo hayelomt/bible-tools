@@ -70,6 +70,12 @@ function seedYear(): Seed {
       conflictDevice: null,
       sourceAt: null,
       sourcePage: null,
+      visibility: 'private',
+      groupId: null,
+      sharedAt: null,
+      replyToId: null,
+      answersQuestionId: null,
+      answerKind: null,
     });
     seed.section.push(row);
     return row;
@@ -90,6 +96,7 @@ function seedYear(): Seed {
       sourceAuthor: null,
       sourceUrl: null,
       sourceStartedAt: null,
+      groupLessonId: null,
       mainPassages: [],
     });
     seed.lesson.push(lesson);
@@ -122,6 +129,8 @@ function seedYear(): Seed {
         lessonId: lesson.id,
         text: QUESTION,
         splitFromId: null,
+        visibility: 'private',
+        groupId: null,
       });
       seed.question.push(question);
       seed.questionEntry.push(

@@ -191,6 +191,9 @@ async function fillAccount(userId: string): Promise<void> {
     p.resurfaceDismissal.create({
       data: { userId, rule: 'year_ago', targetKey: lesson.id, until: new Date('2027-10-19') },
     }),
+    p.comment.create({
+      data: { userId, sectionId: section.id, groupId: crypto.randomUUID(), body: {} },
+    }),
     p.citation.create({
       data: {
         userId,

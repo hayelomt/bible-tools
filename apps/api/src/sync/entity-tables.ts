@@ -57,10 +57,12 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
     // Its `kind` since M10 (§17.7); the next release drops it.
     retired: ['source'],
   },
+  // `replyToId` and `answersQuestionId` name other members' rows, checked against the group's
+  // feed instead (§17.12), as is a lesson's `groupLessonId`.
   section: {
     model: model((tx) => tx.section),
     refs: { lessonId: 'lesson', parentId: 'section', conflictOf: 'section' },
-    times: [...SYNC_TIMES, 'sourceAt'],
+    times: [...SYNC_TIMES, 'sourceAt', 'sharedAt'],
   },
   tag: { model: model((tx) => tx.tag), refs: {}, times: SYNC_TIMES },
   sectionTag: {
@@ -115,6 +117,8 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
     refs: {},
     times: [...SYNC_TIMES, 'until'],
   },
+  // Its section may be another member's: checked against the group's feed (§17.12).
+  comment: { model: model((tx) => tx.comment), refs: {}, times: SYNC_TIMES },
 };
 
 /** Columns stored as a `date`, which the device has as `YYYY-MM-DD`. */

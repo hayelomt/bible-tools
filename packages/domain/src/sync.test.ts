@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SectionBody } from './doc.ts';
 import { keyBetween } from './order.ts';
+import { NOT_IN_GROUP } from './schemas/entities.ts';
 import {
   conflictedCopy,
   PARENT_COLUMNS,
@@ -30,6 +31,7 @@ const section = (fields: Partial<SyncRow<'section'>> = {}): SyncRow<'section'> =
   conflictDevice: null,
   sourceAt: null,
   sourcePage: null,
+  ...NOT_IN_GROUP.section,
   createdAt: EARLY,
   updatedAt: BASE,
   deletedAt: null,
@@ -301,11 +303,37 @@ describe('conflictedCopy', () => {
       conflictDevice: 'Firefox on macOS',
       sourceAt: BASE,
       sourcePage: null,
+      ...NOT_IN_GROUP.section,
       createdAt: EARLY,
       updatedAt: EARLY,
       deletedAt: null,
     });
     expect(orderKey > 'a0' && orderKey < 'a1').toBe(true);
+  });
+
+  it('stays in its group thread beside the section, answering nothing', () => {
+    const shared = section({
+      visibility: 'group',
+      groupId: '0199e0a0-0000-7000-8000-0000000000f1',
+      sharedAt: BASE,
+      replyToId: '0199e0a0-0000-7000-8000-0000000000f2',
+      answersQuestionId: '0199e0a0-0000-7000-8000-0000000000f3',
+      answerKind: 'full',
+    });
+    const copy = conflictedCopy(
+      shared,
+      { body: text('older'), time: EARLY, device: null },
+      '0199e0a0-0000-7000-8000-00000000000e',
+      keyBetween('a0', null),
+    );
+    expect(copy).toMatchObject({
+      visibility: 'group',
+      groupId: shared.groupId,
+      sharedAt: BASE,
+      replyToId: shared.replyToId,
+      answersQuestionId: null,
+      answerKind: null,
+    });
   });
 });
 

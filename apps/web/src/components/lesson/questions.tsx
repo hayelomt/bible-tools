@@ -50,6 +50,8 @@ interface QuestionsProps {
   onAnswer: (questionId: string) => void;
   /** `›` on an answered question: the section list shows its answer. */
   onShowAnswer: (sectionId: string) => void;
+  /** In a lesson with a group thread, the private ones: the group's are in its own panel. */
+  privateOnly?: boolean;
 }
 
 /**
@@ -65,8 +67,13 @@ export function Questions({
   reveal,
   onAnswer,
   onShowAnswer,
+  privateOnly = false,
 }: QuestionsProps) {
-  const questions = useLiveQuery(() => lessonQuestions(lessonId), [lessonId]);
+  const questions = useLiveQuery(
+    async () =>
+      (await lessonQuestions(lessonId)).filter((q) => !privateOnly || q.visibility === 'private'),
+    [lessonId, privateOnly],
+  );
   const [adding, setAdding] = useState(false);
   const [revisiting, setRevisiting] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);

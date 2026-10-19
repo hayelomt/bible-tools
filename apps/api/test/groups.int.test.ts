@@ -181,6 +181,7 @@ describe('POST /api/groups', () => {
       createdAt: lessons[0]!.createdAt,
       updatedAt: lessons[0]!.updatedAt,
       deletedAt: undefined,
+      groupLessonId: undefined,
     });
 
     const pulled = await userPull(account);
@@ -306,7 +307,7 @@ describe('the group feed', () => {
     const { owner, member, groupId, series, lessons } = await twoMembers();
     const start = await pullOk(member, groupId);
 
-    const renamed = { ...lessons[0], title: 'I am the door', updatedAt: LATER };
+    const renamed = { ...lessons[0]!, title: 'I am the door', updatedAt: LATER };
     const added = lessonRow({ title: 'The vine', seriesId: series.id });
     const elsewhere = lessonRow({ title: 'Not in John' });
     const note = sectionRow(lessons[0]!.id);
@@ -343,7 +344,7 @@ describe('the group feed', () => {
   it("refuses to move a shared series' lesson out, or to delete the series", async () => {
     const { owner, series, lessons } = await twoMembers();
     const [moved, deleted] = await pushOk(client, owner, [
-      upsert('lesson', { ...lessons[0], seriesId: null, updatedAt: LATER }, 1),
+      upsert('lesson', { ...lessons[0]!, seriesId: null, updatedAt: LATER }, 1),
       remove('series', series.id, 1),
     ]);
     expect(moved).toMatchObject({ status: 'rejected', errorCode: 'IN_GROUP' });

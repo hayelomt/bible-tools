@@ -87,6 +87,12 @@ function seedYear(tagIds: Map<string, string>): Seed {
       conflictDevice: null,
       sourceAt: null,
       sourcePage: null,
+      visibility: 'private',
+      groupId: null,
+      sharedAt: null,
+      replyToId: null,
+      answersQuestionId: null,
+      answerKind: null,
     });
     seed.section.push(row);
     return row;
@@ -99,6 +105,8 @@ function seedYear(tagIds: Map<string, string>): Seed {
       lessonId,
       text,
       splitFromId: null,
+      visibility: 'private',
+      groupId: null,
     });
     seed.question.push(question);
     seed.questionEntry.push(
@@ -128,6 +136,7 @@ function seedYear(tagIds: Map<string, string>): Seed {
       sourceAuthor: null,
       sourceUrl: null,
       sourceStartedAt: null,
+      groupLessonId: null,
       mainPassages: week === ASKED_WEEK ? [verseRef('Rom 8:18-30')] : [],
     });
     seed.lesson.push(lesson);

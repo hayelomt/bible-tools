@@ -4,7 +4,13 @@ import { emptyBody, type SectionBody } from './doc.ts';
 import { newId } from './ids.ts';
 import { keyBetween } from './order.ts';
 import { idSchema } from './schemas/common.ts';
-import type { Highlight, Lesson, MemoryItem, Section } from './schemas/entities.ts';
+import {
+  type Highlight,
+  type Lesson,
+  type MemoryItem,
+  NOT_IN_GROUP,
+  type Section,
+} from './schemas/entities.ts';
 import { passageRange, type VerseRef } from './verse-ref.ts';
 
 const NOW = '2026-10-13T04:05:06.789Z';
@@ -27,6 +33,7 @@ const lesson: Lesson = {
   sourceUrl: null,
   sourceStartedAt: null,
   mainPassages: [ROM_8_28, JHN_3],
+  ...NOT_IN_GROUP.lesson,
 };
 
 const chipBody = (...refs: VerseRef[]): SectionBody => ({
@@ -52,6 +59,7 @@ const section: Section = {
   conflictDevice: null,
   sourceAt: null,
   sourcePage: null,
+  ...NOT_IN_GROUP.section,
 };
 
 describe('newId', () => {

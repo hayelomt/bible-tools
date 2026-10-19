@@ -77,6 +77,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     sourceUrl: 'https://www.youtube.com/watch?v=abc',
     sourceStartedAt: NOW,
     mainPassages: [ROM_8_28],
+    groupLessonId: null,
   },
   section: {
     ...meta(3),
@@ -88,6 +89,12 @@ const ROWS: { [E in EntityName]: unknown } = {
     conflictDevice: null,
     sourceAt: NOW,
     sourcePage: null,
+    visibility: 'group',
+    groupId: id(20),
+    sharedAt: NOW,
+    replyToId: id(21),
+    answersQuestionId: id(22),
+    answerKind: 'partial',
   },
   tag: { ...meta(4), name: 'grace', isSeeded: true },
   sectionTag: { ...meta(5), tagId: id(4), sectionId: id(3) },
@@ -98,6 +105,8 @@ const ROWS: { [E in EntityName]: unknown } = {
     lessonId: id(2),
     text: 'What is foreknowledge?',
     splitFromId: null,
+    visibility: 'private',
+    groupId: null,
   },
   highlight: { ...meta(9), ref: ROM_8_28, colour: 'yellow', note: null, promotedSectionId: id(3) },
   memoryItem: {
@@ -143,6 +152,23 @@ const ROWS: { [E in EntityName]: unknown } = {
     rule: 'year_ago',
     targetKey: id(2),
     until: '2027-10-19',
+  },
+  comment: {
+    ...meta(17),
+    sectionId: id(3),
+    groupId: id(20),
+    body: {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'And ' },
+            { type: 'verse', attrs: ROM_8_28 },
+          ],
+        },
+      ],
+    },
   },
 };
 

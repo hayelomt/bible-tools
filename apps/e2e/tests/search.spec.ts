@@ -152,6 +152,7 @@ test('5,000 sections are indexed in under 1 s at a mid-range phone’s speed', a
         sourceAuthor: null,
         sourceUrl: null,
         sourceStartedAt: null,
+        groupLessonId: null,
         mainPassages: [],
         ...meta,
       });
@@ -175,6 +176,12 @@ test('5,000 sections are indexed in under 1 s at a mid-range phone’s speed', a
           conflictDevice: null,
           sourceAt: null,
           sourcePage: null,
+          visibility: 'private',
+          groupId: null,
+          sharedAt: null,
+          replyToId: null,
+          answersQuestionId: null,
+          answerKind: null,
           ...meta,
         });
       }

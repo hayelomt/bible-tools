@@ -49,6 +49,7 @@ import { Route as AppThemesTagIdRouteImport } from './routes/_app/themes/$tagId'
 import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
 import { Route as AppGroupsGroupIdIndexRouteImport } from './routes/_app/groups/$groupId/index'
 import { Route as AppGroupsGroupIdMembersRouteImport } from './routes/_app/groups/$groupId/members'
+import { Route as AppGroupsGroupIdQuestionsRouteImport } from './routes/_app/groups/$groupId/questions'
 import { Route as AppInboxImportImportIdRouteImport } from './routes/_app/inbox/import.$importId'
 import { Route as AppSettingsTemplatesIndexRouteImport } from './routes/_app/settings/templates/index'
 import { Route as AppSettingsTemplatesTemplateIdRouteImport } from './routes/_app/settings/templates/$templateId'
@@ -257,6 +258,12 @@ const AppGroupsGroupIdMembersRoute = AppGroupsGroupIdMembersRouteImport.update({
   path: '/groups/$groupId/members',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGroupsGroupIdQuestionsRoute =
+  AppGroupsGroupIdQuestionsRouteImport.update({
+    id: '/groups/$groupId/questions',
+    path: '/groups/$groupId/questions',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppInboxImportImportIdRoute = AppInboxImportImportIdRouteImport.update({
   id: '/inbox/import/$importId',
   path: '/inbox/import/$importId',
@@ -353,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AppSettingsIndexRoute
   '/themes/': typeof AppThemesIndexRoute
   '/groups/$groupId/members': typeof AppGroupsGroupIdMembersRoute
+  '/groups/$groupId/questions': typeof AppGroupsGroupIdQuestionsRoute
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -402,6 +410,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsIndexRoute
   '/themes': typeof AppThemesIndexRoute
   '/groups/$groupId/members': typeof AppGroupsGroupIdMembersRoute
+  '/groups/$groupId/questions': typeof AppGroupsGroupIdQuestionsRoute
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -455,6 +464,7 @@ export interface FileRoutesById {
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/themes/': typeof AppThemesIndexRoute
   '/_app/groups/$groupId/members': typeof AppGroupsGroupIdMembersRoute
+  '/_app/groups/$groupId/questions': typeof AppGroupsGroupIdQuestionsRoute
   '/_app/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/_app/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/_app/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -506,6 +516,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/themes/'
     | '/groups/$groupId/members'
+    | '/groups/$groupId/questions'
     | '/inbox/import/$importId'
     | '/settings/templates/$templateId'
     | '/settings/templates/new'
@@ -555,6 +566,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/themes'
     | '/groups/$groupId/members'
+    | '/groups/$groupId/questions'
     | '/inbox/import/$importId'
     | '/settings/templates/$templateId'
     | '/settings/templates/new'
@@ -607,6 +619,7 @@ export interface FileRouteTypes {
     | '/_app/settings/'
     | '/_app/themes/'
     | '/_app/groups/$groupId/members'
+    | '/_app/groups/$groupId/questions'
     | '/_app/inbox/import/$importId'
     | '/_app/settings/templates/$templateId'
     | '/_app/settings/templates/new'
@@ -909,6 +922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGroupsGroupIdMembersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/groups/$groupId/questions': {
+      id: '/_app/groups/$groupId/questions'
+      path: '/groups/$groupId/questions'
+      fullPath: '/groups/$groupId/questions'
+      preLoaderRoute: typeof AppGroupsGroupIdQuestionsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/inbox/import/$importId': {
       id: '/_app/inbox/import/$importId'
       path: '/inbox/import/$importId'
@@ -1018,6 +1038,7 @@ interface AppRouteChildren {
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppThemesIndexRoute: typeof AppThemesIndexRoute
   AppGroupsGroupIdMembersRoute: typeof AppGroupsGroupIdMembersRoute
+  AppGroupsGroupIdQuestionsRoute: typeof AppGroupsGroupIdQuestionsRoute
   AppInboxImportImportIdRoute: typeof AppInboxImportImportIdRoute
   AppSettingsTemplatesTemplateIdRoute: typeof AppSettingsTemplatesTemplateIdRoute
   AppSettingsTemplatesNewRoute: typeof AppSettingsTemplatesNewRoute
@@ -1063,6 +1084,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppThemesIndexRoute: AppThemesIndexRoute,
   AppGroupsGroupIdMembersRoute: AppGroupsGroupIdMembersRoute,
+  AppGroupsGroupIdQuestionsRoute: AppGroupsGroupIdQuestionsRoute,
   AppInboxImportImportIdRoute: AppInboxImportImportIdRoute,
   AppSettingsTemplatesTemplateIdRoute: AppSettingsTemplatesTemplateIdRoute,
   AppSettingsTemplatesNewRoute: AppSettingsTemplatesNewRoute,

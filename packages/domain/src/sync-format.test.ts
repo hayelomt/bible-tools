@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { compareVersions, MIN_CLIENT_VERSION, SYNC_FORMATS } from './client-version.ts';
+import { NOT_IN_GROUP } from './schemas/entities.ts';
 import { pullResponseSchema, pushRequestSchema } from './schemas/sync.ts';
 import { fingerprintOf, syncFormatFingerprint } from './sync-format.ts';
 
@@ -68,6 +69,7 @@ const page = (body: object) => ({
         conflictDevice: null,
         sourceAt: null,
         sourcePage: null,
+        ...NOT_IN_GROUP.section,
         createdAt: '2026-10-17T09:00:00.000Z',
         updatedAt: '2026-10-17T09:00:00.000Z',
         deletedAt: null,

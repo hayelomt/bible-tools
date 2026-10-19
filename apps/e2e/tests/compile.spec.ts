@@ -61,6 +61,12 @@ function seed(plans: LessonPlan[]): Seed {
       conflictDevice: null,
       sourceAt: null,
       sourcePage: null,
+      visibility: 'private',
+      groupId: null,
+      sharedAt: null,
+      replyToId: null,
+      answersQuestionId: null,
+      answerKind: null,
     });
     sections.push(row);
     return row;
@@ -79,6 +85,7 @@ function seed(plans: LessonPlan[]): Seed {
       sourceAuthor: null,
       sourceUrl: null,
       sourceStartedAt: null,
+      groupLessonId: null,
       mainPassages: [],
     });
     lessons.push(lesson);

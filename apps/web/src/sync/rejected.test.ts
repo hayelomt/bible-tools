@@ -1,4 +1,4 @@
-import { keyBetween, OPEN_IN_TARGETS, type SectionBody } from '@lamp/domain';
+import { keyBetween, NOT_IN_GROUP, OPEN_IN_TARGETS, type SectionBody } from '@lamp/domain';
 import { Dexie } from 'dexie';
 import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -245,7 +245,11 @@ describe('Dexie version 9', () => {
     old.close();
 
     const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
-    expect(await upgraded.question.get(id(1))).toEqual({ ...row, splitFromId: null });
+    expect(await upgraded.question.get(id(1))).toEqual({
+      ...row,
+      splitFromId: null,
+      ...NOT_IN_GROUP.question,
+    });
     const [queued] = await upgraded.outbox.toArray();
     expect(queued).toMatchObject({ row: { ...sent, splitFromId: null } });
     await upgraded.delete();
@@ -289,7 +293,12 @@ describe('Dexie version 10', () => {
     const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
     const { source: _source, ...rest } = lesson;
     // Version 11 adds the source columns.
-    expect(await upgraded.lesson.get(id(1))).toEqual({ ...rest, kind: 'personal', ...NO_SOURCE });
+    expect(await upgraded.lesson.get(id(1))).toEqual({
+      ...rest,
+      kind: 'personal',
+      ...NO_SOURCE,
+      ...NOT_IN_GROUP.lesson,
+    });
     const none = { sermon: null, personal: null, group: null };
     // Version 12 adds the resurfacing rules and the digest's quarter.
     expect(await upgraded.userSettings.get('settings')).toEqual({
@@ -368,8 +377,16 @@ describe('Dexie version 11', () => {
 
     const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
     const moment = { sourceAt: null, sourcePage: null };
-    expect(await upgraded.lesson.get(id(1))).toEqual({ ...lesson, ...NO_SOURCE });
-    expect(await upgraded.section.get(id(2))).toEqual({ ...section, ...moment });
+    expect(await upgraded.lesson.get(id(1))).toEqual({
+      ...lesson,
+      ...NO_SOURCE,
+      ...NOT_IN_GROUP.lesson,
+    });
+    expect(await upgraded.section.get(id(2))).toEqual({
+      ...section,
+      ...moment,
+      ...NOT_IN_GROUP.section,
+    });
     const [queuedLesson, queuedSection, removed] = await upgraded.outbox.toArray();
     expect(queuedLesson).toMatchObject({ row: { ...sentLesson, ...NO_SOURCE } });
     expect(queuedSection).toMatchObject({ row: { ...sentSection, ...moment } });
@@ -403,6 +420,43 @@ describe('Dexie version 12', () => {
     expect(removed).not.toHaveProperty('row');
     expect(await upgraded.passageVisit.count()).toBe(0);
     expect(await upgraded.resurfaceDismissal.count()).toBe(0);
+    await upgraded.delete();
+  });
+});
+
+describe('Dexie version 16', () => {
+  it('makes every lesson, section and question private, stored and queued', async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(15).stores({
+      lesson: 'id, seriesId, date',
+      section: 'id, lessonId, parentId, conflictOf',
+      question: 'id, lessonId',
+      outbox: '++seq, [entity+entityId]',
+    });
+    const lesson = { id: id(1), title: 'The Good Shepherd', rev: 3 };
+    const section = { id: id(2), lessonId: id(1), body: body('The door'), rev: 3 };
+    const question = { id: id(3), lessonId: id(1), text: 'Why a gate?', rev: 3 };
+    await old.table('lesson').put(lesson);
+    await old.table('section').put(section);
+    await old.table('question').put(question);
+    await old.table('outbox').bulkAdd([
+      { entity: 'section', entityId: id(2), op: 'upsert', row: section },
+      { entity: 'question', entityId: id(3), op: 'upsert', row: question },
+      { entity: 'section', entityId: id(4), op: 'delete' },
+    ]);
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    expect(await upgraded.lesson.get(id(1))).toEqual({ ...lesson, ...NOT_IN_GROUP.lesson });
+    expect(await upgraded.section.get(id(2))).toEqual({ ...section, ...NOT_IN_GROUP.section });
+    expect(await upgraded.question.get(id(3))).toEqual({ ...question, ...NOT_IN_GROUP.question });
+    const [queuedSection, queuedQuestion, removed] = await upgraded.outbox.toArray();
+    expect(queuedSection).toMatchObject({ row: { ...section, ...NOT_IN_GROUP.section } });
+    expect(queuedQuestion).toMatchObject({ row: { ...question, ...NOT_IN_GROUP.question } });
+    expect(removed).not.toHaveProperty('row');
+    expect(await upgraded.comment.count()).toBe(0);
+    expect(await upgraded.groupSection.count()).toBe(0);
     await upgraded.delete();
   });
 });

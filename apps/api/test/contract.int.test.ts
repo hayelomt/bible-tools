@@ -36,6 +36,7 @@ const ENTITY_TABLES: Record<EntityName, string> = {
   template: 'template',
   passageVisit: 'passage_visit',
   resurfaceDismissal: 'resurface_dismissal',
+  comment: 'comment',
 };
 
 /** Columns only the server has. */

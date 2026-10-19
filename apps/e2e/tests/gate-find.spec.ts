@@ -182,6 +182,7 @@ function seedMonth(tagIds: Map<string, string>): Seed {
       sourceAuthor: null,
       sourceUrl: null,
       sourceStartedAt: null,
+      groupLessonId: null,
       mainPassages: plan.main ? [verseRef(plan.main)] : [],
     });
     seed.lesson.push(lesson);
@@ -198,6 +199,12 @@ function seedMonth(tagIds: Map<string, string>): Seed {
         conflictDevice: null,
         sourceAt: null,
         sourcePage: null,
+        visibility: 'private',
+        groupId: null,
+        sharedAt: null,
+        replyToId: null,
+        answersQuestionId: null,
+        answerKind: null,
       });
       seed.section.push(section);
       if (tag) {
@@ -216,6 +223,8 @@ function seedMonth(tagIds: Map<string, string>): Seed {
       lessonId: lesson.id,
       text: plan.question,
       splitFromId: null,
+      visibility: 'private',
+      groupId: null,
     });
     seed.question.push(question);
     seed.questionEntry.push(

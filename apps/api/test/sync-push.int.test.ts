@@ -220,6 +220,8 @@ describe('POST /api/sync/push', () => {
       lessonId: lesson.id,
       text: 'Who are the other sheep?',
       splitFromId: null,
+      visibility: 'private',
+      groupId: null,
     };
     const entry = {
       ...synced(),
@@ -257,6 +259,8 @@ describe('POST /api/sync/push', () => {
       lessonId: lesson.id,
       text: 'Why?',
       splitFromId: null,
+      visibility: 'private',
+      groupId: null,
       status: 'open',
     };
     const [, result] = await pushOk(account, [

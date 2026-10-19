@@ -67,6 +67,7 @@ function aQuarter(tagIds: Map<string, string>): Seed {
       sourceAuthor: null,
       sourceUrl: null,
       sourceStartedAt: null,
+      groupLessonId: null,
       mainPassages: [],
     });
     seed.lesson.push(lesson);
@@ -91,6 +92,12 @@ function aQuarter(tagIds: Map<string, string>): Seed {
       conflictDevice: null,
       sourceAt: null,
       sourcePage: null,
+      visibility: 'private',
+      groupId: null,
+      sharedAt: null,
+      replyToId: null,
+      answersQuestionId: null,
+      answerKind: null,
     });
     seed.section.push(section);
     if (seriesId) {
@@ -108,6 +115,8 @@ function aQuarter(tagIds: Map<string, string>): Seed {
         lessonId: lesson.id,
         text: QUESTION,
         splitFromId: null,
+        visibility: 'private',
+        groupId: null,
       });
       seed.question.push(question);
       seed.questionEntry.push(

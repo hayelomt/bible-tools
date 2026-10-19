@@ -9,6 +9,7 @@ import { InviteDialog } from '@/components/groups/invite-dialog.tsx';
 import { PageSection } from '@/components/page-section.tsx';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
 import { ScreenActions, ScreenTitle } from '@/components/shell/slots.tsx';
+import { groupQuestionQueue } from '@/data/group-thread.ts';
 import { groupView } from '@/data/groups.ts';
 import { useAccount } from '@/lib/account.ts';
 import { afterGroupChange } from '@/lib/groups.ts';
@@ -23,13 +24,21 @@ const rowClass =
   '-mx-2 flex items-center gap-2 rounded-lg px-2 py-3 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50';
 
 /**
- * A group's page (wireframes/sharing.md "The group page"): its series, Invite (owner) and its
- * members. M13-10 and M13-11 add its questions and activity.
+ * A group's page (wireframes/sharing.md "The group page"): its series, Invite (owner), its
+ * questions (M13-10) and its members. M13-11 adds its activity.
  */
 function GroupScreen() {
   const { groupId } = Route.useParams();
   const account = useAccount().data;
   const view = useLiveQuery(() => groupView(groupId), [groupId]);
+  const open = useLiveQuery(
+    async () =>
+      account
+        ? (await groupQuestionQueue(groupId, account.id)).filter((q) => q.status !== 'answered')
+            .length
+        : 0,
+    [groupId, account?.id],
+  );
   const [inviting, setInviting] = useState(false);
   // A group just made or joined arrives with the next sync.
   useEffect(() => {
@@ -87,6 +96,12 @@ function GroupScreen() {
           Invite people
         </Button>
       )}
+      <Link to="/groups/$groupId/questions" params={{ groupId }} className={rowClass}>
+        <span className="min-w-0 flex-1">
+          Questions <span className="text-muted-foreground">· {open ?? 0} open</span>
+        </span>
+        <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      </Link>
       <Link to="/groups/$groupId/members" params={{ groupId }} className={rowClass}>
         <span className="min-w-0 flex-1">
           Members <span className="text-muted-foreground">· {members.length}</span>

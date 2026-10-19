@@ -1,11 +1,15 @@
 import type {
   Change,
   Citation,
+  Comment,
   EntityName,
   EntityRow,
+  GroupComment,
   GroupInfo,
   GroupLesson,
   GroupMember,
+  GroupQuestion,
+  GroupSection,
   GroupSeries,
   Highlight,
   InboxItem,
@@ -34,6 +38,7 @@ import {
   chipsWithoutAppText,
   NO_DEFAULT_TEMPLATES,
   newId,
+  NOT_IN_GROUP,
   OPEN_IN_TARGETS,
   withoutAppText,
 } from '@lamp/domain';
@@ -135,6 +140,7 @@ export class LampDb extends Dexie {
   template!: Table<Template, string>;
   passageVisit!: Table<PassageVisit, string>;
   resurfaceDismissal!: Table<ResurfaceDismissal, string>;
+  comment!: Table<Comment, string>;
   /** One row, under `SETTINGS_KEY`. */
   userSettings!: Table<UserSettings, string>;
   citation!: Table<Citation, string>;
@@ -146,6 +152,9 @@ export class LampDb extends Dexie {
   groupMember!: Table<InGroup<GroupMember>, string>;
   groupSeries!: Table<InGroup<GroupSeries>, string>;
   groupLesson!: Table<InGroup<GroupLesson>, string>;
+  groupSection!: Table<InGroup<GroupSection>, string>;
+  groupQuestion!: Table<InGroup<GroupQuestion>, string>;
+  groupComment!: Table<InGroup<GroupComment>, string>;
   groupSync!: Table<GroupSync, string>;
 
   /** Tests pass fake-indexeddb in `options`. */
@@ -348,10 +357,53 @@ export class LampDb extends Dexie {
       groupLesson: 'id, groupId, seriesId',
       groupSync: 'groupId',
     });
+    // Group threads (M13-08 to M13-10, §17.12): a lesson's group lesson, a section's and a
+    // question's group, comments, and the group stores for sections, questions and comments.
+    // Every stored and queued row is private, outside any group, as the server's migration makes
+    // them; not queued themselves, like version 7.
+    this.version(16)
+      .stores({
+        lesson: 'id, seriesId, date, groupLessonId',
+        section: 'id, lessonId, parentId, conflictOf, groupId',
+        question: 'id, lessonId, groupId',
+        comment: 'id, sectionId, groupId',
+        groupSection: 'id, groupId, groupLessonId',
+        groupQuestion: 'id, groupId, groupLessonId',
+        groupComment: 'id, groupId, sectionId',
+      })
+      .upgrade(async (tx) => {
+        for (const entity of ['lesson', 'section', 'question'] as const) {
+          await tx
+            .table(entity)
+            .toCollection()
+            .modify((row: object) => notInGroup(entity, row));
+        }
+        await tx
+          .table('outbox')
+          .filter((entry: OutboxEntry) => entry.op === 'upsert')
+          .modify((entry: OutboxEntry) => {
+            const row = (entry as { row?: object }).row;
+            if (
+              row &&
+              (entry.entity === 'lesson' ||
+                entry.entity === 'section' ||
+                entry.entity === 'question')
+            ) {
+              notInGroup(entry.entity, row);
+            }
+          });
+      });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
     return this.table(entity);
+  }
+}
+
+/** Version 16's group columns, private, on a stored or queued row made before them. */
+function notInGroup(entity: keyof typeof NOT_IN_GROUP, row: object) {
+  for (const [column, value] of Object.entries(NOT_IN_GROUP[entity])) {
+    (row as Record<string, unknown>)[column] ??= value;
   }
 }
 

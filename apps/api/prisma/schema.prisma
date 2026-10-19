@@ -57,6 +57,7 @@ model User {
   devices         Device[]
   shareLinks      ShareLink[]
   groupMembers    GroupMember[]
+  comments        Comment[]
 
   @@map("user")
 }
@@ -160,7 +161,7 @@ model GroupSeries {
 
 // What a group's members have seen, at the group rev it last changed; gone once they must drop
 // it. An index, not a copy: the rows are read from their tables when pulled. entity: group |
-// member | series | lesson (M13-08 and M13-09 add section, question and comment).
+// member | series | lesson | section | question | comment.
 model GroupFeed {
   groupId  String  @map("group_id") @db.Uuid
   entity   String
@@ -174,6 +175,28 @@ model GroupFeed {
   @@index([groupId, rev])
   @@index([entity, entityId])
   @@map("group_feed")
+}
+
+// A comment on a group section (F35, M13-09, §17.12), synced like the author's other rows. Its
+// section may be another member's, and its group is a group, so neither is a foreign key.
+// body: plain text and verse chips (domain commentBodySchema)
+model Comment {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  sectionId String    @map("section_id") @db.Uuid
+  groupId   String    @map("group_id") @db.Uuid
+  body      Json
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@index([sectionId])
+  @@index([groupId])
+  @@map("comment")
 }
 
 // kind: verify | reset
@@ -260,6 +283,9 @@ model Lesson {
   sourceAuthor    String?   @map("source_author")
   sourceUrl       String?   @map("source_url")
   sourceStartedAt DateTime? @map("source_started_at") @db.Timestamptz(3)
+  // The group lesson this is the user's own lesson for (decision 99, §17.12): another user's, so
+  // no foreign key. Set at creation, never changed.
+  groupLessonId   String?   @map("group_lesson_id") @db.Uuid
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
   rev             BigInt    @default(0)
@@ -277,33 +303,44 @@ model Lesson {
 
   @@index([userId, rev])
   @@index([seriesId])
+  @@index([groupLessonId])
   @@map("lesson")
 }
 
 // body: restricted ProseMirror JSON (domain bodySchema)
 // orderKey: fractional index key among siblings; column collation is "C" (byte order)
 model Section {
-  id             String    @id @default(uuid(7)) @db.Uuid
-  userId         String    @map("user_id") @db.Uuid
-  lessonId       String    @map("lesson_id") @db.Uuid
-  parentId       String?   @map("parent_id") @db.Uuid
-  orderKey       String    @map("order_key")
-  body           Json
-  conflictOf     String?   @map("conflict_of") @db.Uuid
+  id                String    @id @default(uuid(7)) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  lessonId          String    @map("lesson_id") @db.Uuid
+  parentId          String?   @map("parent_id") @db.Uuid
+  orderKey          String    @map("order_key")
+  body              Json
+  conflictOf        String?   @map("conflict_of") @db.Uuid
   // The device that wrote a conflicted copy's body, for its label (§6.4).
-  conflictDevice String?   @map("conflict_device")
+  conflictDevice    String?   @map("conflict_device")
   // The moment in the lesson's source, stamped by capture mode, or a page in a book (§17.7).
-  sourceAt       DateTime? @map("source_at") @db.Timestamptz(3)
-  sourcePage     String?   @map("source_page")
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
-  rev            BigInt    @default(0)
+  sourceAt          DateTime? @map("source_at") @db.Timestamptz(3)
+  sourcePage        String?   @map("source_page")
+  // private | group; groupId exactly when group (§17.12). A group, not a foreign key: a section
+  // stays the author's whatever happens to the group. sharedAt orders the group thread.
+  visibility        String    @default("private")
+  groupId           String?   @map("group_id") @db.Uuid
+  sharedAt          DateTime? @map("shared_at") @db.Timestamptz(3)
+  // Another member's group section this replies to, and the group question it answers (partial
+  // | full): other users' rows, so no foreign keys.
+  replyToId         String?   @map("reply_to_id") @db.Uuid
+  answersQuestionId String?   @map("answers_question_id") @db.Uuid
+  answerKind        String?   @map("answer_kind")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev               BigInt    @default(0)
   // Server only: the rev that last changed body, so a push can tell whether the body changed
   // after its baseRev (§6.4).
-  bodyRev        BigInt    @default(0) @map("body_rev")
+  bodyRev           BigInt    @default(0) @map("body_rev")
   // Server only: the device that last changed body, which names a conflicted copy made from it.
-  bodyDevice     String?   @map("body_device")
-  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+  bodyDevice        String?   @map("body_device")
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson             Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -320,6 +357,7 @@ model Section {
 
   @@index([userId, rev])
   @@index([lessonId, parentId, orderKey])
+  @@index([groupId])
   @@map("section")
 }
 
@@ -410,6 +448,9 @@ model Question {
   status          String    @default("open")
   answerSectionId String?   @map("answer_section_id") @db.Uuid
   splitFromId     String?   @map("split_from_id") @db.Uuid
+  // private | group, as a section's (§17.12)
+  visibility      String    @default("private")
+  groupId         String?   @map("group_id") @db.Uuid
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
   rev             BigInt    @default(0)
@@ -424,6 +465,7 @@ model Question {
 
   @@index([userId, rev])
   @@index([lessonId])
+  @@index([groupId])
   @@map("question")
 }
 

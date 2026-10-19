@@ -49,6 +49,7 @@ const lessonRow = (title: string, date: string, passages: string[], seriesId: st
     sourceAuthor: null,
     sourceUrl: null,
     sourceStartedAt: null,
+    groupLessonId: null,
     mainPassages: passages.map(verseRef),
   });
 
@@ -80,6 +81,12 @@ function seed(): Seed {
       conflictDevice: null,
       sourceAt: null,
       sourcePage: null,
+      visibility: 'private',
+      groupId: null,
+      sharedAt: null,
+      replyToId: null,
+      answersQuestionId: null,
+      answerKind: null,
     }),
   );
   const tag = ENTITY_SCHEMAS.tag.parse({ ...synced(), name: 'bethany', isSeeded: false });
@@ -88,6 +95,8 @@ function seed(): Seed {
     lessonId: lazarus.id,
     text: 'Why did Jesus wait two days?',
     splitFromId: null,
+    visibility: 'private',
+    groupId: null,
   });
   const lessons = [shepherd, lazarus];
   return {

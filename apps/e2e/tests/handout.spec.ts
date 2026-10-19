@@ -42,6 +42,7 @@ function goodShepherd(): { seed: Seed; lessonId: string } {
     sourceAuthor: null,
     sourceUrl: 'https://www.youtube.com/watch?v=abc123',
     sourceStartedAt: null,
+    groupLessonId: null,
     mainPassages: [
       {
         book: 'JHN',
@@ -67,13 +68,26 @@ function goodShepherd(): { seed: Seed; lessonId: string } {
       conflictDevice: null,
       sourceAt: null,
       sourcePage: null,
+      visibility: 'private',
+      groupId: null,
+      sharedAt: null,
+      replyToId: null,
+      answersQuestionId: null,
+      answerKind: null,
     }),
   );
   const takeaway = ['He knows his sheep by name.', 'The door is a person, not a rule.'].map(
     (text) => ENTITY_SCHEMAS.takeaway.parse({ ...synced(), lessonId: lesson.id, text }),
   );
   const question = ['Who are the “other sheep”?', 'What is the door?'].map((text) =>
-    ENTITY_SCHEMAS.question.parse({ ...synced(), lessonId: lesson.id, text, splitFromId: null }),
+    ENTITY_SCHEMAS.question.parse({
+      ...synced(),
+      lessonId: lesson.id,
+      text,
+      splitFromId: null,
+      visibility: 'private',
+      groupId: null,
+    }),
   );
   return { seed: { lesson: [lesson], section, takeaway, question }, lessonId: lesson.id };
 }

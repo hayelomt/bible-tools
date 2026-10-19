@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BOOK_CODES } from '../books.ts';
+import { commentBodySchema } from '../comments.ts';
 import { bodySchema, LINK_TARGET_TYPES } from '../doc.ts';
 import { OPEN_IN_TARGETS } from '../open-in.ts';
 import { isOrderKey } from '../order.ts';
@@ -46,6 +47,10 @@ export const INBOX_ORIGINS = ['share', 'paste', 'typed', 'import', 'capture'] as
 export const SOURCE_TYPES = ['sermon', 'book', 'podcast', 'other'] as const;
 /** The review queue's resurfacing rules (F30, §17.8), as a dismissal names them. */
 export const RESURFACE_RULES = ['year_ago', 'repeated_verse', 'stale_question'] as const;
+/** Who sees a section or question (F35, §17.12): its owner alone, or its group too. */
+export const VISIBILITIES = ['private', 'group'] as const;
+/** How much of a group question a group section answers (M13-10). */
+export const ANSWER_KINDS = ['partial', 'full'] as const;
 
 /** Fields every synced row carries (§5.1). */
 const synced = {
@@ -129,6 +134,11 @@ export const lessonSchema = z.strictObject({
   sourceUrl: webUrlSchema.nullable(),
   /** When the recording starts: section times count from it. */
   sourceStartedAt: timestampSchema.nullable(),
+  /**
+   * The group lesson this is the user's own lesson for (decision 99, §17.12): their private notes
+   * and group sections on another member's lesson. Set at creation, never changed.
+   */
+  groupLessonId: idSchema.nullable(),
 });
 
 export const sectionSchema = z.strictObject({
@@ -145,6 +155,16 @@ export const sectionSchema = z.strictObject({
   sourceAt: timestampSchema.nullable(),
   /** A page in a book, as typed ("112"). */
   sourcePage: lineSchema(20).nullable(),
+  /** Private, or in the group thread of `groupId` (§17.12), set together; a reply shares its parent's. */
+  visibility: z.enum(VISIBILITIES),
+  groupId: idSchema.nullable(),
+  /** When it joined the group thread, which is ordered by it. */
+  sharedAt: timestampSchema.nullable(),
+  /** Another member's group section this one replies to (`parentId` is for the author's own). */
+  replyToId: idSchema.nullable(),
+  /** The group question it answers (M13-10), and how much of it; both or neither. */
+  answersQuestionId: idSchema.nullable(),
+  answerKind: z.enum(ANSWER_KINDS).nullable(),
 });
 
 export const tagSchema = z.strictObject({
@@ -173,6 +193,9 @@ export const questionSchema = z.strictObject({
   text: lineSchema(2000),
   /** The question this one was split from (F24, M10-10): "Split from … on …". */
   splitFromId: idSchema.nullable(),
+  /** As a section's (§17.12): a group question is in its group's queue (M13-10). */
+  visibility: z.enum(VISIBILITIES),
+  groupId: idSchema.nullable(),
 });
 
 /** One thing that happened to a question, in a lesson (F24, §17.5). */
@@ -184,6 +207,18 @@ export const questionEntrySchema = z.strictObject({
   kind: z.enum(QUESTION_ENTRY_KINDS),
   /** The section holding a partial or full answer. */
   sectionId: idSchema.nullable(),
+});
+
+/**
+ * A comment on a group section (F35, M13-09, §17.12): the author's own row, which their group's
+ * members read through its feed. Plain text and verse chips.
+ */
+export const commentSchema = z.strictObject({
+  ...synced,
+  /** A group section, another member's or the author's; set at creation. */
+  sectionId: idSchema,
+  groupId: idSchema,
+  body: commentBodySchema,
 });
 
 /** One of the user's own study-method templates (F25, §17.6); the built-ins are code. */
@@ -306,6 +341,23 @@ export const linkSchema = z.strictObject({
   targetId: idSchema,
 });
 
+/**
+ * The columns groups added (§17.12) as a row has them outside any group, private: for rows made
+ * before them, and rows made anywhere but a group thread.
+ */
+export const NOT_IN_GROUP = {
+  lesson: { groupLessonId: null },
+  section: {
+    visibility: 'private',
+    groupId: null,
+    sharedAt: null,
+    replyToId: null,
+    answersQuestionId: null,
+    answerKind: null,
+  },
+  question: { visibility: 'private', groupId: null },
+} as const;
+
 /** The synced entities, by the name used in sync changes and device tables. */
 export const ENTITY_SCHEMAS = {
   userSettings: userSettingsSchema,
@@ -325,6 +377,7 @@ export const ENTITY_SCHEMAS = {
   template: templateSchema,
   passageVisit: passageVisitSchema,
   resurfaceDismissal: resurfaceDismissalSchema,
+  comment: commentSchema,
 } as const;
 
 export type EntityName = keyof typeof ENTITY_SCHEMAS;
@@ -357,4 +410,7 @@ export type ResurfaceDismissal = z.infer<typeof resurfaceDismissalSchema>;
 export type ResurfaceRule = (typeof RESURFACE_RULES)[number];
 export type Resurfacing = UserSettings['resurfacing'];
 export type Citation = z.infer<typeof citationSchema>;
+export type Visibility = (typeof VISIBILITIES)[number];
+export type AnswerKind = (typeof ANSWER_KINDS)[number];
+export type Comment = z.infer<typeof commentSchema>;
 export type EntityRow<E extends EntityName = EntityName> = z.infer<(typeof ENTITY_SCHEMAS)[E]>;

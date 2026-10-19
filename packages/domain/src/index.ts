@@ -100,7 +100,7 @@ export {
   templateStructureSchema,
   templateSummary,
 } from './templates.ts';
-export { newId } from './ids.ts';
+export { newId, ownLessonId } from './ids.ts';
 export { SEED_TAGS } from './seed-tags.ts';
 export {
   addDays,
@@ -315,7 +315,21 @@ export {
   USER_ROLES,
   type UserSettings,
   userSettingsSchema,
+  ANSWER_KINDS,
+  type AnswerKind,
+  type Comment,
+  commentSchema,
+  NOT_IN_GROUP,
+  VISIBILITIES,
+  type Visibility,
 } from './schemas/entities.ts';
+export {
+  type CommentBody,
+  commentBody,
+  commentBodySchema,
+  commentText,
+  MAX_COMMENT_LENGTH,
+} from './comments.ts';
 export {
   type Change,
   changeSchema,

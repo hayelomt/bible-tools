@@ -86,6 +86,12 @@ export const SectionHandle = memo(function SectionHandle({
               <DropdownMenuItem onClick={() => api.pickTemplate(id)}>
                 Add a template…
               </DropdownMenuItem>
+              {/* A reply goes with its section, so only a section is shared. */}
+              {api.share && row.level === 0 && row.item.stored && (
+                <DropdownMenuItem onClick={() => api.share?.(id)}>
+                  Share with the group
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem disabled={!can.moveUp} onClick={() => api.moveUp(id, 'handle')}>
                 Move up
               </DropdownMenuItem>

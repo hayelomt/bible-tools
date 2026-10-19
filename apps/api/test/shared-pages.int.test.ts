@@ -94,6 +94,8 @@ async function owner() {
     lessonId: shared.id,
     text: 'Who can separate us?',
     splitFromId: null,
+    visibility: 'private',
+    groupId: null,
   };
   const revs = await push(account, [
     { entity: 'series', row: series },

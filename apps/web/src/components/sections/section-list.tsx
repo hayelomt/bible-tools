@@ -8,6 +8,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { RowNotFoundError } from '@/data/action.ts';
+import { shareWithGroup, unshare } from '@/data/actions/group-thread.ts';
 import { promoteQuestion } from '@/data/actions/questions.ts';
 import { applyTemplate, removeApplied, type TemplateChoice } from '@/data/actions/templates.ts';
 import { TemplatePicker } from '@/components/templates/template-picker.tsx';
@@ -129,6 +130,8 @@ export interface SectionListApi {
   pickTemplate: (id: string | null) => void;
   /** "Keep this instead" on a conflicted copy: its text replaces its section's, and it goes. */
   keepCopy: (id: string) => void;
+  /** "Share with the group", in a lesson with a group thread (M13-08); undefined in any other. */
+  share?: (id: string) => void;
   /** Whether the press that just ended was a drag, not a click. */
   wasDragged: () => boolean;
   backspaceEmpty: (id: string) => boolean;
@@ -153,6 +156,12 @@ interface SectionListProps {
   focusFirst: number;
   request?: SectionRequest;
   onSavingChange: (saving: boolean) => void;
+  /**
+   * The lesson has a group thread (§17.12): this list is the user's notes, private, and a section
+   * can be shared with the group. Without one, every section shows, group sections whose group is
+   * gone included: they read as the user's own notes.
+   */
+  group?: { id: string; name: string };
 }
 
 /**
@@ -167,8 +176,16 @@ export function SectionList({
   focusFirst,
   request,
   onSavingChange,
+  group,
 }: SectionListProps) {
-  const stored = useLiveQuery(() => lessonSections(lessonId), [lessonId]);
+  const privateOnly = group !== undefined;
+  const groupId = group?.id;
+  const groupName = group?.name;
+  const stored = useLiveQuery(
+    async () =>
+      (await lessonSections(lessonId)).filter((s) => !privateOnly || s.visibility === 'private'),
+    [lessonId, privateOnly],
+  );
   useAutoPreview();
   const [drafts, setDrafts] = useState<OutlineItem[]>([]);
   // Moves and removals show at once, before the live query catches up, so focus stays put.
@@ -523,6 +540,19 @@ export function SectionList({
           });
         });
       },
+      share: groupId
+        ? (id) => {
+            focusNear([id]);
+            setRemoved((r) => new Set(r).add(id));
+            enqueue(async () => {
+              const ids = await shareWithGroup(id, groupId);
+              toast(`Shared with ${groupName}.`, {
+                duration: 10_000,
+                action: { label: 'Undo', onClick: () => enqueue(() => unshare(ids)) },
+              });
+            });
+          }
+        : undefined,
       keepCopy: (id) => {
         const of = rowOf(id)?.item.conflict?.of;
         // Without its section, the copy stays as an ordinary section.
@@ -572,7 +602,16 @@ export function SectionList({
         updateDrafts((ds) => ds.filter((d) => d.id !== id));
       },
     };
-  }, [lessonId, sourceStartedAt, sourceUrl, addDraft, updateDrafts, wasDragged]);
+  }, [
+    lessonId,
+    sourceStartedAt,
+    sourceUrl,
+    addDraft,
+    updateDrafts,
+    wasDragged,
+    groupId,
+    groupName,
+  ]);
   useLayoutEffect(() => {
     apiRef.current = api;
   });

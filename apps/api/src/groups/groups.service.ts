@@ -12,7 +12,7 @@ import { ApiException, ErrorCode } from '../common/errors.js';
 import type { Env } from '../config/env.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { type FeedEntry, nextGroupRev, seriesGone, seriesLessons, writeFeed } from './feed.js';
+import { nextGroupRev, settleGroup, writeFeed } from './feed.js';
 import { inviteToken } from './invite-token.js';
 
 type Tx = Prisma.TransactionClient;
@@ -73,11 +73,10 @@ export class GroupsService {
           data: { groupId: id, userId, role: 'owner', displayName: request.displayName },
         });
         await tx.groupSeries.create({ data: { groupId: id, seriesId: series.id } });
-        await writeFeed(tx, id, rev, [
-          { entity: 'group', entityId: id, gone: false },
-          { entity: 'member', entityId: member.id, gone: false },
-          { entity: 'series', entityId: series.id, gone: false },
-          ...(await seriesLessons(tx, [series.id])),
+        await settleGroup(tx, id, rev, [
+          { entity: 'group', id },
+          { entity: 'member', id: member.id },
+          { entity: 'series', id: series.id },
         ]);
       });
     } catch (error) {
@@ -192,6 +191,7 @@ export class GroupsService {
       const me = members.find((m) => m.userId === userId);
       if (rev === null || !me) throw notFound();
       if (members.length === 1) {
+        await takeBack(tx, groupId, me.userId);
         await tx.group.delete({ where: { id: groupId } });
         return;
       }
@@ -243,10 +243,8 @@ export class GroupsService {
         });
         if (!series) throw notFound('No such series');
         await tx.groupSeries.create({ data: { groupId, seriesId } });
-        await writeFeed(tx, groupId, rev, [
-          { entity: 'series', entityId: seriesId, gone: false },
-          ...(await seriesLessons(tx, [seriesId])),
-        ]);
+        // Its lessons come back with what members had added to them (§17.12).
+        await settleGroup(tx, groupId, rev, [{ entity: 'series', id: seriesId }]);
       });
     } catch (error) {
       throw inGroup(error);
@@ -259,7 +257,7 @@ export class GroupsService {
       const rev = await this.asOwner(tx, userId, groupId);
       const { count } = await tx.groupSeries.deleteMany({ where: { groupId, seriesId } });
       if (count === 0) throw notFound('No such series in the group');
-      await writeFeed(tx, groupId, rev, await seriesGone(tx, groupId, [seriesId]));
+      await settleGroup(tx, groupId, rev);
     });
   }
 
@@ -284,6 +282,7 @@ export class GroupsService {
         const me = members.find((m) => m.userId === userId)!;
         const next = members.find((m) => m.userId !== userId);
         if (!next) {
+          await takeBack(t, groupId, userId);
           await t.group.delete({ where: { id: groupId } });
           continue;
         }
@@ -318,8 +317,9 @@ async function lockUsers(tx: Tx, userIds: readonly string[]): Promise<void> {
 }
 
 /**
- * Takes a member out (decision 98): their membership, and the series they shared with everything
- * in them. M13-08 and M13-09 add their group sections, questions and comments.
+ * Takes a member out (decision 98): their membership and the series they shared, and everything
+ * they added goes back to being their own (`takeBack`). The feed drops all of it, and what others
+ * added to their lessons, at one rev.
  */
 async function removeMember(
   tx: Tx,
@@ -327,18 +327,66 @@ async function removeMember(
   rev: bigint,
   member: { id: string; userId: string },
 ): Promise<void> {
-  const theirs = await tx.groupSeries.findMany({
-    where: { groupId, series: { userId: member.userId } },
+  await takeBack(tx, groupId, member.userId);
+  await tx.groupSeries.deleteMany({ where: { groupId, series: { userId: member.userId } } });
+  await tx.groupMember.delete({ where: { id: member.id } });
+  await settleGroup(tx, groupId, rev);
+}
+
+/**
+ * What a member put in a group comes back to them as they leave it (decision 98), at one new rev of
+ * theirs, so their devices pull it: their group sections and questions become private notes, their
+ * comments are deleted, and their own lessons for the group's lessons take the group lesson's
+ * details, so they read as ordinary lessons. Their user row is locked already.
+ */
+async function takeBack(tx: Tx, groupId: string, userId: string): Promise<void> {
+  const where = { userId, groupId, visibility: 'group' };
+  const [sections, questions, comments] = [
+    await tx.section.count({ where }),
+    await tx.question.count({ where }),
+    await tx.comment.count({ where: { userId, groupId, deletedAt: null } }),
+  ];
+  const shared = await tx.groupSeries.findMany({
+    where: { groupId, series: { userId: { not: userId } } },
     select: { seriesId: true },
   });
-  const seriesIds = theirs.map((s) => s.seriesId);
-  const entries: FeedEntry[] = [
-    { entity: 'member', entityId: member.id, gone: true },
-    ...(await seriesGone(tx, groupId, seriesIds)),
-  ];
-  await tx.groupSeries.deleteMany({ where: { groupId, seriesId: { in: seriesIds } } });
-  await tx.groupMember.delete({ where: { id: member.id } });
-  await writeFeed(tx, groupId, rev, entries);
+  const groupLessons = await tx.lesson.findMany({
+    where: { seriesId: { in: shared.map((s) => s.seriesId) } },
+  });
+  const own = await tx.lesson.findMany({
+    where: { userId, groupLessonId: { in: groupLessons.map((l) => l.id) } },
+    select: { id: true, groupLessonId: true },
+  });
+  if (sections + questions + comments + own.length === 0) return;
+
+  const [row] = await tx.$queryRaw<{ sync_rev: bigint }[]>`
+    UPDATE "user" SET sync_rev = sync_rev + 1 WHERE id = ${userId}::uuid RETURNING sync_rev`;
+  const rev = row!.sync_rev;
+  const now = new Date();
+  const mine = { visibility: 'private', groupId: null, rev, updatedAt: now };
+  await tx.section.updateMany({ where, data: { ...mine, sharedAt: null } });
+  await tx.question.updateMany({ where, data: mine });
+  await tx.comment.updateMany({
+    where: { userId, groupId, deletedAt: null },
+    data: { deletedAt: now, updatedAt: now, rev },
+  });
+  const byId = new Map(groupLessons.map((l) => [l.id, l]));
+  for (const lesson of own) {
+    const from = byId.get(lesson.groupLessonId!)!;
+    await tx.lesson.update({
+      where: { id: lesson.id },
+      data: {
+        title: from.title,
+        date: from.date,
+        kind: from.kind,
+        speaker: from.speaker,
+        church: from.church,
+        mainPassages: from.mainPassages ?? [],
+        updatedAt: now,
+        rev,
+      },
+    });
+  }
 }
 
 /** Makes `nextId` the owner and the current owner a member; one owner at a time (an index). */

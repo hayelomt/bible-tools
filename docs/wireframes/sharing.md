@@ -296,6 +296,9 @@ own, which never leaves them. A switch under the details chooses which one is sh
 - **Laptop:** the same switch above the centre column; the side panel holds details, group
   questions and "Linked from".
 - **Empty (group thread):** "Nothing in the group thread yet. What you add here, the group sees."
+- As built (M13-08): every section's `⋯` has Reply; one's own adds Move to my notes and Delete
+  (with Undo). A member's "My notes" is a lesson of their own for the group lesson, made the first
+  time they touch it, and off their Lessons home while they're in the group.
 - **Offline:** both threads work; group sections wait to sync, and others' arrive when online.
 
 ## Comments (M13-09)
@@ -312,7 +315,8 @@ Only on group sections. "2 comments ›" opens them under the section.
 │ ┃   [ Add a comment…▏            ]   │
 ```
 
-- Comments are plain text with verse chips. Enter posts; Shift+Enter is a new line.
+- Comments are plain text with verse chips. Enter posts; Shift+Enter is a new line. They're typed
+  in a plain box, and the references in them become chips when posted (decision 101).
 - Deleting one's own comment happens at once, with Undo.
 - **Empty:** "No comments yet." with the field.
 
@@ -341,6 +345,8 @@ Open questions across the group's series, with who asked and who answered.
 
 - **Answer** opens the lesson's group thread with a new section headed with the question.
 - Answered rows say "Answered by Ann · Tue 14 Oct".
+- A question is answered once a member's answer in the thread has text below its heading;
+  partial answers only make it "Partly answered", still under Open (decision 102).
 - **Empty:** "No open questions in the group. Questions members add to a group thread show here."
 
 ## Notifications (M13-11, M13-12)

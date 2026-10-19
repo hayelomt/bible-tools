@@ -8,6 +8,9 @@ const STORES = {
   member: 'groupMember',
   series: 'groupSeries',
   lesson: 'groupLesson',
+  section: 'groupSection',
+  question: 'groupQuestion',
+  comment: 'groupComment',
 } as const;
 
 const groupTables = (db: LampDb) => [
@@ -15,6 +18,9 @@ const groupTables = (db: LampDb) => [
   db.groupMember,
   db.groupSeries,
   db.groupLesson,
+  db.groupSection,
+  db.groupQuestion,
+  db.groupComment,
   db.groupSync,
 ];
 
@@ -45,6 +51,9 @@ export async function dropGroup(db: LampDb, groupId: string): Promise<void> {
     await db.groupMember.where({ groupId }).delete();
     await db.groupSeries.where({ groupId }).delete();
     await db.groupLesson.where({ groupId }).delete();
+    await db.groupSection.where({ groupId }).delete();
+    await db.groupQuestion.where({ groupId }).delete();
+    await db.groupComment.where({ groupId }).delete();
     await db.groupSync.delete(groupId);
   });
 }

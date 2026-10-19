@@ -1,7 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Navigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect } from 'react';
 import { NotFoundScreen } from '@/components/error-screen.tsx';
+import { type ThreadMode, threadModeOf } from '@/components/groups/thread-switch.tsx';
+import { db } from '@/data/db.ts';
+import { threadOf } from '@/data/group-thread.ts';
+import { useAccount } from '@/lib/account.ts';
 import { LessonEditor } from '@/components/lesson/lesson-editor.tsx';
 import { ScreenTitle } from '@/components/shell/slots.tsx';
 import { lessonById } from '@/data/queries.ts';
@@ -22,6 +26,10 @@ interface LessonSearch {
   answer?: string;
   /** With `answer`: a partial answer (the question thread's "Add a partial answer"). */
   partial?: true;
+  /** In a shared series: which thread shows (M13-08); the group's unless it says otherwise. */
+  thread?: ThreadMode;
+  /** A group question to answer in the group thread (the group queue's Answer, M13-10). */
+  groupAnswer?: string;
 }
 
 export const Route = createFileRoute('/_app/lessons/$lessonId')({
@@ -34,6 +42,8 @@ export const Route = createFileRoute('/_app/lessons/$lessonId')({
     question: typeof search.question === 'string' ? search.question : undefined,
     answer: typeof search.answer === 'string' ? search.answer : undefined,
     partial: search.partial === true ? true : undefined,
+    thread: threadModeOf(search.thread),
+    groupAnswer: typeof search.groupAnswer === 'string' ? search.groupAnswer : undefined,
   }),
   component: LessonScreen,
 });
@@ -43,6 +53,13 @@ function LessonScreen() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const lesson = useLiveQuery(() => lessonById(lessonId), [lessonId]);
+  const me = useAccount().data?.id;
+  const thread = useLiveQuery(async () => (lesson ? threadOf(lesson) : null), [lesson]);
+  // A section to show is in the thread it's in.
+  const revealed = useLiveQuery(
+    async () => (search.section ? ((await db.section.get(search.section)) ?? null) : null),
+    [search.section],
+  );
   useScreenReady('lesson', lesson !== undefined);
   // A share in the next 10 minutes offers this lesson (F18).
   useRecentLesson(lesson ? lessonId : null);
@@ -63,7 +80,18 @@ function LessonScreen() {
     }
   }, [lesson, search.answer, navigate]);
 
-  if (lesson === undefined) return <ScreenSkeleton />;
+  if (lesson === undefined || (lesson && thread === undefined)) return <ScreenSkeleton />;
+  // The user's own lesson for another member's lesson opens where the group has it (§17.12).
+  if (lesson?.groupLessonId && thread) {
+    return (
+      <Navigate
+        to="/groups/$groupId/lessons/$lessonId"
+        params={{ groupId: thread.groupId, lessonId: thread.groupLessonId }}
+        search={{ thread: search.thread }}
+        replace
+      />
+    );
+  }
   if (lesson === null && !search.new) {
     return (
       <>
@@ -83,6 +111,25 @@ function LessonScreen() {
       seriesId={search.seriesId}
       reveal={search}
       answer={search.answer && { questionId: search.answer, partial: search.partial === true }}
+      group={
+        thread && me
+          ? {
+              place: thread,
+              me,
+              // What's asked for in the lesson's own notes is in My notes.
+              mode:
+                search.thread ??
+                (revealed?.visibility === 'group'
+                  ? 'group'
+                  : search.answer || search.section || search.takeaway || search.question
+                    ? 'mine'
+                    : 'group'),
+              onModeChange: (mode) =>
+                void navigate({ search: (prev) => ({ ...prev, thread: mode }), replace: true }),
+              answer: search.groupAnswer,
+            }
+          : undefined
+      }
     />
   );
 }

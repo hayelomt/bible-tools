@@ -216,7 +216,8 @@ export class SyncEngine {
       await this.pushAll();
       const groups = await this.pullAll();
       // Then the groups the user is in, and those they've left (§17.12).
-      if (groups) await syncGroups(db, groups, this.deps.api.pullGroup);
+      const { api } = this.deps;
+      if (groups) await syncGroups(db, groups, (id, cursor) => api.pullGroup(id, cursor));
       this.failures = 0;
       this.set({
         phase: 'synced',

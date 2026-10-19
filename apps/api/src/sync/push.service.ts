@@ -24,7 +24,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import type { z } from 'zod';
 import { Prisma, type User } from '../generated/prisma/client.js';
-import { groupOfSeries, refreshFeed } from '../groups/feed.js';
+import { groupOfSeries, inFeed, isFeedEntity, refreshFeed } from '../groups/feed.js';
 // A value import, not `import type`: Nest resolves the constructor parameter from its class.
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
@@ -39,6 +39,7 @@ import { assertSupportedClient, assertVerified } from './sync-access.js';
 import { SyncErrorCode } from './sync.errors.js';
 
 type RowChange = Exclude<Change, { entity: 'userSettings' }>;
+type RowUpsert = Extract<RowChange, { op: 'upsert' }>;
 type SettingsChange = Extract<Change, { entity: 'userSettings' }>;
 type Rejected = Extract<PushResult, { status: 'rejected' }>;
 
@@ -153,9 +154,15 @@ export class PushService {
     if (current && current.userId !== userId) {
       return reject(changeId, SyncErrorCode.ID_TAKEN, 'This id belongs to another account');
     }
+    let incoming: SyncRow<RowEntity> | undefined;
     if (change.op === 'upsert') {
       const problem = await this.checkReferences(tx, userId, entity, change.row);
       if (problem) return reject(changeId, SyncErrorCode.REFERENCE_NOT_FOUND, problem);
+      const grouped = await this.groupColumns(tx, userId, change, current);
+      if (typeof grouped === 'string') {
+        return reject(changeId, SyncErrorCode.REFERENCE_NOT_FOUND, grouped);
+      }
+      incoming = grouped;
     }
     const shared = await this.checkShared(tx, change, current);
     if (shared) return reject(changeId, SyncErrorCode.IN_GROUP, shared);
@@ -168,7 +175,7 @@ export class PushService {
         server,
         serverRev,
         baseRev,
-        incoming: change.row,
+        incoming: incoming!,
         changed: change.changed,
         serverBodyChanged:
           current !== null && ((current.bodyRev as bigint | undefined) ?? 0n) > baseRev,
@@ -192,11 +199,12 @@ export class PushService {
         })
       : undefined;
     const written: Written[] = [{ entity, id: entityId }];
+    if (copyId) written.push({ entity: 'section', id: copyId });
     const restored =
       outcome.keepsClientEdit && outcome.row.deletedAt === null
         ? await this.restoreParents(tx, entity, outcome.row, rev, written)
         : false;
-    // A lesson or series shared into a group shows the group what it now is (§17.12).
+    // What's shared with a group shows the group what it now is (§17.12).
     await refreshFeed(tx, written.filter(isGroupVisible));
     return resultOf(
       changeId,
@@ -333,6 +341,127 @@ export class PushService {
     return undefined;
   }
 
+  /**
+   * The group columns as they may be stored (§17.12), or why the change is refused. Membership is
+   * checked, never trusted, and never refuses a change, so nothing typed is lost: a section or
+   * question shared with a group the pusher isn't in, or in a lesson that isn't that group's, is
+   * stored private; a comment is kept, and the group never sees it. The columns naming another
+   * member's row must name one the group sees when they're set, and the ones set at creation (a
+   * lesson's group lesson, a comment's section and group) never change.
+   */
+  private async groupColumns(
+    tx: Tx,
+    userId: string,
+    change: RowUpsert,
+    current: StoredRow | null,
+  ): Promise<SyncRow<RowEntity> | string> {
+    const row = { ...change.row } as Record<string, unknown>;
+    const stored = current as Record<string, unknown> | null;
+    const ids = (column: string) => row[column] as string | null;
+    switch (change.entity) {
+      case 'lesson': {
+        if (stored) row.groupLessonId = stored.groupLessonId ?? null;
+        else if (
+          ids('groupLessonId') &&
+          !(await this.joinsGroupLesson(tx, userId, ids('groupLessonId')!))
+        ) {
+          row.groupLessonId = null;
+        }
+        break;
+      }
+      case 'section':
+      case 'question': {
+        const claimed = row.visibility === 'group' ? ids('groupId') : null;
+        const shared =
+          claimed !== null && (await this.inThread(tx, userId, claimed, row.lessonId as string));
+        if (!shared) Object.assign(row, { visibility: 'private', groupId: null });
+        if (change.entity === 'question') break;
+        if (!shared) row.sharedAt = null;
+        else row.sharedAt ??= change.clientTime;
+        if (row.answersQuestionId === null) row.answerKind = null;
+        else row.answerKind ??= 'full';
+        for (const [column, entity] of [
+          ['replyToId', 'section'],
+          ['answersQuestionId', 'question'],
+        ] as const) {
+          const id = ids(column);
+          if (id === null || id === ((stored?.[column] as string | null | undefined) ?? null)) {
+            continue;
+          }
+          // Shared with a group the pusher has left: kept, and never shown.
+          if (claimed !== null && !shared) continue;
+          if (!shared || !(await inFeed(tx, claimed, entity, id))) {
+            return `${column} names no ${entity} of the group`;
+          }
+        }
+        break;
+      }
+      case 'comment': {
+        if (stored) {
+          row.sectionId = stored.sectionId;
+          row.groupId = stored.groupId;
+        } else if (
+          (await this.isMember(tx, userId, ids('groupId')!)) &&
+          !(await inFeed(tx, ids('groupId')!, 'section', ids('sectionId')!))
+        ) {
+          return 'sectionId names no section of the group';
+        }
+        break;
+      }
+      default:
+        break;
+    }
+    return row as unknown as SyncRow<RowEntity>;
+  }
+
+  private async isMember(tx: Tx, userId: string, groupId: string): Promise<boolean> {
+    const member = await tx.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId } },
+      select: { id: true },
+    });
+    return member !== null;
+  }
+
+  /**
+   * Whether the user's lesson is in one of the group's threads: the group's lesson, or the user's
+   * own lesson for one, and the user a member.
+   */
+  private async inThread(
+    tx: Tx,
+    userId: string,
+    groupId: string,
+    lessonId: string,
+  ): Promise<boolean> {
+    if (!(await this.isMember(tx, userId, groupId))) return false;
+    const lesson = await tx.lesson.findUnique({
+      where: { id: lessonId },
+      select: { userId: true, seriesId: true, groupLessonId: true },
+    });
+    if (lesson?.userId !== userId) return false;
+    if (lesson.groupLessonId === null)
+      return (await groupOfSeries(tx, lesson.seriesId)) === groupId;
+    const groupLesson = await tx.lesson.findUnique({
+      where: { id: lesson.groupLessonId },
+      select: { userId: true, seriesId: true },
+    });
+    return (
+      groupLesson !== null &&
+      groupLesson.userId !== userId &&
+      (await groupOfSeries(tx, groupLesson.seriesId)) === groupId
+    );
+  }
+
+  /** Whether the user may make their own lesson for this one: a live lesson of a group of theirs. */
+  private async joinsGroupLesson(tx: Tx, userId: string, groupLessonId: string): Promise<boolean> {
+    const lesson = await tx.lesson.findUnique({
+      where: { id: groupLessonId },
+      select: { userId: true, seriesId: true, deletedAt: true },
+    });
+    if (!lesson || lesson.deletedAt !== null || lesson.userId === userId) return false;
+    const groupId = await groupOfSeries(tx, lesson.seriesId);
+    return groupId !== null && (await this.isMember(tx, userId, groupId));
+  }
+
   /** Why the row can't name the rows it references, or undefined when it can. */
   private async checkReferences(
     tx: Tx,
@@ -443,8 +572,10 @@ interface Written {
 }
 
 /** The rows a group's feed may show (§17.12). */
-const isGroupVisible = (row: Written): row is { entity: 'lesson' | 'series'; id: string } =>
-  row.entity === 'lesson' || row.entity === 'series';
+const isGroupVisible = (
+  row: Written,
+): row is { entity: 'series' | 'lesson' | 'section' | 'question' | 'comment'; id: string } =>
+  isFeedEntity(row.entity);
 
 function resultOf(
   changeId: string,
