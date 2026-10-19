@@ -9,19 +9,28 @@ import {
 } from '@lamp/ui/components/dropdown-menu';
 import { useNavigate } from '@tanstack/react-router';
 import { Ellipsis } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { ExportDialog } from '@/components/export-dialog.tsx';
+import { CreateGroupDialog } from '@/components/groups/create-group-dialog.tsx';
+import { groupOfSeries } from '@/data/groups.ts';
 import { deleteSeries } from '@/data/actions/series.ts';
 import { ShareLinkDialog } from '@/components/share-links/share-link-dialog.tsx';
 import { exportSeries } from '@/export/load.ts';
 import { count } from '@/lib/labels.ts';
 import { SeriesDialog } from './series-dialog.tsx';
 
-/** The series' `⋯` (wireframes/lessons.md "Series"): Edit, Export, Share link (M13-04) and Delete. */
+/**
+ * The series' `⋯` (wireframes/lessons.md "Series"): Edit, Export, Share link (M13-04), Study with
+ * a group, or Open its group once it's in one (M13-07), and Delete.
+ */
 export function SeriesMenu({ series, lessonCount }: { series: Series; lessonCount: number }) {
   const navigate = useNavigate();
-  const [dialog, setDialog] = useState<'edit' | 'export' | 'share' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'export' | 'share' | 'group' | 'delete' | null>(
+    null,
+  );
+  const groupId = useLiveQuery(() => groupOfSeries(series.id), [series.id]);
   const close = (open: boolean) => !open && setDialog(null);
 
   return (
@@ -36,8 +45,24 @@ export function SeriesMenu({ series, lessonCount }: { series: Series; lessonCoun
           <DropdownMenuItem onClick={() => setDialog('edit')}>Edit series…</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('export')}>Export series…</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('share')}>Share link…</DropdownMenuItem>
+          {groupId ? (
+            <DropdownMenuItem
+              onClick={() => void navigate({ to: '/groups/$groupId', params: { groupId } })}
+            >
+              Open its group
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => setDialog('group')}>
+              Study with a group…
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={() => setDialog('delete')}>
+          {/* A shared series leaves its group before it can go (§17.12). */}
+          <DropdownMenuItem
+            variant="destructive"
+            disabled={!!groupId}
+            onClick={() => setDialog('delete')}
+          >
             Delete series…
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -62,6 +87,7 @@ export function SeriesMenu({ series, lessonCount }: { series: Series; lessonCoun
         target={{ targetType: 'series', targetId: series.id }}
         title={series.title}
       />
+      <CreateGroupDialog open={dialog === 'group'} onOpenChange={close} seriesId={series.id} />
       <ConfirmDialog
         open={dialog === 'delete'}
         onOpenChange={close}

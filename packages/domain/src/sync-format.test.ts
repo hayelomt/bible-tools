@@ -80,6 +80,7 @@ const page = (body: object) => ({
   remaining: 1,
   serverTime: '2026-10-17T09:00:00.000Z',
   minClientVersion: MIN_CLIENT_VERSION,
+  groups: [],
 });
 
 const paragraph = (inline: object) => ({

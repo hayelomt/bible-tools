@@ -5,6 +5,7 @@ import { ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { LessonList } from '@/components/lesson/lesson-list.tsx';
 import { DigestCard } from '@/components/digest/digest-card.tsx';
+import { GroupsSection } from '@/components/groups/groups-section.tsx';
 import { PrepCard } from '@/components/lesson/prep-card.tsx';
 import { SeriesDialog } from '@/components/series/series-dialog.tsx';
 import { Welcome } from '@/components/welcome.tsx';
@@ -26,7 +27,8 @@ export const Route = createFileRoute('/_app/')({
 
 /**
  * The lessons home (F1, wireframes/lessons.md "Lessons home"): "New lesson" first and one tap,
- * the digest card (F32) and the prep card (F29) under it, the recent lessons, then the series. A new device first picks its mode (`Welcome`), then a first
+ * the digest card (F32) and the prep card (F29) under it, the recent lessons, the series, then
+ * the groups (M13-07). A new device first picks its mode (`Welcome`), then a first
  * run shows a welcome that leads to the first lesson.
  */
 function LessonsHome() {
@@ -123,6 +125,7 @@ function LessonsHome() {
           )}
         </PageSection>
       )}
+      <GroupsSection />
       <SeriesDialog
         open={creatingSeries}
         onOpenChange={setCreatingSeries}

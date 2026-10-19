@@ -403,6 +403,7 @@ describe('sync schemas', () => {
       remaining: 12,
       serverTime: NOW,
       minClientVersion: '0.1.0',
+      groups: [],
     };
     expect(pullResponseSchema.parse(page)).toEqual(page);
     const wrong = { ...page, rows: [{ entity: 'tag', row: ROWS.lesson }] };

@@ -12,6 +12,8 @@ export interface Client {
   post(path: string, body?: object, token?: string): request.Test;
   /** A DELETE from the site itself, like `post`. */
   delete(path: string, body?: object, token?: string): request.Test;
+  /** A PATCH from the site itself, like `post`. */
+  patch(path: string, body?: object, token?: string): request.Test;
 }
 
 let nextIp = 1;
@@ -43,6 +45,7 @@ export async function createClient(t: TestApp): Promise<Client> {
     get: (path, token) => withSession(request(origin).get(path).set('X-Forwarded-For', ip), token),
     post: (path, body, token) => fromSite(request(origin).post(path), body, token),
     delete: (path, body, token) => fromSite(request(origin).delete(path), body, token),
+    patch: (path, body, token) => fromSite(request(origin).patch(path), body, token),
   };
 }
 

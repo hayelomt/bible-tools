@@ -25,8 +25,20 @@ declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     /** The screen's title, shown as its `h1` by the shell. */
     title?: string;
-    /** Where `←` goes, on screens below a destination. */
-    back?: '/' | '/settings' | '/settings/templates' | '/search' | '/review' | '/inbox' | '/themes';
+    /**
+     * Where `←` goes, on screens below a destination: a path, or up from this one (`..` for a
+     * group's members, `../..` for its series and lessons).
+     */
+    back?:
+      | '/'
+      | '/settings'
+      | '/settings/templates'
+      | '/search'
+      | '/review'
+      | '/inbox'
+      | '/themes'
+      | '..'
+      | '../..';
   }
 }
 

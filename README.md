@@ -144,14 +144,14 @@ Accounts can be managed from the command line, for example on a private server w
 with the API's environment. `pnpm cli --help` lists the commands, and `pnpm cli help <command>`
 explains one.
 
-| Command                                       | What it does                                                                      |
-| --------------------------------------------- | --------------------------------------------------------------------------------- |
-| `pnpm cli user:create <email> [--role admin]` | Creates an account with its email already verified, even with sign-up turned off. |
-| `pnpm cli user:disable <email>`               | Stops the account from signing in and signs out all its devices. Its data stays.  |
-| `pnpm cli user:enable <email>`                | Lets a disabled account sign in again.                                            |
-| `pnpm cli user:verify <email>`                | Marks the account's email verified without the link, so it can sync.              |
-| `pnpm cli user:delete <email> --yes`          | Deletes the account and all its data, as Delete account in the app does.          |
-| `pnpm cli share-link:revoke <address>`        | Turns off a share link, given its address or token, and names its account.        |
+| Command                                       | What it does                                                                                             |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `pnpm cli user:create <email> [--role admin]` | Creates an account with its email already verified, even with sign-up turned off.                        |
+| `pnpm cli user:disable <email>`               | Stops the account from signing in, signs out its devices and takes it out of its groups. Its data stays. |
+| `pnpm cli user:enable <email>`                | Lets a disabled account sign in again.                                                                   |
+| `pnpm cli user:verify <email>`                | Marks the account's email verified without the link, so it can sync.                                     |
+| `pnpm cli user:delete <email> --yes`          | Deletes the account and all its data, as Delete account in the app does.                                 |
+| `pnpm cli share-link:revoke <address>`        | Turns off a share link, given its address or token, and names its account.                               |
 
 `user:create` asks for the password twice, hidden; it is never taken as an argument, so it stays
 out of the shell history. In a script, pipe it in instead: `printf '%s\n' "$PASSWORD" | pnpm cli

@@ -2,6 +2,7 @@ import {
   type Change,
   ENTITY_NAMES,
   type EntityName,
+  type GroupPullResponse,
   keysBetween,
   type MeResponse,
   linkedTargets,
@@ -110,7 +111,13 @@ class FakeServer implements SyncApi {
       remaining: after.length,
       serverTime: this.serverTime ?? new Date().toISOString(),
       minClientVersion: '0.0.0',
+      groups: [],
     };
+  }
+
+  /** No groups here: `groups.test.ts` covers them. */
+  async pullGroup(): Promise<GroupPullResponse> {
+    return { rows: [], nextCursor: 0, hasMore: false, remaining: 0 };
   }
 
   /** Writes a row as another device would. */
@@ -410,6 +417,7 @@ const page = (rows: PulledRow[], nextCursor: number): PullResponse => ({
   remaining: rows.length,
   serverTime: NOW,
   minClientVersion: '0.0.0',
+  groups: [],
 });
 const remoteLesson = (fields: Partial<Record<string, unknown>> = {}) => ({
   ...LESSON,
@@ -767,6 +775,7 @@ describe('the engine', () => {
         inFlight -= 1;
         return server.pull(cursor);
       },
+      pullGroup: () => server.pullGroup(),
     };
     const engine = engineFor(db, api);
     await Promise.all([engine.syncNow(), engine.syncNow(), engine.syncNow()]);

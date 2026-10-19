@@ -148,7 +148,9 @@ light or dark following their device. No navigation, no editing, no comments, no
 ## Groups (M13-07)
 
 A group studies one or more series together. Groups are listed on the Lessons home under SERIES,
-and in the sidebar under SERIES, with a count of what's new.
+and in the sidebar under SERIES, with a count of what's new (M13-11). A guest sees no GROUPS
+section; an account with none sees "Study a series with others: they see its lessons and what's
+added to the group's thread." under `+ New`.
 
 ```text
 │ SERIES                       + New   │
@@ -207,7 +209,8 @@ and in the sidebar under SERIES, with a count of what's new.
 │ [ Share… ]           Make a new link…│  ← the old one stops working; asks first
 ```
 
-**Join** (`/join/$token`, opened from the link):
+**Join** (`/join?token=…`, opened from the link; a query, so logs and error reports never hold
+the token):
 
 ```text
 ┌──────────────────────────────────────┐

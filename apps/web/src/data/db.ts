@@ -3,6 +3,10 @@ import type {
   Citation,
   EntityName,
   EntityRow,
+  GroupInfo,
+  GroupLesson,
+  GroupMember,
+  GroupSeries,
   Highlight,
   InboxItem,
   InboxItemTag,
@@ -91,6 +95,19 @@ export interface DigestDraft {
   updatedAt: string;
 }
 
+/**
+ * Rows from a group's feed (§17.12): every member's, the user's own included, kept apart from the
+ * user's notes. Nothing reads them as notes: they aren't cited, linked, searched, exported, copied
+ * or pushed.
+ */
+export type InGroup<T> = T & { groupId: string };
+
+/** How far the device has read a group's feed. */
+export interface GroupSync {
+  groupId: string;
+  cursor: number;
+}
+
 export const SYNC_STATE_KEY = 'device';
 export const SETTINGS_KEY = 'settings';
 
@@ -125,6 +142,11 @@ export class LampDb extends Dexie {
   outbox!: Table<OutboxEntry, number>;
   syncState!: Table<SyncState, string>;
   digestDraft!: Table<DigestDraft, string>;
+  group!: Table<GroupInfo, string>;
+  groupMember!: Table<InGroup<GroupMember>, string>;
+  groupSeries!: Table<InGroup<GroupSeries>, string>;
+  groupLesson!: Table<InGroup<GroupLesson>, string>;
+  groupSync!: Table<GroupSync, string>;
 
   /** Tests pass fake-indexeddb in `options`. */
   constructor(name = 'lamp', options?: DexieOptions) {
@@ -317,6 +339,14 @@ export class LampDb extends Dexie {
             withoutStoredText(row);
           }
         });
+    });
+    // Groups (M13-07, §17.12): other members' rows from each group's feed, and its cursor.
+    this.version(15).stores({
+      group: 'id',
+      groupMember: 'id, groupId, userId',
+      groupSeries: 'id, groupId',
+      groupLesson: 'id, groupId, seriesId',
+      groupSync: 'groupId',
     });
   }
 

@@ -17,6 +17,7 @@ import { Route as AppSplatRouteImport } from './routes/_app/$'
 import { Route as AppCheckEmailRouteImport } from './routes/_app/check-email'
 import { Route as AppForgotPasswordRouteImport } from './routes/_app/forgot-password'
 import { Route as AppGuideRouteImport } from './routes/_app/guide'
+import { Route as AppJoinRouteImport } from './routes/_app/join'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppResetPasswordRouteImport } from './routes/_app/reset-password'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
@@ -46,6 +47,8 @@ import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
 import { Route as AppThemesIndexRouteImport } from './routes/_app/themes/index'
 import { Route as AppThemesTagIdRouteImport } from './routes/_app/themes/$tagId'
 import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
+import { Route as AppGroupsGroupIdIndexRouteImport } from './routes/_app/groups/$groupId/index'
+import { Route as AppGroupsGroupIdMembersRouteImport } from './routes/_app/groups/$groupId/members'
 import { Route as AppInboxImportImportIdRouteImport } from './routes/_app/inbox/import.$importId'
 import { Route as AppSettingsTemplatesIndexRouteImport } from './routes/_app/settings/templates/index'
 import { Route as AppSettingsTemplatesTemplateIdRouteImport } from './routes/_app/settings/templates/$templateId'
@@ -54,6 +57,8 @@ import { Route as CaptureLessonsLessonIdCaptureRouteImport } from './routes/_cap
 import { Route as PrintLessonsLessonIdHandoutRouteImport } from './routes/_print/lessons/$lessonId.handout'
 import { Route as PrintLessonsLessonIdPrintRouteImport } from './routes/_print/lessons/$lessonId.print'
 import { Route as PrintSeriesSeriesIdPrintRouteImport } from './routes/_print/series/$seriesId.print'
+import { Route as AppGroupsGroupIdLessonsLessonIdRouteImport } from './routes/_app/groups/$groupId/lessons/$lessonId'
+import { Route as AppGroupsGroupIdSeriesSeriesIdRouteImport } from './routes/_app/groups/$groupId/series/$seriesId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -90,6 +95,11 @@ const AppForgotPasswordRoute = AppForgotPasswordRouteImport.update({
 const AppGuideRoute = AppGuideRouteImport.update({
   id: '/guide',
   path: '/guide',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppJoinRoute = AppJoinRouteImport.update({
+  id: '/join',
+  path: '/join',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPrivacyRoute = AppPrivacyRouteImport.update({
@@ -237,6 +247,16 @@ const AppVersesPassageRoute = AppVersesPassageRouteImport.update({
   path: '/verses/$passage',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGroupsGroupIdIndexRoute = AppGroupsGroupIdIndexRouteImport.update({
+  id: '/groups/$groupId/',
+  path: '/groups/$groupId/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGroupsGroupIdMembersRoute = AppGroupsGroupIdMembersRouteImport.update({
+  id: '/groups/$groupId/members',
+  path: '/groups/$groupId/members',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppInboxImportImportIdRoute = AppInboxImportImportIdRouteImport.update({
   id: '/inbox/import/$importId',
   path: '/inbox/import/$importId',
@@ -283,6 +303,18 @@ const PrintSeriesSeriesIdPrintRoute =
     path: '/series/$seriesId/print',
     getParentRoute: () => PrintRoute,
   } as any)
+const AppGroupsGroupIdLessonsLessonIdRoute =
+  AppGroupsGroupIdLessonsLessonIdRouteImport.update({
+    id: '/groups/$groupId/lessons/$lessonId',
+    path: '/groups/$groupId/lessons/$lessonId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppGroupsGroupIdSeriesSeriesIdRoute =
+  AppGroupsGroupIdSeriesSeriesIdRouteImport.update({
+    id: '/groups/$groupId/series/$seriesId',
+    path: '/groups/$groupId/series/$seriesId',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -290,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/check-email': typeof AppCheckEmailRoute
   '/forgot-password': typeof AppForgotPasswordRoute
   '/guide': typeof AppGuideRoute
+  '/join': typeof AppJoinRoute
   '/privacy': typeof AppPrivacyRoute
   '/reset-password': typeof AppResetPasswordRoute
   '/search': typeof AppSearchRoute
@@ -319,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/review/': typeof AppReviewIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/themes/': typeof AppThemesIndexRoute
+  '/groups/$groupId/members': typeof AppGroupsGroupIdMembersRoute
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -326,7 +360,10 @@ export interface FileRoutesByFullPath {
   '/lessons/$lessonId/handout': typeof PrintLessonsLessonIdHandoutRoute
   '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
+  '/groups/$groupId/': typeof AppGroupsGroupIdIndexRoute
   '/settings/templates/': typeof AppSettingsTemplatesIndexRoute
+  '/groups/$groupId/lessons/$lessonId': typeof AppGroupsGroupIdLessonsLessonIdRoute
+  '/groups/$groupId/series/$seriesId': typeof AppGroupsGroupIdSeriesSeriesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -334,6 +371,7 @@ export interface FileRoutesByTo {
   '/check-email': typeof AppCheckEmailRoute
   '/forgot-password': typeof AppForgotPasswordRoute
   '/guide': typeof AppGuideRoute
+  '/join': typeof AppJoinRoute
   '/privacy': typeof AppPrivacyRoute
   '/reset-password': typeof AppResetPasswordRoute
   '/search': typeof AppSearchRoute
@@ -363,6 +401,7 @@ export interface FileRoutesByTo {
   '/review': typeof AppReviewIndexRoute
   '/settings': typeof AppSettingsIndexRoute
   '/themes': typeof AppThemesIndexRoute
+  '/groups/$groupId/members': typeof AppGroupsGroupIdMembersRoute
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -370,7 +409,10 @@ export interface FileRoutesByTo {
   '/lessons/$lessonId/handout': typeof PrintLessonsLessonIdHandoutRoute
   '/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
+  '/groups/$groupId': typeof AppGroupsGroupIdIndexRoute
   '/settings/templates': typeof AppSettingsTemplatesIndexRoute
+  '/groups/$groupId/lessons/$lessonId': typeof AppGroupsGroupIdLessonsLessonIdRoute
+  '/groups/$groupId/series/$seriesId': typeof AppGroupsGroupIdSeriesSeriesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -381,6 +423,7 @@ export interface FileRoutesById {
   '/_app/check-email': typeof AppCheckEmailRoute
   '/_app/forgot-password': typeof AppForgotPasswordRoute
   '/_app/guide': typeof AppGuideRoute
+  '/_app/join': typeof AppJoinRoute
   '/_app/privacy': typeof AppPrivacyRoute
   '/_app/reset-password': typeof AppResetPasswordRoute
   '/_app/search': typeof AppSearchRoute
@@ -411,6 +454,7 @@ export interface FileRoutesById {
   '/_app/review/': typeof AppReviewIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/themes/': typeof AppThemesIndexRoute
+  '/_app/groups/$groupId/members': typeof AppGroupsGroupIdMembersRoute
   '/_app/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/_app/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/_app/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -418,7 +462,10 @@ export interface FileRoutesById {
   '/_print/lessons/$lessonId/handout': typeof PrintLessonsLessonIdHandoutRoute
   '/_print/lessons/$lessonId/print': typeof PrintLessonsLessonIdPrintRoute
   '/_print/series/$seriesId/print': typeof PrintSeriesSeriesIdPrintRoute
+  '/_app/groups/$groupId/': typeof AppGroupsGroupIdIndexRoute
   '/_app/settings/templates/': typeof AppSettingsTemplatesIndexRoute
+  '/_app/groups/$groupId/lessons/$lessonId': typeof AppGroupsGroupIdLessonsLessonIdRoute
+  '/_app/groups/$groupId/series/$seriesId': typeof AppGroupsGroupIdSeriesSeriesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -428,6 +475,7 @@ export interface FileRouteTypes {
     | '/check-email'
     | '/forgot-password'
     | '/guide'
+    | '/join'
     | '/privacy'
     | '/reset-password'
     | '/search'
@@ -457,6 +505,7 @@ export interface FileRouteTypes {
     | '/review/'
     | '/settings/'
     | '/themes/'
+    | '/groups/$groupId/members'
     | '/inbox/import/$importId'
     | '/settings/templates/$templateId'
     | '/settings/templates/new'
@@ -464,7 +513,10 @@ export interface FileRouteTypes {
     | '/lessons/$lessonId/handout'
     | '/lessons/$lessonId/print'
     | '/series/$seriesId/print'
+    | '/groups/$groupId/'
     | '/settings/templates/'
+    | '/groups/$groupId/lessons/$lessonId'
+    | '/groups/$groupId/series/$seriesId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -472,6 +524,7 @@ export interface FileRouteTypes {
     | '/check-email'
     | '/forgot-password'
     | '/guide'
+    | '/join'
     | '/privacy'
     | '/reset-password'
     | '/search'
@@ -501,6 +554,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/themes'
+    | '/groups/$groupId/members'
     | '/inbox/import/$importId'
     | '/settings/templates/$templateId'
     | '/settings/templates/new'
@@ -508,7 +562,10 @@ export interface FileRouteTypes {
     | '/lessons/$lessonId/handout'
     | '/lessons/$lessonId/print'
     | '/series/$seriesId/print'
+    | '/groups/$groupId'
     | '/settings/templates'
+    | '/groups/$groupId/lessons/$lessonId'
+    | '/groups/$groupId/series/$seriesId'
   id:
     | '__root__'
     | '/_app'
@@ -518,6 +575,7 @@ export interface FileRouteTypes {
     | '/_app/check-email'
     | '/_app/forgot-password'
     | '/_app/guide'
+    | '/_app/join'
     | '/_app/privacy'
     | '/_app/reset-password'
     | '/_app/search'
@@ -548,6 +606,7 @@ export interface FileRouteTypes {
     | '/_app/review/'
     | '/_app/settings/'
     | '/_app/themes/'
+    | '/_app/groups/$groupId/members'
     | '/_app/inbox/import/$importId'
     | '/_app/settings/templates/$templateId'
     | '/_app/settings/templates/new'
@@ -555,7 +614,10 @@ export interface FileRouteTypes {
     | '/_print/lessons/$lessonId/handout'
     | '/_print/lessons/$lessonId/print'
     | '/_print/series/$seriesId/print'
+    | '/_app/groups/$groupId/'
     | '/_app/settings/templates/'
+    | '/_app/groups/$groupId/lessons/$lessonId'
+    | '/_app/groups/$groupId/series/$seriesId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -621,6 +683,13 @@ declare module '@tanstack/react-router' {
       path: '/guide'
       fullPath: '/guide'
       preLoaderRoute: typeof AppGuideRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/join': {
+      id: '/_app/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof AppJoinRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/privacy': {
@@ -826,6 +895,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVersesPassageRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/groups/$groupId/': {
+      id: '/_app/groups/$groupId/'
+      path: '/groups/$groupId'
+      fullPath: '/groups/$groupId/'
+      preLoaderRoute: typeof AppGroupsGroupIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/groups/$groupId/members': {
+      id: '/_app/groups/$groupId/members'
+      path: '/groups/$groupId/members'
+      fullPath: '/groups/$groupId/members'
+      preLoaderRoute: typeof AppGroupsGroupIdMembersRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/inbox/import/$importId': {
       id: '/_app/inbox/import/$importId'
       path: '/inbox/import/$importId'
@@ -882,6 +965,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrintSeriesSeriesIdPrintRouteImport
       parentRoute: typeof PrintRoute
     }
+    '/_app/groups/$groupId/lessons/$lessonId': {
+      id: '/_app/groups/$groupId/lessons/$lessonId'
+      path: '/groups/$groupId/lessons/$lessonId'
+      fullPath: '/groups/$groupId/lessons/$lessonId'
+      preLoaderRoute: typeof AppGroupsGroupIdLessonsLessonIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/groups/$groupId/series/$seriesId': {
+      id: '/_app/groups/$groupId/series/$seriesId'
+      path: '/groups/$groupId/series/$seriesId'
+      fullPath: '/groups/$groupId/series/$seriesId'
+      preLoaderRoute: typeof AppGroupsGroupIdSeriesSeriesIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -890,6 +987,7 @@ interface AppRouteChildren {
   AppCheckEmailRoute: typeof AppCheckEmailRoute
   AppForgotPasswordRoute: typeof AppForgotPasswordRoute
   AppGuideRoute: typeof AppGuideRoute
+  AppJoinRoute: typeof AppJoinRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
   AppResetPasswordRoute: typeof AppResetPasswordRoute
   AppSearchRoute: typeof AppSearchRoute
@@ -919,10 +1017,14 @@ interface AppRouteChildren {
   AppReviewIndexRoute: typeof AppReviewIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppThemesIndexRoute: typeof AppThemesIndexRoute
+  AppGroupsGroupIdMembersRoute: typeof AppGroupsGroupIdMembersRoute
   AppInboxImportImportIdRoute: typeof AppInboxImportImportIdRoute
   AppSettingsTemplatesTemplateIdRoute: typeof AppSettingsTemplatesTemplateIdRoute
   AppSettingsTemplatesNewRoute: typeof AppSettingsTemplatesNewRoute
+  AppGroupsGroupIdIndexRoute: typeof AppGroupsGroupIdIndexRoute
   AppSettingsTemplatesIndexRoute: typeof AppSettingsTemplatesIndexRoute
+  AppGroupsGroupIdLessonsLessonIdRoute: typeof AppGroupsGroupIdLessonsLessonIdRoute
+  AppGroupsGroupIdSeriesSeriesIdRoute: typeof AppGroupsGroupIdSeriesSeriesIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -930,6 +1032,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCheckEmailRoute: AppCheckEmailRoute,
   AppForgotPasswordRoute: AppForgotPasswordRoute,
   AppGuideRoute: AppGuideRoute,
+  AppJoinRoute: AppJoinRoute,
   AppPrivacyRoute: AppPrivacyRoute,
   AppResetPasswordRoute: AppResetPasswordRoute,
   AppSearchRoute: AppSearchRoute,
@@ -959,10 +1062,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppReviewIndexRoute: AppReviewIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppThemesIndexRoute: AppThemesIndexRoute,
+  AppGroupsGroupIdMembersRoute: AppGroupsGroupIdMembersRoute,
   AppInboxImportImportIdRoute: AppInboxImportImportIdRoute,
   AppSettingsTemplatesTemplateIdRoute: AppSettingsTemplatesTemplateIdRoute,
   AppSettingsTemplatesNewRoute: AppSettingsTemplatesNewRoute,
+  AppGroupsGroupIdIndexRoute: AppGroupsGroupIdIndexRoute,
   AppSettingsTemplatesIndexRoute: AppSettingsTemplatesIndexRoute,
+  AppGroupsGroupIdLessonsLessonIdRoute: AppGroupsGroupIdLessonsLessonIdRoute,
+  AppGroupsGroupIdSeriesSeriesIdRoute: AppGroupsGroupIdSeriesSeriesIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

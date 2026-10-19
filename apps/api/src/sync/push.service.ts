@@ -24,6 +24,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import type { z } from 'zod';
 import { Prisma, type User } from '../generated/prisma/client.js';
+import { groupOfSeries, refreshFeed } from '../groups/feed.js';
 // A value import, not `import type`: Nest resolves the constructor parameter from its class.
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
@@ -156,6 +157,8 @@ export class PushService {
       const problem = await this.checkReferences(tx, userId, entity, change.row);
       if (problem) return reject(changeId, SyncErrorCode.REFERENCE_NOT_FOUND, problem);
     }
+    const shared = await this.checkShared(tx, change, current);
+    if (shared) return reject(changeId, SyncErrorCode.IN_GROUP, shared);
 
     const server = current ? toRow<RowEntity>(entity, current) : null;
     const serverRev = Number(current?.rev ?? 0);
@@ -188,10 +191,13 @@ export class PushService {
               : ((current?.bodyDevice as string | null | undefined) ?? null),
         })
       : undefined;
+    const written: Written[] = [{ entity, id: entityId }];
     const restored =
       outcome.keepsClientEdit && outcome.row.deletedAt === null
-        ? await this.restoreParents(tx, entity, outcome.row, rev)
+        ? await this.restoreParents(tx, entity, outcome.row, rev, written)
         : false;
+    // A lesson or series shared into a group shows the group what it now is (§17.12).
+    await refreshFeed(tx, written.filter(isGroupVisible));
     return resultOf(
       changeId,
       rev,
@@ -278,6 +284,7 @@ export class PushService {
     entity: RowEntity,
     row: SyncRow<RowEntity>,
     rev: bigint,
+    written: Written[],
   ): Promise<boolean> {
     const values = row as unknown as Record<string, string | null>;
     let restored = false;
@@ -294,10 +301,36 @@ export class PushService {
       if (target === 'section') {
         await this.relink(tx, parent.userId, parentRow as SyncRow<'section'>);
       }
-      await this.restoreParents(tx, target, parentRow, rev);
+      written.push({ entity: target, id });
+      await this.restoreParents(tx, target, parentRow, rev, written);
       restored = true;
     }
     return restored;
+  }
+
+  /**
+   * Why a change would take a shared series or one of its lessons out of its group, which only the
+   * group's endpoints do (§17.12): a lesson can't move to another series, and a shared series
+   * can't be deleted. Undefined when it doesn't.
+   */
+  private async checkShared(
+    tx: Tx,
+    change: RowChange,
+    current: StoredRow | null,
+  ): Promise<string | undefined> {
+    if (!current || current.deletedAt !== null) return undefined;
+    if (change.entity === 'series') {
+      const deleting = change.op === 'delete' || change.row.deletedAt !== null;
+      if (deleting && (await groupOfSeries(tx, current.id))) {
+        return 'The series is shared with a group: take it out of the group first';
+      }
+    } else if (change.entity === 'lesson' && change.op === 'upsert') {
+      const from = current.seriesId as string | null;
+      if (change.row.seriesId !== from && (await groupOfSeries(tx, from))) {
+        return "The lesson's series is shared with a group, so it can't move to another";
+      }
+    }
+    return undefined;
   }
 
   /** Why the row can't name the rows it references, or undefined when it can. */
@@ -402,6 +435,16 @@ export class PushService {
     return result;
   }
 }
+
+/** A row a change wrote, itself or a parent it restored. */
+interface Written {
+  entity: RowEntity;
+  id: string;
+}
+
+/** The rows a group's feed may show (§17.12). */
+const isGroupVisible = (row: Written): row is { entity: 'lesson' | 'series'; id: string } =>
+  row.entity === 'lesson' || row.entity === 'series';
 
 function resultOf(
   changeId: string,

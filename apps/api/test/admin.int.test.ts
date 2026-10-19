@@ -156,6 +156,34 @@ describe('user:disable and user:enable', () => {
   });
 });
 
+describe('groups', () => {
+  it('user:disable and user:delete take the account out of its groups, passing them on', async () => {
+    const ownerId = await signUp('owner@example.com');
+    const memberId = await signUp('member@example.com');
+    const group = await prisma.group.create({
+      data: {
+        name: 'Thursday group',
+        inviteTokenHash: 'x',
+        members: {
+          create: [
+            { userId: ownerId, role: 'owner', displayName: 'Ann' },
+            { userId: memberId, role: 'member', displayName: 'Ben' },
+          ],
+        },
+      },
+    });
+
+    await commands.disable.run(['owner@example.com']);
+    expect(output.at(-1)).toBe('Disabled owner@example.com; signed out 1 session; left 1 group.');
+    const members = await prisma.groupMember.findMany({ where: { groupId: group.id } });
+    expect(members.map((m) => [m.userId, m.role])).toEqual([[memberId, 'owner']]);
+
+    // The last member's account going takes the group with it.
+    await commands.delete.run(['member@example.com'], { yes: true });
+    await expect(prisma.group.count()).resolves.toBe(0);
+  });
+});
+
 describe('user:verify', () => {
   it('marks the email verified, once', async () => {
     const userId = await signUp('reader@example.com');

@@ -177,6 +177,15 @@ async function fill(account: Account) {
       account.token,
     )
     .expect(201);
+  // A group around the series, which isn't synced either (M13-07): the group, its member, its
+  // series and its feed.
+  await client
+    .post(
+      '/api/groups',
+      { name: 'Thursday group', seriesId: rows.series!.id, displayName: 'Ann' },
+      account.token,
+    )
+    .expect(201);
   const revs = Object.fromEntries(
     ROW_ENTITIES.map((entity, i) => [entity, (results[i] as { rev: number }).rev]),
   ) as Record<RowEntity, number>;
@@ -192,19 +201,38 @@ async function ownedTables(): Promise<string[]> {
   return rows.map((r) => r.table_name);
 }
 
-/** Every row the account has in every table, its `user` row included, as stored. */
+/**
+ * The group tables with no `user_id` (§17.12), and how to find the rows of the account's groups:
+ * the groups it's a member of.
+ */
+const GROUP_TABLES: Record<string, string> = {
+  group: 'id',
+  group_series: 'group_id',
+  group_feed: 'group_id',
+};
+
+/** Every row the account has in every table, its `user` row and its groups' included, as stored. */
 async function everything(userId: string): Promise<Record<string, unknown[]>> {
   const all: Record<string, unknown[]> = {};
+  const read = async (table: string, where: string) =>
+    (
+      await t.prisma.$queryRawUnsafe<{ row: unknown }[]>(
+        `SELECT to_jsonb(r) AS row FROM "public"."${table}" r WHERE ${where}
+         ORDER BY to_jsonb(r)::text`,
+        userId,
+      )
+    ).map((r) => r.row);
   for (const [table, column] of [
     ['user', 'id'],
     ...(await ownedTables()).map((name) => [name, 'user_id']),
   ] as const) {
-    const rows = await t.prisma.$queryRawUnsafe<{ row: unknown }[]>(
-      `SELECT to_jsonb(r) AS row FROM "public"."${table}" r WHERE r."${column}" = $1::uuid
-       ORDER BY to_jsonb(r)::text`,
-      userId,
+    all[table] = await read(table, `r."${column}" = $1::uuid`);
+  }
+  for (const [table, column] of Object.entries(GROUP_TABLES)) {
+    all[table] = await read(
+      table,
+      `r."${column}" IN (SELECT group_id FROM group_member WHERE user_id = $1::uuid)`,
     );
-    all[table] = rows.map((r) => r.row);
   }
   return all;
 }
@@ -231,9 +259,50 @@ const snake = (model: string) =>
 describe('the fixture', () => {
   it('reaches every model', async () => {
     const tables = Object.values(Prisma.ModelName).map(snake).toSorted();
-    expect(['user', ...(await ownedTables())].toSorted()).toEqual(tables);
+    expect(['user', ...(await ownedTables()), ...Object.keys(GROUP_TABLES)].toSorted()).toEqual(
+      tables,
+    );
     const { before } = await theirAccount();
     expect(Object.entries(before).filter(([, rows]) => rows.length === 0)).toEqual([]);
+  });
+});
+
+describe('groups', () => {
+  it("their group is closed to me: its feed, its invite's address and every change", async () => {
+    const their = await theirAccount();
+    const mine = await signUp();
+    const { id: groupId } = await t.prisma.group.findFirstOrThrow();
+    const member = await t.prisma.groupMember.findFirstOrThrow({ where: { groupId } });
+    const mySeries = { ...synced(), title: 'Mine', description: '', kind: 'custom' };
+    await pushOk(client, mine, [upsert('series', mySeries)]);
+
+    const pulled = await client
+      .get(`/api/sync/pull?cursor=0&clientVersion=${CLIENT_VERSION}&${PULL_DEVICE}`, mine.token)
+      .expect(200);
+    expect(pullResponseSchema.parse(pulled.body).groups).toEqual([]);
+    const at = `/api/groups/${groupId}`;
+    const calls = [
+      client.get(`${at}/pull?cursor=0&clientVersion=${CLIENT_VERSION}`, mine.token),
+      client.get(`${at}/invite`, mine.token),
+      client.post(`${at}/invite`, {}, mine.token),
+      client.patch(at, { name: 'Mine now' }, mine.token),
+      client.post(`${at}/leave`, {}, mine.token),
+      client.delete(`${at}/members/${their.theirs.id}`, {}, mine.token),
+      client.post(`${at}/owner`, { userId: mine.id }, mine.token),
+      client.post(`${at}/series`, { seriesId: mySeries.id }, mine.token),
+      client.delete(`${at}/series/${their.rows.series.id}`, {}, mine.token),
+    ];
+    for (const call of calls) expect(errorCode(await call.expect(404))).toBe('NOT_FOUND');
+    // Nor make a group of their series.
+    await client
+      .post(
+        '/api/groups',
+        { name: 'Theirs', seriesId: their.rows.series.id, displayName: 'Me' },
+        mine.token,
+      )
+      .expect(404);
+    expect(member.userId).toBe(their.theirs.id);
+    await expectUntouched(their);
   });
 });
 

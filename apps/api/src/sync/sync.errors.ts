@@ -14,6 +14,11 @@ export const SyncErrorCode = {
   REFERENCE_NOT_FOUND: 'REFERENCE_NOT_FOUND',
   /** Another live row already has the same unique value, such as a tag name. */
   DUPLICATE: 'DUPLICATE',
+  /**
+   * The change would take a series or lesson out of the group it's shared with (§17.12), which
+   * only the group's endpoints do.
+   */
+  IN_GROUP: 'IN_GROUP',
   /** The row breaks a rule only the database checks. */
   CONSTRAINT_VIOLATION: 'CONSTRAINT_VIOLATION',
 } as const;

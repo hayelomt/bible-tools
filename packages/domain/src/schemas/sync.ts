@@ -223,5 +223,12 @@ export const pullResponseSchema = z.strictObject({
   serverTime: timestampSchema,
   /** Older clients get 426 and "Update required" (§6.6). */
   minClientVersion: clientVersionSchema,
+  /**
+   * The user's groups and each one's feed revision (§17.12), from the same snapshot: the device
+   * pulls the groups that moved, and drops one that's gone from the list.
+   */
+  groups: z.array(z.strictObject({ id: idSchema, rev: revSchema })),
 });
 export type PullResponse = z.infer<typeof pullResponseSchema>;
+/** One of the user's groups in a pull, with its feed revision (§17.12). */
+export type PulledGroup = PullResponse['groups'][number];

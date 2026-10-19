@@ -56,6 +56,7 @@ model User {
   syncChanges     SyncChange[]
   devices         Device[]
   shareLinks      ShareLink[]
+  groupMembers    GroupMember[]
 
   @@map("user")
 }
@@ -104,6 +105,75 @@ model ShareLink {
 
   @@index([userId, createdAt])
   @@map("share_link")
+}
+
+// Groups (F35, §17.12), server only: written by the group endpoints, never pushed. Members read
+// each other through group_feed, at the group's own revision (sync_rev). The invite token is
+// HMAC(SHARE_LINK_SECRET, "invite:<id>:<inviteVersion>"); only its SHA-256 is stored. A group is
+// deleted when its last member leaves.
+model Group {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  name            String
+  syncRev         BigInt   @default(0) @map("sync_rev")
+  inviteVersion   Int      @default(1) @map("invite_version")
+  inviteTokenHash String   @unique @map("invite_token_hash")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  members GroupMember[]
+  series  GroupSeries[]
+  feed    GroupFeed[]
+
+  @@map("group")
+}
+
+// role: owner | member; one owner per group (a partial unique index). Deleted on leaving.
+model GroupMember {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  groupId     String   @map("group_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  role        String
+  displayName String   @map("display_name")
+  joinedAt    DateTime @default(now()) @map("joined_at") @db.Timestamptz(3)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@map("group_member")
+}
+
+// A series shared into a group: in one group at most, added by the group's owner, its own.
+model GroupSeries {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  groupId   String   @map("group_id") @db.Uuid
+  seriesId  String   @unique @map("series_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  group  Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@map("group_series")
+}
+
+// What a group's members have seen, at the group rev it last changed; gone once they must drop
+// it. An index, not a copy: the rows are read from their tables when pulled. entity: group |
+// member | series | lesson (M13-08 and M13-09 add section, question and comment).
+model GroupFeed {
+  groupId  String  @map("group_id") @db.Uuid
+  entity   String
+  entityId String  @map("entity_id") @db.Uuid
+  rev      BigInt
+  gone     Boolean @default(false)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, entity, entityId])
+  @@index([groupId, rev])
+  @@index([entity, entityId])
+  @@map("group_feed")
 }
 
 // kind: verify | reset
@@ -159,8 +229,9 @@ model Series {
   rev         BigInt    @default(0)
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   lessons Lesson[]
+  groups  GroupSeries[]
 
   @@index([userId, rev])
   @@map("series")

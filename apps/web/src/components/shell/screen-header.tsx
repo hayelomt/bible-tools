@@ -24,7 +24,8 @@ export function ScreenHeader({ laptop }: { laptop: boolean }) {
     >
       {back && (
         <Link
-          to={back}
+          // The router resolves `../..` as it does `..`, though its types list `..` alone.
+          to={back as '..'}
           aria-label="Back"
           data-slot="button"
           className={buttonVariants({ variant: 'ghost', size: 'icon', className: '-ml-2 lg:ml-0' })}

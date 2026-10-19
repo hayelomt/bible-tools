@@ -51,10 +51,15 @@ export class PullService {
   async pull(user: User, { cursor, limit }: PullQuery): Promise<PullResponse> {
     assertVerified(user);
     const serverTime = new Date().toISOString();
-    const { rows, hasMore, remaining } = await this.prisma.$transaction(
+    const { rows, hasMore, remaining, groups } = await this.prisma.$transaction(
       async (tx) => ({
         ...(await this.page(tx, user.id, BigInt(cursor), limit)),
         remaining: await this.count(tx, user.id, BigInt(cursor)),
+        groups: await tx.group.findMany({
+          where: { members: { some: { userId: user.id } } },
+          select: { id: true, syncRev: true },
+          orderBy: { id: 'asc' },
+        }),
       }),
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
@@ -66,6 +71,7 @@ export class PullService {
       remaining,
       serverTime,
       minClientVersion: MIN_CLIENT_VERSION,
+      groups: groups.map((group) => ({ id: group.id, rev: Number(group.syncRev) })),
     };
   }
 

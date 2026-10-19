@@ -181,6 +181,13 @@ async function fillAccount(userId: string): Promise<void> {
         live: true,
       },
     }),
+    p.group.create({
+      data: {
+        name: 'Thursday group',
+        inviteTokenHash: crypto.randomUUID(),
+        members: { create: { userId, role: 'owner', displayName: 'Ann' } },
+      },
+    }),
     p.resurfaceDismissal.create({
       data: { userId, rule: 'year_ago', targetKey: lesson.id, until: new Date('2027-10-19') },
     }),

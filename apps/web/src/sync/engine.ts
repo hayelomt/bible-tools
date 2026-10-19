@@ -1,9 +1,16 @@
-import type { MeResponse, PullResponse, PushRequest, PushResponse } from '@lamp/domain';
+import type {
+  MeResponse,
+  PulledGroup,
+  PullResponse,
+  PushRequest,
+  PushResponse,
+} from '@lamp/domain';
 import { onLocalWrite } from '@/data/changes.ts';
 import { type LampDb, SYNC_STATE_KEY } from '@/data/db.ts';
 import { ApiRequestError, NetworkError } from '@/lib/api.ts';
 import { copyNotes, removeNotes } from './device-data.ts';
 import { settleBatch, takeBatch, toChange } from './outbox.ts';
+import { type PullGroup, syncGroups } from './groups.ts';
 import { applyPage, clockOffset } from './pull.ts';
 import { matchTagsByName } from './tags.ts';
 
@@ -44,6 +51,8 @@ export interface SyncStatus {
 export interface SyncApi {
   push(body: PushRequest): Promise<PushResponse>;
   pull(cursor: number, device: { deviceId: string; deviceName: string }): Promise<PullResponse>;
+  /** A group's feed (§17.12). */
+  pullGroup: PullGroup;
 }
 
 export interface SyncDeps {
@@ -205,7 +214,9 @@ export class SyncEngine {
       if ((await db.syncState.get(SYNC_STATE_KEY))?.cursor === 0) await this.pullAll();
       await matchTagsByName(db);
       await this.pushAll();
-      await this.pullAll();
+      const groups = await this.pullAll();
+      // Then the groups the user is in, and those they've left (§17.12).
+      if (groups) await syncGroups(db, groups, this.deps.api.pullGroup);
       this.failures = 0;
       this.set({
         phase: 'synced',
@@ -237,11 +248,14 @@ export class SyncEngine {
     }
   }
 
-  /** Pulls pages until the server has nothing newer, counting rows towards the first total. */
-  private async pullAll(): Promise<void> {
+  /**
+   * Pulls pages until the server has nothing newer, counting rows towards the first total. Returns
+   * the user's groups as the last page listed them.
+   */
+  private async pullAll(): Promise<PulledGroup[] | undefined> {
     const { db, api, deviceName } = this.deps;
     const state = await db.syncState.get(SYNC_STATE_KEY);
-    if (!state) return;
+    if (!state) return undefined;
     const device = { deviceId: state.deviceId, deviceName };
     const firstSync = state.cursor === 0;
     let cursor = state.cursor;
@@ -256,7 +270,7 @@ export class SyncEngine {
       done += page.rows.length;
       if (total > 0) this.set({ progress: { done: Math.min(done, total), total, firstSync } });
       cursor = page.nextCursor;
-      if (!page.hasMore) return;
+      if (!page.hasMore) return page.groups;
     }
   }
 

@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { isCommonPassword, hashPassword } from '../auth/passwords.js';
 import { Prisma, type User } from '../generated/prisma/client.js';
+import { GroupsService } from '../groups/groups.service.js';
 // Value imports, not `import type`: Nest resolves the constructor parameters from their classes.
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CliError } from './cli-error.js';
@@ -86,20 +87,35 @@ export class UserCreateCommand extends UserCommand {
 @Command({
   name: 'user:disable',
   arguments: '<email>',
-  description: 'Stop an account from signing in, and sign out all its devices. Its data stays.',
+  description:
+    'Stop an account from signing in, sign out all its devices and take it out of its groups. Its data stays.',
 })
 export class UserDisableCommand extends UserCommand {
+  constructor(
+    prisma: PrismaService,
+    private readonly groups: GroupsService,
+  ) {
+    super(prisma);
+  }
+
   async run([email = '']: string[]): Promise<void> {
     const user = await this.findUser(email);
     if (user.disabledAt) {
       console.log(`${user.email} was already disabled.`);
       return;
     }
-    const [, sessions] = await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: user.id }, data: { disabledAt: new Date() } }),
-      this.prisma.session.deleteMany({ where: { userId: user.id } }),
-    ]);
-    console.log(`Disabled ${user.email}; signed out ${plural(sessions.count, 'session')}.`);
+    // Its posts leave every group at once, and a group it owns passes on (§17.12).
+    const left = await this.prisma.$transaction(async (tx) => {
+      const memberships = await tx.groupMember.count({ where: { userId: user.id } });
+      await this.groups.leaveAll(user.id, tx);
+      await tx.user.update({ where: { id: user.id }, data: { disabledAt: new Date() } });
+      const ended = await tx.session.deleteMany({ where: { userId: user.id } });
+      return { sessions: ended.count, groups: memberships };
+    });
+    console.log(
+      `Disabled ${user.email}; signed out ${plural(left.sessions, 'session')}` +
+        (left.groups > 0 ? `; left ${plural(left.groups, 'group')}.` : '.'),
+    );
   }
 }
 
@@ -147,6 +163,13 @@ export class UserVerifyCommand extends UserCommand {
     'Delete an account and every row it owns, as Delete account in the app does (a deletion request). Needs --yes.',
 })
 export class UserDeleteCommand extends UserCommand {
+  constructor(
+    prisma: PrismaService,
+    private readonly groups: GroupsService,
+  ) {
+    super(prisma);
+  }
+
   async run([email = '']: string[], options: { yes?: boolean } = {}): Promise<void> {
     const user = await this.findUser(email);
     if (!options.yes) {
@@ -154,8 +177,12 @@ export class UserDeleteCommand extends UserCommand {
         `This deletes ${user.email} and all its notes, for good. Run it again with --yes.`,
       );
     }
-    // Every table with a user_id cascades from the user, as for Delete account (§7.2).
-    await this.prisma.user.deleteMany({ where: { id: user.id } });
+    // Every table with a user_id cascades from the user, as for Delete account (§7.2), after it
+    // leaves its groups (§17.12).
+    await this.prisma.$transaction(async (tx) => {
+      await this.groups.leaveAll(user.id, tx);
+      await tx.user.deleteMany({ where: { id: user.id } });
+    });
     console.log(`Deleted ${user.email} and all its data.`);
   }
 

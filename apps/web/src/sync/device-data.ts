@@ -17,6 +17,7 @@ import {
   SYNC_STATE_KEY,
   type SyncState,
 } from '@/data/db.ts';
+import { clearGroups } from './groups.ts';
 import { rowKey } from './outbox.ts';
 
 /** The account the device's notes are being given to. */
@@ -107,6 +108,7 @@ export async function removeNotes(db: LampDb, owner: Owner | null): Promise<void
     await db.link.clear();
     await db.outbox.clear();
     await db.digestDraft.clear();
+    await clearGroups(db);
     await resetSettings(db);
     const now = new Date().toISOString();
     for (const name of SEED_TAGS) {
@@ -187,6 +189,8 @@ export async function copyNotes(db: LampDb, owner: Owner): Promise<void> {
     await db.citation.clear();
     await db.link.clear();
     await db.outbox.clear();
+    // The other account's groups aren't this one's: its own pull brings its groups (§17.12).
+    await clearGroups(db);
     for (const [entity, copy] of copies) {
       await queueCreate(db, entity, copy);
       changed.push({ entity, id: copy.id });

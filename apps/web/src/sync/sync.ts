@@ -2,14 +2,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useSyncExternalStore } from 'react';
 import { db } from '@/data/db.ts';
 import { refreshAccount, useAccount } from '@/lib/account.ts';
-import { CLIENT_VERSION, pullChanges, pushChanges } from '@/lib/api.ts';
+import { CLIENT_VERSION, pullChanges, pullGroup, pushChanges } from '@/lib/api.ts';
 import { deviceName } from './device-name.ts';
 import { SyncEngine, type SyncStatus } from './engine.ts';
 
 /** The app's sync engine, started with the background work once the device is set up. */
 export const syncEngine = new SyncEngine({
   db,
-  api: { push: pushChanges, pull: pullChanges },
+  api: { push: pushChanges, pull: pullChanges, pullGroup },
   deviceName: deviceName(navigator.userAgent),
   clientVersion: CLIENT_VERSION,
 });

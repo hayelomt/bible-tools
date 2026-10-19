@@ -79,6 +79,11 @@ const SERVER_ONLY_TABLES = [
   'email_token',
   'sync_change',
   'share_link',
+  // Groups (§17.12): written by the group endpoints; members read projections of them.
+  'group',
+  'group_member',
+  'group_series',
+  'group_feed',
 ];
 
 /** The JSON Schema types each Postgres column type may appear as on the wire. */

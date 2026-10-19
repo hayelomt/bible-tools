@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { type Env, envFilePaths, envSchema } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { GroupsModule } from './groups/groups.module.js';
 import { ShareModule } from './share/share.module.js';
 import { SyncModule } from './sync/sync.module.js';
 import { withoutShareToken } from './share/share-token.js';
@@ -46,6 +47,7 @@ import { withoutShareToken } from './share/share-token.js';
     AccountModule,
     SyncModule,
     ShareModule,
+    GroupsModule,
     HealthModule,
   ],
 })

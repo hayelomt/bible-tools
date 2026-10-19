@@ -324,6 +324,7 @@ export {
   type ConflictResolution,
   MAX_CHANGES_PER_PUSH,
   MAX_PULL_LIMIT,
+  type PulledGroup,
   type PulledRow,
   pulledRowSchema,
   type PullQuery,
@@ -340,3 +341,4 @@ export {
   pushResultSchema,
 } from './schemas/sync.ts';
 export * from './digest.ts';
+export * from './schemas/groups.ts';

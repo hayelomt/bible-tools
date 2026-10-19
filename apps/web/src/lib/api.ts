@@ -22,6 +22,13 @@ import {
   pushResponseSchema,
   shareLinkSchema,
   shareLinksResponseSchema,
+  type CreateGroupRequest,
+  type GroupPullResponse,
+  groupIdResponseSchema,
+  groupPullResponseSchema,
+  type InvitePreview,
+  invitePreviewSchema,
+  inviteResponseSchema,
 } from '@lamp/domain';
 import { version } from '../../package.json';
 
@@ -56,7 +63,7 @@ export class NetworkError extends Error {
 }
 
 async function request(
-  method: 'GET' | 'POST' | 'DELETE',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
 ): Promise<Response> {
@@ -159,6 +166,60 @@ export async function pullChanges(cursor: number, device: PullDevice): Promise<P
   });
   const res = await request('GET', `/api/sync/pull?${query}`);
   return pullResponseSchema.parse(await res.json());
+}
+
+/** `GET /api/groups/:id/pull`: a group's feed after the device's cursor for it (§17.12). */
+export async function pullGroup(groupId: string, cursor: number): Promise<GroupPullResponse> {
+  const query = new URLSearchParams({ cursor: String(cursor), clientVersion: CLIENT_VERSION });
+  const res = await request('GET', `/api/groups/${groupId}/pull?${query}`);
+  return groupPullResponseSchema.parse(await res.json());
+}
+
+/** `POST /api/groups`: a group around one of the user's series, with the user as owner. */
+export async function createGroup(body: CreateGroupRequest): Promise<string> {
+  const res = await request('POST', '/api/groups', body);
+  return groupIdResponseSchema.parse(await res.json()).groupId;
+}
+
+export async function renameGroup(groupId: string, name: string): Promise<void> {
+  await request('PATCH', `/api/groups/${groupId}`, { name });
+}
+
+/** The invite's address (owner); with `fresh`, a new one that turns the old one off. */
+export async function groupInvite(groupId: string, fresh = false): Promise<string> {
+  const res = await request(fresh ? 'POST' : 'GET', `/api/groups/${groupId}/invite`);
+  return inviteResponseSchema.parse(await res.json()).url;
+}
+
+/** What an invite opens: the group's name, its owner and its series. Signed in or not. */
+export async function previewInvite(token: string): Promise<InvitePreview> {
+  const res = await request('POST', '/api/invites/preview', { token });
+  return invitePreviewSchema.parse(await res.json());
+}
+
+export async function joinGroup(token: string, displayName: string): Promise<string> {
+  const res = await request('POST', '/api/invites/join', { token, displayName });
+  return groupIdResponseSchema.parse(await res.json()).groupId;
+}
+
+export async function leaveGroup(groupId: string): Promise<void> {
+  await request('POST', `/api/groups/${groupId}/leave`);
+}
+
+export async function removeMember(groupId: string, userId: string): Promise<void> {
+  await request('DELETE', `/api/groups/${groupId}/members/${userId}`);
+}
+
+export async function makeOwner(groupId: string, userId: string): Promise<void> {
+  await request('POST', `/api/groups/${groupId}/owner`, { userId });
+}
+
+export async function addGroupSeries(groupId: string, seriesId: string): Promise<void> {
+  await request('POST', `/api/groups/${groupId}/series`, { seriesId });
+}
+
+export async function removeGroupSeries(groupId: string, seriesId: string): Promise<void> {
+  await request('DELETE', `/api/groups/${groupId}/series/${seriesId}`);
 }
 
 /** `GET /api/account/devices`: the devices signed in to the account (§6.6). */

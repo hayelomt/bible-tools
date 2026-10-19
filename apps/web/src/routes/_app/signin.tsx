@@ -18,6 +18,11 @@ import { useOnline } from '@/lib/use-online.ts';
 
 export const Route = createFileRoute('/_app/signin')({
   staticData: { title: 'Sign in', back: '/settings' },
+  // Where to go after signing in: a group's invite (M13-07), or Settings.
+  validateSearch: (search: Record<string, unknown>): { next?: string } => ({
+    next:
+      typeof search.next === 'string' && search.next.startsWith('/join?') ? search.next : undefined,
+  }),
   component: SignIn,
 });
 
@@ -26,6 +31,7 @@ function SignIn() {
   const account = useAccount().data;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const online = useOnline();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +40,7 @@ function SignIn() {
     mutationFn: login,
     onSuccess: (me) => {
       setAccount(queryClient, me);
-      void navigate({ to: '/settings' });
+      void (next ? navigate({ href: next }) : navigate({ to: '/settings' }));
     },
   });
 

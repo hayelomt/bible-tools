@@ -64,6 +64,7 @@ const page = (rowsOut: object[], cursor: number, extra: object = {}) => ({
   remaining: rowsOut.length,
   serverTime: new Date().toISOString(),
   minClientVersion: '0.0.0',
+  groups: [],
   ...extra,
 });
 const applied = (changes: Change[]) => ({

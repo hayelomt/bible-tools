@@ -1,6 +1,8 @@
 import {
   apiErrorSchema,
   ENTITY_NAMES,
+  type GroupPullResponse,
+  groupPullResponseSchema,
   keyBetween,
   lastQuarter,
   type MeResponse,
@@ -118,6 +120,13 @@ class HttpApi implements SyncApi {
       ...by,
     });
     return pullResponseSchema.parse(await this.call('GET', `/api/sync/pull?${query}`));
+  }
+
+  async pullGroup(groupId: string, cursor: number): Promise<GroupPullResponse> {
+    const query = new URLSearchParams({ cursor: `${cursor}`, clientVersion: MIN_CLIENT_VERSION });
+    return groupPullResponseSchema.parse(
+      await this.call('GET', `/api/groups/${groupId}/pull?${query}`),
+    );
   }
 
   async call(method: 'GET' | 'POST', path: string, payload?: unknown): Promise<unknown> {

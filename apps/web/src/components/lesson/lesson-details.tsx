@@ -7,6 +7,7 @@ import { PassageInput } from '@/components/passage-input.tsx';
 import { Segmented } from '@/components/segmented.tsx';
 import { SeriesDialog } from '@/components/series/series-dialog.tsx';
 import { TagInput } from '@/components/tags/tag-input.tsx';
+import { groupOfSeries } from '@/data/groups.ts';
 import { allSeries } from '@/data/queries.ts';
 import { KIND_LABELS } from '@/lib/labels.ts';
 import { SourceFields } from './source-fields.tsx';
@@ -35,6 +36,12 @@ interface LessonDetailsProps {
 export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
   const { values, save, flush } = saver;
   const series = useLiveQuery(() => allSeries(), []);
+  const seriesId = values.seriesId;
+  // A lesson of a series shared with a group stays in it (§17.12).
+  const inGroup = useLiveQuery(
+    async () => (seriesId ? (await groupOfSeries(seriesId)) !== null : false),
+    [seriesId],
+  );
   const [creatingSeries, setCreatingSeries] = useState(false);
   const [speaker, setSpeaker] = useState(values.speaker ?? '');
   const [church, setChurch] = useState(values.church ?? '');
@@ -44,6 +51,7 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
     church: useId(),
     passages: useId(),
     series: useId(),
+    seriesNote: useId(),
     tags: useId(),
   };
   const kindName = useId();
@@ -118,6 +126,8 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
         </label>
         <NativeSelect
           id={ids.series}
+          disabled={inGroup === true}
+          aria-describedby={inGroup ? ids.seriesNote : undefined}
           value={values.seriesId ?? ''}
           onChange={(event) => {
             const next = event.target.value;
@@ -138,6 +148,11 @@ export function LessonDetails({ saver, lessonId }: LessonDetailsProps) {
           ))}
           <option value={CREATE_SERIES}>Create series…</option>
         </NativeSelect>
+        {inGroup && (
+          <p id={ids.seriesNote} className="text-sm text-muted-foreground @sm:col-start-2">
+            The series is shared with a group, so its lessons stay in it.
+          </p>
+        )}
 
         {lessonId && (
           <>

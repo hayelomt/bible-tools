@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { envFilePaths, envSchema } from '../config/env.js';
+import { GroupsService } from '../groups/groups.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { NewPasswordQuestions, PasswordInput } from './password-input.js';
 import { ShareLinkRevokeCommand } from './share-link.commands.js';
@@ -23,6 +24,8 @@ import {
     PrismaModule,
   ],
   providers: [
+    // The service alone: the group controllers' rate limits need the HTTP app's throttler.
+    GroupsService,
     NewPasswordQuestions,
     PasswordInput,
     ShareLinkRevokeCommand,

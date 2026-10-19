@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { groupPullResponseSchema } from './schemas/groups.ts';
 import { pullResponseSchema, pushRequestSchema } from './schemas/sync.ts';
 
 /**
  * A fingerprint of what sync carries (TECH-DESIGN §6.7): the JSON Schema of a pull page, as the
- * device parses it, and of a push, as the server accepts it. Every entity, column, enum value,
+ * device parses it (its own and a group's, §17.12), and of a push, as the server accepts it. Every entity, column, enum value,
  * body node and translation id is in it, so a change to any of them changes the fingerprint.
  * Refinements (a passage in the book table, a repeated mark) aren't; a stricter one is a format
  * change all the same.
@@ -12,7 +13,10 @@ import { pullResponseSchema, pushRequestSchema } from './schemas/sync.ts';
  * can't change without a decision on `MIN_CLIENT_VERSION`.
  */
 export const syncFormatFingerprint = (): string =>
-  fingerprintOf(pullResponseSchema, pushRequestSchema);
+  fingerprintOf(
+    z.strictObject({ user: pullResponseSchema, group: groupPullResponseSchema }),
+    pushRequestSchema,
+  );
 
 /** The fingerprint of a pull page schema and a push schema; exported for its tests. */
 export function fingerprintOf(pull: z.ZodType, push: z.ZodType): string {

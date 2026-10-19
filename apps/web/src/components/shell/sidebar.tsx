@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Settings } from 'lucide-react';
+import { allGroups } from '@/data/groups.ts';
 import { allSeries } from '@/data/queries.ts';
 import { NavCount } from './nav-count.tsx';
 import { NAV_ITEMS } from './nav-items.ts';
@@ -13,6 +14,7 @@ const itemClass =
 /** The laptop's sidebar, from 1024 px (wireframes/shell.md). */
 export function Sidebar() {
   const series = useLiveQuery(() => allSeries(), []);
+  const groups = useLiveQuery(() => allGroups(), []);
 
   return (
     <aside
@@ -45,6 +47,22 @@ export function Sidebar() {
               <li key={s.id}>
                 <Link to="/series/$seriesId" params={{ seriesId: s.id }} className={itemClass}>
                   <span className="truncate">{s.title}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {groups && groups.length > 0 && (
+        <section aria-labelledby="sidebar-groups" className="flex min-h-0 flex-col gap-1">
+          <h2 id="sidebar-groups" className="px-3 text-xs font-medium text-muted-foreground">
+            Groups
+          </h2>
+          <ul className="flex flex-col gap-1 overflow-y-auto">
+            {groups.map((g) => (
+              <li key={g.id}>
+                <Link to="/groups/$groupId" params={{ groupId: g.id }} className={itemClass}>
+                  <span className="truncate">{g.name}</span>
                 </Link>
               </li>
             ))}

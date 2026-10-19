@@ -51,6 +51,12 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
     change:
       "Verse references keep no translation or text of the app's own (decision 97): only text from outside, `shared` or `pasted`, has them",
   },
+  {
+    minClientVersion: '0.7.0',
+    fingerprint: 'a384b22d',
+    change:
+      "M13 (groups, §17.12): the user pull lists the user's groups, and each group's feed is pulled on its own",
+  },
 ];
 
 /**

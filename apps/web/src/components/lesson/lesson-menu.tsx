@@ -17,6 +17,7 @@ import { MoveToSeriesDialog } from '@/components/series/move-to-series-dialog.ts
 import { ShareLinkDialog } from '@/components/share-links/share-link-dialog.tsx';
 import { SaveAsTemplateDialog } from '@/components/templates/save-as-template-dialog.tsx';
 import { deleteLesson } from '@/data/actions/lessons.ts';
+import { groupOfSeries } from '@/data/groups.ts';
 import { sectionCount } from '@/data/queries.ts';
 import { exportLesson, exportLessonForNotion } from '@/export/load.ts';
 import { count } from '@/lib/labels.ts';
@@ -31,6 +32,11 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
     'move' | 'export' | 'share' | 'shareHandout' | 'template' | 'delete' | null
   >(null);
   const sections = useLiveQuery(() => sectionCount(lesson.id), [lesson.id]) ?? 0;
+  // A lesson of a series shared with a group stays in it (§17.12).
+  const inGroup = useLiveQuery(
+    async () => (lesson.seriesId ? (await groupOfSeries(lesson.seriesId)) !== null : false),
+    [lesson.seriesId],
+  );
   const close = (open: boolean) => !open && setDialog(null);
 
   return (
@@ -42,7 +48,9 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
           <Ellipsis />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => setDialog('move')}>Move to series…</DropdownMenuItem>
+          <DropdownMenuItem disabled={inGroup !== false} onClick={() => setDialog('move')}>
+            Move to series…
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('export')}>Export…</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('share')}>Share link…</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('template')}>
