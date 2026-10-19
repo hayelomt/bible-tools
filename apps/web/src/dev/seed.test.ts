@@ -23,12 +23,14 @@ describe('seedDemo', () => {
   it('writes the demo month through the actions', async () => {
     await seedDemo(db);
     expect(await db.series.count()).toBe(2);
-    expect(await db.lesson.count()).toBe(10);
+    expect(await db.lesson.count()).toBe(12);
     expect(await db.section.filter((s) => s.parentId !== null).count()).toBeGreaterThan(3);
     const questions = await questionViews(await db.question.toArray(), db);
     expect(questions.map((q) => q.status).toSorted()).toEqual([
       'answered',
       'answered',
+      'open',
+      'open',
       'open',
       'open',
       'open',

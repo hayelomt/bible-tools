@@ -49,6 +49,8 @@ model User {
   inboxItemTags   InboxItemTag[]
   questionEntries QuestionEntry[]
   templates       Template[]
+  passageVisits   PassageVisit[]
+  dismissals      ResurfaceDismissal[]
   citations       Citation[]
   links           Link[]
   syncChanges     SyncChange[]
@@ -105,6 +107,10 @@ model UserSettings {
   // The template each kind of new lesson starts with: { sermon, personal, group }, each null, a
   // built-in's key (builtin:soap) or a template's id (§17.6)
   defaultTemplates   Json     @default("{\"sermon\": null, \"personal\": null, \"group\": null}") @map("default_templates")
+  // Which resurfacing rules feed the review queue (F30): { yearAgo, repeatedVerse, staleQuestion }
+  resurfacing        Json     @default("{\"yearAgo\": true, \"repeatedVerse\": true, \"staleQuestion\": true}")
+  // The last quarter a digest was drafted for (F32), 2026-Q3: once per account
+  lastDigestQuarter  String?  @map("last_digest_quarter")
   rev                BigInt   @default(0)
   updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
 
@@ -474,6 +480,46 @@ model Template {
 
   @@index([userId, rev])
   @@map("template")
+}
+
+// A visit to a compile view (F30, §17.8): its scope as ordinals, and when (createdAt). Never
+// edited: a new visit deletes the scope's older ones, so two devices' visits both stand.
+model PassageVisit {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  book      String
+  startOrd  Int       @map("start_ord")
+  endOrd    Int       @map("end_ord")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@index([userId, startOrd, endOrd])
+  @@map("passage_visit")
+}
+
+// A resurfaced item dismissed for a year (F30, §17.8). rule: year_ago | repeated_verse |
+// stale_question. targetKey is a lesson or question id, or a passage slug, with no foreign key.
+// Never edited; for a target, the latest until wins.
+model ResurfaceDismissal {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  rule      String
+  targetKey String    @map("target_key")
+  until     DateTime  @db.Date
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  rev       BigInt    @default(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, rev])
+  @@map("resurface_dismissal")
 }
 
 // Derived from a section's link chips on every write, like Citation, and never pushed (§17.4).

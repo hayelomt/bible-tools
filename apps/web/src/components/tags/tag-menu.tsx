@@ -30,7 +30,10 @@ interface TagMenuProps {
   uses: number;
 }
 
-/** The tag page's `⋯` (wireframes/lessons.md "Tag page"): Rename tag and Delete tag. */
+/**
+ * The tag page's `⋯` (wireframes/lessons.md "Tag page"): the tag's row of the theme map (F31),
+ * Rename tag and Delete tag.
+ */
 export function TagMenu({ tag, uses }: TagMenuProps) {
   const navigate = useNavigate();
   const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null);
@@ -45,6 +48,11 @@ export function TagMenu({ tag, uses }: TagMenuProps) {
           <Ellipsis />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem
+            onClick={() => void navigate({ to: '/themes/$tagId', params: { tagId: tag.id } })}
+          >
+            Theme map
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('rename')}>Rename tag…</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={() => setDialog('delete')}>

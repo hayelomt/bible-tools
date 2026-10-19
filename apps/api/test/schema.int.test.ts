@@ -153,6 +153,17 @@ describe('check constraints', () => {
     await expect(
       prisma.userSettings.create({ data: { userId, defaultTemplates: [] } }),
     ).rejects.toThrow(/user_settings_default_templates_check/);
+    await expect(prisma.userSettings.create({ data: { userId, resurfacing: [] } })).rejects.toThrow(
+      /user_settings_resurfacing_check/,
+    );
+    await expect(
+      prisma.userSettings.create({ data: { userId, lastDigestQuarter: '2026-Q5' } }),
+    ).rejects.toThrow(/user_settings_last_digest_quarter_check/);
+    await expect(
+      prisma.resurfaceDismissal.create({
+        data: { userId, rule: 'old_takeaway', targetKey: 'x', until: new Date() },
+      }),
+    ).rejects.toThrow(/resurface_dismissal_rule_check/);
     const item = { userId, origin: 'share', receivedAt: new Date(), text: 'x' };
     await expect(prisma.inboxItem.create({ data: { ...item, origin: 'email' } })).rejects.toThrow(
       /inbox_item_origin_check/,
@@ -266,6 +277,10 @@ describe('deletes', () => {
           tags: { create: { userId, tagId: tag.id } },
         },
       }),
+      prisma.passageVisit.create({ data: { userId, book: 'ROM', startOrd: 1, endOrd: 2 } }),
+      prisma.resurfaceDismissal.create({
+        data: { userId, rule: 'year_ago', targetKey: lesson.id, until: new Date('2027-10-19') },
+      }),
       prisma.citation.create({
         data: {
           userId,
@@ -307,6 +322,8 @@ describe('deletes', () => {
       prisma.memoryItem.count({ where }),
       prisma.inboxItem.count({ where }),
       prisma.inboxItemTag.count({ where }),
+      prisma.passageVisit.count({ where }),
+      prisma.resurfaceDismissal.count({ where }),
       prisma.citation.count({ where }),
       prisma.syncChange.count({ where }),
       prisma.device.count({ where }),

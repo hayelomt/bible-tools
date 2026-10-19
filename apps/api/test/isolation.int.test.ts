@@ -127,6 +127,10 @@ function rowOf(entity: RowEntity, to: Rows): Row {
       return { ...synced(), kind: 'answered', ...refs };
     case 'template':
       return { ...synced(), name: 'Sermon notes', structure: [{ title: 'Main point' }] };
+    case 'passageVisit':
+      return { ...synced(), book: 'JHN', startOrd: 43_003_016, endOrd: 43_003_016 };
+    case 'resurfaceDismissal':
+      return { ...synced(), rule: 'repeated_verse', targetKey: 'JHN.3.16', until: '2027-10-19' };
     case 'sectionTag':
     case 'lessonTag':
     case 'inboxItemTag':
@@ -148,6 +152,8 @@ const settings = (colorMode: string) => ({
     pasteChips: true,
     openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
     defaultTemplates: { sermon: null, personal: null, group: null },
+    resurfacing: { yearAgo: true, repeatedVerse: true, staleQuestion: true },
+    lastDigestQuarter: null,
     updatedAt: NOW,
   },
 });

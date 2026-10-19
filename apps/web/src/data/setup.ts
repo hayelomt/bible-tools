@@ -1,4 +1,5 @@
 import {
+  ALL_RESURFACING,
   DEFAULT_TRANSLATION,
   newId,
   NO_DEFAULT_TEMPLATES,
@@ -50,6 +51,8 @@ export async function ensureDevice(db: LampDb, initial: InitialSettings): Promis
           pasteChips: true,
           openInTargets: [...OPEN_IN_TARGETS],
           defaultTemplates: { ...NO_DEFAULT_TEMPLATES },
+          resurfacing: { ...ALL_RESURFACING },
+          lastDigestQuarter: null,
           rev: 0,
           updatedAt: w.now,
         },

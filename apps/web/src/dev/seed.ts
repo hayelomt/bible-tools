@@ -1,5 +1,6 @@
 import {
   type Block,
+  daysBetween,
   DEFAULT_TRANSLATION,
   keysBetween,
   type Lesson,
@@ -7,6 +8,7 @@ import {
   type SectionBody,
   type Series,
   type VerseRef,
+  weekIn,
 } from '@lamp/domain';
 import { action } from '@/data/action.ts';
 import { createLesson } from '@/data/actions/lessons.ts';
@@ -75,7 +77,37 @@ const SERIES: { key: string; title: string; description: string; kind: Series['k
 
 const CHURCH = 'Grace Community Church';
 
+/** The Sunday of this week a year ago, so Review's "A year ago" has something (F30). */
+const yearAgoSunday = () => {
+  const day = today();
+  return daysBetween(weekIn(day, Number(day.slice(0, 4)) - 1)[1], day);
+};
+
 const LESSONS: LessonPlan[] = [
+  {
+    title: 'Light of the world',
+    daysAgo: yearAgoSunday(),
+    kind: 'sermon',
+    speaker: 'Pastor James Okafor',
+    church: CHURCH,
+    main: ['John 8:12'],
+    notes: [
+      { text: 'I am the light of the world {John 8:12}.', tags: ['light'] },
+      { text: 'All things work together for good {Rom 8:28}, even the dark.', tags: ['hope'] },
+    ],
+    questions: [{ text: 'What does it mean to walk in darkness?', status: 'open' }],
+  },
+  {
+    title: 'When God waits',
+    daysAgo: 120,
+    kind: 'personal',
+    main: ['John 11'],
+    notes: [
+      { text: 'He stayed two days longer where he was {John 11:6}.', tags: ['prayer'] },
+      { text: 'For those who love God all things work together for good {Rom 8:28}.' },
+    ],
+    questions: [{ text: 'Why did Jesus wait two days?', status: 'open' }],
+  },
   {
     title: 'Peace with God',
     daysAgo: 35,
@@ -396,7 +428,10 @@ async function writeQuestion(db: LampDb, lessonId: string, plan: QuestionPlan) {
   }
 }
 
-/** The demo month: two series, ten lessons, notes with replies, tags, takeaways and questions. */
+/**
+ * The demo month, and two older lessons for Review's "Back again": two series, twelve lessons,
+ * notes with replies, tags, takeaways and questions.
+ */
 export async function seedDemo(db: LampDb): Promise<void> {
   const series = new Map<string, string>();
   for (const { key, ...fields } of SERIES) {

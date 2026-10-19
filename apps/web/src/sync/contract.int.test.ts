@@ -44,6 +44,7 @@ import {
   removeSection,
   updateSection,
 } from '@/data/actions/sections.ts';
+import { dismissResurfaced, recordVisit } from '@/data/actions/resurface.ts';
 import { updateSettings } from '@/data/actions/settings.ts';
 import { addTag, removeTag } from '@/data/actions/tags.ts';
 import { createTemplate, templateByKey } from '@/data/actions/templates.ts';
@@ -52,6 +53,8 @@ import { createTakeaway, updateTakeaway } from '@/data/actions/takeaways.ts';
 import { LampDb, type RowEntity, SETTINGS_KEY, SYNC_STATE_KEY } from '@/data/db.ts';
 import { linkedFrom } from '@/data/links.ts';
 import { questionViews } from '@/data/question-status.ts';
+import { backAgain } from '@/data/resurface.ts';
+import { today } from '@/lib/dates.ts';
 import { ensureDevice } from '@/data/setup.ts';
 import { ApiRequestError, NetworkError } from '@/lib/api.ts';
 import { type SyncApi, SyncEngine } from './engine.ts';
@@ -514,6 +517,45 @@ describe('templates on two devices', () => {
 
     await settle(laptop, phone);
     await expectIdentical(email, laptop, phone);
+  });
+});
+
+describe('resurfacing on two devices', () => {
+  it('a dismissal or a commentary visit on one holds on the other', async () => {
+    const { email, first: laptop } = await signUp('Firefox on macOS');
+    // A lesson in this week a year ago, and a verse cited in three lessons.
+    const day = today();
+    const year = Number(day.slice(0, 4)) - 1;
+    const old = await createLesson(
+      { ...LESSON, title: 'Light of the world', date: `${year}${day.slice(4, 10)}` },
+      laptop.db,
+    );
+    for (const title of ['One', 'Two', 'Three']) {
+      const lesson = await createLesson({ ...LESSON, title }, laptop.db);
+      const chip = {
+        type: 'verse' as const,
+        attrs: {
+          book: 'ROM' as const,
+          chapter: 8,
+          verseStart: 28,
+          display: 'Romans 8:28',
+          translation: 'BSB' as const,
+        },
+      };
+      const cited: SectionBody = { type: 'doc', content: [{ type: 'paragraph', content: [chip] }] };
+      await createSection({ ...newSection(lesson.id, 'a0', ''), body: cited }, laptop.db);
+    }
+    await sync(laptop);
+    const phone = await signIn(email, 'Safari on iOS');
+    await sync(phone);
+    const rules = async (db: LampDb) => (await backAgain(day, db)).items.map((i) => i.rule);
+    expect(await rules(phone.db)).toEqual(['year_ago', 'repeated_verse']);
+
+    await dismissResurfaced('year_ago', old.id, day, laptop.db);
+    await recordVisit({ book: 'ROM', chapter: 8 }, day, laptop.db);
+    await settle(laptop, phone);
+    await expectIdentical(email, laptop, phone);
+    expect(await rules(phone.db)).toEqual([]);
   });
 });
 

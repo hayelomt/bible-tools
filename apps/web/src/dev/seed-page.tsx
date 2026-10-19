@@ -14,7 +14,7 @@ const JOBS: Record<Job, { title: string; description: string; confirm: string }>
   demo: {
     title: 'Replace everything with the demo month?',
     description:
-      'Every lesson on this device is deleted, then two series and ten lessons from the last five weeks are added: notes with replies and verse chips, tags, takeaways, and open, parked and answered questions.',
+      'Every lesson on this device is deleted, then two series and ten lessons from the last five weeks are added, with one from this week a year ago and one from four months ago: notes with replies and verse chips, tags, takeaways, and open, parked and answered questions.',
     confirm: 'Clear and seed',
   },
   bulk: {

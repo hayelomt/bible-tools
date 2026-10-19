@@ -34,6 +34,8 @@ const ENTITY_TABLES: Record<EntityName, string> = {
   inboxItemTag: 'inbox_item_tag',
   questionEntry: 'question_entry',
   template: 'template',
+  passageVisit: 'passage_visit',
+  resurfaceDismissal: 'resurface_dismissal',
 };
 
 /** Columns only the server has. */

@@ -58,6 +58,8 @@ const ROWS: { [E in EntityName]: unknown } = {
     pasteChips: true,
     openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
     defaultTemplates: { sermon: null, personal: 'builtin:soap', group: id(13) },
+    resurfacing: { yearAgo: true, repeatedVerse: false, staleQuestion: true },
+    lastDigestQuarter: '2026-Q3',
     rev: 1,
     updatedAt: NOW,
   },
@@ -136,10 +138,17 @@ const ROWS: { [E in EntityName]: unknown } = {
       { title: 'Response' },
     ],
   },
+  passageVisit: { ...meta(15), book: 'ROM', startOrd: 45_008_000, endOrd: 45_008_999 },
+  resurfaceDismissal: {
+    ...meta(16),
+    rule: 'year_ago',
+    targetKey: id(2),
+    until: '2027-10-19',
+  },
 };
 
 describe('entity schemas', () => {
-  it('cover the 15 synced entities', () => {
+  it('cover the 17 synced entities', () => {
     expect(ENTITY_NAMES).toEqual(Object.keys(ROWS));
   });
 
@@ -208,6 +217,15 @@ describe('entity schemas', () => {
     ['a review window of 0 days', 'userSettings', { reviewWindowDays: 0 }],
     ['an unknown "Open in…" target', 'userSettings', { openInTargets: ['biblegateway'] }],
     ['an "Open in…" target twice', 'userSettings', { openInTargets: ['logos', 'logos'] }],
+    [
+      'a resurfacing rule left out',
+      'userSettings',
+      { resurfacing: { yearAgo: true, repeatedVerse: true } },
+    ],
+    ['a digest quarter that is not one', 'userSettings', { lastDigestQuarter: '2026-Q5' }],
+    ['a visit to an unknown book', 'passageVisit', { book: 'XYZ' }],
+    ['an unknown resurfacing rule', 'resurfaceDismissal', { rule: 'old_takeaway' }],
+    ['a dismissal until a time', 'resurfaceDismissal', { until: '2027-10-19T00:00:00Z' }],
   ] as [string, EntityName, Record<string, unknown>][])('rejects %s', (_, entity, change) => {
     const row = { ...(ROWS[entity] as object), ...change };
     expect(ENTITY_SCHEMAS[entity].safeParse(row).success).toBe(false);

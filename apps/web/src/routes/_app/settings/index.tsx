@@ -8,6 +8,7 @@ import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
 import { PasteChipsSetting } from '@/components/paste-chips-setting.tsx';
 import { ReminderSetting } from '@/components/review/reminder-setting.tsx';
+import { ResurfacingSetting } from '@/components/review/resurfacing-setting.tsx';
 import { ReviewWindowSetting } from '@/components/review/review-window-setting.tsx';
 import { RemoveNotes } from '@/components/remove-notes.tsx';
 import { StorageStatus } from '@/components/storage-status.tsx';
@@ -51,6 +52,7 @@ function Settings() {
       {settings && (
         <PageSection title="Review">
           <ReviewWindowSetting value={settings.reviewWindowDays} />
+          <ResurfacingSetting value={settings.resurfacing} />
           <ReminderSetting />
         </PageSection>
       )}

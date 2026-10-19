@@ -39,6 +39,12 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
     change:
       'M11 (sermon workflow): the lesson source columns; `section.sourceAt` and `sourcePage`; inbox item tags',
   },
+  {
+    minClientVersion: '0.5.0',
+    fingerprint: '4a99c7ed',
+    change:
+      'M12 (reflection and export): passage visits and resurface dismissals; the `resurfacing` and `lastDigestQuarter` settings',
+  },
 ];
 
 /**

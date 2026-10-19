@@ -6,7 +6,7 @@ import {
   precacheAndRoute,
 } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
-import type { QuestionEntry, Section } from '@lamp/domain';
+import type { QuestionEntry, Section, UserSettings } from '@lamp/domain';
 import { REMINDER_TAG, weeklyReminder } from './data/reminder.ts';
 import { countWaiting, type QueueRows } from './data/review-count.ts';
 import { today } from './lib/dates.ts';
@@ -79,13 +79,21 @@ async function readQueue(): Promise<QueueRows> {
   try {
     // A database the page hasn't upgraded to M10 yet has statuses on its questions instead.
     const threads = db.objectStoreNames.contains('questionEntry');
-    const stores = ['question', 'lesson', 'memoryItem', 'section'];
-    const tx = db.transaction(threads ? [...stores, 'questionEntry'] : stores);
-    const [questions, lessons, items, stored] = await Promise.all([
+    // Before M12 there are no dismissals, and no resurfacing setting.
+    const resurfacing = db.objectStoreNames.contains('resurfaceDismissal');
+    const stores = ['question', 'lesson', 'memoryItem', 'section', 'userSettings'];
+    if (threads) stores.push('questionEntry');
+    if (resurfacing) stores.push('resurfaceDismissal');
+    const tx = db.transaction(stores);
+    const [questions, lessons, items, stored, dismissals, settings] = await Promise.all([
       settled(tx.objectStore('question').getAll()),
       settled(tx.objectStore('lesson').getAll()),
       settled(tx.objectStore('memoryItem').getAll()),
       threads ? settled(tx.objectStore('questionEntry').getAll()) : Promise.resolve([]),
+      resurfacing ? settled(tx.objectStore('resurfaceDismissal').getAll()) : Promise.resolve([]),
+      settled(tx.objectStore('userSettings').get('settings')) as Promise<
+        Partial<UserSettings> | undefined
+      >,
     ]);
     const entries = threads ? (stored as QuestionEntry[]) : questions.flatMap(legacyEntries);
     const sections = new Map<string, Section>();
@@ -95,7 +103,15 @@ async function readQueue(): Promise<QueueRows> {
         Section | undefined;
       if (section && section.deletedAt === null) sections.set(section.id, section);
     }
-    return { questions, lessons, items, entries, sections } as QueueRows;
+    return {
+      questions,
+      lessons,
+      items,
+      entries,
+      sections,
+      dismissals,
+      resurfacing: settings?.resurfacing,
+    } as QueueRows;
   } finally {
     db.close();
   }

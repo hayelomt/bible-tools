@@ -53,6 +53,8 @@ const NOUNS: Record<EntityName, string> = {
   inboxItemTag: 'Tag on an inbox item',
   questionEntry: 'Change to a question',
   template: 'Template',
+  passageVisit: 'Commentary visit',
+  resurfaceDismissal: 'Dismissed item',
 };
 
 /** The outbox's refused changes, oldest first, described for the sync panel. */
@@ -134,6 +136,10 @@ async function describe(db: LampDb, entry: OutboxEntry): Promise<RejectedChange>
     }
     case 'template':
       return { ...base, what: named(noun, field('name')), target: { kind: 'settings' } };
+    case 'passageVisit':
+      return { ...base, what: 'A visit to a commentary', target: null };
+    case 'resurfaceDismissal':
+      return { ...base, what: 'A dismissed item in Review', target: null };
     case 'highlight':
     case 'memoryItem':
       // Their screens come in M5 and M6.

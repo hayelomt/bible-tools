@@ -291,9 +291,11 @@ describe('Dexie version 10', () => {
     // Version 11 adds the source columns.
     expect(await upgraded.lesson.get(id(1))).toEqual({ ...rest, kind: 'personal', ...NO_SOURCE });
     const none = { sermon: null, personal: null, group: null };
+    // Version 12 adds the resurfacing rules and the digest's quarter.
     expect(await upgraded.userSettings.get('settings')).toEqual({
       ...settings,
       defaultTemplates: none,
+      ...REFLECTION,
     });
     const [renamed, removed, queuedSettings] = await upgraded.outbox.toArray();
     const { source: _sent, ...sentRest } = sent;
@@ -308,6 +310,11 @@ describe('Dexie version 10', () => {
     await upgraded.delete();
   });
 });
+
+const REFLECTION = {
+  resurfacing: { yearAgo: true, repeatedVerse: true, staleQuestion: true },
+  lastDigestQuarter: null,
+};
 
 const NO_SOURCE = {
   sourceType: null,
@@ -368,6 +375,34 @@ describe('Dexie version 11', () => {
     expect(queuedSection).toMatchObject({ row: { ...sentSection, ...moment } });
     expect(removed).not.toHaveProperty('row');
     expect(await upgraded.inboxItemTag.count()).toBe(0);
+    await upgraded.delete();
+  });
+});
+
+describe('Dexie version 12', () => {
+  it('adds the resurfacing rules and the digest quarter to settings, stored and queued', async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(11).stores({ userSettings: '', outbox: '++seq, [entity+entityId]' });
+    const settings = { colorMode: 'dark', reviewWindowDays: 7, rev: 2, updatedAt: at(1) };
+    await old.table('userSettings').put(settings, 'settings');
+    const { rev: _rev, ...sent } = settings;
+    await old.table('outbox').bulkAdd([
+      { entity: 'userSettings', op: 'upsert', row: sent, changed: ['reviewWindowDays'] },
+      { entity: 'lesson', entityId: id(2), op: 'delete' },
+    ]);
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    expect(await upgraded.userSettings.get('settings')).toEqual({ ...settings, ...REFLECTION });
+    const [queued, removed] = await upgraded.outbox.toArray();
+    expect(queued).toMatchObject({
+      row: { ...sent, ...REFLECTION },
+      changed: ['reviewWindowDays'],
+    });
+    expect(removed).not.toHaveProperty('row');
+    expect(await upgraded.passageVisit.count()).toBe(0);
+    expect(await upgraded.resurfaceDismissal.count()).toBe(0);
     await upgraded.delete();
   });
 });

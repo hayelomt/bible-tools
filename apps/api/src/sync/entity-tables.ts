@@ -108,10 +108,17 @@ export const ENTITY_TABLES: Readonly<Record<RowEntity, EntityTable>> = {
     times: SYNC_TIMES,
   },
   template: { model: model((tx) => tx.template), refs: {}, times: SYNC_TIMES },
+  passageVisit: { model: model((tx) => tx.passageVisit), refs: {}, times: SYNC_TIMES },
+  // `targetKey` names a lesson, a question or a passage, so it isn't checked as a reference.
+  resurfaceDismissal: {
+    model: model((tx) => tx.resurfaceDismissal),
+    refs: {},
+    times: [...SYNC_TIMES, 'until'],
+  },
 };
 
 /** Columns stored as a `date`, which the device has as `YYYY-MM-DD`. */
-const DATE_COLUMNS = new Set(['date', 'snoozedUntil']);
+const DATE_COLUMNS = new Set(['date', 'snoozedUntil', 'until']);
 
 /** Columns that never leave the server; `rev` travels beside the row. */
 const SERVER_COLUMNS = new Set(['userId', 'rev', 'bodyRev', 'bodyDevice']);

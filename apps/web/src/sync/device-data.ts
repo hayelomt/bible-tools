@@ -48,6 +48,8 @@ const REFS: Readonly<Record<RowEntity, Readonly<Record<string, RowEntity>>>> = {
   inboxItemTag: { tagId: 'tag', inboxItemId: 'inboxItem' },
   questionEntry: { questionId: 'question', lessonId: 'lesson', sectionId: 'section' },
   template: {},
+  passageVisit: {},
+  resurfaceDismissal: {},
 };
 const OPTIONAL_REFS = new Set([
   'lesson.seriesId',
@@ -172,6 +174,10 @@ export async function copyNotes(db: LampDb, owner: Owner): Promise<void> {
         }
         // Links in a body point at the copies too; one to a row that isn't copied stays broken.
         if (entity === 'section') copy.body = relinked((row as Section).body, ids);
+        // A dismissal's target is a lesson or question id (or a passage, kept as it is).
+        if (entity === 'resurfaceDismissal') {
+          copy.targetKey = ids.get(row.targetKey as string) ?? row.targetKey;
+        }
         copies.push([entity, copy]);
       }
     }

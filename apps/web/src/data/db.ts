@@ -10,9 +10,11 @@ import type {
   LessonTag,
   Link,
   MemoryItem,
+  PassageVisit,
   Question,
   QuestionEntry,
   QuestionEntryKind,
+  ResurfaceDismissal,
   Section,
   SectionTag,
   Series,
@@ -21,7 +23,7 @@ import type {
   Template,
   UserSettings,
 } from '@lamp/domain';
-import { NO_DEFAULT_TEMPLATES, newId, OPEN_IN_TARGETS } from '@lamp/domain';
+import { ALL_RESURFACING, NO_DEFAULT_TEMPLATES, newId, OPEN_IN_TARGETS } from '@lamp/domain';
 import { Dexie, type DexieOptions, type Table, type Transaction } from 'dexie';
 
 /** The entities stored one row per id; settings are one row per device. */
@@ -91,6 +93,8 @@ export class LampDb extends Dexie {
   inboxItemTag!: Table<InboxItemTag, string>;
   questionEntry!: Table<QuestionEntry, string>;
   template!: Table<Template, string>;
+  passageVisit!: Table<PassageVisit, string>;
+  resurfaceDismissal!: Table<ResurfaceDismissal, string>;
   /** One row, under `SETTINGS_KEY`. */
   userSettings!: Table<UserSettings, string>;
   citation!: Table<Citation, string>;
@@ -247,11 +251,32 @@ export class LampDb extends Dexie {
             if (entry.entity === 'section' && row) withoutMoment(row);
           });
       });
+    // M12: compile view visits, found by their range like citations, and resurface dismissals
+    // (F30, §17.8); the `resurfacing` and `lastDigestQuarter` settings at their defaults, stored
+    // and queued, which the server's schema needs. Not queued themselves, like version 7.
+    this.version(12)
+      .stores({ passageVisit: 'id, startOrd, endOrd', resurfaceDismissal: 'id, targetKey' })
+      .upgrade(async (tx) => {
+        await tx.table('userSettings').toCollection().modify(withReflection);
+        await tx
+          .table('outbox')
+          .filter((entry: OutboxEntry) => entry.entity === 'userSettings')
+          .modify((entry: OutboxEntry) => {
+            const row = (entry as { row?: object }).row;
+            if (row) withReflection(row);
+          });
+      });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
     return this.table(entity);
   }
+}
+
+/** Version 12's settings at their defaults: every rule on, no digest yet. */
+function withReflection(settings: Partial<UserSettings>) {
+  settings.resurfacing ??= { ...ALL_RESURFACING };
+  settings.lastDigestQuarter ??= null;
 }
 
 /** Version 11's source columns, none, on a stored or queued lesson. */

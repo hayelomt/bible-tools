@@ -34,11 +34,13 @@ import { LAPTOP_QUERY } from '@/components/verses/verse-suggestions.tsx';
 import { snapshotText, useBook } from '@/data/bible.ts';
 import { useActiveTranslation } from '@/data/translation.ts';
 import { db as appDb } from '@/data/db.ts';
+import { recordVisit } from '@/data/actions/resurface.ts';
 import { exportCommentary } from '@/export/load.ts';
 import { shortDateWithYear } from '@/lib/dates.ts';
 import { count } from '@/lib/labels.ts';
 import { useAfter } from '@/lib/use-after.ts';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
+import { runWrite } from '@/lib/run-write.ts';
 import { useScreenReady } from '@/lib/screen-ready.ts';
 import { type Commentary, type CompiledNote, commentary, scopeTitle } from '@/search/compile.ts';
 import { ReadOnlyBody } from './read-only-body.tsx';
@@ -94,6 +96,13 @@ export function CommentaryScreen({
   );
   const data = full ?? first;
   useScreenReady('commentary', data !== undefined);
+  // Opening it is a visit (F30), which takes a repeated verse out of Review for six months.
+  const visited = scope ? passageSlug(scope) : null;
+  useEffect(() => {
+    if (scope) runWrite(recordVisit(scope), 'a commentary visit');
+    // The scope is a new object each render; its slug says when it changes.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [visited]);
 
   if (!scope || !scopes) {
     return (

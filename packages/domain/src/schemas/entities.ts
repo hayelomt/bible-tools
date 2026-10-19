@@ -44,6 +44,8 @@ export const USER_ROLES = ['user', 'admin'] as const;
 export const INBOX_ORIGINS = ['share', 'paste', 'typed', 'import', 'capture'] as const;
 /** What a lesson's source is (F28, §17.7). */
 export const SOURCE_TYPES = ['sermon', 'book', 'podcast', 'other'] as const;
+/** The review queue's resurfacing rules (F30, §17.8), as a dismissal names them. */
+export const RESURFACE_RULES = ['year_ago', 'repeated_verse', 'stale_question'] as const;
 
 /** Fields every synced row carries (§5.1). */
 const synced = {
@@ -83,6 +85,20 @@ export const userSettingsSchema = z.strictObject({
     personal: templateRefSchema.nullable(),
     group: templateRefSchema.nullable(),
   }),
+  /** Which resurfacing rules feed the review queue (F30, §17.9); each can be turned off. */
+  resurfacing: z.strictObject({
+    yearAgo: z.boolean(),
+    repeatedVerse: z.boolean(),
+    staleQuestion: z.boolean(),
+  }),
+  /**
+   * The last quarter a digest was drafted for (F32, §17.9), `2026-Q3`: once per account, not
+   * once per device.
+   */
+  lastDigestQuarter: z
+    .string()
+    .regex(/^\d{4}-Q[1-4]$/)
+    .nullable(),
   rev: revSchema,
   updatedAt: timestampSchema,
 });
@@ -228,6 +244,29 @@ export const inboxItemTagSchema = z.strictObject({
   inboxItemId: idSchema,
 });
 
+/**
+ * A visit to a compile view (F30, §17.8): its scope, and when (`createdAt`). Never edited: opening
+ * the view again makes a new one and deletes the scope's older ones, so two devices' visits both
+ * stand.
+ */
+export const passageVisitSchema = z.strictObject({
+  ...synced,
+  book: z.enum(BOOK_CODES),
+  startOrd: z.int().min(0),
+  endOrd: z.int().min(0),
+});
+
+/**
+ * A resurfaced item dismissed for a year (F30, §17.8). `targetKey` is a lesson or question id, or
+ * a passage slug, with no foreign key. Never edited; for a target, the latest `until` wins.
+ */
+export const resurfaceDismissalSchema = z.strictObject({
+  ...synced,
+  rule: z.enum(RESURFACE_RULES),
+  targetKey: z.string().min(1).max(100),
+  until: dateSchema,
+});
+
 /** An inbox item holds a chip, some text, or both (the table's CHECK). */
 export const hasRefOrText = (item: { ref: unknown; text: string | null }): boolean =>
   item.ref !== null || (item.text !== null && item.text.trim() !== '');
@@ -284,6 +323,8 @@ export const ENTITY_SCHEMAS = {
   inboxItemTag: inboxItemTagSchema,
   questionEntry: questionEntrySchema,
   template: templateSchema,
+  passageVisit: passageVisitSchema,
+  resurfaceDismissal: resurfaceDismissalSchema,
 } as const;
 
 export type EntityName = keyof typeof ENTITY_SCHEMAS;
@@ -311,5 +352,9 @@ export type InboxItem = z.infer<typeof inboxItemSchema>;
 export type InboxOrigin = (typeof INBOX_ORIGINS)[number];
 export type InboxItemTag = z.infer<typeof inboxItemTagSchema>;
 export type SourceType = (typeof SOURCE_TYPES)[number];
+export type PassageVisit = z.infer<typeof passageVisitSchema>;
+export type ResurfaceDismissal = z.infer<typeof resurfaceDismissalSchema>;
+export type ResurfaceRule = (typeof RESURFACE_RULES)[number];
+export type Resurfacing = UserSettings['resurfacing'];
 export type Citation = z.infer<typeof citationSchema>;
 export type EntityRow<E extends EntityName = EntityName> = z.infer<(typeof ENTITY_SCHEMAS)[E]>;

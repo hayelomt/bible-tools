@@ -1,6 +1,6 @@
 import { daysBetween, type Lesson, type Takeaway } from '@lamp/domain';
 import { today as todayOn } from '@/lib/dates.ts';
-import { db as appDb, type LampDb } from './db.ts';
+import { db as appDb, type LampDb, SETTINGS_KEY } from './db.ts';
 import { type QuestionView, statusRows, viewOf } from './question-status.ts';
 import { countWaiting, type ReviewCount } from './review-count.ts';
 
@@ -85,9 +85,11 @@ export async function recentTakeaways(
 
 /** What waits in the queue on `today`: the Review tab's count (`countWaiting`). */
 export async function reviewCount(today: string, db: LampDb = appDb): Promise<ReviewCount> {
-  const [questions, items] = await Promise.all([
+  const [questions, items, dismissals, settings] = await Promise.all([
     db.question.filter((q) => q.deletedAt === null).toArray(),
     db.memoryItem.toArray(),
+    db.resurfaceDismissal.toArray(),
+    db.userSettings.get(SETTINGS_KEY),
   ]);
   const lessons = await liveLessons(
     questions.map((q) => q.lessonId),
@@ -97,5 +99,15 @@ export async function reviewCount(today: string, db: LampDb = appDb): Promise<Re
     questions.map((q) => q.id),
     db,
   );
-  return countWaiting({ questions, lessons: [...lessons.values()], items, ...status }, today);
+  return countWaiting(
+    {
+      questions,
+      lessons: [...lessons.values()],
+      items,
+      dismissals,
+      resurfacing: settings?.resurfacing,
+      ...status,
+    },
+    today,
+  );
 }

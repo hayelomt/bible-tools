@@ -1,4 +1,5 @@
 import {
+  type BookCode,
   citedRefs,
   formatPassage,
   type Highlight,
@@ -15,6 +16,7 @@ import {
   normaliseTagName,
   toPlainText,
   verseCount,
+  verseOrdinal,
 } from '@lamp/domain';
 import { db as appDb, type LampDb } from '@/data/db.ts';
 import { byDate, lessonSections, readingOrder, taggedWith } from '@/data/queries.ts';
@@ -115,6 +117,12 @@ export async function textResults(hits: TextHit[], db: LampDb = appDb): Promise<
       return { lesson, items };
     }),
   ).then((groups) => groups.filter((g) => g.items.length > 0));
+}
+
+/** A tag page narrowed to a month (`2026-03`) or a book, from the theme map (F31). */
+export interface TagFilter {
+  month?: string;
+  book?: BookCode;
 }
 
 /**
@@ -319,18 +327,41 @@ export async function tagNamed(name: string, db: LampDb = appDb): Promise<Tag | 
 }
 
 /** A tag's results, as on its tag page: the lesson itself when it's tagged, then its sections. */
-export async function tagResults(tagId: string, db: LampDb = appDb): Promise<ResultGroup[]> {
+export async function tagResults(
+  tagId: string,
+  db: LampDb = appDb,
+  filter: TagFilter = {},
+): Promise<ResultGroup[]> {
   const groups = await taggedWith(tagId, db);
-  return groups.map(({ lesson, lessonTagged, sections }) => ({
-    lesson,
-    items: [
-      ...(lessonTagged ? [{ kind: 'lesson' as const, id: lesson.id, text: lesson.title }] : []),
-      ...sections.map((s) => ({
-        kind: 'section' as const,
-        id: s.id,
-        text: toPlainText(s.body),
-        reply: !!s.parentId,
-      })),
-    ],
-  }));
+  const { month, book } = filter;
+  // The rows citing the book: a section by its chips, a lesson by its main passages.
+  const inBook = book
+    ? new Set(
+        (
+          await db.citation
+            .where('startOrd')
+            .between(verseOrdinal(book, 0, 0), verseOrdinal(book, 999, 999), true, true)
+            .toArray()
+        ).map((c) => c.sourceId),
+      )
+    : null;
+  return groups
+    .filter(({ lesson }) => !month || lesson.date.startsWith(month))
+    .map(({ lesson, lessonTagged, sections }) => ({
+      lesson,
+      items: [
+        ...(lessonTagged && (!inBook || inBook.has(lesson.id))
+          ? [{ kind: 'lesson' as const, id: lesson.id, text: lesson.title }]
+          : []),
+        ...sections
+          .filter((s) => !inBook || inBook.has(s.id))
+          .map((s) => ({
+            kind: 'section' as const,
+            id: s.id,
+            text: toPlainText(s.body),
+            reply: !!s.parentId,
+          })),
+      ],
+    }))
+    .filter((group) => group.items.length > 0);
 }

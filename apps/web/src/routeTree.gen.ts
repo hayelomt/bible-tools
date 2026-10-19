@@ -39,6 +39,8 @@ import { Route as AppSettingsDevicesRouteImport } from './routes/_app/settings/d
 import { Route as AppSettingsOpenInRouteImport } from './routes/_app/settings/open-in'
 import { Route as AppSettingsPasswordRouteImport } from './routes/_app/settings/password'
 import { Route as AppTagsTagIdRouteImport } from './routes/_app/tags/$tagId'
+import { Route as AppThemesIndexRouteImport } from './routes/_app/themes/index'
+import { Route as AppThemesTagIdRouteImport } from './routes/_app/themes/$tagId'
 import { Route as AppVersesPassageRouteImport } from './routes/_app/verses/$passage'
 import { Route as AppInboxImportImportIdRouteImport } from './routes/_app/inbox/import.$importId'
 import { Route as AppSettingsTemplatesIndexRouteImport } from './routes/_app/settings/templates/index'
@@ -195,6 +197,16 @@ const AppTagsTagIdRoute = AppTagsTagIdRouteImport.update({
   path: '/tags/$tagId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppThemesIndexRoute = AppThemesIndexRouteImport.update({
+  id: '/themes/',
+  path: '/themes/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppThemesTagIdRoute = AppThemesTagIdRouteImport.update({
+  id: '/themes/$tagId',
+  path: '/themes/$tagId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppVersesPassageRoute = AppVersesPassageRouteImport.update({
   id: '/verses/$passage',
   path: '/verses/$passage',
@@ -264,12 +276,14 @@ export interface FileRoutesByFullPath {
   '/settings/open-in': typeof AppSettingsOpenInRoute
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
+  '/themes/$tagId': typeof AppThemesTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
   '/inbox/': typeof AppInboxIndexRoute
   '/lessons/': typeof AppLessonsIndexRoute
   '/read/': typeof AppReadIndexRoute
   '/review/': typeof AppReviewIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
+  '/themes/': typeof AppThemesIndexRoute
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -301,12 +315,14 @@ export interface FileRoutesByTo {
   '/settings/open-in': typeof AppSettingsOpenInRoute
   '/settings/password': typeof AppSettingsPasswordRoute
   '/tags/$tagId': typeof AppTagsTagIdRoute
+  '/themes/$tagId': typeof AppThemesTagIdRoute
   '/verses/$passage': typeof AppVersesPassageRoute
   '/inbox': typeof AppInboxIndexRoute
   '/lessons': typeof AppLessonsIndexRoute
   '/read': typeof AppReadIndexRoute
   '/review': typeof AppReviewIndexRoute
   '/settings': typeof AppSettingsIndexRoute
+  '/themes': typeof AppThemesIndexRoute
   '/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -342,12 +358,14 @@ export interface FileRoutesById {
   '/_app/settings/open-in': typeof AppSettingsOpenInRoute
   '/_app/settings/password': typeof AppSettingsPasswordRoute
   '/_app/tags/$tagId': typeof AppTagsTagIdRoute
+  '/_app/themes/$tagId': typeof AppThemesTagIdRoute
   '/_app/verses/$passage': typeof AppVersesPassageRoute
   '/_app/inbox/': typeof AppInboxIndexRoute
   '/_app/lessons/': typeof AppLessonsIndexRoute
   '/_app/read/': typeof AppReadIndexRoute
   '/_app/review/': typeof AppReviewIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
+  '/_app/themes/': typeof AppThemesIndexRoute
   '/_app/inbox/import/$importId': typeof AppInboxImportImportIdRoute
   '/_app/settings/templates/$templateId': typeof AppSettingsTemplatesTemplateIdRoute
   '/_app/settings/templates/new': typeof AppSettingsTemplatesNewRoute
@@ -381,12 +399,14 @@ export interface FileRouteTypes {
     | '/settings/open-in'
     | '/settings/password'
     | '/tags/$tagId'
+    | '/themes/$tagId'
     | '/verses/$passage'
     | '/inbox/'
     | '/lessons/'
     | '/read/'
     | '/review/'
     | '/settings/'
+    | '/themes/'
     | '/inbox/import/$importId'
     | '/settings/templates/$templateId'
     | '/settings/templates/new'
@@ -418,12 +438,14 @@ export interface FileRouteTypes {
     | '/settings/open-in'
     | '/settings/password'
     | '/tags/$tagId'
+    | '/themes/$tagId'
     | '/verses/$passage'
     | '/inbox'
     | '/lessons'
     | '/read'
     | '/review'
     | '/settings'
+    | '/themes'
     | '/inbox/import/$importId'
     | '/settings/templates/$templateId'
     | '/settings/templates/new'
@@ -458,12 +480,14 @@ export interface FileRouteTypes {
     | '/_app/settings/open-in'
     | '/_app/settings/password'
     | '/_app/tags/$tagId'
+    | '/_app/themes/$tagId'
     | '/_app/verses/$passage'
     | '/_app/inbox/'
     | '/_app/lessons/'
     | '/_app/read/'
     | '/_app/review/'
     | '/_app/settings/'
+    | '/_app/themes/'
     | '/_app/inbox/import/$importId'
     | '/_app/settings/templates/$templateId'
     | '/_app/settings/templates/new'
@@ -692,6 +716,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTagsTagIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/themes/': {
+      id: '/_app/themes/'
+      path: '/themes'
+      fullPath: '/themes/'
+      preLoaderRoute: typeof AppThemesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/themes/$tagId': {
+      id: '/_app/themes/$tagId'
+      path: '/themes/$tagId'
+      fullPath: '/themes/$tagId'
+      preLoaderRoute: typeof AppThemesTagIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/verses/$passage': {
       id: '/_app/verses/$passage'
       path: '/verses/$passage'
@@ -773,12 +811,14 @@ interface AppRouteChildren {
   AppSettingsOpenInRoute: typeof AppSettingsOpenInRoute
   AppSettingsPasswordRoute: typeof AppSettingsPasswordRoute
   AppTagsTagIdRoute: typeof AppTagsTagIdRoute
+  AppThemesTagIdRoute: typeof AppThemesTagIdRoute
   AppVersesPassageRoute: typeof AppVersesPassageRoute
   AppInboxIndexRoute: typeof AppInboxIndexRoute
   AppLessonsIndexRoute: typeof AppLessonsIndexRoute
   AppReadIndexRoute: typeof AppReadIndexRoute
   AppReviewIndexRoute: typeof AppReviewIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+  AppThemesIndexRoute: typeof AppThemesIndexRoute
   AppInboxImportImportIdRoute: typeof AppInboxImportImportIdRoute
   AppSettingsTemplatesTemplateIdRoute: typeof AppSettingsTemplatesTemplateIdRoute
   AppSettingsTemplatesNewRoute: typeof AppSettingsTemplatesNewRoute
@@ -807,12 +847,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsOpenInRoute: AppSettingsOpenInRoute,
   AppSettingsPasswordRoute: AppSettingsPasswordRoute,
   AppTagsTagIdRoute: AppTagsTagIdRoute,
+  AppThemesTagIdRoute: AppThemesTagIdRoute,
   AppVersesPassageRoute: AppVersesPassageRoute,
   AppInboxIndexRoute: AppInboxIndexRoute,
   AppLessonsIndexRoute: AppLessonsIndexRoute,
   AppReadIndexRoute: AppReadIndexRoute,
   AppReviewIndexRoute: AppReviewIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
+  AppThemesIndexRoute: AppThemesIndexRoute,
   AppInboxImportImportIdRoute: AppInboxImportImportIdRoute,
   AppSettingsTemplatesTemplateIdRoute: AppSettingsTemplatesTemplateIdRoute,
   AppSettingsTemplatesNewRoute: AppSettingsTemplatesNewRoute,

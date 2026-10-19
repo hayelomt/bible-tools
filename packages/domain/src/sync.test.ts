@@ -117,6 +117,8 @@ describe('resolveUpsert', () => {
         pasteChips: true,
         openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
         defaultTemplates: { sermon: null, personal: null, group: null },
+        resurfacing: { yearAgo: true, repeatedVerse: true, staleQuestion: true },
+        lastDigestQuarter: null,
         updatedAt: BASE,
       };
       const server: SyncRow<'userSettings'> = { ...settings, colorMode: 'dark' };
