@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { ExportDialog } from '@/components/export-dialog.tsx';
 import { MoveToSeriesDialog } from '@/components/series/move-to-series-dialog.tsx';
+import { ShareLinkDialog } from '@/components/share-links/share-link-dialog.tsx';
 import { SaveAsTemplateDialog } from '@/components/templates/save-as-template-dialog.tsx';
 import { deleteLesson } from '@/data/actions/lessons.ts';
 import { sectionCount } from '@/data/queries.ts';
@@ -21,12 +22,14 @@ import { exportLesson, exportLessonForNotion } from '@/export/load.ts';
 import { count } from '@/lib/labels.ts';
 
 /**
- * The lesson's `⋯` (wireframes/lessons.md): Move to series, Export, Save as template (M10-13) and
- * Delete lesson.
+ * The lesson's `⋯` (wireframes/lessons.md): Move to series, Export, Share link (M13-04), Save as
+ * template (M10-13) and Delete lesson.
  */
 export function LessonMenu({ lesson }: { lesson: Lesson }) {
   const navigate = useNavigate();
-  const [dialog, setDialog] = useState<'move' | 'export' | 'template' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<
+    'move' | 'export' | 'share' | 'shareHandout' | 'template' | 'delete' | null
+  >(null);
   const sections = useLiveQuery(() => sectionCount(lesson.id), [lesson.id]) ?? 0;
   const close = (open: boolean) => !open && setDialog(null);
 
@@ -41,6 +44,7 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={() => setDialog('move')}>Move to series…</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('export')}>Export…</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setDialog('share')}>Share link…</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('template')}>
             Save as template…
           </DropdownMenuItem>
@@ -71,6 +75,19 @@ export function LessonMenu({ lesson }: { lesson: Lesson }) {
             search: { print: true },
           })
         }
+        onShareHandout={() => setDialog('shareHandout')}
+      />
+      <ShareLinkDialog
+        open={dialog === 'share'}
+        onOpenChange={close}
+        target={{ targetType: 'lesson', targetId: lesson.id }}
+        title={lesson.title}
+      />
+      <ShareLinkDialog
+        open={dialog === 'shareHandout'}
+        onOpenChange={close}
+        target={{ targetType: 'handout', targetId: lesson.id }}
+        title={lesson.title}
       />
       <SaveAsTemplateDialog
         lessonId={lesson.id}

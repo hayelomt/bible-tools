@@ -172,6 +172,15 @@ async function fillAccount(userId: string): Promise<void> {
     }),
     p.template.create({ data: { userId, name: 'Notes', structure: [{ title: 'Main point' }] } }),
     p.passageVisit.create({ data: { userId, book: 'ROM', startOrd: 1, endOrd: 2 } }),
+    p.shareLink.create({
+      data: {
+        userId,
+        targetType: 'lesson',
+        targetId: lesson.id,
+        tokenHash: crypto.randomUUID(),
+        live: true,
+      },
+    }),
     p.resurfaceDismissal.create({
       data: { userId, rule: 'year_ago', targetKey: lesson.id, until: new Date('2027-10-19') },
     }),

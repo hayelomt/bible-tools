@@ -232,6 +232,20 @@ export {
 } from './schemas/auth.ts';
 export { dateSchema, idSchema, revSchema, timestampSchema } from './schemas/common.ts';
 export {
+  type CreateShareLinkRequest,
+  createShareLinkRequestSchema,
+  type HandoutSnapshot,
+  handoutSnapshotSchema,
+  SHARE_TARGET_TYPES,
+  type ShareLink,
+  type ShareLinkParams,
+  shareLinkParamsSchema,
+  shareLinkSchema,
+  type ShareLinksResponse,
+  shareLinksResponseSchema,
+  type ShareTargetType,
+} from './schemas/share.ts';
+export {
   CITATION_SOURCE_TYPES,
   type Citation,
   citationSchema,

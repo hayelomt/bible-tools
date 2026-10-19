@@ -3,6 +3,9 @@ import { z } from 'zod';
 /** The web app under `pnpm dev`; the links in emails point here outside production. */
 const DEV_APP_URL = 'http://localhost:5173';
 
+/** Outside production only: share links made in development and tests are made with this. */
+const DEV_SHARE_LINK_SECRET = 'lamp-development-share-link-secret-not-for-production';
+
 /**
  * Every environment variable the API reads. Startup fails with the list of problems if any is
  * invalid. Convention over configuration: a variable exists only for a real deployment choice,
@@ -29,6 +32,9 @@ export const envSchema = z
       .optional(),
     // Production sends through Resend; development and tests write .eml files instead.
     RESEND_API_KEY: z.string().startsWith('re_', 'must be a Resend API key (re_…)').optional(),
+    // Share links' addresses are made from it (src/share/share-token.ts); changing it turns every
+    // link off. Required in production.
+    SHARE_LINK_SECRET: z.string().min(32, 'at least 32 characters').optional(),
     // Errors and a fifth of requests' traces go to Sentry; unset, nothing is sent
     // (src/instrument.ts reads it before the app starts).
     SENTRY_DSN: z.url({ protocol: /^https?$/ }).optional(),
@@ -41,8 +47,19 @@ export const envSchema = z
     if (!env.RESEND_API_KEY) {
       ctx.addIssue({ code: 'custom', path: ['RESEND_API_KEY'], message: 'required in production' });
     }
+    if (!env.SHARE_LINK_SECRET) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SHARE_LINK_SECRET'],
+        message: 'required in production',
+      });
+    }
   })
-  .transform((env) => ({ ...env, APP_URL: env.APP_URL ?? DEV_APP_URL }));
+  .transform((env) => ({
+    ...env,
+    APP_URL: env.APP_URL ?? DEV_APP_URL,
+    SHARE_LINK_SECRET: env.SHARE_LINK_SECRET ?? DEV_SHARE_LINK_SECRET,
+  }));
 
 export type Env = z.infer<typeof envSchema>;
 

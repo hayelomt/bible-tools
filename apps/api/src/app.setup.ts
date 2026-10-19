@@ -1,4 +1,9 @@
-import { HttpStatus, type INestApplication, StandardSchemaValidationPipe } from '@nestjs/common';
+import {
+  HttpStatus,
+  type INestApplication,
+  RequestMethod,
+  StandardSchemaValidationPipe,
+} from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
@@ -6,7 +11,8 @@ import { ApiException, ErrorCode } from './common/errors.js';
 
 /** Shared by `main.ts` and the tests, so both run the same app. */
 export function configureApp(app: INestApplication): void {
-  app.setGlobalPrefix('api');
+  // Shared pages are at /s/<token> (F34): outside /api, so the session cookie never goes there.
+  app.setGlobalPrefix('api', { exclude: [{ path: 's/{*rest}', method: RequestMethod.GET }] });
   // Caddy proxies from the same machine, so `req.ip` (rate limits) is the client's address.
   (app as NestExpressApplication).set('trust proxy', 'loopback');
   // A push carries up to 100 changes in at most 1 MB (§6.2); Express's default is 100 kB.

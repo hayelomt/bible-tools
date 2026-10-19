@@ -55,6 +55,7 @@ model User {
   links           Link[]
   syncChanges     SyncChange[]
   devices         Device[]
+  shareLinks      ShareLink[]
 
   @@map("user")
 }
@@ -76,6 +77,33 @@ model Session {
 
   @@index([userId, deviceId])
   @@map("session")
+}
+
+// A read-only share link (F34, §17.10), server only like Session: made, listed and revoked
+// through its own endpoints, never synced. targetType: lesson | series | compile | handout.
+// targetId is the lesson or series (the handout's lesson), with no foreign key, like link.target_id;
+// a compile view has its scope in passage instead. The token is HMAC(SHARE_LINK_SECRET, id), so the
+// owner can be shown it again; only its SHA-256 is stored, to find the link by. A frozen link
+// (live = false: a handout, or a compile view as it was) renders snapshot; a live one, the rows.
+model ShareLink {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  targetType   String    @map("target_type")
+  targetId     String?   @map("target_id") @db.Uuid
+  passage      Json?
+  // SHA-256 of the token, hex
+  tokenHash    String    @unique @map("token_hash")
+  live         Boolean
+  snapshot     Json?
+  expiresAt    DateTime? @map("expires_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastOpenedAt DateTime? @map("last_opened_at") @db.Timestamptz(3)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("share_link")
 }
 
 // kind: verify | reset

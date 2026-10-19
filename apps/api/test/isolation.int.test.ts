@@ -5,6 +5,7 @@ import {
   meResponseSchema,
   newId,
   pullResponseSchema,
+  shareLinksResponseSchema,
 } from '@lamp/domain';
 import type request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -168,6 +169,14 @@ async function fill(account: Account) {
   ];
   const results = await pushOk(client, account, changes);
   expect(results.map((r) => r.status)).toEqual(changes.map(() => 'applied'));
+  // A share link, which isn't synced: made through its own endpoint (M13-01).
+  await client
+    .post(
+      '/api/share-links',
+      { targetType: 'lesson', targetId: rows.lesson!.id, expiresAt: null },
+      account.token,
+    )
+    .expect(201);
   const revs = Object.fromEntries(
     ROW_ENTITIES.map((entity, i) => [entity, (results[i] as { rev: number }).rev]),
   ) as Record<RowEntity, number>;
@@ -229,6 +238,24 @@ describe('the fixture', () => {
 });
 
 describe('reading', () => {
+  it('my share links list none of theirs, nor revoke them', async () => {
+    const their = await theirAccount();
+    const mine = await signUp();
+    const res = await client.get('/api/share-links', mine.token).expect(200);
+    expect(shareLinksResponseSchema.parse(res.body).links).toEqual([]);
+    const link = await t.prisma.shareLink.findFirstOrThrow({ where: { userId: their.theirs.id } });
+    await client.delete(`/api/share-links/${link.id}`, undefined, mine.token).expect(404);
+    // Nor share their lesson themselves.
+    await client
+      .post(
+        '/api/share-links',
+        { targetType: 'lesson', targetId: their.rows.lesson.id, expiresAt: null },
+        mine.token,
+      )
+      .expect(404);
+    await expectUntouched(their);
+  });
+
   it('a pull, my account and my devices show none of theirs', async () => {
     const their = await theirAccount();
     const mine = await signUp();

@@ -13,14 +13,15 @@ import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { ExportDialog } from '@/components/export-dialog.tsx';
 import { deleteSeries } from '@/data/actions/series.ts';
+import { ShareLinkDialog } from '@/components/share-links/share-link-dialog.tsx';
 import { exportSeries } from '@/export/load.ts';
 import { count } from '@/lib/labels.ts';
 import { SeriesDialog } from './series-dialog.tsx';
 
-/** The series' `⋯` (wireframes/lessons.md "Series"): Edit, Export and Delete. */
+/** The series' `⋯` (wireframes/lessons.md "Series"): Edit, Export, Share link (M13-04) and Delete. */
 export function SeriesMenu({ series, lessonCount }: { series: Series; lessonCount: number }) {
   const navigate = useNavigate();
-  const [dialog, setDialog] = useState<'edit' | 'export' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'export' | 'share' | 'delete' | null>(null);
   const close = (open: boolean) => !open && setDialog(null);
 
   return (
@@ -34,6 +35,7 @@ export function SeriesMenu({ series, lessonCount }: { series: Series; lessonCoun
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={() => setDialog('edit')}>Edit series…</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog('export')}>Export series…</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setDialog('share')}>Share link…</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={() => setDialog('delete')}>
             Delete series…
@@ -53,6 +55,12 @@ export function SeriesMenu({ series, lessonCount }: { series: Series; lessonCoun
             search: { print: true },
           })
         }
+      />
+      <ShareLinkDialog
+        open={dialog === 'share'}
+        onOpenChange={close}
+        target={{ targetType: 'series', targetId: series.id }}
+        title={series.title}
       />
       <ConfirmDialog
         open={dialog === 'delete'}
