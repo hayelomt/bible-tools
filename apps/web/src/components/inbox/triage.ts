@@ -1,12 +1,5 @@
 import type { InboxItem } from '@lamp/domain';
-import { today } from '@/lib/dates.ts';
-
-/** A day `n` days after `day` ("2026-10-18"). */
-export function addDays(day: string, n: number): string {
-  const at = new Date(`${day}T00:00:00Z`);
-  at.setUTCDate(at.getUTCDate() + n);
-  return at.toISOString().slice(0, 10);
-}
+import { addDays, today } from '@/lib/dates.ts';
 
 /** Snooze's quick choices (wireframes/sermon.md "Inbox triage"): Tomorrow, Sunday, In a week. */
 export function snoozeChoices(day: string): { label: string; until: string }[] {

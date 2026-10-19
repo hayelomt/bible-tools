@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, daysWaiting, oldLabel, snoozeChoices } from './triage.ts';
+import { addDays } from '@/lib/dates.ts';
+import { daysWaiting, oldLabel, snoozeChoices } from './triage.ts';
 
 const at = (day: string) => new Date(`${day}T12:00:00`).toISOString();
 

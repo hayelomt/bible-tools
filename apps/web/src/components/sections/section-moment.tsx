@@ -65,7 +65,8 @@ export function SectionMoment({
             ? `Open the recording at ${label}`
             : `${label}: open the recording at the start; this site can’t jump to a time`
         }
-        className={`${plain} -my-0.5 -ml-1 flex items-center gap-0.5 rounded-md px-1 py-0.5 outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50`}
+        // Above the editor's text, which is positioned and would take the tap otherwise.
+        className={`${plain} relative z-[1] -my-0.5 -ml-1 flex items-center gap-0.5 rounded-md px-1 py-0.5 outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50`}
       >
         <Play aria-hidden className="size-3 fill-current" />
         {label}

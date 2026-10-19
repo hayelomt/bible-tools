@@ -22,10 +22,10 @@ import { useId, useState } from 'react';
 import { AddToLesson, type AddChoice, LessonPicker } from '@/components/reader/add-to-lesson.tsx';
 import { TagInput } from '@/components/tags/tag-input.tsx';
 import { inboxItemTitle, type Promoted, promoteText } from '@/data/actions/inbox.ts';
-import { shortDate } from '@/lib/dates.ts';
+import { addDays, shortDate } from '@/lib/dates.ts';
 import { count } from '@/lib/labels.ts';
 import { useToday } from '@/lib/use-today.ts';
-import { addDays, snoozeChoices } from './triage.ts';
+import { snoozeChoices } from './triage.ts';
 
 interface DialogProps {
   open: boolean;

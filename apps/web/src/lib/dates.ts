@@ -34,6 +34,13 @@ export function today(now = new Date()): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+/** A day `n` days after `day` ("2026-10-18"). */
+export function addDays(day: string, n: number): string {
+  const at = new Date(`${day}T00:00:00Z`);
+  at.setUTCDate(at.getUTCDate() + n);
+  return at.toISOString().slice(0, 10);
+}
+
 /** "Sun 12 Oct", with the year added when it isn't this year's. */
 export function shortDate(date: string, now = new Date()): string {
   const format = date.startsWith(String(now.getFullYear())) ? SHORT : SHORT_WITH_YEAR;
