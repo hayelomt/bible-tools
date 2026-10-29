@@ -70,14 +70,14 @@ export function DigestCard() {
           to="/digest/$quarter"
           params={{ quarter: draft.quarter }}
           data-slot="button"
-          className={buttonVariants({ className: 'pointer-coarse:min-h-11' })}
+          className={buttonVariants({ className: 'pointer-coarse:min-h-touch' })}
         >
           Open draft
           <ChevronRight aria-hidden />
         </Link>
         <Button
           variant="ghost"
-          className="pointer-coarse:min-h-11"
+          className="pointer-coarse:min-h-touch"
           onClick={() => {
             notNow.add(draft.quarter);
             setHidden((n) => n + 1);

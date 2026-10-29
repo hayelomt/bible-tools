@@ -168,7 +168,7 @@ export function Choice({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-muted has-focus-visible:ring-3 has-focus-visible:ring-ring/50 pointer-coarse:min-h-11">
+    <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-muted has-focus-visible:ring-3 has-focus-visible:ring-ring/50 pointer-coarse:min-h-touch">
       <input
         type="radio"
         name={name}

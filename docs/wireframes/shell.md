@@ -154,20 +154,27 @@ an account (M3-03's dialog, built with the note).
 
 ## Appearance (M2-03, M2-15)
 
-One theme, Lamplight, in light and dark (TECH-DESIGN §8.5), so Appearance holds only the mode.
-There is no Theme row and no sheet (the theme picker, its looks and presets were removed on
-2026-10-16). A tap applies the mode at once; there is no Save.
+One theme, Lamplight, in light and dark (TECH-DESIGN §8.5), so Appearance holds the mode, the
+density and the text size. There is no Theme row and no sheet (the theme picker, its looks and
+presets were removed on 2026-10-16). A tap applies a choice at once; there is no Save.
 
 ```text
-│ APPEARANCE                           │
-│ Mode         ( Light | Dark | Auto ) │
-│                                      │
+│ APPEARANCE                                      │
+│ Mode       ( Light | Dark | Auto )              │
+│ Density    ( Compact | Default | Roomy )        │
+│ Text size  ( Small | Default | Large | Larger ) │
+│ Density and text size are for this device only. │
+│                                                 │
 ```
 
 - **Auto** (`system`, the default) follows the device, and changes with it while the app is open.
 - The control is three native radios in one group (a segmented control): arrow keys move
   between them. The same control is on the first-run welcome (lessons.md).
 - The mode is synced and applies before the first paint, so a reload never flashes the other one.
+- **Density** tightens or loosens spacing everywhere (padding, gaps, bar heights); **Text size**
+  scales every size of text, notes and scripture included. Each is for this device only (added
+  2026-10-29), applies before the first paint, and leaves touch targets at 44 px. On a phone the
+  segments wrap under their label when the row is too narrow.
 
 ## Bible download (M2-11)
 

@@ -106,7 +106,7 @@ function ChipText({ chip: { ref } }: { chip: OpenChip }) {
   return (
     <RefText
       verse={ref}
-      className="text-[17px] leading-[1.6]"
+      className="text-read leading-[1.6]"
       missing={
         ref.translation
           ? 'No text came with it.'
@@ -117,7 +117,7 @@ function ChipText({ chip: { ref } }: { chip: OpenChip }) {
 }
 
 const ROW_LINK =
-  '-mx-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11';
+  '-mx-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch';
 
 /** To the verse index for the chip's passage (M4-07), and to its commentary (M10-02). */
 function IndexLink({ chip: { ref } }: { chip: OpenChip }) {
@@ -152,7 +152,7 @@ function IndexLink({ chip: { ref } }: { chip: OpenChip }) {
 function ChipActions({ chip }: { chip: OpenChip }) {
   const ref = storedRef(chip.ref);
   const memory = useMemoryItem(ref);
-  const button = buttonVariants({ variant: 'outline', className: 'pointer-coarse:min-h-11' });
+  const button = buttonVariants({ variant: 'outline', className: 'pointer-coarse:min-h-touch' });
   return (
     <div className="flex flex-wrap gap-2">
       <Link

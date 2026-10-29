@@ -101,7 +101,7 @@ export function AddBox({ onAdded }: { onAdded?: (id: string) => void }) {
           aria-label="Add a verse or a note"
           placeholder="Add a verse or a note…"
           rows={1}
-          className="min-h-9 resize-none pointer-coarse:min-h-11"
+          className="min-h-9 resize-none pointer-coarse:min-h-touch"
           value={text}
           onChange={(event) => setText(event.target.value)}
           onPaste={(event) => {
@@ -121,7 +121,11 @@ export function AddBox({ onAdded }: { onAdded?: (id: string) => void }) {
             void add();
           }}
         />
-        <Button type="submit" disabled={!text.trim() || busy} className="pointer-coarse:min-h-11">
+        <Button
+          type="submit"
+          disabled={!text.trim() || busy}
+          className="pointer-coarse:min-h-touch"
+        >
           Add
         </Button>
       </form>
@@ -167,7 +171,7 @@ function PasteOfferPanel({ offer, busy, onMake, onChoose, onDismiss }: PasteOffe
         <Button
           variant="ghost"
           size="icon-sm"
-          className="pointer-coarse:size-11"
+          className="pointer-coarse:size-touch"
           aria-label="Keep the paste as it is"
           onClick={onDismiss}
         >
@@ -175,14 +179,14 @@ function PasteOfferPanel({ offer, busy, onMake, onChoose, onDismiss }: PasteOffe
         </Button>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" className="pointer-coarse:min-h-11" disabled={busy} onClick={onMake}>
+        <Button size="sm" className="pointer-coarse:min-h-touch" disabled={busy} onClick={onMake}>
           {one ? 'Make chip' : `Make ${verses.length} chips`}
         </Button>
         {!one && (
           <Button
             size="sm"
             variant="outline"
-            className="pointer-coarse:min-h-11"
+            className="pointer-coarse:min-h-touch"
             disabled={busy}
             onClick={onChoose}
           >

@@ -22,7 +22,7 @@ function BacklinkRow({ backlink: { section, lesson } }: { backlink: Backlink }) 
         to="/lessons/$lessonId"
         params={{ lessonId: lesson.id }}
         search={{ section: section.id }}
-        className="-mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent pointer-coarse:min-h-11"
+        className="-mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent pointer-coarse:min-h-touch"
       >
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate">

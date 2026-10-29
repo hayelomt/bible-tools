@@ -40,7 +40,7 @@ export function MoveToSeriesDialog({ lesson, open, onOpenChange }: MoveToSeriesD
             {choices.map(({ id, title }) => (
               <label
                 key={id ?? 'none'}
-                className="relative flex min-h-9 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 has-checked:font-medium has-focus-visible:ring-3 has-focus-visible:ring-ring/50 hover:bg-muted pointer-coarse:min-h-11"
+                className="relative flex min-h-9 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 has-checked:font-medium has-focus-visible:ring-3 has-focus-visible:ring-ring/50 hover:bg-muted pointer-coarse:min-h-touch"
               >
                 <input
                   type="radio"

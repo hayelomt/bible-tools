@@ -63,7 +63,7 @@ export function BibleStatus({
               <Button
                 variant="ghost"
                 size="sm"
-                className="pointer-coarse:min-h-11"
+                className="pointer-coarse:min-h-touch"
                 aria-label={`Remove the ${label} from this device`}
                 onClick={() => void removeBible(translation)}
               >
@@ -105,7 +105,7 @@ export function BibleStatus({
           <Button
             variant="outline"
             size="sm"
-            className="pointer-coarse:min-h-11"
+            className="pointer-coarse:min-h-touch"
             aria-label={`Download the ${label}`}
             onClick={() => void downloadBible(translation)}
           >

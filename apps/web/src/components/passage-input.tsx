@@ -157,7 +157,7 @@ export function PassageInput({ id, value, onChange }: PassageInputProps) {
               // Keeps focus in the field, so its blur doesn't add the text first.
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => add(ref)}
-              className="flex cursor-default flex-col rounded-md px-2 py-1.5 aria-selected:bg-accent aria-selected:text-accent-foreground pointer-coarse:min-h-11 pointer-coarse:justify-center"
+              className="flex cursor-default flex-col rounded-md px-2 py-1.5 aria-selected:bg-accent aria-selected:text-accent-foreground pointer-coarse:min-h-touch pointer-coarse:justify-center"
             >
               {ref.display}
             </li>

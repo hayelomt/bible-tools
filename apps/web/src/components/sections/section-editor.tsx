@@ -294,7 +294,7 @@ export const SectionEditor = memo(function SectionEditor({
           <button
             type="button"
             onClick={() => api.pickTemplate(null)}
-            className="-mx-1 flex items-center gap-0.5 rounded-md px-1 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+            className="-mx-1 flex items-center gap-0.5 rounded-md px-1 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
           >
             Start from a template
             <ChevronRight aria-hidden className="size-4" />
@@ -342,7 +342,7 @@ export const SectionEditor = memo(function SectionEditor({
         />
       ) : (
         // A draft has nothing to move or delete yet; the space keeps the text from shifting.
-        <div aria-hidden className="w-8 shrink-0 pointer-coarse:w-11" />
+        <div aria-hidden className="w-8 shrink-0 pointer-coarse:w-touch" />
       )}
       {item.stored && (
         <MomentDialog
@@ -369,7 +369,7 @@ function editorAttributes(level: 0 | 1): Record<string, string> {
 
 /** Note text in the reading font (UX-PATTERNS "Typography"), with the body's few block styles. */
 export const EDITOR_CLASS = [
-  'min-h-11 text-[17px] leading-[1.6] outline-none',
+  'min-h-11 text-read leading-[1.6] outline-none',
   '[&_p+*]:mt-2 [&_*+p]:mt-2',
   '[&_h3]:font-semibold [&_h3]:text-lg',
   '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6',

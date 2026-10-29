@@ -19,7 +19,7 @@ import { runWrite } from '@/lib/run-write.ts';
 import { useToday } from '@/lib/use-today.ts';
 
 const ROW_LINK =
-  '-mx-2 flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11';
+  '-mx-2 flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch';
 
 const UNDO_MS = 10_000;
 
@@ -49,7 +49,7 @@ function PrepEntry({ day }: { day: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="-mt-6 flex items-center gap-1 self-start rounded-md text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+        className="-mt-6 flex items-center gap-1 self-start rounded-md text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
       >
         Prep the next sermon
         <ChevronRight aria-hidden className="size-4" />
@@ -114,7 +114,7 @@ function PrepSummaryCard({ prep }: { prep: PrepSummary }) {
           variant="ghost"
           size="icon-sm"
           aria-label="Clear the prep"
-          className="-my-1 pointer-coarse:size-11"
+          className="-my-1 pointer-coarse:size-touch"
           onClick={() => runWrite(clear(), 'the prep')}
         >
           <XIcon />
@@ -185,7 +185,7 @@ function PrepSummaryCard({ prep }: { prep: PrepSummary }) {
                   <Link
                     to="/tags/$tagId"
                     params={{ tagId: tag.id }}
-                    className="rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center"
+                    className="rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:inline-flex pointer-coarse:min-h-touch pointer-coarse:items-center"
                   >
                     #{tag.name}
                   </Link>

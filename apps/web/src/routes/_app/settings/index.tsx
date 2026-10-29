@@ -6,6 +6,7 @@ import { ApiStatus } from '@/components/api-status.tsx';
 import { DigestSetting } from '@/components/groups/digest-setting.tsx';
 import { BibleSettings } from '@/components/bible-status.tsx';
 import { YouVersionImport } from '@/components/import/youversion-import.tsx';
+import { DisplayControl } from '@/components/display-control.tsx';
 import { ModeControl } from '@/components/mode-control.tsx';
 import { PageSection } from '@/components/page-section.tsx';
 import { PasteChipsSetting } from '@/components/paste-chips-setting.tsx';
@@ -33,11 +34,10 @@ function Settings() {
   return (
     <div className="flex flex-col gap-8">
       <AccountSection />
-      {settings && (
-        <PageSection title="Appearance">
-          <ModeControl value={settings.colorMode} />
-        </PageSection>
-      )}
+      <PageSection title="Appearance">
+        {settings && <ModeControl value={settings.colorMode} />}
+        <DisplayControl />
+      </PageSection>
       <PageSection title="Bible">
         {settings && <BibleSettings value={settings.defaultTranslation} />}
         {settings && <VersePreviewSetting value={settings.autoPreviewVerses} />}

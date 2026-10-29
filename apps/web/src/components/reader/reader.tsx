@@ -65,7 +65,7 @@ export function Reader({ at }: { at: Chapter }) {
           type="button"
           aria-haspopup="dialog"
           onClick={() => setPicking(true)}
-          className="-mx-2 inline-flex max-w-full items-center gap-1 rounded-md px-2 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+          className="-mx-2 inline-flex max-w-full items-center gap-1 rounded-md px-2 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
         >
           <span className="truncate">{chapterName(at)}</span>
           <ChevronDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />

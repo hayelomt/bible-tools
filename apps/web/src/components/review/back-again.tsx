@@ -113,7 +113,7 @@ function RowHeading({
             <Button
               variant="ghost"
               size="icon"
-              className="-my-2 pointer-coarse:size-11"
+              className="-my-2 pointer-coarse:size-touch"
               aria-label={`More for ${name}`}
             />
           }
@@ -201,7 +201,7 @@ function RepeatedVerseRow({ item, today }: { item: RepeatedVerseItem; today: str
         className={buttonVariants({
           variant: 'outline',
           size: 'sm',
-          className: 'self-start pointer-coarse:min-h-11',
+          className: 'self-start pointer-coarse:min-h-touch',
         })}
       >
         Read as commentary
@@ -264,14 +264,14 @@ function StaleQuestionRow({ item, today }: { item: StaleQuestion; today: string 
           search={{ answer: question.id }}
           data-slot="button"
           aria-label={`Answer “${question.text}”`}
-          className={buttonVariants({ size: 'sm', className: 'pointer-coarse:min-h-11' })}
+          className={buttonVariants({ size: 'sm', className: 'pointer-coarse:min-h-touch' })}
         >
           Answer
         </Link>
         <Button
           variant="outline"
           size="sm"
-          className="pointer-coarse:min-h-11"
+          className="pointer-coarse:min-h-touch"
           aria-label={`Park “${question.text}”`}
           onClick={park}
         >
@@ -285,7 +285,7 @@ function StaleQuestionRow({ item, today }: { item: StaleQuestion; today: string 
           className={buttonVariants({
             variant: 'ghost',
             size: 'sm',
-            className: 'pointer-coarse:min-h-11',
+            className: 'pointer-coarse:min-h-touch',
           })}
         >
           Thread

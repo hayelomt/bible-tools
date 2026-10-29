@@ -235,7 +235,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer, group }: Le
               aria-expanded={detailsOpen}
               aria-controls={detailsId}
               onClick={() => setDetailsOpen((open) => !open)}
-              className="-mx-1 flex items-center gap-0.5 rounded-md px-1 text-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+              className="-mx-1 flex items-center gap-0.5 rounded-md px-1 text-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
             >
               Details
               <ChevronDown

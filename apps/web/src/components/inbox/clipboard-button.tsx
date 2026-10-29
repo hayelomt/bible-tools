@@ -31,7 +31,7 @@ export function ClipboardButton() {
     <Button
       variant="outline"
       size="sm"
-      className="pointer-coarse:min-h-11"
+      className="pointer-coarse:min-h-touch"
       onClick={() => void read()}
     >
       <ClipboardPaste />

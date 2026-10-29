@@ -10,7 +10,7 @@ import { BibleDownloadIndicator } from './bible-download-indicator.tsx';
 import { SyncStatus } from './sync-status.tsx';
 
 const itemClass =
-  'flex h-9 items-center gap-3 rounded-lg px-3 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11 aria-[current=page]:bg-muted aria-[current=page]:font-medium aria-[current=page]:text-foreground';
+  'flex h-9 items-center gap-3 rounded-lg px-3 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch aria-[current=page]:bg-muted aria-[current=page]:font-medium aria-[current=page]:text-foreground';
 
 /** The laptop's sidebar, from 1024 px (wireframes/shell.md). */
 export function Sidebar() {

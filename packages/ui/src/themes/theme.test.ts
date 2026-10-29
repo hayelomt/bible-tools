@@ -11,7 +11,17 @@ import {
   type Rgba,
   withAlpha,
 } from './color.ts';
-import { applyMode, readMode, resolveMode, saveMode, THEME_STORAGE_KEY } from './theme.ts';
+import {
+  applyDisplay,
+  applyMode,
+  DISPLAY_STORAGE_KEY,
+  readDisplay,
+  readMode,
+  resolveMode,
+  saveDisplay,
+  saveMode,
+  THEME_STORAGE_KEY,
+} from './theme.ts';
 
 /** The palette tokens Lamplight sets, in both modes. */
 const PALETTE_TOKENS = [
@@ -319,6 +329,31 @@ describe('theme helpers', () => {
     for (const bad of ['{"mode":"dim"}', 'not json', 'null', '[1]']) {
       storage.set(THEME_STORAGE_KEY, bad);
       expect(readMode(store)).toBe('system');
+    }
+  });
+
+  it('applies a density and text size, with no attribute for the defaults', () => {
+    const element = document.createElement('html');
+    applyDisplay(element, { density: 'compact', textSize: 'large' });
+    expect(element.outerHTML).toBe('<html data-density="compact" data-text-size="large"></html>');
+    applyDisplay(element, { density: 'default', textSize: 'default' });
+    expect(element.outerHTML).toBe('<html></html>');
+  });
+
+  it('stores the density and text size, each "default" when unknown', () => {
+    const storage = new Map<string, string>();
+    const store = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => void storage.set(key, value),
+    };
+    expect(readDisplay(store)).toEqual({ density: 'default', textSize: 'default' });
+    saveDisplay(store, { density: 'roomy', textSize: 'small' });
+    expect(readDisplay(store)).toEqual({ density: 'roomy', textSize: 'small' });
+    storage.set(DISPLAY_STORAGE_KEY, '{"density":"tight","textSize":"larger"}');
+    expect(readDisplay(store)).toEqual({ density: 'default', textSize: 'larger' });
+    for (const bad of ['not json', 'null', '[1]']) {
+      storage.set(DISPLAY_STORAGE_KEY, bad);
+      expect(readDisplay(store)).toEqual({ density: 'default', textSize: 'default' });
     }
   });
 });

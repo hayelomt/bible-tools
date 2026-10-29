@@ -29,7 +29,7 @@ export function OpenInLinks({ chip }: { chip: VerseRef }) {
               href={openInUrl(target, chip, active)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-lg px-2 py-2 text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+              className="flex items-center justify-between rounded-lg px-2 py-2 text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
             >
               {target.name}
               <ArrowUpRight aria-hidden className="size-4 text-muted-foreground" />

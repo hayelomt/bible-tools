@@ -88,7 +88,7 @@ export function HighlightNote({
           className={buttonVariants({
             variant: 'outline',
             size: 'sm',
-            className: 'pointer-coarse:min-h-11',
+            className: 'pointer-coarse:min-h-touch',
           })}
         >
           Done

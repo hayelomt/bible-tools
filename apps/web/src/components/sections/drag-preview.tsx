@@ -19,7 +19,7 @@ export function DragPreview({ row, text, level }: DragPreviewProps) {
     <div className="flex cursor-grabbing items-start gap-1 rounded-lg bg-card shadow-xl ring-1 ring-primary/40">
       <div className="min-w-0 flex-1 border-l-2 border-primary py-2 pl-3">
         <p className="text-xs font-medium text-primary">{level === 1 ? 'Reply' : 'Note'}</p>
-        <p className="line-clamp-3 text-[17px] leading-[1.6]">
+        <p className="line-clamp-3 text-read leading-[1.6]">
           {text.trim() || <span className="text-muted-foreground">Empty</span>}
         </p>
         {replies > 0 && (
@@ -28,7 +28,7 @@ export function DragPreview({ row, text, level }: DragPreviewProps) {
           </p>
         )}
       </div>
-      <div className="flex size-8 shrink-0 items-center justify-center text-primary pointer-coarse:size-11">
+      <div className="flex size-8 shrink-0 items-center justify-center text-primary pointer-coarse:size-touch">
         <GripVertical className="size-4" />
       </div>
     </div>

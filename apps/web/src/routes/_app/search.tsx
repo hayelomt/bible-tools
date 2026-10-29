@@ -129,7 +129,7 @@ function BeforeTyping({ onPick }: { onPick: (query: string) => void }) {
             {i > 0 && <span aria-hidden>·</span>}
             <button
               type="button"
-              className="rounded-md px-1 text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+              className="rounded-md px-1 text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
               onClick={() => onPick(example)}
             >
               {example}

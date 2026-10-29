@@ -131,7 +131,7 @@ function Option({ id, entry, selected, onChoose }: OptionProps) {
       id={id}
       role="option"
       aria-selected={selected}
-      className="flex cursor-default flex-col gap-0.5 rounded-md px-2 py-1.5 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground pointer-coarse:min-h-11 pointer-coarse:justify-center"
+      className="flex cursor-default flex-col gap-0.5 rounded-md px-2 py-1.5 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground pointer-coarse:min-h-touch pointer-coarse:justify-center"
       onClick={onChoose}
     >
       <div className="flex items-baseline justify-between gap-2">

@@ -41,7 +41,7 @@ export function SourceLine({ source }: { source: SourceValues }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Source: ${words} (opens in a new tab)`}
-      className="-mx-1 flex max-w-full items-center gap-1.5 self-start rounded-md px-1 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+      className="-mx-1 flex max-w-full items-center gap-1.5 self-start rounded-md px-1 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
     >
       {content}
       <ExternalLink aria-hidden className="size-3.5 shrink-0" />

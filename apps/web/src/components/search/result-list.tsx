@@ -39,7 +39,7 @@ export function ResultList({ groups, perLesson = Infinity, onOpen }: ResultListP
             {!all && (
               <button
                 type="button"
-                className="-mx-2 self-start rounded-lg px-2 py-1 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+                className="-mx-2 self-start rounded-lg px-2 py-1 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
                 onClick={() => setExpanded((ids) => new Set(ids).add(lesson.id))}
               >
                 + {items.length - perLesson} more in this lesson

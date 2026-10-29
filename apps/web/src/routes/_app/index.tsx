@@ -61,7 +61,7 @@ function LessonsHome() {
           <div className="mt-2">{newLesson}</div>
           <Link
             to="/read"
-            className="flex items-center gap-1 rounded-md text-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+            className="flex items-center gap-1 rounded-md text-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
           >
             Or open the Bible to read
             <ChevronRight className="size-4" aria-hidden />
@@ -77,7 +77,7 @@ function LessonsHome() {
             {lessons.length > RECENT && (
               <Link
                 to="/lessons"
-                className="flex items-center gap-1 self-start rounded-md text-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+                className="flex items-center gap-1 self-start rounded-md text-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
               >
                 Show all {count(lessons.length, 'lesson')}
                 <ChevronRight className="size-4" aria-hidden />

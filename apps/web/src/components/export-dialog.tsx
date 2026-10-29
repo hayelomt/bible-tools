@@ -69,7 +69,7 @@ export function ExportDialog({
         <div className="flex flex-col gap-2">
           <Button
             variant="outline"
-            className="justify-start pointer-coarse:min-h-11"
+            className="justify-start pointer-coarse:min-h-touch"
             onClick={() => void run(({ fileName, markdown }) => download(fileName, markdown))}
           >
             <FileDown aria-hidden />
@@ -77,7 +77,7 @@ export function ExportDialog({
           </Button>
           <Button
             variant="outline"
-            className="justify-start pointer-coarse:min-h-11"
+            className="justify-start pointer-coarse:min-h-touch"
             onClick={() =>
               void run(async ({ markdown }) => {
                 await navigator.clipboard.writeText(markdown);
@@ -91,7 +91,7 @@ export function ExportDialog({
           {loadNotion && (
             <Button
               variant="outline"
-              className="justify-start pointer-coarse:min-h-11"
+              className="justify-start pointer-coarse:min-h-touch"
               onClick={() =>
                 void run(async ({ markdown }) => {
                   await navigator.clipboard.writeText(markdown);
@@ -106,7 +106,7 @@ export function ExportDialog({
           {onPrint && (
             <Button
               variant="outline"
-              className="justify-start pointer-coarse:min-h-11"
+              className="justify-start pointer-coarse:min-h-touch"
               onClick={() => {
                 onOpenChange(false);
                 onPrint();
@@ -119,7 +119,7 @@ export function ExportDialog({
           {onHandout && (
             <Button
               variant="outline"
-              className="justify-start pointer-coarse:min-h-11"
+              className="justify-start pointer-coarse:min-h-touch"
               onClick={() => {
                 onOpenChange(false);
                 onHandout();
@@ -132,7 +132,7 @@ export function ExportDialog({
           {onShareHandout && (
             <Button
               variant="outline"
-              className="justify-start pointer-coarse:min-h-11"
+              className="justify-start pointer-coarse:min-h-touch"
               onClick={() => {
                 onOpenChange(false);
                 onShareHandout();

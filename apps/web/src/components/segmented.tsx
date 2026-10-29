@@ -24,7 +24,7 @@ export function Segmented<T extends string>({
       {options.map((option) => (
         <label
           key={option}
-          className="relative flex h-7 cursor-pointer items-center rounded-md px-3 text-sm text-muted-foreground has-checked:bg-primary has-checked:text-primary-foreground has-focus-visible:ring-3 has-focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+          className="relative flex h-7 cursor-pointer items-center rounded-md px-3 text-sm text-muted-foreground has-checked:bg-primary has-checked:text-primary-foreground has-focus-visible:ring-3 has-focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
         >
           <input
             type="radio"

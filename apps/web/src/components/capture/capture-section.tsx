@@ -234,7 +234,7 @@ function CaptureEditor({
 
 /** The reading font, larger on a laptop, with the placeholder from TipTap's extension. */
 const EDITOR_CLASS = [
-  'min-h-8 text-[17px] leading-[1.6] outline-none lg:text-xl',
+  'min-h-8 text-read leading-[1.6] outline-none lg:text-xl',
   '[&_p+p]:mt-2',
   '[&_p.is-editor-empty:first-child]:before:pointer-events-none',
   '[&_p.is-editor-empty:first-child]:before:float-left',

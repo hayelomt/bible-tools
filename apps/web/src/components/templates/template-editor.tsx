@@ -216,7 +216,7 @@ function RowMenu(props: RowMenuProps) {
         aria-label={`Actions for ${props.label}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="shrink-0 text-muted-foreground pointer-coarse:size-11"
+        className="shrink-0 text-muted-foreground pointer-coarse:size-touch"
         onClick={() => setOpen(true)}
       >
         <Ellipsis />

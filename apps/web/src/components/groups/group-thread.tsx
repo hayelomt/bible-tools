@@ -230,7 +230,7 @@ function Entry({
           focusOnMount={focused}
         />
       ) : (
-        <div className={cn('text-[17px] leading-[1.6]')}>
+        <div className={cn('text-read leading-[1.6]')}>
           <ReadOnlyBody body={entry.body} headingLevel={4} />
         </div>
       )}

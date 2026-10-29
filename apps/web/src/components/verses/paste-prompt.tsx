@@ -95,7 +95,7 @@ function Prompt({ prompt }: { prompt: PastePrompt }) {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="pointer-coarse:size-11"
+          className="pointer-coarse:size-touch"
           aria-label="Keep the paste as it is"
           tabIndex={-1}
           onClick={() => dismissPaste(editor)}
@@ -114,7 +114,7 @@ function Prompt({ prompt }: { prompt: PastePrompt }) {
               <Button
                 size="sm"
                 variant="outline"
-                className="pointer-coarse:min-h-11"
+                className="pointer-coarse:min-h-touch"
                 tabIndex={-1}
                 aria-label={`Make chip for ${chip.ref.display}`}
                 onClick={() => makePasteChips(editor, [chip])}
@@ -128,7 +128,7 @@ function Prompt({ prompt }: { prompt: PastePrompt }) {
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            className="pointer-coarse:min-h-11"
+            className="pointer-coarse:min-h-touch"
             tabIndex={-1}
             onClick={() => makePasteChips(editor, chips)}
           >
@@ -138,7 +138,7 @@ function Prompt({ prompt }: { prompt: PastePrompt }) {
             <Button
               size="sm"
               variant="outline"
-              className="pointer-coarse:min-h-11"
+              className="pointer-coarse:min-h-touch"
               tabIndex={-1}
               onClick={() => setChoosing(true)}
             >

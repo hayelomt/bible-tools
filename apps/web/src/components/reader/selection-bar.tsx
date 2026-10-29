@@ -59,7 +59,7 @@ export function SelectionBar({
       params: { passage: passageSlug(passage) },
       search: show ? { show } : {},
     });
-  const action = buttonVariants({ variant: 'ghost', className: 'pointer-coarse:min-h-11' });
+  const action = buttonVariants({ variant: 'ghost', className: 'pointer-coarse:min-h-touch' });
   return (
     <div
       role="toolbar"
@@ -78,7 +78,7 @@ export function SelectionBar({
             className={buttonVariants({
               variant: 'ghost',
               size: 'icon',
-              className: 'pointer-coarse:size-11',
+              className: 'pointer-coarse:size-touch',
             })}
           >
             <X />
@@ -94,7 +94,7 @@ export function SelectionBar({
                 aria-label={HIGHLIGHT_COLOUR_NAME[colour]}
                 aria-pressed={exact?.colour === colour}
                 onClick={() => onPaint(colour)}
-                className={`inline-flex size-8 items-center justify-center rounded-full text-xs font-semibold text-foreground outline-none ring-offset-2 ring-offset-background focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:ring-2 aria-pressed:ring-ring pointer-coarse:size-11 ${HIGHLIGHT_COLOUR_CLASS[colour]}`}
+                className={`inline-flex size-8 items-center justify-center rounded-full text-xs font-semibold text-foreground outline-none ring-offset-2 ring-offset-background focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:ring-2 aria-pressed:ring-ring pointer-coarse:size-touch ${HIGHLIGHT_COLOUR_CLASS[colour]}`}
               >
                 <span aria-hidden>{HIGHLIGHT_COLOUR_NAME[colour][0]}</span>
               </button>
@@ -107,7 +107,7 @@ export function SelectionBar({
             data-slot="button"
             className={buttonVariants({
               variant: 'ghost',
-              className: 'pointer-coarse:min-h-11',
+              className: 'pointer-coarse:min-h-touch',
             })}
           >
             Note
@@ -134,7 +134,7 @@ export function SelectionBar({
               data-slot="button"
               className={buttonVariants({
                 variant: 'ghost',
-                className: 'pointer-coarse:min-h-11',
+                className: 'pointer-coarse:min-h-touch',
               })}
             >
               Remove highlight
@@ -147,7 +147,7 @@ export function SelectionBar({
                   variant="ghost"
                   size="icon"
                   aria-label="More for the selected verses"
-                  className="pointer-coarse:size-11"
+                  className="pointer-coarse:size-touch"
                 />
               }
             >

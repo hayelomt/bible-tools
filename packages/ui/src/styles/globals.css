@@ -65,6 +65,46 @@
 }
 
 /*
+ * Density and text size (TECH-DESIGN §8.5), set per device as `data-density` and `data-text-size`
+ * on `<html>`. Density scales `--spacing`, which every spacing and size utility multiplies; text
+ * size scales the text sizes below through `--text-scale`. `text-read` is the size of notes and
+ * scripture. `touch` (`pointer-coarse:min-h-touch`) is the 44 px touch target, kept whatever
+ * the density.
+ */
+@theme {
+  --spacing-touch: 2.75rem;
+  --text-xs: calc(0.75rem * var(--text-scale, 1));
+  --text-sm: calc(0.875rem * var(--text-scale, 1));
+  --text-base: calc(1rem * var(--text-scale, 1));
+  --text-lg: calc(1.125rem * var(--text-scale, 1));
+  --text-xl: calc(1.25rem * var(--text-scale, 1));
+  --text-2xl: calc(1.5rem * var(--text-scale, 1));
+  --text-3xl: calc(1.875rem * var(--text-scale, 1));
+  --text-4xl: calc(2.25rem * var(--text-scale, 1));
+  --text-read: calc(1.0625rem * var(--text-scale, 1));
+  --text-read-lg: calc(1.1875rem * var(--text-scale, 1));
+}
+
+/* On screen only: paper keeps the default sizes. */
+@media screen {
+  :root[data-density='compact'] {
+    --spacing: 0.21875rem;
+  }
+  :root[data-density='roomy'] {
+    --spacing: 0.28125rem;
+  }
+  :root[data-text-size='small'] {
+    --text-scale: 0.9375;
+  }
+  :root[data-text-size='large'] {
+    --text-scale: 1.125;
+  }
+  :root[data-text-size='larger'] {
+    --text-scale: 1.25;
+  }
+}
+
+/*
  * Lamplight: a study lit by one lamp. Dark is the evening study; light is the same room in the
  * morning, cream paper with the amber deepened to read. The contrast test reads these tokens, so
  * keep the two blocks flat.
@@ -179,6 +219,10 @@
   [data-slot='label']:has([data-slot='checkbox'], [data-slot='switch']) {
     min-height: 2.75rem;
   }
+  /* Small text keeps fields at 16 px, so iOS doesn't zoom on focus. */
+  :root[data-text-size='small'] :is(input, textarea, select, [contenteditable='true']) {
+    font-size: 1rem;
+  }
 }
 
 @layer base {
@@ -187,5 +231,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Text with no size class follows the text size too. */
+    font-size: var(--text-base);
   }
 }

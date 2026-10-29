@@ -23,6 +23,19 @@
         var root = document.documentElement;
         root.classList.toggle('dark', dark);
         root.style.colorScheme = dark ? 'dark' : 'light';
+        // The device's density and text size: mirrors readDisplay and applyDisplay there too.
+        var display;
+        try {
+          display = JSON.parse(localStorage.getItem('lamp.display') || '{}') || {};
+        } catch (e) {
+          display = {};
+        }
+        if (['compact', 'roomy'].indexOf(display.density) >= 0) {
+          root.setAttribute('data-density', display.density);
+        }
+        if (['small', 'large', 'larger'].indexOf(display.textSize) >= 0) {
+          root.setAttribute('data-text-size', display.textSize);
+        }
       })();
     </script>
   </head>

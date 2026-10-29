@@ -236,7 +236,7 @@ function ItemMenu({ label, triage }: { label: string; triage: ReturnType<typeof 
             variant="ghost"
             size="icon"
             aria-label={`More for ${label}`}
-            className="pointer-coarse:size-11"
+            className="pointer-coarse:size-touch"
           />
         }
       >

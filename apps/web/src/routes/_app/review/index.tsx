@@ -118,7 +118,7 @@ function MemoryVerses({
           <Link
             to="/review/memory"
             data-slot="button"
-            className={buttonVariants({ className: 'pointer-coarse:min-h-11' })}
+            className={buttonVariants({ className: 'pointer-coarse:min-h-touch' })}
           >
             Start
             <ChevronRight aria-hidden />

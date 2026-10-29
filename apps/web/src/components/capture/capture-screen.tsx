@@ -190,7 +190,7 @@ export function CaptureScreen({ lesson }: { lesson: Lesson }) {
     <div className="flex min-h-svh flex-col">
       <header className="sticky top-0 z-10 border-b bg-background pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 w-full max-w-2xl items-center gap-2 px-4">
-          <Button variant="outline" onClick={done} className="pointer-coarse:min-h-11">
+          <Button variant="outline" onClick={done} className="pointer-coarse:min-h-touch">
             Done
           </Button>
           <Clock startedAt={lesson.sourceStartedAt} offset={offset ?? 0} />
@@ -280,7 +280,7 @@ function StartMenu({ lesson }: { lesson: Lesson }) {
               variant="ghost"
               size="icon"
               aria-label="Capture actions"
-              className="pointer-coarse:size-11"
+              className="pointer-coarse:size-touch"
             />
           }
         >
@@ -378,7 +378,7 @@ function PinnedPassage({ passage }: { passage: VerseRef }) {
         aria-expanded={open}
         aria-controls={textId}
         onClick={() => setOpen((o) => !o)}
-        className="-mx-1 flex items-center justify-between gap-2 rounded-md px-1 text-sm font-medium tracking-wide uppercase outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+        className="-mx-1 flex items-center justify-between gap-2 rounded-md px-1 text-sm font-medium tracking-wide uppercase outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
       >
         {passage.display}
         <ChevronDown
@@ -450,9 +450,9 @@ function VerseBox({
             setText(event.target.value);
             setError(null);
           }}
-          className="pointer-coarse:h-11"
+          className="pointer-coarse:h-touch"
         />
-        <Button type="submit" variant="outline" className="pointer-coarse:min-h-11">
+        <Button type="submit" variant="outline" className="pointer-coarse:min-h-touch">
           Insert
         </Button>
       </div>

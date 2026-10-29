@@ -49,6 +49,47 @@ test('every mode is stored, and applied before the first paint on reload', async
   }
 });
 
+test('density and text size apply at once, and before the first paint on reload', async ({
+  page,
+}) => {
+  const html = page.locator('html');
+  await page.goto('/settings');
+  const fontSize = () =>
+    page.getByRole('radio', { name: 'Roomy' }).evaluate((radio) => {
+      const label = radio.closest('label') as HTMLElement;
+      return parseFloat(getComputedStyle(label).fontSize);
+    });
+  const height = () =>
+    page
+      .getByRole('radio', { name: 'Roomy' })
+      .evaluate((radio) => (radio.closest('label') as HTMLElement).offsetHeight);
+  const [defaultSize, defaultHeight] = [await fontSize(), await height()];
+
+  await page.getByRole('radio', { name: 'Compact' }).click();
+  await page.getByRole('radio', { name: 'Larger' }).click();
+  await expect(html).toHaveAttribute('data-density', 'compact');
+  await expect(html).toHaveAttribute('data-text-size', 'larger');
+  expect(await fontSize()).toBeCloseTo(defaultSize * 1.25);
+  expect(await height()).toBeLessThan(defaultHeight);
+  expect(await page.evaluate(() => localStorage.getItem('lamp.display'))).toBe(
+    '{"density":"compact","textSize":"larger"}',
+  );
+
+  // With the app's scripts blocked, only the inline script in index.html can apply them.
+  await page.route('**/*.js', (route) => route.abort());
+  await page.reload();
+  await expect(html).toHaveAttribute('data-density', 'compact');
+  await expect(html).toHaveAttribute('data-text-size', 'larger');
+  await page.unroute('**/*.js');
+
+  await page.goto('/settings');
+  await expect(page.getByRole('radio', { name: 'Compact' })).toBeChecked();
+  await page.getByRole('radio', { name: 'Default' }).first().click();
+  await page.getByRole('radio', { name: 'Default' }).last().click();
+  await expect(html).not.toHaveAttribute('data-density');
+  await expect(html).not.toHaveAttribute('data-text-size');
+});
+
 test('Auto follows the device as it changes', async ({ page }) => {
   const html = page.locator('html');
   await page.emulateMedia({ colorScheme: 'light' });
@@ -74,6 +115,25 @@ test.describe('on a phone', () => {
       );
       return Math.min(...heights);
     }, slots);
+    expect(smallest).toBeGreaterThanOrEqual(44);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(0);
+  });
+
+  test('compact keeps the 44 px touch targets, and the largest text fits', async ({ page }) => {
+    await page.addInitScript(() =>
+      localStorage.setItem('lamp.display', '{"density":"compact","textSize":"larger"}'),
+    );
+    await page.goto('/settings');
+    const smallest = await page.evaluate(() =>
+      Math.min(
+        ...[...document.querySelectorAll('[data-slot="button"], input[type="radio"]')]
+          .filter((element) => element.checkVisibility())
+          .map((element) => (element.closest('label') ?? element).getBoundingClientRect().height),
+      ),
+    );
     expect(smallest).toBeGreaterThanOrEqual(44);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

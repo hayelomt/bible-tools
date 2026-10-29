@@ -132,7 +132,7 @@ function TargetRow({ target, name, index, count, onShow, onMove }: TargetRowProp
             aria-haspopup="menu"
             aria-expanded={open}
             title="Drag to move, or click for actions"
-            className="cursor-grab touch-pan-y text-muted-foreground select-none pointer-coarse:size-11"
+            className="cursor-grab touch-pan-y text-muted-foreground select-none pointer-coarse:size-touch"
             {...listeners}
             onClick={() => setOpen(true)}
           >
@@ -151,7 +151,7 @@ function TargetRow({ target, name, index, count, onShow, onMove }: TargetRowProp
         </>
       ) : (
         // Nothing to move: the space keeps the switches in line.
-        <div aria-hidden className="size-8 shrink-0 pointer-coarse:size-11" />
+        <div aria-hidden className="size-8 shrink-0 pointer-coarse:size-touch" />
       )}
     </li>
   );

@@ -72,14 +72,14 @@ function QuestionRow({ entry: { question, lesson } }: { entry: QuestionInQueue }
           search={{ answer: question.id }}
           data-slot="button"
           aria-label={`Answer “${question.text}”`}
-          className={buttonVariants({ size: 'sm', className: 'pointer-coarse:min-h-11' })}
+          className={buttonVariants({ size: 'sm', className: 'pointer-coarse:min-h-touch' })}
         >
           Answer
         </Link>
         <Button
           variant="outline"
           size="sm"
-          className="pointer-coarse:min-h-11"
+          className="pointer-coarse:min-h-touch"
           aria-label={`Park “${question.text}”`}
           onClick={park}
         >
@@ -93,7 +93,7 @@ function QuestionRow({ entry: { question, lesson } }: { entry: QuestionInQueue }
           className={buttonVariants({
             variant: 'ghost',
             size: 'sm',
-            className: 'pointer-coarse:min-h-11',
+            className: 'pointer-coarse:min-h-touch',
           })}
         >
           Open lesson

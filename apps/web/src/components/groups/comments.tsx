@@ -172,7 +172,7 @@ export function Comments({
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((o) => !o)}
-        className="-mx-1 flex w-fit items-center gap-1 rounded-md px-1 text-sm text-muted-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+        className="-mx-1 flex w-fit items-center gap-1 rounded-md px-1 text-sm text-muted-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
       >
         {comments.length > 0 ? count(comments.length, 'comment') : 'No comments · Comment'}
         <ChevronDown

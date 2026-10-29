@@ -51,7 +51,7 @@ function Indicator({
       title={label}
       data-slot="bible-download"
       className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground tabular-nums outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11',
+        'flex shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground tabular-nums outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch',
         className,
       )}
     >

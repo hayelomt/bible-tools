@@ -94,7 +94,7 @@ export function InboxSelectionBar({
             size="icon"
             aria-label="Stop selecting"
             onClick={onClose}
-            className="pointer-coarse:size-11"
+            className="pointer-coarse:size-touch"
           >
             <X />
           </Button>
@@ -104,7 +104,7 @@ export function InboxSelectionBar({
           <Button
             variant="ghost"
             onClick={all ? onClear : onSelectAll}
-            className="pointer-coarse:min-h-11"
+            className="pointer-coarse:min-h-touch"
           >
             {all ? 'Select none' : 'Select all'}
           </Button>
@@ -114,7 +114,7 @@ export function InboxSelectionBar({
             variant="ghost"
             disabled={none}
             onClick={() => triage.open('send')}
-            className="pointer-coarse:min-h-11"
+            className="pointer-coarse:min-h-touch"
           >
             Send to lesson
           </Button>
@@ -122,7 +122,7 @@ export function InboxSelectionBar({
             variant="ghost"
             disabled={none}
             onClick={() => triage.open('tag')}
-            className="pointer-coarse:min-h-11"
+            className="pointer-coarse:min-h-touch"
           >
             Tag
           </Button>
@@ -130,7 +130,7 @@ export function InboxSelectionBar({
             variant="ghost"
             disabled={none}
             onClick={triage.dismiss}
-            className="pointer-coarse:min-h-11"
+            className="pointer-coarse:min-h-touch"
           >
             Dismiss
           </Button>
@@ -142,7 +142,7 @@ export function InboxSelectionBar({
                   variant="ghost"
                   size="icon"
                   aria-label="More for the selected items"
-                  className="ml-auto pointer-coarse:size-11"
+                  className="ml-auto pointer-coarse:size-touch"
                 />
               }
             >

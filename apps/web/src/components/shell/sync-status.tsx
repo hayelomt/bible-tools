@@ -63,7 +63,7 @@ export function SyncStatus({ className }: { className?: string }) {
     </>
   );
   const triggerClass = cn(
-    'flex min-w-0 items-center gap-1.5 rounded-lg text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11',
+    'flex min-w-0 items-center gap-1.5 rounded-lg text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch',
     toneClass,
     className,
   );
@@ -88,7 +88,7 @@ export function SyncStatus({ className }: { className?: string }) {
         className={cn(
           triggerClass,
           'px-2',
-          tone !== 'act' && 'justify-center max-sm:pointer-coarse:min-w-11',
+          tone !== 'act' && 'justify-center max-sm:pointer-coarse:min-w-touch',
         )}
         aria-label={`Sync: ${text}`}
       >

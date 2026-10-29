@@ -117,7 +117,7 @@ function MemoryRow({ item }: { item: MemoryItem }) {
         className={buttonVariants({
           variant: 'ghost',
           size: 'icon',
-          className: 'mt-1 shrink-0 text-muted-foreground pointer-coarse:size-11',
+          className: 'mt-1 shrink-0 text-muted-foreground pointer-coarse:size-touch',
         })}
       >
         <X />

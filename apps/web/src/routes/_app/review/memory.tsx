@@ -142,7 +142,7 @@ function MemoryCard({ item, onGrade }: { item: MemoryItem; onGrade: (grade: Grad
         ) : (
           <RefText
             verse={ref}
-            className="text-[19px] leading-[1.6]"
+            className="text-read-lg leading-[1.6]"
             missing="Text not downloaded yet. It shows once the Bible is downloaded."
           />
         )}
@@ -222,7 +222,7 @@ function RunOver({
             to="/review/memory"
             search={{}}
             data-slot="button"
-            className={buttonVariants({ className: 'pointer-coarse:min-h-11' })}
+            className={buttonVariants({ className: 'pointer-coarse:min-h-touch' })}
           >
             Review the verses due
           </Link>
@@ -230,7 +230,10 @@ function RunOver({
         <Link
           to="/review"
           data-slot="button"
-          className={buttonVariants({ variant: 'outline', className: 'pointer-coarse:min-h-11' })}
+          className={buttonVariants({
+            variant: 'outline',
+            className: 'pointer-coarse:min-h-touch',
+          })}
         >
           Back to Review
         </Link>

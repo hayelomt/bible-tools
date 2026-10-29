@@ -237,7 +237,7 @@ export function TagInput({ id, target, focusOnMount = false, onEscape }: TagInpu
               // Keeps focus in the field, so its blur doesn't close the list first.
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => pick(option)}
-              className="flex cursor-default items-center gap-1.5 rounded-md px-2 py-1.5 break-all aria-selected:bg-accent aria-selected:text-accent-foreground pointer-coarse:min-h-11"
+              className="flex cursor-default items-center gap-1.5 rounded-md px-2 py-1.5 break-all aria-selected:bg-accent aria-selected:text-accent-foreground pointer-coarse:min-h-touch"
             >
               {option.kind === 'tag' ? (
                 option.name

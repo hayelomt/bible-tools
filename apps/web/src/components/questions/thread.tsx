@@ -59,7 +59,10 @@ export function QuestionThreadView({ thread }: { thread: QuestionThread }) {
             params={{ lessonId: answerLesson.id }}
             search={{ answer: question.id, partial: true }}
             data-slot="button"
-            className={buttonVariants({ variant: 'outline', className: 'pointer-coarse:min-h-11' })}
+            className={buttonVariants({
+              variant: 'outline',
+              className: 'pointer-coarse:min-h-touch',
+            })}
           >
             Add a partial answer
           </Link>
@@ -68,7 +71,7 @@ export function QuestionThreadView({ thread }: { thread: QuestionThread }) {
             params={{ lessonId: answerLesson.id }}
             search={{ answer: question.id }}
             data-slot="button"
-            className={buttonVariants({ className: 'pointer-coarse:min-h-11' })}
+            className={buttonVariants({ className: 'pointer-coarse:min-h-touch' })}
           >
             Answer
           </Link>
@@ -92,7 +95,7 @@ function EntryRow({ item: { entry, lesson, section } }: { item: ThreadEntry }) {
             to="/lessons/$lessonId"
             params={{ lessonId: lesson.id }}
             search={section ? { section: section.id } : {}}
-            className="-mx-2 flex items-start gap-2 rounded-lg px-2 py-1 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+            className="-mx-2 flex items-start gap-2 rounded-lg px-2 py-1 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
           >
             <span className="min-w-0 flex-1">
               <span className="block break-words">{lesson.title}</span>

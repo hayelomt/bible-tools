@@ -37,3 +37,53 @@ export function readMode(storage: Pick<Storage, 'getItem'>): ColorMode {
 export function saveMode(storage: Pick<Storage, 'setItem'>, mode: ColorMode): void {
   storage.setItem(THEME_STORAGE_KEY, JSON.stringify({ mode }));
 }
+
+/**
+ * How tight the interface is and how large its text, per device: a phone and a laptop can differ,
+ * so neither is in `UserSettings`. Density scales Tailwind's `--spacing`, text size the `--text-*`
+ * sizes (globals.css); the 44 px touch target stays fixed. "default" sets no attribute.
+ */
+export type Density = 'compact' | 'default' | 'roomy';
+export type TextSize = 'small' | 'default' | 'large' | 'larger';
+
+export const DENSITY_OPTIONS = ['compact', 'default', 'roomy'] as const;
+export const TEXT_SIZE_OPTIONS = ['small', 'default', 'large', 'larger'] as const;
+
+export interface Display {
+  density: Density;
+  textSize: TextSize;
+}
+
+export const DEFAULT_DISPLAY: Display = { density: 'default', textSize: 'default' };
+
+/** Read by the inline script in apps/web/index.html as well, so keep the two in step. */
+export const DISPLAY_STORAGE_KEY = 'lamp.display';
+
+/** The stored density and text size, each "default" when missing or unknown. */
+export function readDisplay(storage: Pick<Storage, 'getItem'>): Display {
+  let stored: { density?: unknown; textSize?: unknown } = {};
+  try {
+    stored = JSON.parse(storage.getItem(DISPLAY_STORAGE_KEY) ?? '{}') ?? {};
+  } catch {
+    // Not JSON: use the defaults.
+  }
+  return {
+    density: DENSITY_OPTIONS.find((d) => d === stored.density) ?? 'default',
+    textSize: TEXT_SIZE_OPTIONS.find((s) => s === stored.textSize) ?? 'default',
+  };
+}
+
+export function saveDisplay(storage: Pick<Storage, 'setItem'>, display: Display): void {
+  storage.setItem(DISPLAY_STORAGE_KEY, JSON.stringify(display));
+}
+
+/** Applies a density and text size to an element (normally `<html>`) as `data-` attributes. */
+export function applyDisplay(element: HTMLElement, display: Display): void {
+  for (const [name, value] of [
+    ['data-density', display.density],
+    ['data-text-size', display.textSize],
+  ] as const) {
+    if (value === 'default') element.removeAttribute(name);
+    else element.setAttribute(name, value);
+  }
+}

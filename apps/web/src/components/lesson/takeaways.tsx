@@ -269,7 +269,7 @@ function TakeawayRow({
         maxLength={2000}
         aria-label="Takeaway"
         placeholder="One line to remember"
-        className="min-w-0 flex-1 resize-none overflow-hidden bg-transparent py-1 leading-6 outline-none placeholder:text-muted-foreground pointer-coarse:min-h-11 pointer-coarse:py-2.5"
+        className="min-w-0 flex-1 resize-none overflow-hidden bg-transparent py-1 leading-6 outline-none placeholder:text-muted-foreground pointer-coarse:min-h-touch pointer-coarse:py-2.5"
         onChange={(event) => {
           const value = oneLine(event.target.value);
           setText(value);

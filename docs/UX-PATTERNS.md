@@ -17,7 +17,7 @@ screen needs something new.
 | App shell: bottom bar, sidebar, Inbox tab and badge | [shell.md](wireframes/shell.md#app-shell-m2-02-m9-02) | M2-02, M9-02 |
 | Settings | [shell.md](wireframes/shell.md#settings-m2-02) | M2-02, M3-03 |
 | Settings: v2 sections | [shell.md](wireframes/shell.md#settings-in-v2-m9m13) | M9-09, M9-10, M10-13, M12-01, M13-04, M13-12 |
-| Appearance: light, dark, auto | [shell.md](wireframes/shell.md#appearance-m2-03-m2-15) | M2-03, M2-15 |
+| Appearance: light, dark, auto; density, text size | [shell.md](wireframes/shell.md#appearance-m2-03-m2-15) | M2-03, M2-15 |
 | Bible download, update prompt | [shell.md](wireframes/shell.md#bible-download-m2-11) | M2-11 |
 | Lessons home, welcome and first run | [lessons.md](wireframes/lessons.md#lessons-home-m2-06) | M2-06, M2-14 |
 | Lesson: capture and edit (phone, laptop) | [lessons.md](wireframes/lessons.md#lesson-capture-and-edit-m2-04-m2-07) | M2-04, M2-07 |
@@ -99,7 +99,7 @@ with the single theme (M2-15).
 - **Touch targets are at least 44 × 44 px.** `globals.css` enforces this on touch screens
   (`pointer: coarse`) for buttons, inputs, select and tab triggers, menu items, and labels that
   hold a checkbox or switch; a mouse keeps the compact sizes. Custom controls must meet the same
-  size, and adjacent targets keep 8 px apart. An E2E test measures Settings on a phone.
+  size (`pointer-coarse:min-h-touch`, kept at Compact), and adjacent targets keep 8 px apart. An E2E test measures Settings on a phone.
 - **Inputs use 16 px text on phones** (the components' `text-base`), so iOS doesn't zoom on focus.
 - **The keyboard reaches everything.** Every action has a keyboard path, including the ones done by
   drag (reorder has Move up and Move down in the section menu). Focus is always visible (the `ring`
@@ -150,7 +150,12 @@ with the single theme (M2-15).
   reach a new element gives it a `data-slot`.
 - **Keep it cheap to paint.** Only the top bar and the bottom bar blur what's behind them; repeated
   panels (rows, cards) use an opaque fill instead of a blur each.
-- The mode applies before the first paint, from `localStorage` (§8.5), so there's no flash.
+- The mode applies before the first paint, from `localStorage` (§8.5), so there's no flash. So do
+  the device's density and text size.
+- **Sizes come from tokens, so density and text size reach them:** spacing and sizes from the
+  spacing scale (`p-4`, `h-9`), text from the text scale (`text-sm`, `text-read` for notes and
+  scripture), never `text-[17px]` or a fixed `rem` in CSS. A touch target uses `touch`
+  (`pointer-coarse:min-h-touch`), which density doesn't change.
 
 ## Saving and feedback
 

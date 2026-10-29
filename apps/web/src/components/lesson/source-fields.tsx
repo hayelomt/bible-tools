@@ -48,7 +48,7 @@ export function SourceFields({ saver, labelClass }: { saver: LessonSaver; labelC
               setLinkWrong(false);
               save(NO_SOURCE);
             }}
-            className="rounded-md px-1 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-11"
+            className="rounded-md px-1 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:min-h-touch"
           >
             Remove source
           </button>

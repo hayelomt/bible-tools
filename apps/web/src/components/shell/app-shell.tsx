@@ -5,6 +5,7 @@ import { OtherAccountDialog } from '@/components/account/other-account-dialog.ts
 import { ReviewCountProvider } from '@/components/review/review-count.tsx';
 import { useMediaQuery } from '@/lib/use-media-query.ts';
 import { ScreenSkeleton } from '@/components/screen-skeleton.tsx';
+import { useDisplaySync } from '@/lib/display.ts';
 import { useThemeSync } from '@/lib/theme.ts';
 import { BottomNav } from './bottom-nav.tsx';
 import { InstallPrompt } from './install-prompt.tsx';
@@ -32,6 +33,7 @@ export function AppShell() {
   useShortcuts();
   useInAppLinks();
   useThemeSync();
+  useDisplaySync();
   useSyncAccount();
   const laptop = useMediaQuery(LAPTOP);
   const [selectionBar, setSelectionBar] = useState(false);

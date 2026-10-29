@@ -162,7 +162,7 @@ function Picker({
                         type="button"
                         aria-current={here ? 'true' : undefined}
                         onClick={() => choose(getBook(b.code))}
-                        className="flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 aria-[current]:font-medium pointer-coarse:min-h-11"
+                        className="flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 aria-[current]:font-medium pointer-coarse:min-h-touch"
                       >
                         <span className="truncate">{b.name}</span>
                         {here && <Check aria-hidden className="size-4 shrink-0" />}
