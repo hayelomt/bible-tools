@@ -43,11 +43,11 @@ export function saveMode(storage: Pick<Storage, 'setItem'>, mode: ColorMode): vo
  * so neither is in `UserSettings`. Density scales Tailwind's `--spacing`, text size the `--text-*`
  * sizes (globals.css); the 44 px touch target stays fixed. "default" sets no attribute.
  */
-export type Density = 'compact' | 'default' | 'roomy';
-export type TextSize = 'small' | 'default' | 'large' | 'larger';
+export type Density = 'dense' | 'compact' | 'default' | 'roomy';
+export type TextSize = 'tiny' | 'small' | 'default' | 'large' | 'larger';
 
-export const DENSITY_OPTIONS = ['compact', 'default', 'roomy'] as const;
-export const TEXT_SIZE_OPTIONS = ['small', 'default', 'large', 'larger'] as const;
+export const DENSITY_OPTIONS = ['dense', 'compact', 'default', 'roomy'] as const;
+export const TEXT_SIZE_OPTIONS = ['tiny', 'small', 'default', 'large', 'larger'] as const;
 
 export interface Display {
   density: Density;

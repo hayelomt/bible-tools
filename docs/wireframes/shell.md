@@ -83,28 +83,12 @@ blocker.
 │ them to your other devices.          │
 │ [ Sign up ]  [ Sign in ]             │
 │                                      │
-│ APPEARANCE                           │
-│ Mode         ( Light | Dark | Auto ) │  ← the only appearance setting
-│                                      │
-│ BIBLE                                │
-│ Translation            ( BSB | KJV ) │
-│ Berean Standard Bible     3.9 MB  ✓  │
-│ King James Version      [ Download ] │
-│ Show verse text in notes      [● ]   │  ← wireframes/verses.md
-│                                      │
-│ REVIEW                               │
-│ Keep takeaways in review  [ 14 ] days│
-│ Weekly reminder               [○ ]   │
-│                                      │
-│ STORAGE                              │
-│ 6.2 MB used · kept by the browser ✓  │
-│ [ Remove notes from this device… ]   │  ← signed out only (M3-10)
-│                                      │
-│ ABOUT                                │
-│ Lamp 1.0.0 · MIT licence · Source ›  │
-│ Bible text: the BSB › and the KJV,   │
-│ both public domain                   │
-└──────────────────────────────────────┘
+│ APPEARANCE                                             │
+│ Mode       ( Light | Dark | Auto )                     │
+│ Density    ( Dense | Compact | Default | Roomy )       │
+│ Text size  ( Tiny | Small | Default | Large | Larger ) │
+│ Density and text size are for this device only.        │
+│                                                        │
 ```
 
 Signed in, the account section becomes (M3-03, M3-12):

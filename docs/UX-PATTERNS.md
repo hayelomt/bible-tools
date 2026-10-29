@@ -99,7 +99,7 @@ with the single theme (M2-15).
 - **Touch targets are at least 44 × 44 px.** `globals.css` enforces this on touch screens
   (`pointer: coarse`) for buttons, inputs, select and tab triggers, menu items, and labels that
   hold a checkbox or switch; a mouse keeps the compact sizes. Custom controls must meet the same
-  size (`pointer-coarse:min-h-touch`, kept at Compact), and adjacent targets keep 8 px apart. An E2E test measures Settings on a phone.
+  size (`pointer-coarse:min-h-touch`, kept at Dense and Compact), and adjacent targets keep 8 px apart. An E2E test measures Settings on a phone.
 - **Inputs use 16 px text on phones** (the components' `text-base`), so iOS doesn't zoom on focus.
 - **The keyboard reaches everything.** Every action has a keyboard path, including the ones done by
   drag (reorder has Move up and Move down in the section menu). Focus is always visible (the `ring`

@@ -87,11 +87,17 @@
 
 /* On screen only: paper keeps the default sizes. */
 @media screen {
+  :root[data-density='dense'] {
+    --spacing: 0.1875rem;
+  }
   :root[data-density='compact'] {
     --spacing: 0.21875rem;
   }
   :root[data-density='roomy'] {
     --spacing: 0.28125rem;
+  }
+  :root[data-text-size='tiny'] {
+    --text-scale: 0.875;
   }
   :root[data-text-size='small'] {
     --text-scale: 0.9375;
@@ -219,8 +225,9 @@
   [data-slot='label']:has([data-slot='checkbox'], [data-slot='switch']) {
     min-height: 2.75rem;
   }
-  /* Small text keeps fields at 16 px, so iOS doesn't zoom on focus. */
-  :root[data-text-size='small'] :is(input, textarea, select, [contenteditable='true']) {
+  /* Tiny and small text keep fields at 16 px, so iOS doesn't zoom on focus. */
+  :root:is([data-text-size='tiny'], [data-text-size='small'])
+    :is(input, textarea, select, [contenteditable='true']) {
     font-size: 1rem;
   }
 }

@@ -122,22 +122,30 @@ test.describe('on a phone', () => {
     expect(overflow).toBe(0);
   });
 
-  test('compact keeps the 44 px touch targets, and the largest text fits', async ({ page }) => {
-    await page.addInitScript(() =>
-      localStorage.setItem('lamp.display', '{"density":"compact","textSize":"larger"}'),
-    );
-    await page.goto('/settings');
-    const smallest = await page.evaluate(() =>
-      Math.min(
-        ...[...document.querySelectorAll('[data-slot="button"], input[type="radio"]')]
-          .filter((element) => element.checkVisibility())
-          .map((element) => (element.closest('label') ?? element).getBoundingClientRect().height),
-      ),
-    );
-    expect(smallest).toBeGreaterThanOrEqual(44);
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBe(0);
-  });
+  for (const display of [
+    { density: 'dense', textSize: 'larger' },
+    { density: 'dense', textSize: 'tiny' },
+  ]) {
+    test(`${display.density} with ${display.textSize} text keeps 44 px touch targets, with no sideways scroll`, async ({
+      page,
+    }) => {
+      await page.addInitScript(
+        (value) => localStorage.setItem('lamp.display', value),
+        JSON.stringify(display),
+      );
+      await page.goto('/settings');
+      const smallest = await page.evaluate(() =>
+        Math.min(
+          ...[...document.querySelectorAll('[data-slot="button"], input[type="radio"]')]
+            .filter((element) => element.checkVisibility())
+            .map((element) => (element.closest('label') ?? element).getBoundingClientRect().height),
+        ),
+      );
+      expect(smallest).toBeGreaterThanOrEqual(44);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBe(0);
+    });
+  }
 });

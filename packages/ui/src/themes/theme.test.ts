@@ -349,6 +349,8 @@ describe('theme helpers', () => {
     expect(readDisplay(store)).toEqual({ density: 'default', textSize: 'default' });
     saveDisplay(store, { density: 'roomy', textSize: 'small' });
     expect(readDisplay(store)).toEqual({ density: 'roomy', textSize: 'small' });
+    saveDisplay(store, { density: 'dense', textSize: 'tiny' });
+    expect(readDisplay(store)).toEqual({ density: 'dense', textSize: 'tiny' });
     storage.set(DISPLAY_STORAGE_KEY, '{"density":"tight","textSize":"larger"}');
     expect(readDisplay(store)).toEqual({ density: 'default', textSize: 'larger' });
     for (const bad of ['not json', 'null', '[1]']) {

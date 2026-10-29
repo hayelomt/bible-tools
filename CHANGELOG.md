@@ -7,7 +7,7 @@ Lamp's releases, newest first. The format follows [Keep a Changelog](https://kee
 ### Added
 
 - **Enduring Word in "Open in…".** A verse chip opens David Guzik's commentary on its chapter at enduringword.com. New accounts show it; existing ones can switch it on in Settings → Open in. Changes the sync format, so apps before 2.1.0 are asked to update.
-- **Density and text size.** Settings → Appearance gains Density (Compact, Default, Roomy) and Text size (Small, Default, Large, Larger), for each device. They apply before the first paint, and touch targets stay at 44 px (TECH-DESIGN §8.5, decision 107).
+- **Density and text size.** Settings → Appearance gains Density (Dense, Compact, Default, Roomy) and Text size (Tiny, Small, Default, Large, Larger), for each device. They apply before the first paint, and touch targets stay at 44 px (TECH-DESIGN §8.5, decision 107).
 
 ## [2.0.0] - 2026-10-19
 

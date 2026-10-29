@@ -30,10 +30,10 @@
         } catch (e) {
           display = {};
         }
-        if (['compact', 'roomy'].indexOf(display.density) >= 0) {
+        if (['dense', 'compact', 'roomy'].indexOf(display.density) >= 0) {
           root.setAttribute('data-density', display.density);
         }
-        if (['small', 'large', 'larger'].indexOf(display.textSize) >= 0) {
+        if (['tiny', 'small', 'large', 'larger'].indexOf(display.textSize) >= 0) {
           root.setAttribute('data-text-size', display.textSize);
         }
       })();

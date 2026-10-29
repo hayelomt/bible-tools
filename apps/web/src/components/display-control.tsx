@@ -3,8 +3,19 @@ import { useId } from 'react';
 import { setDisplay, useDisplay } from '@/lib/display.ts';
 import { Segmented } from './segmented.tsx';
 
-const DENSITY_LABELS = { compact: 'Compact', default: 'Default', roomy: 'Roomy' } as const;
-const TEXT_SIZE_LABELS = { small: 'Small', default: 'Default', large: 'Large', larger: 'Larger' };
+const DENSITY_LABELS = {
+  dense: 'Dense',
+  compact: 'Compact',
+  default: 'Default',
+  roomy: 'Roomy',
+} as const;
+const TEXT_SIZE_LABELS = {
+  tiny: 'Tiny',
+  small: 'Small',
+  default: 'Default',
+  large: 'Large',
+  larger: 'Larger',
+};
 
 /**
  * Density and text size (wireframes/shell.md "Appearance"), for this device only; a choice
