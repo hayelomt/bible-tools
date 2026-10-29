@@ -8,6 +8,7 @@ describe('the "Open in…" order', () => {
       'youversion',
       'blueletterbible',
       'biblehub',
+      'enduringword',
     ]);
   });
 

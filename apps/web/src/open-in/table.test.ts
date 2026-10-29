@@ -37,6 +37,24 @@ describe('the "Open in…" table', () => {
     ['logos', ACROSS, 'KJV', 'https://ref.ly/Ro7.24-8.2;kjv'],
     // BSB on Logos needs a sign-in: the KJV.
     ['logos', VERSE, 'BSB', 'https://ref.ly/Jn3.16;kjv'],
+    // A commentary by chapter, in no translation.
+    ['enduringword', VERSE, 'BSB', 'https://enduringword.com/bible-commentary/john-3/'],
+    ['enduringword', RANGE, 'KJV', 'https://enduringword.com/bible-commentary/romans-8/'],
+    ['enduringword', CHAPTER, 'BSB', 'https://enduringword.com/bible-commentary/psalm-23/'],
+    ['enduringword', ACROSS, 'BSB', 'https://enduringword.com/bible-commentary/romans-7/'],
+    [
+      'enduringword',
+      { book: 'SNG', chapter: 2 },
+      'BSB',
+      'https://enduringword.com/bible-commentary/song-of-solomon-2/',
+    ],
+    // A book of one chapter is chapter 1.
+    [
+      'enduringword',
+      { book: '3JN', chapter: 1, verseStart: 4 },
+      'BSB',
+      'https://enduringword.com/bible-commentary/3-john-1/',
+    ],
   ] as const)('%s: %o in the %s', (key, chip, translation, url) => {
     expect(openInUrl(target(key), chip, translation)).toBe(url);
   });
@@ -62,6 +80,7 @@ describe('the "Open in…" table', () => {
       ['blueletterbible', 66],
       ['biblehub', 66],
       ['logos', 66],
+      ['enduringword', 66],
     ]);
   });
 });

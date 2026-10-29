@@ -25,7 +25,13 @@ test('a chip opens in each target, with its translation where the target has it'
 }) => {
   await openChip(page);
   const links = openIn(page).getByRole('link');
-  await expect(links).toHaveText([/^Blue Letter Bible/, /^YouVersion/, /^Bible Hub/, /^Logos/]);
+  await expect(links).toHaveText([
+    /^Blue Letter Bible/,
+    /^YouVersion/,
+    /^Bible Hub/,
+    /^Logos/,
+    /^Enduring Word/,
+  ]);
   const hrefs = await links.evaluateAll((all) => all.map((a) => a.getAttribute('href')));
   expect(hrefs).toEqual([
     // No BSB there: the KJV.
@@ -34,6 +40,8 @@ test('a chip opens in each target, with its translation where the target has it'
     // No ranges: the first verse.
     'https://biblehub.com/bsb/romans/8.htm#28',
     'https://ref.ly/Ro8.28-30;kjv',
+    // A commentary by chapter.
+    'https://enduringword.com/bible-commentary/romans-8/',
   ]);
   await expect(links.first()).toHaveAttribute('target', '_blank');
   await expect(links.first()).toHaveAttribute('rel', 'noopener noreferrer');
@@ -52,7 +60,7 @@ test('Settings → Open in hides and reorders the targets', async ({ page }) => 
     await page.getByRole('menuitem', { name: 'Move up' }).click();
   }
   await expect(page.getByRole('button', { name: /^Move Logos/ })).toHaveAccessibleName(
-    'Move Logos, shown, 1 of 3',
+    'Move Logos, shown, 1 of 4',
   );
 
   await openChip(page);
@@ -60,14 +68,15 @@ test('Settings → Open in hides and reorders the targets', async ({ page }) => 
     /^Logos/,
     /^Blue Letter Bible/,
     /^YouVersion/,
+    /^Enduring Word/,
   ]);
 
   // With every target hidden, the block goes.
   await page.goto('/settings/open-in');
-  for (const name of ['Logos', 'Blue Letter Bible', 'YouVersion']) {
+  for (const name of ['Logos', 'Blue Letter Bible', 'YouVersion', 'Enduring Word']) {
     await page.getByRole('switch', { name: `Show ${name}` }).click();
   }
-  for (const name of ['Logos', 'Blue Letter Bible', 'YouVersion', 'Bible Hub']) {
+  for (const name of ['Logos', 'Blue Letter Bible', 'YouVersion', 'Enduring Word', 'Bible Hub']) {
     await expect(page.getByRole('switch', { name: `Show ${name}` })).not.toBeChecked();
   }
   await openChip(page);

@@ -72,7 +72,7 @@ describe('first run', () => {
       reviewWindowDays: 14,
       autoPreviewVerses: true,
       pasteChips: true,
-      openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
+      openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos', 'enduringword'],
       rev: 0,
     });
     const tags = await db.tag.toArray();

@@ -57,6 +57,11 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
     change:
       "M13 (groups, §17.12): the user pull lists the user's groups, and each group's feed is pulled on its own; a member's own lesson for a group lesson, group sections and questions, comments on them, answers to group questions, and each member's visit to a group with when each feed row reached it",
   },
+  {
+    minClientVersion: '2.1.0',
+    fingerprint: '948fefd7',
+    change: 'The "Open in…" target `enduringword` in the `openInTargets` setting',
+  },
 ];
 
 /**

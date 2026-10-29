@@ -6,7 +6,13 @@ import { refTranslation, type TranslationId, type VerseRef } from './verse-ref.t
  * "Open in…" (F20, TECH-DESIGN §17.11): the reading and study apps a chip can hand its passage to.
  * The keys are what `UserSettings.openInTargets` lists, in the order the user chose.
  */
-export const OPEN_IN_TARGETS = ['blueletterbible', 'youversion', 'biblehub', 'logos'] as const;
+export const OPEN_IN_TARGETS = [
+  'blueletterbible',
+  'youversion',
+  'biblehub',
+  'logos',
+  'enduringword',
+] as const;
 export type OpenInTarget = (typeof OPEN_IN_TARGETS)[number];
 
 /** A link template; `{book}`, `{chapter}`, `{verse}`, `{chapterEnd}`, `{verseEnd}`, `{version}`. */

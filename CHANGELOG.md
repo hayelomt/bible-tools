@@ -2,6 +2,18 @@
 
 Lamp's releases, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/). The web app and the API ship together and carry the same version. The user-facing notes for each release are in [`docs/releases/`](docs/releases/).
 
+## [Unreleased]
+
+### Added
+
+- **Enduring Word in "Open in…".** A verse chip opens David Guzik's commentary on its chapter at enduringword.com. New accounts show it; existing ones can switch it on in Settings → Open in. Changes the sync format, so apps before 2.1.0 are asked to update.
+
+## [Unreleased]
+
+### Added
+
+- **Density and text size.** Settings → Appearance gains Density (Compact, Default, Roomy) and Text size (Small, Default, Large, Larger), for each device. They apply before the first paint, and touch targets stay at 44 px (TECH-DESIGN §8.5, decision 107).
+
 ## [2.0.0] - 2026-10-19
 
 The first tagged release. v1.0 (M7-10) was never tagged, so 2.0.0 brings the v1 study app and v2's interop, thinking, sermon, reflection and group features. Release notes: [`docs/releases/v2.0.0.md`](docs/releases/v2.0.0.md).

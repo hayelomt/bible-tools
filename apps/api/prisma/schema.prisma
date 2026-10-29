@@ -250,8 +250,9 @@ model UserSettings {
   reviewWindowDays   Int      @default(14) @map("review_window_days")
   autoPreviewVerses  Boolean  @default(true) @map("auto_preview_verses")
   pasteChips         Boolean  @default(true) @map("paste_chips")
-  // The "Open in…" target keys shown, in order: blueletterbible | youversion | biblehub | logos
-  openInTargets      Json     @default("[\"blueletterbible\", \"youversion\", \"biblehub\", \"logos\"]") @map("open_in_targets")
+  // The "Open in…" target keys shown, in order: blueletterbible | youversion | biblehub | logos |
+  // enduringword
+  openInTargets      Json     @default("[\"blueletterbible\", \"youversion\", \"biblehub\", \"logos\", \"enduringword\"]") @map("open_in_targets")
   // The template each kind of new lesson starts with: { sermon, personal, group }, each null, a
   // built-in's key (builtin:soap) or a template's id (§17.6)
   defaultTemplates   Json     @default("{\"sermon\": null, \"personal\": null, \"group\": null}") @map("default_templates")
