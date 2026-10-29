@@ -2,7 +2,9 @@
 
 Lamp's releases, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/). The web app and the API ship together and carry the same version. The user-facing notes for each release are in [`docs/releases/`](docs/releases/).
 
-## [Unreleased]
+## [2.1.0] - 2026-10-29
+
+Release notes: [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md).
 
 ### Added
 
