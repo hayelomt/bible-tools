@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Locator, type Page, test } from '@playwright/test';
 import { newLesson, rows } from './helpers.ts';
 
 interface Chip {
@@ -23,6 +23,11 @@ async function chips(page: Page): Promise<Chip['attrs'][]> {
 const note = (page: Page) => page.getByRole('textbox', { name: 'Note', exact: true }).first();
 /** What was typed in the note, without the verse text shown under a paragraph. */
 const paragraphs = (page: Page) => note(page).locator('p');
+/** The words of the verse text under a paragraph: they're drawn, so they aren't its text. */
+const drawn = (preview: Locator) =>
+  preview
+    .locator('[data-text]')
+    .evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.text).join(''));
 const list = (page: Page) => page.getByRole('listbox', { name: 'Verse suggestions' });
 const option = (page: Page, name: string | RegExp) => list(page).getByRole('option', { name });
 
@@ -89,9 +94,11 @@ test('references complete into chips, offline too', async ({ page, context }) =>
       { book: '1JN', chapter: 3, display: '1 John 3' },
     ]);
   const preview = note(page).locator('[data-verse-preview]');
-  await expect(preview).toContainText('And we know that God works all things together');
-  await expect(preview).toContainText('Therefore, there is now no condemnation');
-  await expect(preview).toContainText('Text not downloaded yet.');
+  await expect
+    .poll(() => drawn(preview))
+    .toContain('And we know that God works all things together');
+  await expect.poll(() => drawn(preview)).toContain('Therefore, there is now no condemnation');
+  await expect.poll(() => drawn(preview)).toContain('Text not downloaded yet.');
 });
 
 test('Escape keeps the reference as typed', async ({ page }) => {
@@ -165,9 +172,9 @@ test('verses keep their KJV numbers, and a verse the BSB leaves out shows its no
       expect.objectContaining({ display: 'Romans 16:25–27' }),
       expect.objectContaining({ display: 'Acts 8:37' }),
     ]);
-  await expect(note(page).locator('[data-verse-preview]')).toContainText(
-    '[Not in BSB: Some later manuscripts include this verse.]',
-  );
+  await expect
+    .poll(() => drawn(note(page).locator('[data-verse-preview]')))
+    .toContain('[Not in BSB: Some later manuscripts include this verse.]');
 });
 
 const chip = (page: Page, name: string) =>
@@ -214,7 +221,9 @@ test('a chip opens its text, read from the book as it is now', async ({ page }) 
   await chip(page, 'Romans 8:28').click();
   await expect(viewer(page)).toContainText('A corrected verse.');
   await page.keyboard.press('Escape');
-  await expect(note(page).locator('[data-verse-preview]')).toContainText('A corrected verse.');
+  await expect
+    .poll(() => drawn(note(page).locator('[data-verse-preview]')))
+    .toContain('A corrected verse.');
   await expect
     .poll(() => chips(page))
     .toEqual([{ book: 'ROM', chapter: 8, verseStart: 28, display: 'Romans 8:28' }]);
@@ -228,16 +237,20 @@ test('picking another translation changes every chip, its text and the quote und
   await page.keyboard.press('Enter');
   const lesson = page.url();
   const preview = note(page).locator('[data-verse-preview]');
-  await expect(preview).toContainText('Romans 8:28 · BSB');
-  await expect(preview).toContainText('And we know that God works all things together');
+  await expect.poll(() => drawn(preview)).toContain('Romans 8:28 · BSB');
+  await expect
+    .poll(() => drawn(preview))
+    .toContain('And we know that God works all things together');
 
   await page.goto('/settings');
   await page.getByRole('radio', { name: 'KJV' }).click();
   await expect(page.getByRole('radio', { name: 'KJV' })).toBeChecked();
   await page.goto(lesson);
   await expect(paragraphs(page)).toHaveText('Paul says in Romans 8:28 · KJV');
-  await expect(preview).toContainText('Romans 8:28 · KJV');
-  await expect(preview).toContainText('And we know that all things work together for good');
+  await expect.poll(() => drawn(preview)).toContain('Romans 8:28 · KJV');
+  await expect
+    .poll(() => drawn(preview))
+    .toContain('And we know that all things work together for good');
   await page
     .getByRole('button', { name: 'Romans 8:28, King James Version, verse. Show text.' })
     .click();
@@ -293,10 +306,16 @@ test('with "Show verse text in notes" on (the default), a paragraph’s chips sh
 
   // One quote under the paragraph, numbered, a new chapter with its number; not part of the note.
   await expect(preview).toHaveCount(1);
-  await expect(preview).toContainText('Romans 8:38–9:1 · BSB');
-  await expect(preview).toContainText('Psalm 23:1 · BSB');
-  await expect(preview.locator('sup')).toHaveText(['38', '39', '9:1', '1']);
-  await expect(preview).toContainText('1A Psalm of David. The LORD is my shepherd');
+  await expect.poll(() => drawn(preview)).toContain('Romans 8:38–9:1 · BSB');
+  await expect.poll(() => drawn(preview)).toContain('Psalm 23:1 · BSB');
+  await expect
+    .poll(() =>
+      preview
+        .locator('sup')
+        .evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.text)),
+    )
+    .toEqual(['38', '39', '9:1', '1']);
+  await expect.poll(() => drawn(preview)).toContain('1A Psalm of David. The LORD is my shepherd');
   await expect
     .poll(() => chips(page))
     .toEqual([
@@ -311,6 +330,23 @@ test('with "Show verse text in notes" on (the default), a paragraph’s chips sh
   await page.goto(lesson);
   await expect(note(page)).toContainText('Psalm 23:1 · BSB');
   await expect(preview).toHaveCount(0);
+});
+
+test('the verse text under a paragraph is drawn, so a phone keyboard cannot read it', async ({
+  page,
+}) => {
+  await startLesson(page);
+  await page.keyboard.type('Rom 8:28');
+  await page.keyboard.press('Enter');
+  const preview = note(page).locator('[data-verse-preview]');
+  await expect.poll(() => drawn(preview)).toContain('And we know that God works all things');
+  // A keyboard takes the word before the cursor from here, and would type it into the note.
+  expect((await preview.textContent())?.trim()).toBe('');
+  const shown = await preview
+    .locator('[data-text]')
+    .last()
+    .evaluate((el) => getComputedStyle(el, '::before').content);
+  expect(shown).toContain('And we know that God works all things');
 });
 
 test('from the keyboard: arrow onto a chip, Enter opens it, Backspace deletes it whole', async ({
@@ -358,10 +394,9 @@ test('a chip inserted before its book was downloaded shows its text when it arri
   // Back online, the download goes on; the chip shows its text, under the note and opened.
   await letThrough();
   await context.setOffline(false);
-  await expect(note(page).locator('[data-verse-preview]')).toContainText(
-    'Behold what manner of love the Father',
-    { timeout: 15_000 },
-  );
+  await expect
+    .poll(() => drawn(note(page).locator('[data-verse-preview]')), { timeout: 15_000 })
+    .toContain('Behold what manner of love the Father');
   await chip(page, '1 John 3').click();
   await expect(viewer(page)).toContainText('Behold what manner of love the Father');
 });

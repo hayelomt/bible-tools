@@ -9,7 +9,7 @@ import { activeTranslation, onActiveTranslation } from '@/data/translation.ts';
 import { useSettings } from '@/data/use-settings.ts';
 import { type Reading, readRef } from '@/data/verse-text.ts';
 import { missingText } from './verse-chip.ts';
-import { verseTextNodes } from './verse-text.tsx';
+import { drawText, verseTextNodes } from './verse-text.tsx';
 
 /** The user's "Show verse text in notes" setting, for every open editor. */
 let enabled = false;
@@ -38,7 +38,7 @@ function redraw(editor: Editor) {
  * With the setting on, each paragraph's verse chips show their text under it, numbered, as a quote
  * that isn't part of the note (wireframes/verses.md "Verse text in notes"). It's the text the
  * chip's viewer shows, in the translation picked in Settings (decision 97), and is drawn again
- * when that changes or a chip's book arrives.
+ * when that changes or a chip's book arrives. Its words are drawn, not in the DOM (`drawText`).
  */
 export const VersePreviews = Extension.create<unknown, { stop?: () => void }>({
   name: 'versePreviews',
@@ -125,14 +125,14 @@ function previewDom(readings: (Reading & { ref: VerseRef })[]): HTMLElement {
     const label = document.createElement('div');
     label.className =
       'mb-0.5 font-sans text-[0.7rem] font-medium tracking-wide text-primary uppercase';
-    label.textContent = `${ref.display} · ${ref.versionLabel ?? translation}`;
+    drawText(label, `${ref.display} · ${ref.versionLabel ?? translation}`);
     const text = document.createElement('div');
     if (quote) {
       text.className = 'text-foreground/80 italic';
       text.append(...verseTextNodes(book, ref, quote));
     } else {
       text.className = 'font-sans text-sm text-muted-foreground';
-      text.textContent = missingText(ref);
+      drawText(text, missingText(ref));
     }
     item.append(label, text);
     dom.append(item);

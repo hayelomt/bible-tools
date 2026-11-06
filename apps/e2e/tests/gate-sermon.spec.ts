@@ -96,7 +96,9 @@ test('a sermon is prepped, captured live, triaged in the week and traced back to
   await page.getByRole('link', { name: /^John 11:1–44/ }).click();
   // The two captured, then the share, then the empty section that's always last.
   await expect(notes(page).nth(0)).toContainText('He waited two days');
-  await expect(notes(page).nth(2)).toContainText(WEPT);
+  await expect(
+    notes(page).nth(2).locator('[data-verse-preview] [data-text]').last(),
+  ).toHaveAttribute('data-text', WEPT);
   await expect(notes(page)).toHaveCount(4);
   await page.getByRole('button', { name: 'Details' }).click();
   await page.getByRole('radiogroup', { name: 'Source type' }).getByText('Sermon').click();

@@ -82,18 +82,30 @@ export function RefText({ verse, className, missing }: RefTextProps) {
   return <p className="text-muted-foreground">{missing ?? missingText(verse)}</p>;
 }
 
+/**
+ * Shows `text` on `el` as generated content, so it's drawn but isn't in the DOM. Inside an editor
+ * that matters: a phone's keyboard reads the words around the cursor from the DOM, and would
+ * take a preview's last word for one being typed and put it in the note.
+ */
+export function drawText<T extends HTMLElement>(el: T, text: string): T {
+  el.dataset.text = text;
+  el.classList.add('before:content-[attr(data-text)]');
+  return el;
+}
+
+const drawnSpan = (text: string) => drawText(document.createElement('span'), text);
+
 /** `VerseText` as plain DOM, for the editor's previews; drawn again when the book arrives. */
 export function verseTextNodes(book: BookState | null, passage: Passage, text: string): Node[] {
   const numbered = book && verses(book, passage, text);
-  if (!numbered) return [document.createTextNode(text)];
+  if (!numbered) return [drawnSpan(text)];
   return numbered.flatMap((v, i) => {
     const number = document.createElement('sup');
     number.className = NUMBER_CLASS;
-    number.textContent = v.label;
     return [
       ...(i > 0 ? [document.createTextNode(' ')] : []),
-      number,
-      document.createTextNode(v.text),
+      drawText(number, v.label),
+      drawnSpan(v.text),
     ];
   });
 }
