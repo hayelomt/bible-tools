@@ -62,6 +62,11 @@ export const SYNC_FORMATS: readonly SyncFormat[] = [
     fingerprint: '948fefd7',
     change: 'The "Open in…" target `enduringword` in the `openInTargets` setting',
   },
+  {
+    minClientVersion: '2.2.0',
+    fingerprint: '4755d292',
+    change: 'The `openInTranslation` setting',
+  },
 ];
 
 /**

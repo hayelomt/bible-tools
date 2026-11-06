@@ -1,4 +1,10 @@
-import { type OpenInTarget, openInTableSchema, openInUrl, type VerseRef } from '@lamp/domain';
+import {
+  OPEN_IN_TRANSLATIONS,
+  type OpenInTarget,
+  openInTableSchema,
+  openInUrl,
+  type VerseRef,
+} from '@lamp/domain';
 import { describe, expect, it } from 'vitest';
 import bundled from '../../public/open-in.json' with { type: 'json' };
 
@@ -70,6 +76,14 @@ describe('the "Open in…" table', () => {
     const pasted: Chip = { ...VERSE, translation: 'pasted' };
     expect(openInUrl(target('biblehub'), pasted, 'BSB')).toBe('https://biblehub.com/john/3-16.htm');
     expect(openInUrl(target('logos'), pasted, 'BSB')).toBe('https://ref.ly/Jn3.16');
+  });
+
+  it('has every translation Settings offers in each Bible target', () => {
+    for (const key of ['blueletterbible', 'youversion', 'biblehub', 'logos'] as const) {
+      for (const translation of OPEN_IN_TRANSLATIONS) {
+        expect(target(key).versions[translation], `${translation} in ${key}`).toBeDefined();
+      }
+    }
   });
 
   it('names a book code for every book in each target that has its own', () => {

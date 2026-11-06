@@ -20,9 +20,7 @@ async function openChip(page: Page) {
   await expect(page.getByRole('dialog')).toContainText('Berean Standard Bible');
 }
 
-test('a chip opens in each target, with its translation where the target has it', async ({
-  page,
-}) => {
+test('a chip opens in each target, in the ESV unless Settings says otherwise', async ({ page }) => {
   await openChip(page);
   const links = openIn(page).getByRole('link');
   await expect(links).toHaveText([
@@ -34,17 +32,33 @@ test('a chip opens in each target, with its translation where the target has it'
   ]);
   const hrefs = await links.evaluateAll((all) => all.map((a) => a.getAttribute('href')));
   expect(hrefs).toEqual([
-    // No BSB there: the KJV.
-    'https://www.blueletterbible.org/kjv/rom/8/28-30/',
-    'https://www.bible.com/bible/3034/ROM.8.28-30',
+    'https://www.blueletterbible.org/esv/rom/8/28-30/',
+    'https://www.bible.com/bible/59/ROM.8.28-30',
     // No ranges: the first verse.
-    'https://biblehub.com/bsb/romans/8.htm#28',
-    'https://ref.ly/Ro8.28-30;kjv',
+    'https://biblehub.com/esv/romans/8-28.htm',
+    'https://ref.ly/Ro8.28-30;esv',
     // A commentary by chapter.
     'https://enduringword.com/bible-commentary/romans-8/',
   ]);
   await expect(links.first()).toHaveAttribute('target', '_blank');
   await expect(links.first()).toHaveAttribute('rel', 'noopener noreferrer');
+});
+
+test('Settings → Open in picks the translation chips open in', async ({ page }) => {
+  await page.goto('/settings');
+  await page.getByRole('link', { name: 'Open in other apps ›' }).click();
+  const translation = page.getByRole('combobox', { name: 'Translation' });
+  await expect(translation).toHaveValue('ESV');
+  await translation.selectOption('NIV');
+  await expect(translation).toHaveValue('NIV');
+
+  await openChip(page);
+  const links = openIn(page).getByRole('link');
+  await expect(links.first()).toHaveAttribute(
+    'href',
+    'https://www.blueletterbible.org/niv/rom/8/28-30/',
+  );
+  await expect(links.nth(1)).toHaveAttribute('href', 'https://www.bible.com/bible/111/ROM.8.28-30');
 });
 
 test('Settings → Open in hides and reorders the targets', async ({ page }) => {
@@ -99,7 +113,7 @@ test('a changed target table is used on the next start, and kept for offline', a
   const youVersion = openIn(page).getByRole('link', { name: /^YouVersion \(new links\)/ });
   await expect(youVersion).toHaveAttribute(
     'href',
-    'https://www.bible.com/bible/3034/ROM.8.28-30.NEW',
+    'https://www.bible.com/bible/59/ROM.8.28-30.NEW',
   );
 
   // When the table can't be fetched (offline), the last one fetched stays in use.

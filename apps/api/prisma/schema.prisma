@@ -253,6 +253,9 @@ model UserSettings {
   // The "Open in…" target keys shown, in order: blueletterbible | youversion | biblehub | logos |
   // enduringword
   openInTargets      Json     @default("[\"blueletterbible\", \"youversion\", \"biblehub\", \"logos\", \"enduringword\"]") @map("open_in_targets")
+  // The translation a chip of the app's own text opens in: ESV | BSB | KJV | NIV | NKJV | NLT |
+  // NASB | CSB
+  openInTranslation  String   @default("ESV") @map("open_in_translation")
   // The template each kind of new lesson starts with: { sermon, personal, group }, each null, a
   // built-in's key (builtin:soap) or a template's id (§17.6)
   defaultTemplates   Json     @default("{\"sermon\": null, \"personal\": null, \"group\": null}") @map("default_templates")

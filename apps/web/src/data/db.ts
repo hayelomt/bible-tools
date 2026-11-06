@@ -37,6 +37,7 @@ import type {
 import {
   ALL_RESURFACING,
   chipsWithoutAppText,
+  DEFAULT_OPEN_IN_TRANSLATION,
   NO_DEFAULT_TEMPLATES,
   newId,
   NOT_IN_GROUP,
@@ -414,11 +415,28 @@ export class LampDb extends Dexie {
           await tx.table(table).clear();
         }
       });
+    // `openInTranslation` added at its default, for queued settings changes too: the server's
+    // schema needs it. Not queued itself, like version 7.
+    this.version(18).upgrade(async (tx) => {
+      await tx.table('userSettings').toCollection().modify(withOpenInTranslation);
+      await tx
+        .table('outbox')
+        .filter((entry: OutboxEntry) => entry.entity === 'userSettings')
+        .modify((entry: OutboxEntry) => {
+          const row = (entry as { row?: Partial<UserSettings> }).row;
+          if (row) withOpenInTranslation(row);
+        });
+    });
   }
 
   rows<E extends RowEntity>(entity: E): Table<EntityRow<E>, string> {
     return this.table(entity);
   }
+}
+
+/** Version 18's `openInTranslation`, on a stored or queued settings row. */
+function withOpenInTranslation(settings: Partial<UserSettings>) {
+  settings.openInTranslation ??= DEFAULT_OPEN_IN_TRANSLATION;
 }
 
 /** Version 16's group columns, private, on a stored or queued row made before them. */

@@ -9,19 +9,26 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { OpenInTarget } from '@lamp/domain';
+import {
+  OPEN_IN_TRANSLATION_NAMES,
+  OPEN_IN_TRANSLATIONS,
+  type OpenInTarget,
+  type OpenInTranslation,
+} from '@lamp/domain';
 import { Button } from '@lamp/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@lamp/ui/components/dropdown-menu';
+import { Label } from '@lamp/ui/components/label';
+import { NativeSelect } from '@lamp/ui/components/native-select';
 import { Switch } from '@lamp/ui/components/switch';
 import { createFileRoute } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { GripVertical } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { changeOpenInTargets } from '@/data/actions/settings.ts';
+import { useId, useRef, useState } from 'react';
+import { changeOpenInTargets, updateSettings } from '@/data/actions/settings.ts';
 import { useSettings } from '@/data/use-settings.ts';
 import { allTargets, moveShown, setShown } from '@/open-in/order.ts';
 import { useOpenInTable } from '@/open-in/table.ts';
@@ -48,11 +55,13 @@ function onDragEnd({ active, over }: DragEndEvent) {
 
 /**
  * Settings → Open in (F20, M9-10, wireframes/interop.md): each target with a switch, and the shown
- * ones in the order the verse sheet lists them. `⠿` drags, or opens Move up and Move down. Synced.
+ * ones in the order the verse sheet lists them. `⠿` drags, or opens Move up and Move down. Above
+ * them, the translation chips open in. Synced.
  */
 function OpenInSettings() {
   const settings = useSettings();
   const table = useOpenInTable();
+  const translationId = useId();
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: MOUSE_SLOP_PX } }),
     useSensor(TouchSensor, {
@@ -66,6 +75,29 @@ function OpenInSettings() {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={translationId}>Translation</Label>
+        <NativeSelect
+          id={translationId}
+          value={settings.openInTranslation}
+          onChange={(event) =>
+            runWrite(
+              updateSettings({ openInTranslation: event.target.value as OpenInTranslation }),
+              'the Open in setting',
+            )
+          }
+        >
+          {OPEN_IN_TRANSLATIONS.map((key) => (
+            <option key={key} value={key}>
+              {key} · {OPEN_IN_TRANSLATION_NAMES[key]}
+            </option>
+          ))}
+        </NativeSelect>
+        <p className="text-sm text-muted-foreground">
+          Verses open in this translation where the site has it. One pasted or shared with its own
+          version keeps that version.
+        </p>
+      </div>
       <p className="text-muted-foreground">Shown in the verse sheet, in this order.</p>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={shown} strategy={verticalListSortingStrategy}>

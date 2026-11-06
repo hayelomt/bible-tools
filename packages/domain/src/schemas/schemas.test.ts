@@ -56,6 +56,7 @@ const ROWS: { [E in EntityName]: unknown } = {
     autoPreviewVerses: false,
     pasteChips: true,
     openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
+    openInTranslation: 'ESV',
     defaultTemplates: { sermon: null, personal: 'builtin:soap', group: id(13) },
     resurfacing: { yearAgo: true, repeatedVerse: false, staleQuestion: true },
     lastDigestQuarter: '2026-Q3',
@@ -242,6 +243,7 @@ describe('entity schemas', () => {
     ['a retired theme field', 'userSettings', { look: 'folio' }],
     ['a review window of 0 days', 'userSettings', { reviewWindowDays: 0 }],
     ['an unknown "Open in…" target', 'userSettings', { openInTargets: ['biblegateway'] }],
+    ['an unknown "Open in…" translation', 'userSettings', { openInTranslation: 'MSG' }],
     ['an "Open in…" target twice', 'userSettings', { openInTargets: ['logos', 'logos'] }],
     [
       'a resurfacing rule left out',

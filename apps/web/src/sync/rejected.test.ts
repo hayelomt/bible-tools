@@ -137,6 +137,31 @@ describe('Dexie version 7', () => {
   });
 });
 
+describe('Dexie version 18', () => {
+  it('adds openInTranslation to the settings and to queued settings changes', async () => {
+    const name = `upgrade-${++dbCount}`;
+    const old = new Dexie(name, { indexedDB, IDBKeyRange });
+    old.version(17).stores({ userSettings: '', outbox: '++seq, [entity+entityId]' });
+    const row = { colorMode: 'dark', rev: 3 };
+    await old.table('userSettings').put(row, 'settings');
+    await old.table('outbox').add({
+      entity: 'userSettings',
+      entityId: 'settings',
+      op: 'upsert',
+      row,
+      changed: ['colorMode'],
+    });
+    old.close();
+
+    const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
+    const expected = { openInTranslation: 'ESV' };
+    expect(await upgraded.userSettings.get('settings')).toMatchObject({ ...row, ...expected });
+    const [queued] = await upgraded.outbox.toArray();
+    expect(queued).toMatchObject({ row: expected, changed: ['colorMode'] });
+    await upgraded.delete();
+  });
+});
+
 const at = (minute: number) => `2026-03-01T09:0${minute}:00.000Z`;
 const id = (n: number) => `0199e0a0-0000-7000-8000-00000000000${n}`;
 
@@ -300,11 +325,12 @@ describe('Dexie version 10', () => {
       ...NOT_IN_GROUP.lesson,
     });
     const none = { sermon: null, personal: null, group: null };
-    // Version 12 adds the resurfacing rules and the digest's quarter.
+    // Version 12 adds the resurfacing rules and the digest's quarter, and 18 the translation.
     expect(await upgraded.userSettings.get('settings')).toEqual({
       ...settings,
       defaultTemplates: none,
       ...REFLECTION,
+      openInTranslation: 'ESV',
     });
     const [renamed, removed, queuedSettings] = await upgraded.outbox.toArray();
     const { source: _sent, ...sentRest } = sent;
@@ -411,7 +437,11 @@ describe('Dexie version 12', () => {
     old.close();
 
     const upgraded = new LampDb(name, { indexedDB, IDBKeyRange });
-    expect(await upgraded.userSettings.get('settings')).toEqual({ ...settings, ...REFLECTION });
+    expect(await upgraded.userSettings.get('settings')).toEqual({
+      ...settings,
+      ...REFLECTION,
+      openInTranslation: 'ESV',
+    });
     const [queued, removed] = await upgraded.outbox.toArray();
     expect(queued).toMatchObject({
       row: { ...sent, ...REFLECTION },

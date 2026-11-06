@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BOOK_CODES, type BookCode } from './books.ts';
-import { refTranslation, type TranslationId, type VerseRef } from './verse-ref.ts';
+import type { VerseRef } from './verse-ref.ts';
 
 /**
  * "Open in…" (F20, TECH-DESIGN §17.11): the reading and study apps a chip can hand its passage to.
@@ -14,6 +14,33 @@ export const OPEN_IN_TARGETS = [
   'enduringword',
 ] as const;
 export type OpenInTarget = (typeof OPEN_IN_TARGETS)[number];
+
+/**
+ * The translations a chip can open in (`UserSettings.openInTranslation`), with their names for
+ * Settings. Each is one the Bible targets carry; one a target lacks falls back to its `*`.
+ */
+export const OPEN_IN_TRANSLATIONS = [
+  'ESV',
+  'BSB',
+  'KJV',
+  'NIV',
+  'NKJV',
+  'NLT',
+  'NASB',
+  'CSB',
+] as const;
+export type OpenInTranslation = (typeof OPEN_IN_TRANSLATIONS)[number];
+export const DEFAULT_OPEN_IN_TRANSLATION: OpenInTranslation = 'ESV';
+export const OPEN_IN_TRANSLATION_NAMES: Record<OpenInTranslation, string> = {
+  ESV: 'English Standard Version',
+  BSB: 'Berean Standard Bible',
+  KJV: 'King James Version',
+  NIV: 'New International Version',
+  NKJV: 'New King James Version',
+  NLT: 'New Living Translation',
+  NASB: 'New American Standard Bible',
+  CSB: 'Christian Standard Bible',
+};
 
 /** A link template; `{book}`, `{chapter}`, `{verse}`, `{chapterEnd}`, `{verseEnd}`, `{version}`. */
 const templateSchema = z
@@ -66,18 +93,19 @@ type ChipPassage = Pick<
 
 /**
  * The address that opens `ref` in `target` (F20): the target's own book code and version, in the
- * link for the kind of passage; the app's own text in `active`, the translation picked in Settings.
+ * link for the kind of passage. A chip of the app's own text opens in `translation`, the one picked
+ * in Settings → Open in; a chip from outside keeps the version it came with.
  * A target without range links opens a range at its first verse, as YouVersion and Blue Letter
  * Bible need for a range across chapters (§17.11).
  */
 export function openInUrl(
   target: OpenInTargetSpec,
   ref: ChipPassage,
-  active: TranslationId,
+  translation: OpenInTranslation,
 ): string {
   const version =
     (ref.versionLabel == null
-      ? target.versions[refTranslation(ref, active)]
+      ? target.versions[ref.translation ?? translation]
       : target.versions[ref.versionLabel]) ?? target.versions['*']!;
   const links = { ...target.links, ...target.versionLinks?.[version] };
   const fields: Record<string, string | number> = {

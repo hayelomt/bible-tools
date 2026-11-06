@@ -24,12 +24,16 @@ export {
 } from './parse-reference.ts';
 export { type FoundReference, findReferences } from './find-references.ts';
 export {
+  DEFAULT_OPEN_IN_TRANSLATION,
   OPEN_IN_TARGETS,
+  OPEN_IN_TRANSLATION_NAMES,
+  OPEN_IN_TRANSLATIONS,
   type OpenInLinks,
   type OpenInTable,
   openInTableSchema,
   type OpenInTarget,
   type OpenInTargetSpec,
+  type OpenInTranslation,
   openInUrl,
   shownTargets,
 } from './open-in.ts';

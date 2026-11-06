@@ -195,17 +195,25 @@ passage in a new tab, or in the installed app where the platform does that.
 └──────────────────────────────────────┘
 ```
 
-- The link carries the translation where the target has it; a `shared` or `pasted` chip opens in
-  the target's own default.
+- The link carries the translation picked in Settings → Open in (ESV by default) where the target
+  has it, whichever one the app reads in. A `shared` or `pasted` chip with its own version keeps
+  it, and one without opens in the target's own default.
 - Lamp keeps nothing from the target. Offline, the links still show; the target says if it can't
   load.
-- Settings → Open in: each target with a switch and `⠿` (drag, or Move up and Move down in its
-  menu). Synced.
+- Settings → Open in: the translation, then each target with a switch and `⠿` (drag, or Move up
+  and Move down in its menu). Synced.
 
 ```text
 ┌──────────────────────────────────────┐
 │ ← Open in                            │
 ├──────────────────────────────────────┤
+│ Translation                          │
+│ [ ESV · English Standard Version ⌄ ] │
+│ Verses open in this translation where│
+│ the site has it. One pasted or shared│
+│ with its own version keeps that      │
+│ version.                             │
+│                                      │
 │ Shown in the verse sheet, in this    │
 │ order.                               │
 │                                      │

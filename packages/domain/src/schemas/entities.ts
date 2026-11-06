@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { BOOK_CODES } from '../books.ts';
 import { commentBodySchema } from '../comments.ts';
 import { bodySchema, LINK_TARGET_TYPES } from '../doc.ts';
-import { OPEN_IN_TARGETS } from '../open-in.ts';
+import { OPEN_IN_TARGETS, OPEN_IN_TRANSLATIONS } from '../open-in.ts';
 import { isOrderKey } from '../order.ts';
 import { templateStructureSchema } from '../templates.ts';
 import { TRANSLATIONS } from '../verse-ref.ts';
@@ -81,6 +81,8 @@ export const userSettingsSchema = z.strictObject({
     .array(z.enum(OPEN_IN_TARGETS))
     .max(OPEN_IN_TARGETS.length)
     .refine((keys) => new Set(keys).size === keys.length, 'A target is listed twice'),
+  /** The translation a chip of the app's own text opens in, in each "Open in…" target. */
+  openInTranslation: z.enum(OPEN_IN_TRANSLATIONS),
   /**
    * The template each kind of new lesson starts with (F25, §17.6): null, a built-in's key or a
    * template's id. A deleted template counts as none.

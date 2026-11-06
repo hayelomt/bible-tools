@@ -118,6 +118,7 @@ describe('resolveUpsert', () => {
         autoPreviewVerses: false,
         pasteChips: true,
         openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos'],
+        openInTranslation: 'ESV',
         defaultTemplates: { sermon: null, personal: null, group: null },
         resurfacing: { yearAgo: true, repeatedVerse: true, staleQuestion: true },
         lastDigestQuarter: null,

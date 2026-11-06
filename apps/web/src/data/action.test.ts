@@ -73,6 +73,7 @@ describe('first run', () => {
       autoPreviewVerses: true,
       pasteChips: true,
       openInTargets: ['blueletterbible', 'youversion', 'biblehub', 'logos', 'enduringword'],
+      openInTranslation: 'ESV',
       rev: 0,
     });
     const tags = await db.tag.toArray();

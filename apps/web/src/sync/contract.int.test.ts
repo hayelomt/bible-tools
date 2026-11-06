@@ -340,7 +340,12 @@ describe('two devices editing offline', () => {
     );
     await addTag({ kind: 'section', id: door.id }, 'shepherd', phone.db);
     await updateSettings(
-      { autoPreviewVerses: true, pasteChips: false, openInTargets: ['logos', 'youversion'] },
+      {
+        autoPreviewVerses: true,
+        pasteChips: false,
+        openInTargets: ['logos', 'youversion'],
+        openInTranslation: 'NIV',
+      },
       phone.db,
     );
     await sync(laptop);
@@ -381,6 +386,7 @@ describe('two devices editing offline', () => {
       autoPreviewVerses: true,
       pasteChips: false,
       openInTargets: ['logos', 'youversion'],
+      openInTranslation: 'NIV',
     });
   });
 });
