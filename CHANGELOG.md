@@ -2,6 +2,17 @@
 
 Lamp's releases, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/). The web app and the API ship together and carry the same version. The user-facing notes for each release are in [`docs/releases/`](docs/releases/).
 
+## [Unreleased]
+
+### Added
+
+- **Quick find.** A find bar on lessons and in the reader, from the search icon or Ctrl/Cmd+F: matches in the open lesson or chapter, with a count and next and previous. On a lesson it covers the title, sections, takeaways, questions and the verse text under a paragraph (TECH-DESIGN decision 108).
+- **A translation for "Open in…".** Settings → Open in picks the translation verse chips open in, ESV by default, whichever one the app reads in. A chip pasted or shared with its own version keeps it. Changes the sync format, so apps before 2.2.0 are asked to update (decision 109).
+
+### Fixed
+
+- **Verse text in notes on a phone.** Typing after tapping a verse preview no longer puts the preview's last word in the note.
+
 ## [2.1.0] - 2026-10-29
 
 Release notes: [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md).

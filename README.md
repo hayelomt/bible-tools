@@ -19,7 +19,8 @@ used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
 - **Reference verses as you type:** `Rom 8:28-30` or `1 jn 3` completes into a verse chip that
   holds the text, labelled with its translation.
 - **Find anything by verse:** the verse index shows every note, highlight and memory verse on a
-  passage, across all lessons. Search covers text and tags too.
+  passage, across all lessons. Search covers text and tags too, and quick find a word in the
+  open lesson or chapter.
 - **Read the Berean Standard Bible** (or the King James Version) offline, highlight verses and
   turn a highlight into a note.
 - **Keep questions and takeaways visible** in a review queue, and memorise verses on a spaced
@@ -30,7 +31,8 @@ used for notes yet. Progress is tracked in [docs/BACKLOG.md](docs/BACKLOG.md).
 - **Share verses in from other apps:** a verse shared from YouVersion or a Bible site, or pasted,
   waits in the Inbox with its reference and translation recognised, until it goes into a lesson.
   Pasting into a note offers to turn the references and verses in it into chips, and each chip
-  opens in Blue Letter Bible, YouVersion, Bible Hub, Logos or Enduring Word's commentary.
+  opens in Blue Letter Bible, YouVersion, Bible Hub, Logos or Enduring Word's commentary, in the
+  translation picked in Settings.
 - **Import from YouVersion:** highlights and notes from YouVersion's data download land in the
   Inbox (Settings → Import) as one row, which opens its items and can dismiss them all at once.
   The export's format isn't confirmed yet, so this may not read a real file until it is.

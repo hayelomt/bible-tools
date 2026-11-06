@@ -42,6 +42,28 @@ for the selected verses, in place of the `⋯` menu's "Every note on …" until 
 *As built in M6-01:* the `⋯` menu holds Memorise (or "In memory verses ✓") and Verse index; Copy is
 left out.
 
+## Quick find
+
+A word in the open chapter, on the reader and on a lesson. The `⌕` in the header or Ctrl/Cmd+F opens
+a bar, over the header on a phone and at the top right on a laptop; on these two screens Ctrl/Cmd+F
+is the app's find, not the browser's.
+
+```text
+┌──────────────────────────────────────┐
+│ [ shepherd       ] 2 of 7   ⌃  ⌄  ✕  │  ← over the header
+├──────────────────────────────────────┤
+│ ¹ The LORD is my ▒shepherd▒; I shall │  ← the current match stands out
+```
+
+- Matches show as the word is typed, ignoring case and the shape of quotes. Enter and Shift+Enter
+  or `⌃` `⌄` step through them, wrapping round; Esc or `✕` closes the bar and focus goes back.
+- **Reader:** the chapter's text, not its verse numbers. A new chapter closes the bar.
+- **Lesson:** the title, sections, takeaways and questions, and the verse text under a paragraph.
+  Words in sections and questions are marked; the title, a takeaway or a verse's text is marked as
+  a whole, since a field's words can't be, and a preview's are drawn. The matches follow a note
+  as it's typed.
+- **Nothing found:** "No matches", and `⌃` `⌄` are disabled.
+
 ## Book and chapter picker (M5-01)
 
 ```text

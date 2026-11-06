@@ -232,6 +232,28 @@
   }
 }
 
+/*
+ * Quick find: words in the text, and whole fields and drawn verses (apps/web/src/lib/find.ts).
+ * Separate rules: a browser without ::highlight drops a whole rule that names it.
+ */
+::highlight(lamp-find) {
+  background-color: color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+::highlight(lamp-find-current) {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+[data-find='match'] {
+  background-color: color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+[data-find='current'] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -106,7 +106,7 @@ with the single theme (M2-15).
   token, checked by the contrast test) and moves into a dialog when it opens and back when it
   closes.
 - **Shortcuts (laptop):** `/` search, `n` new lesson, `←` `→` previous and next chapter in the
-  reader, Esc closes the top layer. None of them fire while typing in a field. A screen with its own
+  reader, Ctrl/Cmd+F quick find on a lesson and in the reader, Esc closes the top layer. All but Ctrl/Cmd+F wait while typing in a field. A screen with its own
   keys (inbox triage) lists them with `?`, and shows each action's key beside its button.
 - **Multi-select:** "Select" in the header, or holding an item, shows checkboxes (44 px targets).
   A bar with the count and the actions replaces the bottom bar, as the reader's selection bar

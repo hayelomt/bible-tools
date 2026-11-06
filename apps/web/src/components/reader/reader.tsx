@@ -12,6 +12,7 @@ import {
 } from '@/lib/chapters.ts';
 import { useActiveTranslation } from '@/data/translation.ts';
 import { DictionaryButton } from '../dictionary/dictionary.tsx';
+import { QuickFind } from '../find/quick-find.tsx';
 import { chapterVerses } from '../dictionary/page-verses.ts';
 import { today } from '@/lib/dates.ts';
 import { extendSelection, selectionPassage, type VerseSelection } from '@/lib/highlights.ts';
@@ -72,6 +73,7 @@ export function Reader({ at }: { at: Chapter }) {
         </button>
       </ScreenTitle>
       <ScreenActions>
+        <QuickFind label="Find in chapter" />
         {/* The dictionary explains the KJV's old words, so it's there only with the KJV, and on a
             phone too: it's one icon beside the chapter's name (decided 2026-10-15). */}
         {translation === 'KJV' && (

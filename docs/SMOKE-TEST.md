@@ -78,6 +78,9 @@ Don't stop at the first failure. Carry on where the rest of the section doesn't 
 4. Memorise a verse (from the reader or a chip). It shows in Review → Memory; reveal it and grade
    it.
 
+Quick find: on a chapter and on a lesson, the `⌕` or Ctrl/Cmd+F finds a word, Enter steps through
+the matches, Esc closes the bar and the marks go.
+
 ## 6. Review
 
 1. The Review tab lists open questions, recent takeaways and memory verses due.
@@ -160,7 +163,7 @@ Use two verified accounts in two browser contexts, Ann and Ben.
 ## 14. Settings and help
 
 1. Settings → **Open in other apps**: hide a target and reorder the rest. A verse chip's "Open in…" follows the
-   new order.
+   new order. Pick another translation: its links open in that one (ESV by default).
 2. The privacy note and the user guide open from Settings → About, and read offline too.
 3. The status indicator's menu shows **Sync now**, and it works.
 

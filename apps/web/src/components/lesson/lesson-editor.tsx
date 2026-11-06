@@ -4,6 +4,7 @@ import { buttonVariants } from '@lamp/ui/components/button';
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, CircleDot } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
+import { QuickFind } from '@/components/find/quick-find.tsx';
 import { GroupQuestions } from '@/components/groups/group-questions.tsx';
 import { GroupThread } from '@/components/groups/group-thread.tsx';
 import {
@@ -152,11 +153,12 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer, group }: Le
 
   return (
     // On a phone the page ends with room for the + button, so it never covers the last line.
-    <div className={cn('flex flex-col gap-2', lesson && !wide && 'pb-20')}>
+    <div data-find-root className={cn('flex flex-col gap-2', lesson && !wide && 'pb-20')}>
       <ScreenTitle>
         <span className="sr-only">{lesson?.title ?? 'New lesson'}</span>
       </ScreenTitle>
       <ScreenActions>
+        {lesson && <QuickFind label="Find in lesson" />}
         {lesson && <LessonDictionary lesson={lesson} />}
         <output className="grid size-8 place-items-center text-muted-foreground">
           {lesson && !saving && !sectionsSaving && (
@@ -251,7 +253,7 @@ export function LessonEditor({ id, lesson, seriesId, reveal, answer, group }: Le
 
       {wide ? (
         <SidePanel>
-          <div className="flex flex-col gap-8">
+          <div data-find-root className="flex flex-col gap-8">
             <section aria-labelledby={detailsId} className="flex flex-col gap-3">
               <PanelHeading id={detailsId}>Details</PanelHeading>
               <LessonDetails saver={saver} lessonId={lesson ? id : null} />
